@@ -1,5 +1,4 @@
 using System;
-using Unity.Entities;
 
 namespace MLFLegends.Combat
 {
@@ -25,18 +24,19 @@ namespace MLFLegends.Combat
     }
 
     /// <summary>
-    /// The intention of one combatant for one simulation tick. Exactly one slot per combatant;
-    /// the producer of that combatant (player input or AI) overwrites it, the command processor
-    /// only reads it. See CONTRACTS.md next to this file for the full lifecycle.
+    /// The intention of one combatant for one simulation tick, identified by
+    /// (<see cref="Combatant"/>, <see cref="Tick"/>). Player input and AI produce the same value.
     /// </summary>
     /// <remarks>
-    /// A command applies only on the tick equal to <see cref="Tick"/>. A command whose
-    /// <see cref="Tick"/> differs from the tick being simulated is stale and is treated exactly as
-    /// <see cref="None"/>. Tick 0 is never simulated, so <c>default</c> is always a no-op command.
+    /// A plain unmanaged value: how commands are queued, stored and consumed is owned by the single
+    /// command processor (Issue #4), which wraps it in its own ECS storage. Acceptance rules
+    /// (none, stale, future, duplicate, unknown combatant) are defined in CONTRACTS.md next to this file.
     /// </remarks>
-    public struct CombatCommand : IComponentData
+    public struct CombatCommand
     {
-        /// <summary>Simulation tick this command is meant for. 0 means "no command".</summary>
+        public CombatantId Combatant;
+
+        /// <summary>Simulation tick this command is meant for. Tick 0 is never simulated.</summary>
         public uint Tick;
 
         /// <summary>Desired movement along world X: -1, 0 or +1.</summary>
@@ -49,14 +49,14 @@ namespace MLFLegends.Combat
         public CommandButtons Held;
 
         /// <summary>
-        /// Buttons pressed at least once since the producer's previous command. May contain a
-        /// button that is no longer <see cref="Held"/> (a tap shorter than one tick).
+        /// Buttons pressed at least once since the producer's previous command for this combatant.
+        /// May contain a button that is no longer <see cref="Held"/> (a tap shorter than one tick).
         /// </summary>
         public CommandButtons Pressed;
 
         public CommandSource Source;
 
-        /// <summary>No movement, no buttons: the combatant performs no new action.</summary>
-        public static CombatCommand None => default;
+        /// <summary>No movement and no buttons: the combatant performs no new action this tick.</summary>
+        public bool IsNone => MoveX == 0 && MoveZ == 0 && Held == CommandButtons.None && Pressed == CommandButtons.None;
     }
 }
