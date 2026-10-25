@@ -44,8 +44,12 @@ namespace MLFLegends.Tests.PlayMode
         static IEnumerator NextTick()
         {
             var tick = Tick;
+            var deadline = Time.realtimeSinceStartup + 5f;
             while (Tick == tick)
+            {
+                Assert.That(Time.realtimeSinceStartup, Is.LessThan(deadline), "No fixed step ran (Time.timeScale = 0?).");
                 yield return null;
+            }
         }
 
         [UnityTest]

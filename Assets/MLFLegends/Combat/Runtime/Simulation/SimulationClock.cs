@@ -11,9 +11,10 @@ namespace MLFLegends.Combat
     /// <c>SystemAPI.GetSingleton&lt;SimulationClock&gt;()</c>; the tick cannot be set from outside
     /// this assembly.
     /// <para>
-    /// <see cref="Tick"/> is <c>0</c> until the first tick runs. Inside the fixed step it is the tick
-    /// being simulated (the first simulated tick is <c>1</c>); outside the fixed step it is the last
-    /// completed tick, so the next tick to be simulated is <c>Tick + 1</c>.
+    /// <see cref="Tick"/> is <c>0</c> until the first tick runs. From <see cref="CombatClockSystem"/> on (every
+    /// combat phase) it is the tick being simulated (the first simulated tick is <c>1</c>); outside the fixed
+    /// step, and in the fixed step before the clock (the battle lifecycle), it is the last completed tick, so
+    /// the next tick to be simulated is <c>Tick + 1</c>.
     /// </para>
     /// </remarks>
     public struct SimulationClock : IComponentData

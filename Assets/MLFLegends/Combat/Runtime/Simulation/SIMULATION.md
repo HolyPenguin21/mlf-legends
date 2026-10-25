@@ -61,8 +61,10 @@ SimulationSystemGroup
 ## Tick semantics
 - `uint`, `0` = `SimulationClock.NoTick` = "no tick yet"; never simulated, never valid for a command.
 - The first simulated tick is `1`. Each fixed step increments exactly once, before every phase.
-- Inside the fixed step `Tick` is the tick being simulated. Outside it, `Tick` is the last completed
-  tick and the next one is `Tick + 1` (what a frame-rate producer targets).
+- From `CombatClockSystem` on (every combat phase) `Tick` is the tick being simulated. Outside the fixed
+  step, and inside it before the clock (`BeginFixedStepSimulationEntityCommandBufferSystem`,
+  `BattleLifecycleSystem`), `Tick` is the last completed tick and the next one is `Tick + 1` (what a
+  frame-rate producer targets).
 - Upper bound: `uint.MaxValue` (~828 days at 60 Hz). The clock never wraps to `0` and never repeats a
   tick: on the step after `LastTick` it logs an error and removes `SimulationClockRunning`, which stops
   the clock and every phase in that same step. The battle must end.

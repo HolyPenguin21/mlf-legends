@@ -43,7 +43,15 @@ frame N+1  step 1: Lifecycle (applies Start, BattleStartTick = T) -> Clock T+1 (
 A frame that runs no fixed step (high frame rate, `Time.timeScale = 0`) applies nothing and simulates nothing:
 requests wait for the next step, so the tick timeline is the same as if they had been applied at once. Readers
 of `BattleSession` (UI, tests) see the change after the next tick, not after the next frame; while paused, a
-requested end keeps the combatants until the simulation resumes.
+requested end keeps the combatants until the simulation resumes. The very first fixed step of a World always
+runs (Entities' catch-up manager steps at t = 0), so a request made before it is applied immediately.
+
+**Entity command buffers.** Combatants can now be destroyed between two ticks of the same frame. A system inside
+the fixed step that records commands for combatants must use the fixed-step buffers
+(`BeginFixedStepSimulationEntityCommandBufferSystem`, played back before this system, or
+`EndFixedStepSimulationEntityCommandBufferSystem`, played back at the end of the same tick), never
+`EndSimulationEntityCommandBufferSystem` or later: those play back after further ticks may have destroyed the
+target. No system uses an ECB yet.
 
 ## Combatant created by `Start`
 
