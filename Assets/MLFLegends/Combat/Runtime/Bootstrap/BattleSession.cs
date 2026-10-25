@@ -29,23 +29,58 @@ namespace MLFLegends.Combat
     }
 
     /// <summary>
-    /// The two combatants of a battle: one controlled by the human player, one by AI. Both get identical
-    /// components; which one is human is recorded only in <see cref="BattleSession"/>.
+    /// The combatants of a battle: one controlled by the human player, one by AI, and optionally allies of each
+    /// on the same team. All get identical components; which one is human is recorded only in <see cref="BattleSession"/>.
     /// </summary>
+    /// <remarks>
+    /// With no allies (the default) the battle is the 1v1 duel. Allies are ordinary combatants of the same simulation,
+    /// spawned behind their leader (<see cref="AllyOf"/>); a team has at most <see cref="MaxCombatantsPerTeam"/> combatants.
+    /// </remarks>
     public struct BattleSetup
     {
+        /// <summary>Largest team, leader included: 200 vs 200 at most.</summary>
+        public const int MaxCombatantsPerTeam = 200;
+
+        /// <summary>Allies per row of the formation behind a leader (a row runs along Z).</summary>
+        public const int AlliesPerRow = 10;
+
+        /// <summary>Distance between neighbouring places of a formation, world units.</summary>
+        public const float AllySpacing = 1f;
+
         public CombatantSetup Human;
         public CombatantSetup Ai;
 
-        /// <summary>Human on team 1 at X = -2 facing right, AI on team 2 at X = +2 facing left.</summary>
+        /// <summary>Combatants on <see cref="Human"/>'s team besides the human one; at most <see cref="MaxCombatantsPerTeam"/> - 1.</summary>
+        public ushort HumanAllies;
+
+        /// <summary>Combatants on <see cref="Ai"/>'s team besides the AI leader; at most <see cref="MaxCombatantsPerTeam"/> - 1.</summary>
+        public ushort AiAllies;
+
+        /// <summary>Human on team 1 at X = -2 facing right, AI on team 2 at X = +2 facing left, no allies.</summary>
         public static BattleSetup Default => new BattleSetup
         {
             Human = new CombatantSetup { Team = 1, Position = new float3(-2f, 0f, 0f), Facing = FacingDirection.Right },
             Ai = new CombatantSetup { Team = 2, Position = new float3(2f, 0f, 0f), Facing = FacingDirection.Left },
         };
 
-        /// <summary>Valid facings and finite positions for both, on different teams.</summary>
-        public bool IsValid => Human.IsValid && Ai.IsValid && Human.Team != Ai.Team;
+        /// <summary>Combatants the battle spawns: both leaders and all allies.</summary>
+        public int CombatantCount => 2 + HumanAllies + AiAllies;
+
+        /// <summary>Valid facings and finite positions for both leaders, on different teams, each team within <see cref="MaxCombatantsPerTeam"/>.</summary>
+        public bool IsValid => Human.IsValid && Ai.IsValid && Human.Team != Ai.Team
+            && HumanAllies < MaxCombatantsPerTeam && AiAllies < MaxCombatantsPerTeam;
+
+        /// <summary>
+        /// Spawn values of ally <paramref name="index"/> (0-based) of <paramref name="leader"/>: same team and facing, in rows of
+        /// <see cref="AlliesPerRow"/> behind the leader (away from where it faces), centred on the leader's Z.
+        /// </summary>
+        internal static CombatantSetup AllyOf(in CombatantSetup leader, int index)
+        {
+            var back = 1 + index / AlliesPerRow;
+            var side = index % AlliesPerRow - (AlliesPerRow - 1) * 0.5f;
+            var offset = new float3(-(sbyte)leader.Facing * back, 0f, side) * AllySpacing;
+            return new CombatantSetup { Team = leader.Team, Position = leader.Position + offset, Facing = leader.Facing };
+        }
     }
 
     public enum BattleRequestKind : byte

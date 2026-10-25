@@ -124,13 +124,19 @@ namespace MLFLegends.Combat
             var battleStartTick = CurrentTick;
             if (!CombatCommandQueue.CanResetForBattle(entityManager, battleStartTick))
                 return BattleRequestOutcome.CommandQueueRejected;
-            if (!allocator.TryReserve(2, out var first))
+            // One reservation for the whole battle: human = first, AI = first + 1, then the human's and the AI's allies.
+            if (!allocator.TryReserve((uint)setup.CombatantCount, out var first))
                 return BattleRequestOutcome.IdsExhausted;
 
             // Also drops the previous battle's command boundary, pending commands and results.
             DestroyCombatants(entityManager, battleStartTick);
-            var human = Spawn(entityManager, new CombatantId { Value = first }, setup.Human);
-            var ai = Spawn(entityManager, new CombatantId { Value = first + 1 }, setup.Ai);
+            var human = Spawn(entityManager, new CombatantId { Value = first }, setup.Human, named: true);
+            var ai = Spawn(entityManager, new CombatantId { Value = first + 1 }, setup.Ai, named: true);
+            var next = first + 2;
+            for (var i = 0; i < setup.HumanAllies; i++)
+                Spawn(entityManager, new CombatantId { Value = next++ }, BattleSetup.AllyOf(setup.Human, i), named: false);
+            for (var i = 0; i < setup.AiAllies; i++)
+                Spawn(entityManager, new CombatantId { Value = next++ }, BattleSetup.AllyOf(setup.Ai, i), named: false);
             session.Begin(battleStartTick, request.Owner, human, ai);
             return BattleRequestOutcome.Started;
         }
@@ -150,7 +156,12 @@ namespace MLFLegends.Combat
             CombatCommandQueue.ResetForBattle(entityManager, tick);
         }
 
-        CombatantId Spawn(EntityManager entityManager, CombatantId id, in CombatantSetup setup)
+        /// <remarks>
+        /// <paramref name="named"/>: only the two leaders get an Entities Hierarchy name. Entity names live in a process-wide
+        /// store of 16 384 unique strings that is never emptied until a domain reload, and IDs are never reused, so a name per
+        /// combatant would fill it after about 40 restarts of a 200 vs 200 battle (an Editor error, then no names at all).
+        /// </remarks>
+        CombatantId Spawn(EntityManager entityManager, CombatantId id, in CombatantSetup setup, bool named)
         {
             var entity = entityManager.CreateEntity(m_CombatantArchetype); // InCombat starts enabled
             entityManager.SetComponentData(entity, id);
@@ -158,9 +169,13 @@ namespace MLFLegends.Combat
             entityManager.SetComponentData(entity, new CombatPosition { Value = setup.Position });
             entityManager.SetComponentData(entity, new CombatFacing { Value = setup.Facing });
 
-            FixedString64Bytes name = "Combatant ";
-            name.Append(id.Value);
-            entityManager.SetName(entity, name);
+            if (named)
+            {
+                FixedString64Bytes name = "Combatant ";
+                name.Append(id.Value);
+                entityManager.SetName(entity, name);
+            }
+
             return id;
         }
 
