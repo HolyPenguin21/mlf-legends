@@ -88,10 +88,15 @@ when the next one begins in the same World (the World and `SimulationClock` are 
 - stores `battleStartTick`: any later command with `Tick <= battleStartTick` is `BeforeBattleStart`,
   so the first accepted tick is `battleStartTick + 1` and relative battle tick = `Tick - BattleStartTick`;
 - throws if `battleStartTick` is before the current `SimulationClock.Tick` or before the previous
-  boundary; never touches the clock, combatants or other systems.
+  boundary, before changing anything; never touches the clock, combatants or other systems.
 
-Call it on the main thread at a tick boundary: between fixed steps (where `Tick` is the last completed
-tick, the usual `BattleStartTick`) or in the command-collection phase before the processor, and after
+`CombatCommandQueue.CanResetForBattle(EntityManager, uint battleStartTick)` answers whether that reset would
+succeed now, with the same single set of checks and no side effect (Burst-compatible). The lifecycle owner calls
+it before destroying the previous battle's combatants, so a reset that would throw rejects the whole request
+instead of failing after the destroy (#14). Rules are not repeated outside this queue.
+
+Call it on the main thread at a tick boundary: between fixed steps, e.g. at the start of a step before
+`CombatClockSystem` as the lifecycle owner does (where `Tick` is the last completed tick, the usual `BattleStartTick`) or in the command-collection phase before the processor, and after
 the previous battle's combatants were despawned or disabled (same step), so a late command cannot find
 them in combat. It is Burst-compatible (callable from a Burst `ISystem`). #5 owns the
 battle lifecycle and its `BattleStartTick`; it passes that value here. A late producer targeting an old
