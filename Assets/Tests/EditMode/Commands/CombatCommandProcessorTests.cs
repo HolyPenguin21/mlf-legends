@@ -317,25 +317,58 @@ namespace MLFLegends.Tests.EditMode
         }
 
         [Test]
+        public void RepeatedFutureKeyIsRejectedAtSubmissionAndKeepsOnePendingCommand()
+        {
+            var combatant = Spawn(1);
+            var first = Cmd(1, 3, moveX: 1);
+            Submit(first, first, Cmd(1, 3, moveX: -1, source: CommandSource.AI));
+            Step();
+            Assert.That(Outcomes(Results), Is.EqualTo(new[] { CommandOutcome.Deferred, CommandOutcome.Duplicate, CommandOutcome.Conflict }));
+            Assert.That(PendingCount, Is.EqualTo(1));
+
+            Submit(Cmd(1, 3, moveX: -1)); // next tick, still in the future
+            Step();
+            Assert.That(Outcomes(Results), Is.EqualTo(new[] { CommandOutcome.Conflict }));
+
+            Step();
+            Assert.That(Outcomes(Results), Is.EqualTo(new[] { CommandOutcome.Accepted }));
+            AssertSame(Applied(combatant).Command, first);
+        }
+
+        [Test]
+        public void FutureCommandForACombatantNotInCombatIsRejectedAtSubmission()
+        {
+            var defeated = Spawn(2);
+            Manager.SetComponentEnabled<InCombat>(defeated, false);
+            Submit(Cmd(2, 5), Cmd(99, 5));
+            Step();
+
+            Assert.That(Outcomes(Results), Is.EqualTo(new[] { CommandOutcome.UnknownCombatant, CommandOutcome.UnknownCombatant }));
+            Assert.That(PendingCount, Is.Zero, "Garbage IDs never occupy the pending store.");
+        }
+
+        [Test]
         public void PendingStoreIsBoundedAndOverflowIsReported()
         {
-            Spawn(1);
-            var commands = new CombatCommand[CombatCommandQueue.MaxPendingCommands + 3];
-            for (var i = 0; i < commands.Length; i++)
-                commands[i] = Cmd(1, 2); // all valid future commands; only the first can win later
-            Submit(commands);
+            // 401 combatants x 32 future ticks = 12 832 distinct keys > MaxPendingCommands (400 x 32).
+            const int combatants = 401;
+            for (uint id = 1; id <= combatants; id++)
+                Spawn(id);
+            var commands = new List<CombatCommand>();
+            for (uint tick = 2; tick <= 1 + CombatCommandQueue.MaxLeadTicks; tick++)
+                for (uint id = 1; id <= combatants; id++)
+                    commands.Add(Cmd(id, tick));
+            Submit(commands.ToArray());
             Step();
 
             var outcomes = Outcomes(Results);
             Assert.That(outcomes.Count(o => o == CommandOutcome.Deferred), Is.EqualTo(CombatCommandQueue.MaxPendingCommands));
-            Assert.That(outcomes.Count(o => o == CommandOutcome.QueueFull), Is.EqualTo(3));
+            Assert.That(outcomes.Count(o => o == CommandOutcome.QueueFull), Is.EqualTo(commands.Count - CombatCommandQueue.MaxPendingCommands));
             Assert.That(PendingCount, Is.EqualTo(CombatCommandQueue.MaxPendingCommands));
 
             Step();
-            outcomes = Outcomes(Results);
-            Assert.That(outcomes.Count(o => o == CommandOutcome.Accepted), Is.EqualTo(1));
-            Assert.That(outcomes.Count(o => o == CommandOutcome.Duplicate), Is.EqualTo(CombatCommandQueue.MaxPendingCommands - 1));
-            Assert.That(PendingCount, Is.Zero);
+            Assert.That(Outcomes(Results).Count(o => o == CommandOutcome.Accepted), Is.EqualTo(combatants));
+            Assert.That(PendingCount, Is.EqualTo(CombatCommandQueue.MaxPendingCommands - combatants));
         }
 
         // ---- invalid values and combatants ----
@@ -522,7 +555,7 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(Tick - Queue.BattleStartTick, Is.EqualTo(1u));
             Assert.That(Outcomes(Results), Is.EqualTo(new[]
             {
-                CommandOutcome.Deferred, CommandOutcome.BeforeBattleStart, CommandOutcome.Accepted,
+                CommandOutcome.UnknownCombatant, CommandOutcome.BeforeBattleStart, CommandOutcome.Accepted,
             }));
             Assert.That(Applied(new3).WasSubmitted, Is.False);
             Assert.That(Applied(new4).Command.MoveX, Is.EqualTo(-1));
@@ -556,6 +589,38 @@ namespace MLFLegends.Tests.EditMode
         }
 
         [Test]
+        public void ResetFromABurstSystemInTheCollectionPhaseRejectsThatTicksCommands()
+        {
+            var collection = m_World.GetExistingSystemManaged<CombatCommandCollectionSystemGroup>();
+            collection.AddSystemToUpdateList(m_World.CreateSystem<BurstBattleResetProbe>());
+            collection.SortSystems();
+
+            var combatant = Spawn(1);
+            Submit(Cmd(1, 1, moveX: 1), Cmd(1, 4, moveX: 1));
+            Step();
+            Assert.That(PendingCount, Is.EqualTo(1));
+
+            // Tick 2: the first producer submits, then the probe resets with BattleStartTick = 2, then the processor runs.
+            Manager.CreateSingleton(new ResetRequest { OnTick = 2 });
+            m_First.Produce = t => t == 2 ? new[] { Cmd(1, 2, moveX: -1) } : Array.Empty<CombatCommand>();
+            m_Second.Produce = t => t == 2 ? new[] { Cmd(1, 2, moveX: -1), Cmd(1, 3, moveX: 1) } : Array.Empty<CombatCommand>();
+            Step();
+
+            var request = Manager.CreateEntityQuery(typeof(ResetRequest)).GetSingleton<ResetRequest>();
+            Assert.That(request.Done, Is.EqualTo(1));
+            if (Unity.Burst.BurstCompiler.IsEnabled)
+                Assert.That(request.RanManaged, Is.Zero, "ResetForBattle must compile and run under Burst.");
+            Assert.That(Queue.BattleStartTick, Is.EqualTo(2u));
+            Assert.That(Results, Is.Empty, "Everything submitted before the reset is dropped.");
+            Assert.That(PendingCount, Is.Zero);
+            Assert.That(Applied(combatant).Command.Tick, Is.EqualTo(2u));
+            Assert.That(Applied(combatant).WasSubmitted, Is.False);
+
+            Step(2);
+            Assert.That(Applied(combatant).WasSubmitted, Is.False, "Battle-1 command for tick 4 never applies.");
+        }
+
+        [Test]
         public void RepeatedBattlesInOneWorldStartFromAnEmptyQueue()
         {
             uint nextId = 1;
@@ -579,7 +644,39 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(Tick, Is.EqualTo(9u), "One monotonic World clock across battles.");
         }
 
-        // ---- test producers ----
+        // ---- test systems ----
+
+        internal struct ResetRequest : IComponentData
+        {
+            public uint OnTick;
+            public byte Done;
+            public byte RanManaged;
+        }
+
+        // Plays the battle lifecycle owner (#5) calling the cleanup contract from Burst, after the
+        // producers and before the processor.
+        [DisableAutoCreation]
+        [Unity.Burst.BurstCompile]
+        [UpdateInGroup(typeof(CombatCommandCollectionSystemGroup))]
+        [UpdateAfter(typeof(SecondProducer))]
+        internal partial struct BurstBattleResetProbe : ISystem
+        {
+            [Unity.Burst.BurstCompile(CompileSynchronously = true)]
+            public void OnUpdate(ref SystemState state)
+            {
+                var tick = SystemAPI.GetSingleton<SimulationClock>().Tick;
+                if (!SystemAPI.TryGetSingleton<ResetRequest>(out var request) || request.OnTick != tick)
+                    return;
+
+                CombatCommandQueue.ResetForBattle(state.EntityManager, tick);
+                request.Done = 1;
+                MarkManaged(ref request.RanManaged);
+                SystemAPI.SetSingleton(request);
+            }
+
+            [Unity.Burst.BurstDiscard]
+            static void MarkManaged(ref byte ranManaged) => ranManaged = 1;
+        }
 
         abstract partial class ScriptedProducer : SystemBase
         {

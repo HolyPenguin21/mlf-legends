@@ -25,8 +25,12 @@ entity with `CombatantId` + `InCombat` that lacks it, so the spawner (#5) needs 
 SystemAPI.GetSingletonBuffer<CombatCommandSubmission>().Add(new CombatCommandSubmission(command));
 ```
 - Inside `CombatCommandCollectionSystemGroup` (before the processor): target the current
-  `SimulationClock.Tick`. The order of producer systems in that group is the submission order.
-- Outside the fixed step (frame-rate input): target `Tick + 1` (or up to `MaxLeadTicks` ahead).
+  `SimulationClock.Tick`. The order of producer systems in that group is the submission order, so
+  producers must fix it explicitly with `[UpdateBefore]`/`[UpdateAfter]`; the relative order of
+  unconstrained systems is not a contract.
+- Outside the fixed step (frame-rate input): target `Tick + 1` (or up to `MaxLeadTicks` ahead). These
+  submissions precede every in-step producer of the next tick. On frames that run no tick the producer
+  must not resubmit the same key: the first submission wins and later ones are `Duplicate`/`Conflict`.
 - Never write `AppliedCombatCommand` or any combat component. No `UnityEngine.Input` in the processor.
 
 ## Policy per tick T (same rules for every `Source`)
@@ -40,7 +44,9 @@ Validation, in this order, at submission processing:
 | `Tick <= BattleStartTick` (previous battle / already started tick) | `BeforeBattleStart` |
 | `Tick < T` | `Stale` |
 | `Tick > T + MaxLeadTicks` (32) | `TooFarAhead` |
-| `T < Tick <= T + 32` | `Deferred`, kept pending; `QueueFull` if the pending store is full |
+| `T < Tick <= T + 32`, combatant not in combat now | `UnknownCombatant` |
+| `T < Tick <= T + 32`, key already pending | `Duplicate` / `Conflict` against the pending (first) command |
+| `T < Tick <= T + 32`, otherwise | `Deferred`, kept pending; `QueueFull` if the pending store is full |
 | `Tick == T` | resolved below |
 
 Resolution of the commands for T (pending ones first, then this tick's submissions, i.e. submission order):
@@ -62,7 +68,9 @@ A submitted None command is a normal `Accepted` command (`WasSubmitted == true`)
   the submission order itself (rule 3: first wins).
 - Per tick: one pass over pending + submissions, one sort of the processed commands, one pass over
   in-combat combatants with an O(1) hash lookup. O(C log C + N); no combatant × command scan.
-- Bounds: pending ≤ `MaxPendingCommands` = 400 × 32 = 12 800 × 16 B ≈ 200 KB. Submissions and results
+- Bounds: pending holds at most one command per (in-combat combatant, future tick), i.e. ≤ N × 32, and is
+  capped at `MaxPendingCommands` = 400 × 32 = 12 800 × 16 B ≈ 200 KB, so `QueueFull` only happens with
+  more than 400 combatants. Garbage IDs and repeated keys never occupy it. Submissions and results
   hold at most one tick of commands and are cleared every tick. `AppliedCombatCommand` is 16 B per
   combatant. Temporary data is `Allocator.Temp`, freed at the end of the update. No Entity handles
   are kept between ticks.
@@ -77,7 +85,9 @@ when the next one begins in the same World (the World and `SimulationClock` are 
   boundary; never touches the clock, combatants or other systems.
 
 Call it on the main thread at a tick boundary: between fixed steps (where `Tick` is the last completed
-tick, the usual `BattleStartTick`) or in the command-collection phase before the processor. #5 owns the
+tick, the usual `BattleStartTick`) or in the command-collection phase before the processor, and after
+the previous battle's combatants were despawned or disabled (same step), so a late command cannot find
+them in combat. It is Burst-compatible (callable from a Burst `ISystem`). #5 owns the
 battle lifecycle and its `BattleStartTick`; it passes that value here. A late producer targeting an old
 combatant after the reset is rejected as `UnknownCombatant` because IDs are never reused in a World.
 

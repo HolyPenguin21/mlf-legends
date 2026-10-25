@@ -3,6 +3,7 @@
   "rootNamespace": "MLFLegends.Tests.EditMode",
   "references": [
     "MLFLegends.Combat.Runtime",
+    "Unity.Burst",
     "Unity.Collections",
     "Unity.Entities",
     "Unity.RenderPipelines.Universal.Runtime"

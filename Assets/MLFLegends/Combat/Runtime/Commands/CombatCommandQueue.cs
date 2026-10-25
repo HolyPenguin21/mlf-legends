@@ -127,9 +127,11 @@ namespace MLFLegends.Combat
         /// </summary>
         /// <remarks>
         /// Call on the main thread at a tick boundary: between fixed steps, or inside the command-collection
-        /// phase before the processor. <paramref name="battleStartTick"/> is the battle's <c>BattleStartTick</c>
-        /// (normally the current <see cref="SimulationClock.Tick"/>); the first tick the new battle accepts
-        /// commands for is <c>battleStartTick + 1</c>. Does not touch the clock, combatants or any other state.
+        /// phase before the processor; after the previous battle's combatants were despawned or disabled in
+        /// the same step, so no late command can still find them in combat. Burst-compatible.
+        /// <paramref name="battleStartTick"/> is the battle's <c>BattleStartTick</c> (normally the current
+        /// <see cref="SimulationClock.Tick"/>); the first tick the new battle accepts commands for is
+        /// <c>battleStartTick + 1</c>. Does not touch the clock, combatants or any other state.
         /// </remarks>
         /// <exception cref="InvalidOperationException">The world has no command processor.</exception>
         /// <exception cref="ArgumentOutOfRangeException">
@@ -137,23 +139,25 @@ namespace MLFLegends.Combat
         /// </exception>
         public static void ResetForBattle(EntityManager entityManager, uint battleStartTick)
         {
-            Entity queueEntity;
-            using (var queueQuery = entityManager.CreateEntityQuery(ComponentType.ReadWrite<CombatCommandQueue>()))
-            {
-                if (queueQuery.CalculateEntityCount() != 1)
-                    throw new InvalidOperationException($"{nameof(ResetForBattle)} requires exactly one {nameof(CombatCommandQueue)}.");
-                queueEntity = queueQuery.GetSingletonEntity();
-            }
+            // Burst-compatible on purpose (no params arrays, boxing or formatted messages): #5 may call it
+            // from a Burst-compiled ISystem.
+            var builder = new EntityQueryBuilder(Allocator.Temp);
+            var queueQuery = builder.WithAllRW<CombatCommandQueue>().Build(entityManager);
+            builder.Reset();
+            var clockQuery = builder.WithAll<SimulationClock>().Build(entityManager);
+            builder.Reset();
+            var appliedQuery = builder.WithAllRW<AppliedCombatCommand>().Build(entityManager);
+            builder.Dispose();
 
-            using (var clockQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<SimulationClock>()))
-            {
-                if (!clockQuery.IsEmpty && battleStartTick < clockQuery.GetSingleton<SimulationClock>().Tick)
-                    throw new ArgumentOutOfRangeException(nameof(battleStartTick), battleStartTick, "A battle cannot start on an already simulated tick.");
-            }
+            if (queueQuery.CalculateEntityCount() != 1)
+                throw new InvalidOperationException("ResetForBattle requires exactly one CombatCommandQueue (CombatCommandProcessorSystem).");
+            if (!clockQuery.IsEmpty && battleStartTick < clockQuery.GetSingleton<SimulationClock>().Tick)
+                throw new ArgumentOutOfRangeException(nameof(battleStartTick), "A battle cannot start on an already simulated tick.");
 
+            var queueEntity = queueQuery.GetSingletonEntity();
             var queue = entityManager.GetComponentData<CombatCommandQueue>(queueEntity);
             if (battleStartTick < queue.m_BattleStartTick)
-                throw new ArgumentOutOfRangeException(nameof(battleStartTick), battleStartTick, "Battle boundaries never move back.");
+                throw new ArgumentOutOfRangeException(nameof(battleStartTick), "Battle boundaries never move back.");
 
             entityManager.GetBuffer<CombatCommandSubmission>(queueEntity).Clear();
             entityManager.GetBuffer<PendingCombatCommand>(queueEntity).Clear();
@@ -161,11 +165,8 @@ namespace MLFLegends.Combat
             queue.m_BattleStartTick = battleStartTick;
             entityManager.SetComponentData(queueEntity, queue);
 
-            using (var appliedQuery = entityManager.CreateEntityQuery(ComponentType.ReadWrite<AppliedCombatCommand>()))
-            using (var cleared = new NativeArray<AppliedCombatCommand>(appliedQuery.CalculateEntityCount(), Allocator.Temp))
-            {
-                appliedQuery.CopyFromComponentDataArray(cleared);
-            }
+            var cleared = new NativeArray<AppliedCombatCommand>(appliedQuery.CalculateEntityCount(), Allocator.Temp);
+            appliedQuery.CopyFromComponentDataArray(cleared);
         }
     }
 }

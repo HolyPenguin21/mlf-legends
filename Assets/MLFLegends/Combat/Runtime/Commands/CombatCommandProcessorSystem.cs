@@ -64,13 +64,20 @@ namespace MLFLegends.Combat
             var pending = SystemAPI.GetBuffer<PendingCombatCommand>(m_Queue);
             var results = SystemAPI.GetBuffer<CombatCommandResult>(m_Queue);
 
+            // In-combat combatants of this tick (a set, so chunk order never matters).
+            var combatantIds = m_ActiveCombatants.ToComponentDataArray<CombatantId>(Allocator.Temp);
+            var active = new NativeHashSet<uint>(combatantIds.Length + 1, Allocator.Temp);
+            for (var i = 0; i < combatantIds.Length; i++)
+                active.Add(combatantIds[i].Value);
+
             var processed = new NativeList<ProcessedCommand>(submissions.Length + pending.Length, Allocator.Temp);
             var due = new NativeList<ProcessedCommand>(Allocator.Temp);
             var order = 0;
 
             // 1. Commands kept from earlier ticks were submitted first. Overdue ones (a tick that was not
-            // processed) are stale; the rest stay pending in submission order.
+            // processed) are stale; the rest stay pending in submission order, at most one per key.
             var kept = 0;
+            var pendingByKey = new NativeHashMap<ulong, int>(pending.Length + submissions.Length + 1, Allocator.Temp);
             for (var i = 0; i < pending.Length; i++)
             {
                 var command = pending[i].Command;
@@ -79,7 +86,10 @@ namespace MLFLegends.Combat
                 else if (command.Tick < tick)
                     processed.Add(new ProcessedCommand(command, order++, CommandOutcome.Stale));
                 else
+                {
+                    pendingByKey.Add(Key(command), kept);
                     pending[kept++] = pending[i];
+                }
             }
             pending.ResizeUninitialized(kept);
 
@@ -95,22 +105,12 @@ namespace MLFLegends.Combat
                 }
 
                 if (outcome == CommandOutcome.Deferred)
-                {
-                    if (pending.Length < CombatCommandQueue.MaxPendingCommands)
-                        pending.Add(new PendingCombatCommand { Command = command });
-                    else
-                        outcome = CommandOutcome.QueueFull;
-                }
+                    outcome = Defer(command, active, pending, pendingByKey);
                 processed.Add(new ProcessedCommand(command, order++, outcome));
             }
             submissions.Clear();
 
             // 3. Resolve commands for this tick per combatant: first in submission order wins.
-            var combatantIds = m_ActiveCombatants.ToComponentDataArray<CombatantId>(Allocator.Temp);
-            var active = new NativeHashSet<uint>(combatantIds.Length + 1, Allocator.Temp);
-            for (var i = 0; i < combatantIds.Length; i++)
-                active.Add(combatantIds[i].Value);
-
             due.Sort(new CombatantTickOrder());
             var accepted = new NativeHashMap<uint, CombatCommand>(due.Length + 1, Allocator.Temp);
             for (var first = 0; first < due.Length;)
@@ -148,6 +148,29 @@ namespace MLFLegends.Combat
                 results.Add(new CombatCommandResult { Command = processed[i].Command, Outcome = processed[i].Outcome });
             queue.ValueRW.MarkProcessed(tick);
         }
+
+        /// <summary>
+        /// Keeps a valid future command until its tick. Only the first command per key is kept (later ones
+        /// can never win), and only for a combatant that is in combat now, so the store holds at most
+        /// in-combat combatants × <see cref="CombatCommandQueue.MaxLeadTicks"/> commands; whether the
+        /// combatant is still in combat is checked again on the due tick.
+        /// </summary>
+        static CommandOutcome Defer(in CombatCommand command, NativeHashSet<uint> active,
+            DynamicBuffer<PendingCombatCommand> pending, NativeHashMap<ulong, int> pendingByKey)
+        {
+            if (!active.Contains(command.Combatant.Value))
+                return CommandOutcome.UnknownCombatant;
+            if (pendingByKey.TryGetValue(Key(command), out var index))
+                return SameCommand(command, pending[index].Command) ? CommandOutcome.Duplicate : CommandOutcome.Conflict;
+            if (pending.Length >= CombatCommandQueue.MaxPendingCommands)
+                return CommandOutcome.QueueFull;
+
+            pendingByKey.Add(Key(command), pending.Length);
+            pending.Add(new PendingCombatCommand { Command = command });
+            return CommandOutcome.Deferred;
+        }
+
+        static ulong Key(in CombatCommand command) => ((ulong)command.Tick << 32) | command.Combatant.Value;
 
         /// <summary>Source-independent validation. Returns <see cref="CommandOutcome.None"/> for a valid command due on <paramref name="tick"/>.</summary>
         static CommandOutcome Classify(in CombatCommand command, uint tick, uint battleStartTick)
