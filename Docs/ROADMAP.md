@@ -28,6 +28,14 @@
 | 12 | 200v200 scale | ECS/Burst/rendering/perf benchmark on 400 actors; profile collisions, AI, render, frame pacing | NOT STARTED |
 | 13 | Magic and destruction | Prepared spells, multiple resources, systemic area effects, destructible objects/terrain, nav changes | NOT STARTED |
 
+## First visible gameplay scene — owner decision (2026-10-25)
+
+- Preserve stage order: finish **Stage 01** baseline ECS profiling (#7), then **Stage 02** movement and fixed-angle camera, then **Stage 03** sprite rendering.
+- **Do not** create a new visually playable/demo battle scene in Stage 02 using capsules, placeholder GameObjects or other substitute fighter graphics. Movement and camera in Stage 02 are verified through ECS state/integration tests and existing technical smoke infrastructure, not a new user-facing scene.
+- **After the sprite renderer is working in Stage 03**, assemble the first visible battle test scene: orthographic camera, simple 3D arena and sprite-rendered fighters reflecting canonical ECS state. Integrate the Stage 02 movement/camera there; no separate gameplay model or render-driven simulation.
+- Existing `Assets/Scenes/CombatSmoke.unity` is a **technical ECS smoke scene**, not a visual gameplay milestone, and can remain for automated/debug checks. No request to remove it.
+- The first attack-capable fight remains a later milestone (Stage 05+); the complete 1v1 prototype is Stage 09. Do not promise visual attacks or finished combat at Stage 03.
+
 ## Early risk probes (not separate feature architectures)
 - During 01 benchmark fixed-step loop and spatial query overhead at 400 basic entities.
 - During 03 prove sprite instancing, sorting and equipment passes on actual target GPU before asset pipeline locks.
