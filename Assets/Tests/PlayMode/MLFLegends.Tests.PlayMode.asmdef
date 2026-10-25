@@ -2,6 +2,7 @@
   "name": "MLFLegends.Tests.PlayMode",
   "rootNamespace": "MLFLegends.Tests.PlayMode",
   "references": [
+    "Unity.Collections",
     "Unity.Entities"
   ],
   "includePlatforms": [],
