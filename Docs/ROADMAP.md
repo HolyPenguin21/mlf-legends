@@ -62,5 +62,16 @@
 - **Architectural ownership:** only Issue #3 writes the authoritative World tick. Only Issue #4 consumes and clears commands; its `ResetForBattle` API is invoked by #5, never copied. Issue #5 owns battle lifecycle and monotonic non-reusable-in-World `CombatantId`. Future movement/collisions own authoritative `CombatPosition`, not Stage 01 clock. Tooling issue #10 and Commands Temp cleanup issue #12 are scoped follow-ups, not blockers for bootstrap.
 - Unknown Unity execution status must remain explicit; **not a blocker** for delivering approved PRs.
 
+## Stage 01 stabilization window — manager scheduling decision (2026-10-25)
+
+After Issue #5 is integrated, execute the existing follow-up tasks **before final validation and performance baselining**:
+
+1. **Issue #12 — Commands Temp Native-container lifetime:** narrow corrective PR in `Commands/`, before #6 regression/replay tests and #7 performance baseline. Confirm actual issue and resolve without speculative architecture changes. Unity Temp allocations are automatically reclaimed; no leak has been independently demonstrated.
+2. **Issue #10 — PowerShell Unity test runner waiting:** separate tooling-only PR, before #6 so subsequent automated tests have a reliable local runner. Do not change ECS runtime here.
+3. **Issue #6 — Replay and integrated behavior tests:** execute/review against the post-fix runtime.
+4. **Issue #7 — 2/100/400-light-actor performance baseline:** final performance measurements only after #12 and #5; may be developed alongside #6 when ownership scopes do not overlap.
+
+**Operating policy:** manager tracks every nonblocking follow-up as an Issue and decides the integration window. Truly independent polish/low-impact debt can wait until end of the stage; a fix that affects a subsequent test, measurement, integration boundary or correctness must go **before** that consumer. Keep one Issue per focused PR, prohibit competing writers/file overlap, perform available static checks, report Unity execution status honestly. These follow-ups do **not** retroactively block delivery of #5 or require a new ECS layer.
+
 ## Delivery policy
 Existing Unity-generated project content is preserved. Code changes belong in focused commits/PRs and must not be merged before authorization. **Project-owner rule (2026-10-25): Unity Editor tests must never block commit/merge/push when the owner cannot run them from the current environment.** Perform available static checks, report risks, mark runtime tests **NOT RUN**, and leave them outstanding for a later verification opportunity. Do not mislabel delivery as VERIFIED. Update status and QA together whenever delivering milestones.
