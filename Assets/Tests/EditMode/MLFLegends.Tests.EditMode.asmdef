@@ -2,6 +2,7 @@
   "name": "MLFLegends.Tests.EditMode",
   "rootNamespace": "MLFLegends.Tests.EditMode",
   "references": [
+    "MLFLegends.Combat.Runtime",
     "Unity.Collections",
     "Unity.Entities",
     "Unity.RenderPipelines.Universal.Runtime"
