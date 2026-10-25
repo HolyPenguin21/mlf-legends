@@ -70,6 +70,16 @@ The script requires a nonzero NUnit test count with all tests passing; it saves 
 - **Residual risks:** producer-order first-wins requires explicit scheduling by the future input/AI adapters; 400-actor performance remains unprofiled; derived fresh-direction key edges for dodge are Stage 02+ and not implemented yet.
 - **Other independent follow-up:** PowerShell test runner issue #10, no ECS runtime blocker.
 
+## Stage 01.4 code review (Issue #5 / PR #13; 2026-10-25)
+- **Delivery: PASS.** PR #13 merged in `main` at `e64976f91ab032c6af00c900b9c0334834c89bc2`; #5 closed. Static review covered `BattleLifecycleSystem`, `BattleSession`, `CombatantIdAllocator`, `CombatSmokeBootstrap`, `BOOTSTRAP.md`, and test source including editor and PlayMode scene swap.
+- **Ownership/flow: PASS (STATIC).** The lifecycle system is the only spawner/despawner, owns per-World non-reused `CombatantId` and `BattleSession`; uses the existing `SimulationClock` unchanged and calls the existing `CombatCommandQueue.ResetForBattle`, no duplicate command processor. Spawns identical archetypes with valid Team/Position/Facing and enabled `InCombat`. Owner-scoped End prevents a previous scene's late disable from killing the replacement scene's battle.
+- **Agent-reported test execution:** Unity 6000.5.4f1 batchmode EditMode **71/71 PASS**, PlayMode **6/6 PASS** with real scene switch, plus Burst negative controls / GUID checks, as described in PR #13. Manager did not receive XML logs or run Unity independently.
+- **Important follow-up #14:** End sent from inside a fixed step is currently processed next render-frame before the next fixed-step group, letting remaining catch-up ticks of that frame execute old-session logic. Harmless in current no-attacks prototype but **must be corrected before gameplay consequences**. Ensure same lifecycle owner and no duplicate tick processor.
+- **Atomicity follow-up #14:** In `Start`/`End`, prior actors are destroyed before `ResetForBattle` validates the queue boundary. Current caller passes current clock tick so a failure is not reachable under contract, but any future erroneous boundary can leave a partial cleanup; require a preflight before destructive operations.
+- **Domain Reload disabled:** Unity Enter/Exit Play Mode with domain reload turned off was not exercised, since the agent's tests do not toggle that editor setting. Record as **NOT RUN**; include manual QA scenario in #14, do not claim a regression.
+- **Core documentation mismatch: RESOLVED.** Manager updated `Core/CombatantId.cs` XML summary and `Core/CONTRACTS.md` to state IDs are unique **within the World** and never reused across battle restarts. No code or public API behavior changed.
+- **Remaining integration boundaries:** `BattleSession.LastOutcome` reports last request in a batch rather than a per-request ledger; intentional current lightweight diagnostic. Requests currently only apply at frame boundaries, and `CombatSmokeBootstrap` may hold a static *owner token* but no static combat entities/state. Profiling 400 actors (#7) must reuse the real spawn/ID allocator path.
+
 ## Stage-specific profiling
 - 1v1: response timing, invalid actions, front/back guard, dash, injury capability limits.
 - 4v4, 16v16, 50v50, 200v200: sim time/tick, collision pairs, AI decisions, GPU batches, allocations, sprite sorting and camera.
@@ -95,3 +105,8 @@ The script requires a nonzero NUnit test count with all tests passing; it saves 
 | 2026-10-25 | Stage 01.3 command processor PR #11 | PASS — MANAGER STATIC REVIEW | One queue/consumer, documented command classification, no new clock or duplicated movement |
 | 2026-10-25 | Stage 01.3 Unity EditMode 48/48, PlayMode 3/3 | AGENT-REPORTED PASS | PR #11 report; raw Unity logs not inspected independently by manager |
 | 2026-10-25 | Commands temporary Native allocations | FOLLOW-UP / NON-BLOCKING | Issue #12; explicitly dispose where appropriate, before benchmark #7 |
+| 2026-10-25 | Stage 01.4 lifecycle PR #13 | PASS — MANAGER STATIC REVIEW | World preserved, clock monotonic, same command reset API, two clean combatants, owner-gated End |
+| 2026-10-25 | Stage 01.4 Unity tests: EditMode 71/71, PlayMode 6/6 | AGENT-REPORTED PASS | PR #13 report; manager did not independently execute Unity tests |
+| 2026-10-25 | No-domain-reload Play Mode scenario | NOT RUN | Manual scenario required; Issue #14 |
+| 2026-10-25 | Catch-up End timing and reset atomicity | FOLLOW-UP / NON-BLOCKING FOR #5 | Issue #14, schedule before integration tests #6 |
+| 2026-10-25 | Core CombatantId scope mismatch | RESOLVED — DOCUMENTATION | Updated class XML comment and Core/CONTRACTS.md to World-scoped uniqueness |
