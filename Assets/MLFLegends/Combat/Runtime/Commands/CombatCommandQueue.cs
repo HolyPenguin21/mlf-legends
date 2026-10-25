@@ -141,23 +141,38 @@ namespace MLFLegends.Combat
         {
             // Burst-compatible on purpose (no params arrays, boxing or formatted messages): #5 may call it
             // from a Burst-compiled ISystem.
+            // Queries built from an EntityManager are Persistent and stay alive until the World is disposed, and
+            // this runs on every battle start, restart and end: each one is disposed right after its last use,
+            // before any throw (Burst skips finally blocks on exceptions).
             var builder = new EntityQueryBuilder(Allocator.Temp);
             var queueQuery = builder.WithAllRW<CombatCommandQueue>().Build(entityManager);
             builder.Reset();
             var clockQuery = builder.WithAll<SimulationClock>().Build(entityManager);
             builder.Reset();
-            var appliedQuery = builder.WithAllRW<AppliedCombatCommand>().Build(entityManager);
-            builder.Dispose();
 
-            if (queueQuery.CalculateEntityCount() != 1)
+            var hasQueue = queueQuery.CalculateEntityCount() == 1;
+            var queueEntity = hasQueue ? queueQuery.GetSingletonEntity() : Entity.Null;
+            var tickInPast = hasQueue && !clockQuery.IsEmpty && battleStartTick < clockQuery.GetSingleton<SimulationClock>().Tick;
+            queueQuery.Dispose();
+            clockQuery.Dispose();
+
+            if (!hasQueue)
+            {
+                builder.Dispose();
                 throw new InvalidOperationException("ResetForBattle requires exactly one CombatCommandQueue (CombatCommandProcessorSystem).");
-            if (!clockQuery.IsEmpty && battleStartTick < clockQuery.GetSingleton<SimulationClock>().Tick)
+            }
+            if (tickInPast)
+            {
+                builder.Dispose();
                 throw new ArgumentOutOfRangeException(nameof(battleStartTick), "A battle cannot start on an already simulated tick.");
+            }
 
-            var queueEntity = queueQuery.GetSingletonEntity();
             var queue = entityManager.GetComponentData<CombatCommandQueue>(queueEntity);
             if (battleStartTick < queue.m_BattleStartTick)
+            {
+                builder.Dispose();
                 throw new ArgumentOutOfRangeException(nameof(battleStartTick), "Battle boundaries never move back.");
+            }
 
             entityManager.GetBuffer<CombatCommandSubmission>(queueEntity).Clear();
             entityManager.GetBuffer<PendingCombatCommand>(queueEntity).Clear();
@@ -165,8 +180,12 @@ namespace MLFLegends.Combat
             queue.m_BattleStartTick = battleStartTick;
             entityManager.SetComponentData(queueEntity, queue);
 
+            var appliedQuery = builder.WithAllRW<AppliedCombatCommand>().Build(entityManager);
+            builder.Dispose();
             var cleared = new NativeArray<AppliedCombatCommand>(appliedQuery.CalculateEntityCount(), Allocator.Temp);
             appliedQuery.CopyFromComponentDataArray(cleared);
+            cleared.Dispose();
+            appliedQuery.Dispose();
         }
     }
 }

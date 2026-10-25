@@ -70,7 +70,9 @@ namespace MLFLegends.Combat
             for (var i = 0; i < combatantIds.Length; i++)
                 active.Add(combatantIds[i].Value);
 
-            var processed = new NativeList<ProcessedCommand>(submissions.Length + pending.Length, Allocator.Temp);
+            // Sized for the submissions: pending commands that stay pending (up to MaxPendingCommands) are never
+            // reported, so reserving for them would waste Temp memory on every catch-up tick of a frame.
+            var processed = new NativeList<ProcessedCommand>(submissions.Length, Allocator.Temp);
             var due = new NativeList<ProcessedCommand>(Allocator.Temp);
             var order = 0;
 
@@ -147,6 +149,16 @@ namespace MLFLegends.Combat
             for (var i = 0; i < processed.Length; i++)
                 results.Add(new CombatCommandResult { Command = processed[i].Command, Outcome = processed[i].Outcome });
             queue.ValueRW.MarkProcessed(tick);
+
+            // Main-thread Temp is only reclaimed at the end of the frame, and this runs once per fixed tick
+            // (several per frame on catch-up): release every scratch container here, after its last use,
+            // in reverse allocation order.
+            accepted.Dispose();
+            pendingByKey.Dispose();
+            due.Dispose();
+            processed.Dispose();
+            active.Dispose();
+            combatantIds.Dispose();
         }
 
         /// <summary>
