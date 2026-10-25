@@ -4,11 +4,11 @@ using Unity.Entities;
 namespace MLFLegends.Combat
 {
     /// <summary>
-    /// Immutable battle-scoped identity of a combatant. Assigned once by the spawner, the single
+    /// Immutable World-scoped identity of a combatant. Assigned once by the spawner, the single
     /// owner of ID allocation, and never changed afterwards; every other system only reads it.
     /// </summary>
     /// <remarks>
-    /// Unique within one battle and never reused, even after the combatant is defeated or its
+    /// Unique within one ECS World and never reused across battle restarts, even after the fighter is defeated or its
     /// entity is destroyed. <see cref="Invalid"/> (0) is reserved.
     /// Use this, not <see cref="Entity"/>, for anything that must stay stable across structural
     /// changes or replays (commands, ledgers, logs, AI memory, deterministic ordering).
