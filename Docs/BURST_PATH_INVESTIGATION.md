@@ -44,6 +44,15 @@ The diagnostic change adds only managed `TestContext.WriteLine` output before pr
 and before assertions: Editor version, `Application.dataPath`, current working directory,
 Burst enabled state, `Done` and `RanManaged`. Collect the NUnit test-case output as well as
 Editor logs. No assertion, probe body, Burst option, runtime code, package or runner changes.
+The first write is **after NUnit SetUp**, which has already created the clock and processor;
+setup/early-step failures can prevent either output point from being reached. Preserve the
+complete run log in that case. `TestContext.WriteLine` is test-result output; do not assume
+the full-suite PowerShell runner prints it to the console.
+
+Adding diagnostics changes the test assembly and may invalidate Burst compilation caches or
+affect timing. Static source preservation does **not** prove observational equivalence. Compare
+the original and instrumented commits with separately established cache conditions at each
+same absolute project path. An instrumented PASS cannot alone establish a fix for the original test.
 
 **URP relationship remains unproved.** PR #21 describes cached failed imports produced in a
 Cyrillic-path copy. That does not establish whether a common path failure also affects Burst,
@@ -55,6 +64,10 @@ bug is identified as the cause of #17.
 Use one Windows machine, the same user/session, the exact Editor above and identical package
 lockfile. Keep Burst compilation enabled throughout. Before any cleanup, preserve the original
 failing project, its Library, logs and settings outside the project. Never share a Library between paths.
+Use the original failing Windows profile when available: an ASCII project under a Cyrillic
+profile controls for project path while preserving profile/TEMP effects. An ASCII-profile-only
+comparison does not cover that original profile configuration. Changing user or TEMP is a later,
+separate experiment, not part of the initial project-path comparison.
 
 1. Record OS build, CPU, Windows display language and system locale, active UTF-8 system-locale
    option, PowerShell version, Editor executable path/revision, package versions, and the values
@@ -69,23 +82,34 @@ failing project, its Library, logs and settings outside the project. Never share
    --porcelain`, and SHA256 of `Packages/manifest.json`, `Packages/packages-lock.json` and
    `ProjectSettings/ProjectVersion.txt`. First reproduce on the inspected main SHA; then use
    the diagnostic PR head (record its actual SHA) in all three copies to obtain probe output.
-   Do not compare one path's older main against another path's PR head.
-4. Close all Editors using those projects. For each path run the targeted test first, before
-   any full suite or reimport; archive XML/logs immediately. Run once on the fresh clone
-   (no Library) and again after restarting the Editor with that Library unchanged.
-   Repeat the comparison in reverse path order to check process/global-cache order effects.
-5. Retain a separately reproduced failing-state copy for each intervention below. A full
-   Library reset changes multiple caches and cannot by itself identify which cache caused a failure.
+   Do not compare one path's older main against another path's PR head, or reuse a main-built
+   Library as the PR's cold baseline. Check Git status and version-file hashes after every run
+   too; record any Editor migrations before treating source/settings as identical.
+4. Close all Editors using those projects. At each path/commit establish **two separate baseline
+   series** before any repair: targeted-test cold → warm, and full-EditMode cold → warm. Recreate
+   an equivalent cold state at the same absolute path before starting the second series; do not
+   call a full run after the targeted test a cold full-suite run. The historical failure was in
+   a full suite: a standalone PASS does not exclude test-order/process-state effects. Preserve
+   every run's target result and preceding compiler messages. Archive XML/logs immediately.
+   Repeat in reverse path order, recording shared global-cache state; do not call it cold just
+   because Library is missing. On different commits reestablish equivalent baselines separately.
+5. Preserve backups of failing state for independent interventions; restore each only to its
+   **original absolute path and commit**, with the Editor closed, and reconfirm failure before
+   changing one variable. Do not open a copied Library at a different path as an isolation control.
+   A full Library reset changes multiple caches and cannot identify the responsible cache alone.
 
 ### Targeted command
 
 Use **Windows Command Prompt** (not PowerShell) for this example. Create a new, empty output
 directory for each path/condition/attempt first. Replace project/output paths consistently.
-`start /wait` waits for the actual Editor process; retain its exit code and validate XML.
+The initial output is under the project as in the full-suite runner; archive it outside afterward.
+`start /wait /d` waits for the Editor and explicitly sets its working directory to the project,
+matching `Run-UnityTests.ps1`. Retain its exit code and validate XML. These Windows commands
+are a **NOT RUN** example here; confirm their actual arguments/paths in the Editor log.
 
 ```bat
-mkdir D:\MLF-QA\evidence\ascii-cold-01
-start "" /wait "C:\Program Files\Unity\Hub\Editor\6000.5.4f1\Editor\Unity.exe" -batchmode -nographics -projectPath "D:\MLF-QA\mlf-ascii" -runTests -testPlatform EditMode -testFilter "^MLFLegends\.Tests\.EditMode\.CombatCommandProcessorTests\.ResetFromABurstSystemInTheCollectionPhaseRejectsThatTicksCommands$" -testResults "D:\MLF-QA\evidence\ascii-cold-01\target.xml" -logFile "D:\MLF-QA\evidence\ascii-cold-01\Editor.log"
+mkdir "D:\MLF-QA\mlf-ascii\TestResults\issue17-target-cold-01"
+start "" /wait /d "D:\MLF-QA\mlf-ascii" "C:\Program Files\Unity\Hub\Editor\6000.5.4f1\Editor\Unity.exe" -batchmode -nographics -projectPath "D:\MLF-QA\mlf-ascii" -runTests -testPlatform EditMode -testFilter "^MLFLegends\.Tests\.EditMode\.CombatCommandProcessorTests\.ResetFromABurstSystemInTheCollectionPhaseRejectsThatTicksCommands$" -testResults "D:\MLF-QA\mlf-ascii\TestResults\issue17-target-cold-01\target.xml" -logFile "D:\MLF-QA\mlf-ascii\TestResults\issue17-target-cold-01\Editor.log"
 echo UnityExit=%ERRORLEVEL%
 ```
 
@@ -97,6 +121,9 @@ Archive stdout/exit status; if no XML exists, retain Editor/compiler logs and re
 Cross-check a failing command-line case by selecting that same test in the Editor Test Runner
 on the **same physical path**, recording launch route, actual dataPath and working directory.
 GUI/CLI disagreement warrants a controlled launch/quoting comparison, not an ECS change.
+If necessary vary the working directory alone, then output location alone (project vs external
+ASCII evidence folder), restoring the relevant baseline between trials. Keep project path, SHA,
+compiler options and cache condition fixed. Do not combine these changes with cache cleanup.
 
 `Tools/Run-UnityTests.ps1` has only `-EditorPath`, `-Mode`, `-TimeoutMinutes` and derives the
 project root from its own location. **It has no `-TestFilter`.** Use it unchanged for full suites
@@ -169,12 +196,22 @@ disposition is still required before closing this debt; delivery of this PR does
 
 - PASS: `git diff --check` and local Markdown link/fence/conflict-marker checks.
 - PASS: source comparison against inspected main after removing only the two diagnostic writes
-  and their comment is byte-for-byte equal (UTF-8 text). Assertions, conditional Burst check,
-  probe and behavior are preserved; no new tests or assemblies were added.
+  and their comment is byte-for-byte equal (UTF-8 text). Assertions, conditional Burst check and
+  probe source are preserved; no new tests or assemblies were added. Timing/cache equivalence
+  has **not** been demonstrated.
 - PASS: package-lock version checks and changed-file scope review. Runtime, clock, spawner,
   performance harness, packages, project settings, asmdefs, test `.meta` and runner are unchanged.
 - **NOT RUN:** C# compilation, NUnit/Unity execution and every Windows path/cache experiment.
   Static preservation checks do not demonstrate Burst compilation or a regression-free Editor run.
+
+## Bottom-up review (2026-10-26)
+
+Traced reset buffer/applied-state cleanup → managed sentinel and stored request → producer/probe/
+processor ordering → fixed-step helpers → fixture setup/World disposal → EditMode asmdef/NUnit
+output → targeted/full runner arguments → source/cache/profile controls. No evidence justifies
+a runtime change. Corrected the protocol's missing cold full-suite baseline, source-change cache
+confound, inherited working directory, output-path difference and original Cyrillic-profile control.
+All new execution comparisons remain **NOT RUN**. No additional C# changes were made in review.
 
 Reference mechanics: Unity's [Test Framework command-line reference](https://docs.unity.com/en-us/engine/7000.0/manual/programming-environment/test-framework-introduction/reference-command-line)
 documents test selection/results and the unsupported `-quit` combination; its current page is
@@ -182,3 +219,4 @@ not version-pinned to the project's 1.7.0. Check the installed package documenta
 differs. Burst's [BurstDiscard reference](https://docs.unity3d.com/Packages/com.unity.burst@1.8/manual/compilation-burstdiscard.html)
 documents the managed-execution sentinel technique; the rolling 1.8 docs currently show 1.8.31,
 not proof of a defect or fix in the pinned 1.8.29.
+Launch-directory semantics: Microsoft [start reference](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/start).
