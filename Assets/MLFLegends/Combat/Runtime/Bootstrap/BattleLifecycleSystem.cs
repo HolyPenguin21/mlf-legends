@@ -133,13 +133,13 @@ namespace MLFLegends.Combat
 
             // Also drops the previous battle's command boundary, pending commands and results.
             DestroyCombatants(entityManager, battleStartTick);
-            var human = Spawn(entityManager, new CombatantId { Value = first }, setup.Human, named: true);
-            var ai = Spawn(entityManager, new CombatantId { Value = first + 1 }, setup.Ai, named: true);
+            var human = Spawn(entityManager, new CombatantId { Value = first }, setup.Human, diagnosticName: "Combatant Human");
+            var ai = Spawn(entityManager, new CombatantId { Value = first + 1 }, setup.Ai, diagnosticName: "Combatant AI");
             var next = first + 2;
             for (var i = 0; i < setup.HumanAllies; i++)
-                Spawn(entityManager, new CombatantId { Value = next++ }, BattleSetup.AllyOf(setup.Human, i), named: false);
+                Spawn(entityManager, new CombatantId { Value = next++ }, BattleSetup.AllyOf(setup.Human, i), diagnosticName: default);
             for (var i = 0; i < setup.AiAllies; i++)
-                Spawn(entityManager, new CombatantId { Value = next++ }, BattleSetup.AllyOf(setup.Ai, i), named: false);
+                Spawn(entityManager, new CombatantId { Value = next++ }, BattleSetup.AllyOf(setup.Ai, i), diagnosticName: default);
             session.Begin(battleStartTick, request.Owner, human, ai);
             return BattleRequestOutcome.Started;
         }
@@ -160,11 +160,11 @@ namespace MLFLegends.Combat
         }
 
         /// <remarks>
-        /// <paramref name="named"/>: only the two leaders get an Entities Hierarchy name. Entity names live in a process-wide
-        /// store of 16 384 unique strings that is never emptied until a domain reload, and IDs are never reused, so a name per
-        /// combatant would fill it after about 40 restarts of a 200 vs 200 battle (an Editor error, then no names at all).
+        /// Only leaders receive one of two constant diagnostic role names. Entity names live in a process-wide
+        /// store until domain reload; appending a never-reused ID would grow that store on every battle.
+        /// Allies stay unnamed. CombatantId is the only authoritative identity, never this display name.
         /// </remarks>
-        CombatantId Spawn(EntityManager entityManager, CombatantId id, in CombatantSetup setup, bool named)
+        CombatantId Spawn(EntityManager entityManager, CombatantId id, in CombatantSetup setup, FixedString64Bytes diagnosticName)
         {
             var entity = entityManager.CreateEntity(m_CombatantArchetype); // InCombat starts enabled
             entityManager.SetComponentData(entity, id);
@@ -172,12 +172,8 @@ namespace MLFLegends.Combat
             entityManager.SetComponentData(entity, new CombatPosition { Value = setup.Position });
             entityManager.SetComponentData(entity, new CombatFacing { Value = setup.Facing });
 
-            if (named)
-            {
-                FixedString64Bytes name = "Combatant ";
-                name.Append(id.Value);
-                entityManager.SetName(entity, name);
-            }
+            if (!diagnosticName.IsEmpty)
+                entityManager.SetName(entity, diagnosticName);
 
             return id;
         }

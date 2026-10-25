@@ -72,3 +72,7 @@ Any change to accepted decisions requires explicit conversation and an entry her
   playback can outlive paused-frame actor cleanup; no current runtime producer needs migration.
 - Unity execution and Domain Reload GUI verification remain NOT RUN in this environment; #17's Windows
   gate and #23's independent manager review remain open. Delivery is not verified Stage 01 completion.
+
+- Diagnostic actor names are the two constants `Combatant Human` and `Combatant AI`; allies have no name.
+  Never encode IDs/counters into Entity names. `CombatantId` alone identifies actors; names are reusable
+  display labels. This closes the implementation scope of former #26, subject to Unity verification.

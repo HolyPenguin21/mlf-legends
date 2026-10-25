@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using MLFLegends.Combat;
 using NUnit.Framework;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Is = UnityEngine.TestTools.Constraints.Is;
@@ -62,24 +63,53 @@ namespace MLFLegends.Tests.EditMode
             var archetype = Manager.GetChunk(Find(session.HumanCombatant)).Archetype;
             foreach (var id in LiveIds)
                 Assert.That(Manager.GetChunk(Find(new CombatantId { Value = id })).Archetype, Is.EqualTo(archetype), $"Combatant {id}");
-            Assert.That(Manager.GetName(Find(session.HumanCombatant)), Is.EqualTo("Combatant 1"));
-            Assert.That(Manager.GetName(Find(session.AiCombatant)), Is.EqualTo("Combatant 2"));
+            Assert.That(Manager.GetName(Find(session.HumanCombatant)), Is.EqualTo("Combatant Human"));
+            Assert.That(Manager.GetName(Find(session.AiCombatant)), Is.EqualTo("Combatant AI"));
             Assert.That(Manager.GetName(Find(new CombatantId { Value = 17 })), Is.Empty, "Allies are not named.");
         }
 
         [Test]
-        public void RepeatedLargeRostersKeepNamingTheLeaders()
+        public void RepeatedStartsAndRestartsUseExactlyTwoDiagnosticNamesAcrossDuelAndLargeRosters()
         {
-            // 45 x 400 never-reused IDs would be 18 000 unique names, more than Entities' process-wide name store holds
-            // (16 384, emptied only by a domain reload); once it is full every later SetName is silently dropped.
-            var setup = Roster(BattleSetup.MaxCombatantsPerTeam - 1, BattleSetup.MaxCombatantsPerTeam - 1);
+            // A small number suffices: an ID-derived name would enlarge the observed set on the second battle.
+            // Inspect every actor, not only the leaders, so accidentally naming allies also fails this regression.
+            var names = new HashSet<string>();
+            var lastIssued = 0u;
             for (var battle = 0; battle < 45; battle++)
-                Assert.That(Request(BattleRequest.Restart(setup)), Is.EqualTo(BattleRequestOutcome.Started));
-
-            var session = Session;
-            Assert.That(session.HumanCombatant.Value, Is.EqualTo(44u * 400 + 1));
-            Assert.That(Manager.GetName(Find(session.HumanCombatant)), Is.EqualTo($"Combatant {session.HumanCombatant.Value}"));
-            Assert.That(Manager.GetName(Find(session.AiCombatant)), Is.EqualTo($"Combatant {session.AiCombatant.Value}"));
+            {
+                var allies = (ushort)(battle % 2 == 0 ? 0 : 199);
+                var setup = Roster(allies, allies);
+                var startAfterEnd = battle % 3 == 0;
+                if (startAfterEnd && Session.IsActive)
+                    Assert.That(Request(BattleRequest.End()), Is.EqualTo(BattleRequestOutcome.Ended));
+                var request = startAfterEnd ? BattleRequest.Start(setup) : BattleRequest.Restart(setup);
+                Assert.That(Request(request), Is.EqualTo(BattleRequestOutcome.Started));
+                var session = Session;
+                Assert.That(session.HumanCombatant.Value, Is.EqualTo(lastIssued + 1));
+                Assert.That(session.AiCombatant.Value, Is.EqualTo(lastIssued + 2));
+                Assert.That(Manager.GetName(Find(session.HumanCombatant)), Is.EqualTo("Combatant Human"));
+                Assert.That(Manager.GetName(Find(session.AiCombatant)), Is.EqualTo("Combatant AI"));
+                lastIssued += (uint)setup.CombatantCount;
+                var namedCount = 0;
+                using (var entities = CombatantQuery.ToEntityArray(Allocator.Temp))
+                {
+                    Assert.That(entities.Length, Is.EqualTo(setup.CombatantCount));
+                    foreach (var entity in entities)
+                    {
+                        var name = Manager.GetName(entity);
+                        var id = Manager.GetComponentData<CombatantId>(entity);
+                        if (id.Value != session.HumanCombatant.Value && id.Value != session.AiCombatant.Value)
+                            Assert.That(name, Is.Empty, "Allies do not consume global diagnostic names.");
+                        if (name.Length == 0)
+                            continue;
+                        names.Add(name);
+                        namedCount++;
+                    }
+                }
+                Assert.That(namedCount, Is.EqualTo(2));
+                Assert.That(names, Is.EquivalentTo(new[] { "Combatant Human", "Combatant AI" }),
+                    "The diagnostic name set is independent of battle count, roster size and monotonic IDs.");
+            }
         }
 
         [Test]

@@ -74,10 +74,13 @@ producers to migrate. Do not add another spawner/destructor or flush arbitrary E
 
 Human and AI combatants have exactly the same archetype. Who is human is only `BattleSession.HumanCombatant`;
 `CombatCommand.Source` stays diagnostics. `AppliedCombatCommand` is added by the command processor on the
-first tick. The human and the AI leader are named `Combatant <id>` for the Entities Hierarchy window; allies are
-not named: Entities keeps entity names in a process-wide store of 16 384 unique strings that is only emptied by a domain
-reload, and IDs are never reused, so a name per ally would fill it after ~40 restarts of a 200 vs 200 battle (one Editor
-error, then no entity gets a name). Two names per battle still accumulate: ~8 000 battles per Editor domain.
+first tick. The human and AI leaders have constant diagnostic names **`Combatant Human`** and
+**`Combatant AI`**; allies are unnamed. `CombatantId` is the sole authoritative identity and remains
+monotonic across battles. Names never include IDs, team values or counters: this bootstrap contributes at
+most two unique actor names to Entities' process-wide name store, regardless of roster size, Restart count
+or new Worlds without Domain Reload. Roles here describe the two session leaders, not all AI-controlled allies.
+The regression inspects every actor over 45 alternating 1v1/200v200 sessions with Start/End and Restart;
+an ID-derived name fails after the second battle, without thousands of cycles or filling the global store.
 
 ## Rosters (Issue #7)
 `BattleSetup.HumanAllies` / `AiAllies` add ordinary combatants to the human's and the AI's team; both 0 (the
@@ -158,14 +161,14 @@ ended battle.
 Not automated (no Editor automation for this). Record the result in `Docs/QA.md`; `NOT RUN` until performed.
 1. *Project Settings > Editor > Enter Play Mode Settings*: *Do not reload Domain or Scene* (also try *Reload
    Scene only*). Open `Assets/Scenes/CombatSmoke.unity` and *Window > Entities > Hierarchy*.
-2. Enter Play Mode: exactly two entities `Combatant 1` and `Combatant 2`; the `BattleSession` entity is `Active`,
+2. Enter Play Mode: exactly two entities `Combatant Human` and `Combatant AI` (IDs 1 and 2); the `BattleSession` entity is `Active`,
    `BattleNumber` 1, `Owner` not 0; no Console errors.
 3. Exit Play Mode: no errors and no "leak"/"not disposed" warnings in the Console.
-4. Repeat Enter/Exit 3 times: each entry again shows `Combatant 1`/`Combatant 2`, `BattleNumber` 1, a clock
+4. Repeat Enter/Exit 3 times: each entry again shows `Combatant Human`/`Combatant AI` (IDs 1/2), `BattleNumber` 1, a clock
    starting near tick 0 (a new World each time; the static owner counter of `CombatSmokeBootstrap` keeps
    growing between sessions, which is harmless).
 5. In Play Mode, disable the bootstrap GameObject: the combatants disappear at the next safe boundary, including while paused. Enable it again:
-   `Combatant 3` and `Combatant 4`, `BattleNumber` 2.
+   `Combatant Human` and `Combatant AI`, with fresh IDs 3 and 4, `BattleNumber` 2.
 6. In Play Mode set `Time.timeScale = 0` from the debugger/test harness after at least one fixed tick.
    Disable/enable the bootstrap and unload/reload CombatSmoke additively. Verify End removes all actors on
    the next rendered frame, Restart changes IDs without advancing Tick, and a late old-owner End does not

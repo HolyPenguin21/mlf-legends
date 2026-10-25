@@ -260,3 +260,12 @@ can precede the next BeginFixedStep. No runtime ECB producer exists today. Revie
 stages add jobs/structural writes. Real Unity 6000.5.4f1 / Entities 6.5.0 compilation, automatic dual-group
 registration/order, all EditMode/PlayMode suites and the Domain Reload GUI scenario remain verification
 risks, not claimed PASS. #17 remains OPEN and its Windows evidence is independent; Stage 01 is not closed.
+
+### Bounded diagnostic names (part B / former #26)
+
+**Before:** two unique `Combatant <ID>` names per battle accumulated globally even after entity destruction.
+**After:** only `Combatant Human` / `Combatant AI`, with unnamed allies; IDs remain monotonic and authoritative.
+Updated every `GetName` expectation and the Domain Reload smoke instructions. Added a regression that
+inspects every actor over 45 alternating 1v1/200v200 Start/End and Restart sessions, requiring exactly the
+same two nonempty names and fresh IDs on every iteration. **Unity execution: NOT RUN**. No global store
+mutation/reset, mutable naming counter, additional singleton, spawner or identity lookup was introduced.

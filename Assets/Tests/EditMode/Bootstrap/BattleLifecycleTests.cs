@@ -195,7 +195,7 @@ namespace MLFLegends.Tests.EditMode
             AssertCombatant(session.AiCombatant, setup.Ai);
             Assert.That(Manager.GetChunk(Find(session.HumanCombatant)).Archetype,
                 Is.EqualTo(Manager.GetChunk(Find(session.AiCombatant)).Archetype), "Human and AI combatants carry identical components.");
-            Assert.That(Manager.GetName(Find(session.HumanCombatant)), Is.EqualTo("Combatant 1"));
+            Assert.That(Manager.GetName(Find(session.HumanCombatant)), Is.EqualTo("Combatant Human"));
         }
 
         [Test]
