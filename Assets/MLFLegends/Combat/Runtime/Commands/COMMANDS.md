@@ -75,10 +75,10 @@ A submitted None command is a normal `Accepted` command (`WasSubmitted == true`)
   combatant. No Entity handles are kept between ticks.
 - Native lifetime: per-tick scratch (in-combat IDs, hash set/maps, sort lists) is `Allocator.Temp` and
   disposed at the end of `OnUpdate`. Main-thread Temp is only reclaimed by Unity at the end of the
-  frame and the processor runs once per fixed tick (up to `World.MaximumDeltaTime` / tick = 20 catch-up
-  ticks per frame by default), so scratch is sized by the commands of the tick, not by the pending
-  store; the only pending-sized scratch is the key map of kept commands (≤ 12 800 keys, ≈ 0.4 MB at
-  the cap). `ResetForBattle` disposes the `EntityQuery`s it builds (Persistent until World disposal
+  frame and the processor runs once per fixed tick (catch-up is capped by `World.MaximumDeltaTime`,
+  1/3 s by default: 19 ticks per frame at 60 Hz after float rounding), so scratch is sized by the
+  commands of the tick, not by the pending store; the only pending-sized scratch is the key map of
+  kept commands (≤ 12 800 keys, ≈ 0.4 MB at the cap, ≈ 0.5 MB of scratch per tick in total). `ResetForBattle` disposes the `EntityQuery`s it builds (Persistent until World disposal
   otherwise) and its Temp array on every path.
 
 ## Battle cleanup (contract for #5)

@@ -78,7 +78,7 @@ namespace MLFLegends.Tests.EditMode
         }
 
         // Several fixed steps in one render frame (catch-up), half a tick past the last one; stays below
-        // World.MaximumDeltaTime (20 ticks at 60 Hz) so no tick is dropped.
+        // World.MaximumDeltaTime (19 ticks at 60 Hz) so no tick is dropped.
         void StepInOneFrame(int ticks)
         {
             var dt = (double)SimulationTiming.TickDuration;
