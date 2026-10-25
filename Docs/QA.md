@@ -331,6 +331,13 @@ Additional missing integration coverage was prepared:
 remains untouched. **NOT RUN:** Unity compilation, the additional/retained EditMode/PlayMode scenarios,
 profiles and the Domain Reload GUI scenario. Unity remains unavailable; source review is not runtime PASS.
 
+## Manager acceptance of PR #29 and Issue #19 (2026-10-26; STATIC PASS)
+
+- [PR #29](https://github.com/HolyPenguin21/mlf-legends/pull/29) merged in `main` as `c14d011824ed92a660919256d336e78638df72b8`; full patch and final Runtime attributes inspected. `BattleLifecycleSystem` has no `UpdateBefore/After` constraint, is still in Initialization (OrderFirst) + normal FixedStep, and `CombatClockSystem` in FixedStep declares `UpdateAfter(BattleLifecycleSystem)`. BeginFixedStep/EndFixedStep have their built-in OrderFirst/OrderLast; Collection after Clock; State after Collection; Publication after State. Runtime method bodies, ID/clock/queue and tests of original #17 are unchanged.
+- [Issue #19](https://github.com/HolyPenguin21/mlf-legends/issues/19) **CLOSED as implementation completed**. Pause-safe End/Restart and bounded leader naming from PR #28; ordering annotation follow-up PR #29. **Not Unity verified**: compilation, EditMode/PlayMode, no-domain-reload manual, actual Unity sorter logs and post-refactor whole-frame performance are NOT RUN. Delivery verified by static inspection only.
+- **Final audit #23 additional check:** both `CombatClockTests.CreateClockWorld` and `CombatCommandProcessorTests.SetUp` construct incomplete Worlds with Clock but without Lifecycle, yet call `FixedStep.SortSystems()`. Clock's new `UpdateAfter(BattleLifecycleSystem)` may be ignored and produce `Ignoring invalid [UpdateAfterAttribute]` warnings because the target is absent. These warnings are **NOT OBSERVED** without Unity; they are not shown to break the real default World, which contains both systems. In first available Unity EditMode test run inspect full Editor.log and test failures, and if warnings are emitted fix only the responsible fixture/contract and retest. Do not invent a second clock/lifecycle or new owner.
+- #17 remains OPEN; controlled Windows Unicode/Burst reproduction NOT RUN. #23 remains OPEN as independent final Stage 01 gate: unresolved manual QA and missing Unity runtime test evidence need explicit disposition before describing Stage 01 as verified.
+
 ## Issue #19 — fixed-only ordering annotation follow-up (2026-10-26)
 
 Base: fresh `main` `d6acf7b104f7165b2347cd4d5a6097ab87fd25b9`, after manager review of merged PR #28.
@@ -361,4 +368,4 @@ Actually executed:
 
 Actual Editor sorting logs, including intentionally partial clock/command test Worlds that omit Lifecycle,
 remain unobserved; source checks are not proof of warning-free runtime sorting. #17 remains open and #23
-independent manager acceptance remains required. This follow-up is prepared for review, not merged.
+independent manager acceptance remains required. This follow-up **was merged as PR #29**, but its actual Unity test execution remains NOT RUN.
