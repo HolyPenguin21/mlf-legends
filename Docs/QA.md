@@ -61,6 +61,15 @@ The script requires a nonzero NUnit test count with all tests passing; it saves 
 - **Minor tool defect (not a combat runtime blocker):** existing `Tools/Run-UnityTests.ps1` uses direct `& Unity.exe`; PR #9 reports PowerShell process-wait issues. Follow-up [Issue #10](https://github.com/HolyPenguin21/mlf-legends/issues/10), non-blocking.
 - **Known residual risks:** fixed-step full-group allocation profile not recorded, agent states catch-up is bounded by `World.MaximumDeltaTime`, and World-level clock runs even outside active battles. No separate second clock should be introduced. Future replay tests must use relative battle tick and battle-seeded inputs, not absolute World uptime.
 
+## Stage 01.3 code review (Issue #4 / PR #11; 2026-10-25)
+- **Delivery confirmed:** PR #11 merged to `main` at `cca88b38e3167f4b0e1329a5128b640a49227fc3` and Issue #4 closed.
+- **Manager static review:** looked at `CombatCommandProcessorSystem`, `CombatCommandQueue`, `AppliedCombatCommand`, `COMMANDS.md`, production ownership and command tests. Single `CombatCommandCollectionSystemGroup` processor applies player and AI commands with identical validation; no duplicate gameplay logic, no new clock or separate battle world. Bounded future pending, first valid command wins, stale/invalid/duplicate outcomes observable. `ResetForBattle` clears buffers and applied state without changing World clock.
+- **Agent-reported tests (not independently executed by manager):** Unity EditMode **48/48 PASS**, PlayMode **3/3 PASS**; Burst compilation/negative-control and Unity metadata audit reported in PR #11.
+- **Finding / follow-up #12:** `Allocator.Temp` Native containers in OnUpdate and the NativeArray created by `ResetForBattle` are not explicitly disposed. Unity Temp memory is automatically reclaimed, so a leak was **not proven**. Explicit lifetime/disposal and catch-up stress review recommended **before benchmark #7**, not blocking bootstrap #5.
+- **Cross-module contract for #5:** call `ResetForBattle` after old actor cleanup and before spawning next session, at a safe tick boundary; pass **current** `SimulationClock.Tick`, not a future tick. `CombatantId` uniqueness must be enforced by the spawner over World lifetime; duplicate live IDs are not detected by the command system. Queue's `LastProcessedTick` is a World command-processing counter, not relative battle time.
+- **Residual risks:** producer-order first-wins requires explicit scheduling by the future input/AI adapters; 400-actor performance remains unprofiled; derived fresh-direction key edges for dodge are Stage 02+ and not implemented yet.
+- **Other independent follow-up:** PowerShell test runner issue #10, no ECS runtime blocker.
+
 ## Stage-specific profiling
 - 1v1: response timing, invalid actions, front/back guard, dash, injury capability limits.
 - 4v4, 16v16, 50v50, 200v200: sim time/tick, collision pairs, AI decisions, GPU batches, allocations, sprite sorting and camera.
@@ -83,3 +92,6 @@ The script requires a nonzero NUnit test count with all tests passing; it saves 
 | 2026-10-25 | Stage 01.2 EditMode 15/15 and PlayMode 2/2 | AGENT-REPORTED PASS | Test execution described in PR #9, manager did not inspect raw logs |
 | 2026-10-25 | Battle restart decision | MANAGER DECISION | Keep World and monotonic clock; battle start offset and queue cleanup, see DECISIONS.md and Issues #4–#6 |
 | 2026-10-25 | Existing Windows test runner issue | OPEN / NON-BLOCKING | Issue #10: process waiting for Unity.exe |
+| 2026-10-25 | Stage 01.3 command processor PR #11 | PASS — MANAGER STATIC REVIEW | One queue/consumer, documented command classification, no new clock or duplicated movement |
+| 2026-10-25 | Stage 01.3 Unity EditMode 48/48, PlayMode 3/3 | AGENT-REPORTED PASS | PR #11 report; raw Unity logs not inspected independently by manager |
+| 2026-10-25 | Commands temporary Native allocations | FOLLOW-UP / NON-BLOCKING | Issue #12; explicitly dispose where appropriate, before benchmark #7 |
