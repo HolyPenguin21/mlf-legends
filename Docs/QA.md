@@ -131,6 +131,9 @@ The script waits for the `Unity.exe` process itself (default timeout 60 min, `-T
 - Static checks **PASS**: diff whitespace, local document links/fences, pinned package versions and exact source comparison after removing diagnostic writes; no assertions/probe or protected runtime files changed. These are not Unity execution results.
 - Bottom-up review corrected reproduction controls: independent cold/warm full-suite and target runs, separate main/diagnostic cache baselines, explicit launch working directory, project-local outputs and the original Cyrillic Windows profile. Diagnostic logging can alter timing/cache state; it is not a fix. No further C# change was justified.
 - **NOT RUN:** Unity compilation, targeted Burst test and full EditMode/PlayMode on ASCII, ASCII+spaces and Cyrillic+spaces; existing/clean/warm Library, isolated Burst-cache and Core RP reimport comparisons. This delivery is diagnostic only; #17 and the Stage 01 debt gate remain open.
+- **Manager static review and delivery (2026-10-26):** [PR #27](https://github.com/HolyPenguin21/mlf-legends/pull/27) merged into main, commit `9c98220dc53ed0a76db87b92035f95dbda8e44af`. Reviewed all three changed files and current test: exactly two managed `TestContext.WriteLine` additions; Burst probe, test assertion, queue, runtime, packages, asmdefs and runner unchanged. The targeted `-testFilter` pattern is consistent with Unity's documented support for regex; targeted command and Windows path scenarios **not executed**. **Diagnostic PR accepted, Issue #17 remains OPEN/UNVERIFIED.** This is no evidence of Burst compatibility at a Cyrillic project path.
+- **Work ordering:** next development is consolidated [Issue #19](https://github.com/HolyPenguin21/mlf-legends/issues/19) (paused End, Domain Reload QA, bounded names formerly #26) independent of Burst/Unicode. **Issue #17 still requires actual Windows evidence or owner disposition before final Stage 01 signoff #23.** No stage transition or retroactive PASS granted.
+
 
 ## Editor error "Host type is not matching any asset type … TraceVirtualOffset.urtshader" (2026-10-25; RESOLVED locally)
 
@@ -223,3 +226,7 @@ The script waits for the `Unity.exe` process itself (default timeout 60 min, `-T
 | 2026-10-25 | Leader name pool after many World restarts | OPEN / STAGE 01 DEBT | Issue #26, narrow fix before #19 and final Stage 01 closeout |
 | 2026-10-25 | Stage 01 completion gate | NOT YET COMPLETE | #17 Unicode/Burst → #26 bounded names → #19 pause/Domain QA → #23 final review; Stage 02 in a new session |
 | 2026-10-26 | Issue #17 controlled Windows path/cache matrix | NOT RUN / INCOMPLETE | Linux host without Unity/Windows; diagnostic test output and reproducible protocol only; root cause unknown, issue remains open |
+| 2026-10-26 | PR #27 diagnostic code/docs | MERGED / MANAGER STATIC PASS | `9c98220`; no gameplay/rules/probe assertion changed; Windows Unity tests remain NOT RUN |
+| 2026-10-26 | Unicode/Burst Issue #17 | OPEN / WINDOWS QA PENDING | Repro on physical ASCII/Cyrillic Windows paths remains mandatory for Stage 01 closure |
+| 2026-10-26 | Bootstrap lifecycle + bounded naming Issue #19 | NEXT / READY | Unified implementation and tests; former #26 closed as duplicate only, not fixed |
+| 2026-10-26 | Stage 01 closeout Issue #23 | BLOCKED BY OUTSTANDING QA | Require review/disposition for both #17 and #19 before new-session Stage 02 |
