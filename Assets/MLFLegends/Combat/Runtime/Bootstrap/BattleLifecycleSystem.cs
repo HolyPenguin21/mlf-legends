@@ -1,0 +1,177 @@
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Entities;
+
+namespace MLFLegends.Combat
+{
+    /// <summary>
+    /// Owner of the battle lifecycle and the single place that creates and destroys combatant entities and
+    /// allocates <see cref="CombatantId"/>. Applies <see cref="BattleRequest"/>s between fixed steps.
+    /// </summary>
+    /// <remarks>
+    /// Runs every frame right before <see cref="FixedStepSimulationSystemGroup"/>, where
+    /// <see cref="SimulationClock.Tick"/> is the last completed tick: a battle started here has
+    /// <c>BattleStartTick = Tick</c> and its first simulated tick is <c>Tick + 1</c>.
+    /// Start/restart order: destroy the previous battle's combatants → <see cref="CombatCommandQueue.ResetForBattle"/>
+    /// → spawn the new combatants with fresh IDs. Never touches the <see cref="World"/>, the clock or entities
+    /// without <see cref="CombatantId"/>. Lifetime equals the World; <c>OnCreate</c> throws if a
+    /// <see cref="BattleSession"/> already exists, so a world never has two lifecycle owners. See BOOTSTRAP.md.
+    /// </remarks>
+    [BurstCompile]
+    [UpdateInGroup(typeof(SimulationSystemGroup), OrderFirst = true)]
+    [UpdateAfter(typeof(BeginSimulationEntityCommandBufferSystem))]
+    [UpdateBefore(typeof(FixedStepSimulationSystemGroup))]
+    public partial struct BattleLifecycleSystem : ISystem
+    {
+        Entity m_Session;
+        EntityArchetype m_CombatantArchetype;
+        EntityQuery m_Combatants;
+        EntityQuery m_Clock;
+        EntityQuery m_RunningClock;
+
+        public void OnCreate(ref SystemState state)
+        {
+            // Throws if a session already exists in this world.
+            m_Session = state.EntityManager.CreateSingleton(new BattleSession(), nameof(BattleSession));
+            state.EntityManager.AddComponentData(m_Session, new CombatantIdAllocator());
+            state.EntityManager.AddBuffer<BattleRequest>(m_Session);
+
+            // Human and AI combatants are identical; AppliedCombatCommand is added by the command processor.
+            m_CombatantArchetype = state.EntityManager.CreateArchetype(
+                typeof(CombatantId), typeof(CombatTeam), typeof(CombatPosition), typeof(CombatFacing), typeof(InCombat));
+            m_Combatants = SystemAPI.QueryBuilder().WithAll<CombatantId>()
+                .WithOptions(EntityQueryOptions.IgnoreComponentEnabledState).Build();
+            m_Clock = SystemAPI.QueryBuilder().WithAll<SimulationClock>().Build();
+            m_RunningClock = SystemAPI.QueryBuilder().WithAll<SimulationClock, SimulationClockRunning>().Build();
+
+            state.RequireForUpdate<SimulationClock>();
+            state.RequireForUpdate<CombatCommandQueue>();
+        }
+
+        public void OnDestroy(ref SystemState state)
+        {
+            // The owner leaves no combatants and no session behind (only relevant if the World outlives the system).
+            if (!m_Combatants.IsEmptyIgnoreFilter)
+                state.EntityManager.DestroyEntity(m_Combatants);
+            if (state.EntityManager.Exists(m_Session))
+                state.EntityManager.DestroyEntity(m_Session);
+        }
+
+        [BurstCompile(CompileSynchronously = true)]
+        public void OnUpdate(ref SystemState state)
+        {
+            var buffer = SystemAPI.GetBuffer<BattleRequest>(m_Session);
+            if (buffer.Length == 0)
+                return;
+
+            // Copied first: spawning and destroying are structural changes that invalidate the buffer.
+            var requests = buffer.ToNativeArray(Allocator.Temp);
+            buffer.Clear();
+
+            var entityManager = state.EntityManager;
+            var session = entityManager.GetComponentData<BattleSession>(m_Session);
+            var allocator = entityManager.GetComponentData<CombatantIdAllocator>(m_Session);
+            for (var i = 0; i < requests.Length; i++)
+                session.SetOutcome(Apply(entityManager, requests[i], ref session, ref allocator));
+
+            entityManager.SetComponentData(m_Session, session);
+            entityManager.SetComponentData(m_Session, allocator);
+            requests.Dispose();
+        }
+
+        BattleRequestOutcome Apply(EntityManager entityManager, in BattleRequest request,
+            ref BattleSession session, ref CombatantIdAllocator allocator)
+        {
+            switch (request.Kind)
+            {
+                case BattleRequestKind.Start:
+                case BattleRequestKind.Restart:
+                    return Start(entityManager, request, ref session, ref allocator);
+                case BattleRequestKind.End:
+                    if (!session.IsActive)
+                        return BattleRequestOutcome.NotActive;
+                    if (request.Owner != 0 && request.Owner != session.Owner)
+                        return BattleRequestOutcome.NotOwner;
+                    DestroyCombatants(entityManager);
+                    session.Finish();
+                    return BattleRequestOutcome.Ended;
+                case BattleRequestKind.Despawn:
+                    if (!session.IsActive)
+                        return BattleRequestOutcome.NotActive;
+                    return Despawn(entityManager, request.Combatant) ? BattleRequestOutcome.Despawned : BattleRequestOutcome.UnknownCombatant;
+                default:
+                    return BattleRequestOutcome.None;
+            }
+        }
+
+        BattleRequestOutcome Start(EntityManager entityManager, in BattleRequest request,
+            ref BattleSession session, ref CombatantIdAllocator allocator)
+        {
+            // Every check before any side effect: a rejected (re)start leaves the running battle untouched.
+            var setup = request.Setup;
+            if (!setup.IsValid)
+                return BattleRequestOutcome.InvalidSetup;
+            if (session.IsActive && request.Kind != BattleRequestKind.Restart)
+                return BattleRequestOutcome.AlreadyActive;
+            if (m_RunningClock.IsEmpty)
+                return BattleRequestOutcome.ClockStopped;
+            if (!allocator.TryReserve(2, out var first))
+                return BattleRequestOutcome.IdsExhausted;
+
+            // Also drops the previous battle's command boundary, pending commands and results.
+            var battleStartTick = DestroyCombatants(entityManager);
+            var human = Spawn(entityManager, new CombatantId { Value = first }, setup.Human);
+            var ai = Spawn(entityManager, new CombatantId { Value = first + 1 }, setup.Ai);
+            session.Begin(battleStartTick, request.Owner, human, ai);
+            return BattleRequestOutcome.Started;
+        }
+
+        /// <summary>Destroys every combatant, then clears the command queue at the current tick, which it returns.</summary>
+        uint DestroyCombatants(EntityManager entityManager)
+        {
+            if (!m_Combatants.IsEmptyIgnoreFilter)
+                entityManager.DestroyEntity(m_Combatants);
+
+            var tick = m_Clock.GetSingleton<SimulationClock>().Tick;
+            CombatCommandQueue.ResetForBattle(entityManager, tick);
+            return tick;
+        }
+
+        CombatantId Spawn(EntityManager entityManager, CombatantId id, in CombatantSetup setup)
+        {
+            var entity = entityManager.CreateEntity(m_CombatantArchetype); // InCombat starts enabled
+            entityManager.SetComponentData(entity, id);
+            entityManager.SetComponentData(entity, new CombatTeam { Value = setup.Team });
+            entityManager.SetComponentData(entity, new CombatPosition { Value = setup.Position });
+            entityManager.SetComponentData(entity, new CombatFacing { Value = setup.Facing });
+
+            FixedString64Bytes name = "Combatant ";
+            name.Append(id.Value);
+            entityManager.SetName(entity, name);
+            return id;
+        }
+
+        bool Despawn(EntityManager entityManager, CombatantId id)
+        {
+            var ids = m_Combatants.ToComponentDataArray<CombatantId>(Allocator.Temp);
+            var entities = m_Combatants.ToEntityArray(Allocator.Temp);
+            var found = Entity.Null;
+            for (var i = 0; i < ids.Length; i++)
+            {
+                if (ids[i].Value == id.Value)
+                {
+                    found = entities[i];
+                    break;
+                }
+            }
+
+            ids.Dispose();
+            entities.Dispose();
+            if (found == Entity.Null)
+                return false;
+
+            entityManager.DestroyEntity(found);
+            return true;
+        }
+    }
+}
