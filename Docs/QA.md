@@ -331,6 +331,16 @@ Additional missing integration coverage was prepared:
 remains untouched. **NOT RUN:** Unity compilation, the additional/retained EditMode/PlayMode scenarios,
 profiles and the Domain Reload GUI scenario. Unity remains unavailable; source review is not runtime PASS.
 
+## Independent Stage 01 code audit #23 (2026-10-26; STATIC PASS, Unity NOT RUN)
+
+The manager audited current `main` `5bf4493a3280628a93be1841997682a3a6f6f981` bottom-up across all 18 combat runtime C# files, core contracts/asmdefs, command queue/processor/reset, World clock/phase sorting, Bootstrap/start/end/restart/owner tokens, 2/100/400 actors, replay, benchmark and their test fixtures. **No critical architectural or implementation defect established by source review.** In particular, there is one lifecycle spawner, one clock writer, one command consumer/reset path, World-scoped monotonic IDs and constant diagnostic leader names. Pause-safe Initialization and fixed-tick paths use the same lifecycle system and request buffer.
+
+**Non-blocking source-level test fixture discrepancy:** `Assets/Tests/EditMode/Simulation/CombatClockTests.cs` and `Assets/Tests/EditMode/Commands/CombatCommandProcessorTests.cs` assemble isolated FixedStep Worlds with Clock but no Lifecycle. Current Clock carries `UpdateAfter(BattleLifecycleSystem)`; the target is absent during their `SortSystems()`. There **may** be an invalid-ordering warning in Unity; no editor output exists to substantiate it. Inspect test output and fix fixtures minimally if confirmed; avoid runtime architectural expansion. Default/replay/benchmark Worlds include both systems.
+
+**Evidence boundary:** 114/114 EditMode and 6/6 PlayMode tests are historical agent-reported results from **before** PR #28/#29. **NOT RUN on current HEAD:** Unity compilation/Entities codegen/Burst, full EditMode/PlayMode, actual sorter logs, paused/scene tests, Domain Reload disabled GUI and post-change full-frame profiling. The benchmark baseline is light ECS overhead, **not** gameplay frame time. Windows Unicode/Burst investigation remains open as #17 (root cause unknown; original failure not retested). Future full-pending cost #25 and Stage 02 tick-input pacing #22 remain separate.
+
+**Status:** #23 independent **source-code audit complete / PASS**, but final Stage 01 acceptance as `Unity verified` is **not** supported. #23 is an explicit owner-disposition/checkpoint for missing external Unity evidence, *not* a reason to redo architecture blindly. Full audit details in [issue comment](https://github.com/HolyPenguin21/mlf-legends/issues/23#issuecomment-6405137109).
+
 ## Manager acceptance of PR #29 and Issue #19 (2026-10-26; STATIC PASS)
 
 - [PR #29](https://github.com/HolyPenguin21/mlf-legends/pull/29) merged in `main` as `c14d011824ed92a660919256d336e78638df72b8`; full patch and final Runtime attributes inspected. `BattleLifecycleSystem` has no `UpdateBefore/After` constraint, is still in Initialization (OrderFirst) + normal FixedStep, and `CombatClockSystem` in FixedStep declares `UpdateAfter(BattleLifecycleSystem)`. BeginFixedStep/EndFixedStep have their built-in OrderFirst/OrderLast; Collection after Clock; State after Collection; Publication after State. Runtime method bodies, ID/clock/queue and tests of original #17 are unchanged.
