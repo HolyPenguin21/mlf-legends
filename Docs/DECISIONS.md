@@ -18,6 +18,7 @@
 - **S.P.E.C.I.A.L.** and anatomical injuries (eyes, arms, legs, head/torso) with functional consequences.
 - Prepared magic spells with several type-dependent resources, and environmental effects, postponed until later stages.
 - Implementation roadmap 00–13, quality gates, maintainable clear ownership and systematic dependency checks.
+- **Delivery policy (2026-10-25): Unity runtime/EditMode/PlayMode checks are NOT a blocking condition for commit, PR merge, push or continued implementation when the user cannot execute them.** Always run feasible static checks, mark unexecuted Unity checks **NOT RUN** in QA, and leave them for later verification. Never claim unexecuted tests passed; distinguish delivery from verified completion.
 
 ## Deferred but previously discussed — campaign
 - Strategic campaign is turn-based with months or years per turn.

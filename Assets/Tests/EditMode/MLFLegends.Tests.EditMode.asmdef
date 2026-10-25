@@ -1,0 +1,21 @@
+{
+  "name": "MLFLegends.Tests.EditMode",
+  "rootNamespace": "MLFLegends.Tests.EditMode",
+  "references": [
+    "Unity.Entities",
+    "Unity.RenderPipelines.Universal.Runtime"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}
