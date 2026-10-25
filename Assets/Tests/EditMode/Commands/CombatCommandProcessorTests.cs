@@ -680,6 +680,10 @@ namespace MLFLegends.Tests.EditMode
         [Test]
         public void ResetFromABurstSystemInTheCollectionPhaseRejectsThatTicksCommands()
         {
+            // Managed test-side diagnostics only; never add logging to the Burst probe itself.
+            TestContext.WriteLine($"Burst reset environment: Unity={UnityEngine.Application.unityVersion}; " +
+                $"BurstEnabled={Unity.Burst.BurstCompiler.IsEnabled}; " +
+                $"AssetsPath={UnityEngine.Application.dataPath}; CurrentDirectory={Environment.CurrentDirectory}");
             var collection = m_World.GetExistingSystemManaged<CombatCommandCollectionSystemGroup>();
             collection.AddSystemToUpdateList(m_World.CreateSystem<BurstBattleResetProbe>());
             collection.SortSystems();
@@ -696,6 +700,8 @@ namespace MLFLegends.Tests.EditMode
             Step();
 
             var request = Manager.CreateEntityQuery(typeof(ResetRequest)).GetSingleton<ResetRequest>();
+            TestContext.WriteLine($"Burst reset probe: Done={request.Done}; RanManaged={request.RanManaged}; " +
+                $"BurstEnabled={Unity.Burst.BurstCompiler.IsEnabled}");
             Assert.That(request.Done, Is.EqualTo(1));
             if (Unity.Burst.BurstCompiler.IsEnabled)
                 Assert.That(request.RanManaged, Is.Zero, "ResetForBattle must compile and run under Burst.");
