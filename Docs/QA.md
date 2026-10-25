@@ -2,6 +2,8 @@
 
 **Scope note:** GitHub repository and serialized Unity project settings can be reviewed, but compilation or play-mode execution has **not** been performed by this assistant. Never confuse configuration inspection with passed Editor tests.
 
+**Non-blocking delivery rule (approved 2026-10-25):** The owner currently cannot run Unity tests from their environment. This MUST NOT block committing, merging or pushing requested changes, nor prevent moving on to subsequent implementation tasks. Perform every feasible static check, label Unity checks **NOT RUN**, record the residual risk and verify later when execution becomes possible. Delivery is not the same as test approval.
+
 ## Stage 00 findings and checklist
 - [x] `HolyPenguin21/mlf-legends` exists; GitHub App repository access repaired and write validated.
 - [x] `Assets/`, `Packages/` and `ProjectSettings/` exist in `main`.
@@ -31,7 +33,7 @@ In PowerShell from repository root:
 .\Tools\Run-UnityTests.ps1 -EditorPath 'C:\Program Files\Unity\Hub\Editor\6000.5.4f1\Editor\Unity.exe' -Mode PlayMode
 ```
 
-The script requires a nonzero NUnit test count with all tests passing; it saves XML and Editor log to ignored `TestResults/`. Command-line testing can require an available Editor license. If either suite fails, send the Unity Console/Editor log and test result XML; do not mark stage 00 complete.
+The script requires a nonzero NUnit test count with all tests passing; it saves XML and Editor log to ignored `TestResults/`. Command-line testing can require an available Editor license. **Running these commands is optional for delivery**; when unavailable, keep Unity tests marked NOT RUN and continue via static review. If either suite fails when eventually executed, log the failure and fix it; do not mark the stage VERIFIED before actual evidence.
 
 ## Required review/check method
 1. Inspect code and existing callers before modifying.
@@ -58,3 +60,4 @@ The script requires a nonzero NUnit test count with all tests passing; it saves 
 | 2026-10-25 | Stage 00 smoke test suites and local runner | AUTHORED, NOT RUN | Feature branch `chore/stage-00-ecs-smoke-tests` |
 | 2026-10-25 | Static branch audit: test assets, asmdefs, GUIDs, package lock, scene in build settings | PASS (STATIC ONLY) | 19 files inspected, 7 new unique meta GUIDs, 2 EditMode and 1 PlayMode tests authored |
 | 2026-10-25 | Unity compiler, EditMode/PlayMode tests | NOT RUN | No Editor process/tool results |
+| 2026-10-25 | Delivery without local Unity access | USER-APPROVED POLICY | Static checks required; unrun Unity tests explicitly tracked; delivery and stage verification separate |
