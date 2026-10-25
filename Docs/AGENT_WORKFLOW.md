@@ -28,7 +28,7 @@ The technical manager must not leave discovered corrective work as informal rema
 - **End of stage:** defer cosmetic/low-impact cleanup not required by downstream work, while keeping open issues visible.
 - Avoid contradictory parallel edits to the same files. Only the owner-approved integration sequence determines what is ready; passing unavailable tests is never assumed.
 
-**Current Stage 01 dispatch order:** #5 main bootstrap → #12 Native Temp handling → #10 Unity test runner → #6 replay/integration tests → #7 performance baseline. #6 and #7 may run in parallel after both fixes, if agents keep distinct file ownership.
+**Current Stage 01 dispatch order:** #5 main bootstrap **MERGED** → #12 Native Temp handling → #10 Unity test runner → #14 battle lifecycle safe End/atomic restart → #6 replay/integration tests → #7 performance baseline. #6 and #7 may run in parallel after these fixes, if agents keep distinct file ownership. Stage 01.4 risk checks and decisions are tracked in #14, not folded into unrelated tasks.
 
 ## Stage 01 integration graph
 
