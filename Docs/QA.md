@@ -53,6 +53,14 @@ The script requires a nonzero NUnit test count with all tests passing; it saves 
 - **Unity Editor project compile/Entities source generation/EditMode/PlayMode:** **NOT RUN by manager**. Agent did not report running full Unity tests for its new contracts. This is a documented risk but **not a blocker** to issuing #3.
 - **Dependency checks for #3:** clock must use a `uint` tick, `Tick=0` is invalid, first simulated tick = 1, and must not introduce a competing queue consumer. Clarification posted to Issue #3.
 
+## Stage 01.2 code review (Issue #3 / PR #9; 2026-10-25)
+- **GitHub delivery: PASS.** PR #9 merged into `main`; merge commit `1c98d1f982bea8e7776101382b2585fa16a89fd3`; Issue #3 closed.
+- **Manager static review: PASS for core design.** `CombatClockSystem` is the only writer of the World-scoped `SimulationClock` and the fixed-step timestep; `FixedStepSimulationSystemGroup` is used with no competing frame-time accumulator. Collection → state → publication are empty ordering groups. Clock starts at tick 1, saturates without wrapping, and does not own combatant state.
+- **Agent-reported checks:** Unity EditMode 15/15 PASS and PlayMode 2/2 PASS; dotnet build with Entities generators PASS; metadata GUID audit PASS. Reported in PR #9, but full test XML/editor logs were not independently inspected by manager. Do not label these MANAGER-EXECUTED.
+- **Accepted architecture decision:** ordinary fight restart reuses the default ECS World; `SimulationClock.Tick` stays monotonic, and bootstrap (#5) stores `BattleStartTick` to derive relative battle ticks. Persistent `CombatantId` allocation remains non-reusing within the same World. Future command queue owner (#4) must clear battle-owned commands/history on restart.
+- **Minor tool defect (not a combat runtime blocker):** existing `Tools/Run-UnityTests.ps1` uses direct `& Unity.exe`; PR #9 reports PowerShell process-wait issues. Follow-up [Issue #10](https://github.com/HolyPenguin21/mlf-legends/issues/10), non-blocking.
+- **Known residual risks:** fixed-step full-group allocation profile not recorded, agent states catch-up is bounded by `World.MaximumDeltaTime`, and World-level clock runs even outside active battles. No separate second clock should be introduced. Future replay tests must use relative battle tick and battle-seeded inputs, not absolute World uptime.
+
 ## Stage-specific profiling
 - 1v1: response timing, invalid actions, front/back guard, dash, injury capability limits.
 - 4v4, 16v16, 50v50, 200v200: sim time/tick, collision pairs, AI decisions, GPU batches, allocations, sprite sorting and camera.
@@ -71,3 +79,7 @@ The script requires a nonzero NUnit test count with all tests passing; it saves 
 | 2026-10-25 | Delivery without local Unity access | USER-APPROVED POLICY | Static checks required; unrun Unity tests explicitly tracked; delivery and stage verification separate |
 | 2026-10-25 | Stage 01.1 merged core ECS contracts (#2 / PR #8) | PASS — STATIC INSPECTION | One runtime asmdef and data-only core contract; manager reviewed committed files; agent reports separate dotnet/reflection validation |
 | 2026-10-25 | Stage 01.1 Unity Editor tests | NOT RUN BY MANAGER | PR #8 reports compile against DLLs, not execution inside Unity Editor |
+| 2026-10-25 | Stage 01.2 PR #9 fixed-step architecture | PASS — STATIC INSPECTION | One clock writer, one fixed-step rate owner, ordered empty phase groups, World-scope lifecycle |
+| 2026-10-25 | Stage 01.2 EditMode 15/15 and PlayMode 2/2 | AGENT-REPORTED PASS | Test execution described in PR #9, manager did not inspect raw logs |
+| 2026-10-25 | Battle restart decision | MANAGER DECISION | Keep World and monotonic clock; battle start offset and queue cleanup, see DECISIONS.md and Issues #4–#6 |
+| 2026-10-25 | Existing Windows test runner issue | OPEN / NON-BLOCKING | Issue #10: process waiting for Unity.exe |
