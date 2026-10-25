@@ -143,8 +143,8 @@ namespace MLFLegends.Combat
 
     /// <summary>
     /// A request to the battle lifecycle. Anyone may append it (main thread); <see cref="BattleLifecycleSystem"/>
-    /// applies all requests in append order at the next boundary between fixed steps: the start of the next
-    /// fixed step, before its tick advances (also between catch-up steps of one frame).
+    /// applies all requests in append order at the next boundary: Initialization of a frame (also while paused)
+    /// or the start of a fixed step, before its tick advances (also between catch-up steps of one frame).
     /// </summary>
     [InternalBufferCapacity(0)]
     public struct BattleRequest : IBufferElementData

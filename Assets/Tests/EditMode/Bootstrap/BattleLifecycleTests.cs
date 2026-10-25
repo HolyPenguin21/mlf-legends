@@ -53,6 +53,9 @@ namespace MLFLegends.Tests.EditMode
             fixedStep.AddSystemToUpdateList(world.CreateSystemManaged<CombatPublicationSystemGroup>());
             lifecycle = world.CreateSystem<BattleLifecycleSystem>();
             fixedStep.AddSystemToUpdateList(lifecycle);
+            var initialization = world.CreateSystemManaged<InitializationSystemGroup>();
+            initialization.AddSystemToUpdateList(lifecycle);
+            initialization.SortSystems();
             fixedStep.SortSystems();
             return world;
         }
@@ -192,7 +195,7 @@ namespace MLFLegends.Tests.EditMode
             AssertCombatant(session.AiCombatant, setup.Ai);
             Assert.That(Manager.GetChunk(Find(session.HumanCombatant)).Archetype,
                 Is.EqualTo(Manager.GetChunk(Find(session.AiCombatant)).Archetype), "Human and AI combatants carry identical components.");
-            Assert.That(Manager.GetName(Find(session.HumanCombatant)), Is.EqualTo("Combatant 1"));
+            Assert.That(Manager.GetName(Find(session.HumanCombatant)), Is.EqualTo("Combatant Human"));
         }
 
         [Test]
@@ -660,16 +663,20 @@ namespace MLFLegends.Tests.EditMode
                 "The new combatants already took part in that tick's command processing.");
         }
 
-        [TestCase(typeof(CombatCommandCollectionSystemGroup))]
-        [TestCase(typeof(CombatStateUpdateSystemGroup))]
-        [TestCase(typeof(CombatPublicationSystemGroup))]
-        public void EndRequestedInsideAFixedStepStopsTheBattleBeforeTheNextCatchUpTick(Type phase)
+        [TestCase(typeof(CombatCommandCollectionSystemGroup), 0)]
+        [TestCase(typeof(CombatStateUpdateSystemGroup), 0)]
+        [TestCase(typeof(CombatPublicationSystemGroup), 0)]
+        [TestCase(typeof(CombatCommandCollectionSystemGroup), 199)]
+        [TestCase(typeof(CombatStateUpdateSystemGroup), 199)]
+        [TestCase(typeof(CombatPublicationSystemGroup), 199)]
+        public void EndRequestedInsideAFixedStepStopsTheBattleBeforeTheNextCatchUpTick(Type phase, ushort allies)
         {
             var recorder = AddToPhase<TickRecorder>(typeof(CombatPublicationSystemGroup));
             var requester = AddToPhase<InStepRequester>(phase);
-            Request(BattleRequest.Start(BattleSetup.Default, owner: 5));
+            Request(BattleRequest.Start(Roster(allies, allies), owner: 5));
             Step(2);
             var battle = Session;
+            var ids = LiveIds;
             var endTick = Tick + 1;
             // Commands of this battle for every tick of the coming catch-up frame.
             for (var t = endTick; t < endTick + 3; t++)
@@ -682,7 +689,6 @@ namespace MLFLegends.Tests.EditMode
 
             Assert.That(Tick, Is.EqualTo(endTick + 2), "One render frame ran three catch-up ticks.");
             Assert.That(recorder.Ticks.Select(r => r.Tick), Is.EqualTo(new[] { endTick, endTick + 1, endTick + 2 }));
-            var ids = new[] { battle.HumanCombatant.Value, battle.AiCombatant.Value };
             Assert.That(recorder.Ticks[0].InCombat, Is.EqualTo(ids), "The tick that requested the end completes.");
             Assert.That(recorder.Ticks[0].Accepted, Is.EqualTo(2));
             foreach (var later in recorder.Ticks.Skip(1))
@@ -698,19 +704,23 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(CombatantQuery.CalculateEntityCount(), Is.Zero);
         }
 
-        [Test]
-        public void RestartRequestedInsideAFixedStepStartsTheNextBattleOnTheFollowingCatchUpTick()
+        [TestCase((ushort)0)]
+        [TestCase((ushort)199)]
+        public void RestartRequestedInsideAFixedStepStartsTheNextBattleOnTheFollowingCatchUpTick(ushort allies)
         {
             var recorder = AddToPhase<TickRecorder>(typeof(CombatPublicationSystemGroup));
             var requester = AddToPhase<InStepRequester>(typeof(CombatStateUpdateSystemGroup));
-            Request(BattleRequest.Start(BattleSetup.Default, owner: 1));
+            Request(BattleRequest.Start(Roster(allies, allies), owner: 1));
             Step(2);
             var first = Session;
+            var firstIds = LiveIds;
+            var nextSetup = OtherSetup;
+            nextSetup.HumanAllies = nextSetup.AiAllies = allies;
             var restartTick = Tick + 1;
             for (var t = restartTick; t < restartTick + 3; t++)
                 Submit(Cmd(first.HumanCombatant, t), Cmd(first.AiCombatant, t, source: CommandSource.AI));
             requester.OnTick = restartTick;
-            requester.Request = BattleRequest.Restart(OtherSetup, owner: 2);
+            requester.Request = BattleRequest.Restart(nextSetup, owner: 2);
             recorder.Ticks.Clear();
 
             StepInOneFrame(3);
@@ -721,11 +731,12 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(second.Owner, Is.EqualTo(2u));
             Assert.That(second.BattleStartTick, Is.EqualTo(restartTick), "The requesting tick is the last tick of battle 1.");
             Assert.That(Queue.BattleStartTick, Is.EqualTo(restartTick));
-            Assert.That(LiveIds, Is.EqualTo(new[] { 3u, 4u }), "Exactly two fresh fighters.");
+            var nextIds = Enumerable.Range(nextSetup.CombatantCount + 1, nextSetup.CombatantCount).Select(i => (uint)i).ToArray();
+            Assert.That(LiveIds, Is.EqualTo(nextIds), "Exactly one fresh roster.");
             AssertCombatant(second.HumanCombatant, OtherSetup.Human);
 
-            Assert.That(recorder.Ticks[0].InCombat, Is.EqualTo(new[] { 1u, 2u }));
-            Assert.That(recorder.Ticks[1].InCombat, Is.EqualTo(new[] { 3u, 4u }));
+            Assert.That(recorder.Ticks[0].InCombat, Is.EqualTo(firstIds));
+            Assert.That(recorder.Ticks[1].InCombat, Is.EqualTo(nextIds));
             Assert.That(second.RelativeTick(recorder.Ticks[1].Tick), Is.EqualTo(1u), "The next catch-up tick is relative tick 1.");
             Assert.That(recorder.Ticks.Skip(1).Select(r => r.Results), Is.All.Zero, "Battle-1 commands never reach battle 2.");
             Assert.That(Manager.GetComponentData<AppliedCombatCommand>(Find(second.HumanCombatant)).WasSubmitted, Is.False);

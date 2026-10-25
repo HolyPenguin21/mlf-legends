@@ -6,13 +6,13 @@ namespace MLFLegends.Combat
 {
     /// <summary>
     /// Owner of the battle lifecycle and the single place that creates and destroys combatant entities and
-    /// allocates <see cref="CombatantId"/>. Applies <see cref="BattleRequest"/>s between fixed steps.
+    /// allocates <see cref="CombatantId"/>. Applies <see cref="BattleRequest"/>s between fixed steps, including paused frames.
     /// </summary>
     /// <remarks>
-    /// Runs at the start of every fixed step, before <see cref="CombatClockSystem"/> advances the tick, where
-    /// <see cref="SimulationClock.Tick"/> is still the last completed tick: a battle started here has
-    /// <c>BattleStartTick = Tick</c> and its first simulated tick is <c>Tick + 1</c>, the step that follows
-    /// in the same update. Because it runs before every catch-up step, a request made during tick T (e.g. an
+    /// Runs in Initialization (even on paused frames) and at the start of every fixed step, before
+    /// <see cref="CombatClockSystem"/> advances the tick. <see cref="SimulationClock.Tick"/> is still the last
+    /// completed tick: a battle started here has <c>BattleStartTick = Tick</c> and its first simulated tick
+    /// is <c>Tick + 1</c>, the next real fixed step. Because it runs before every catch-up step, a request made during tick T (e.g. an
     /// end of battle decided in the state-update phase) is applied before tick T + 1 runs any combat phase.
     /// Start/restart order: check every precondition (including <see cref="CombatCommandQueue.CanResetForBattle"/>)
     /// → destroy the previous battle's combatants → <see cref="CombatCommandQueue.ResetForBattle"/> → spawn the
@@ -21,8 +21,11 @@ namespace MLFLegends.Combat
     /// <see cref="BattleSession"/> already exists, so a world never has two lifecycle owners. See BOOTSTRAP.md.
     /// </remarks>
     [BurstCompile]
-    [UpdateInGroup(typeof(FixedStepSimulationSystemGroup), OrderFirst = true)]
-    [UpdateAfter(typeof(BeginFixedStepSimulationEntityCommandBufferSystem))]
+    // The SAME instance drains the SAME buffer at both boundaries. Initialization never advances time.
+    // Normal fixed-step ordering places us after the OrderFirst BeginFixedStep ECB; the clock follows us.
+    // OrderFirst in Initialization also makes UpdateBefore(CombatClockSystem) redundant there (clock is absent).
+    [UpdateInGroup(typeof(InitializationSystemGroup), OrderFirst = true)]
+    [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
     [UpdateBefore(typeof(CombatClockSystem))]
     public partial struct BattleLifecycleSystem : ISystem
     {
@@ -130,18 +133,18 @@ namespace MLFLegends.Combat
 
             // Also drops the previous battle's command boundary, pending commands and results.
             DestroyCombatants(entityManager, battleStartTick);
-            var human = Spawn(entityManager, new CombatantId { Value = first }, setup.Human, named: true);
-            var ai = Spawn(entityManager, new CombatantId { Value = first + 1 }, setup.Ai, named: true);
+            var human = Spawn(entityManager, new CombatantId { Value = first }, setup.Human, diagnosticName: "Combatant Human");
+            var ai = Spawn(entityManager, new CombatantId { Value = first + 1 }, setup.Ai, diagnosticName: "Combatant AI");
             var next = first + 2;
             for (var i = 0; i < setup.HumanAllies; i++)
-                Spawn(entityManager, new CombatantId { Value = next++ }, BattleSetup.AllyOf(setup.Human, i), named: false);
+                Spawn(entityManager, new CombatantId { Value = next++ }, BattleSetup.AllyOf(setup.Human, i), diagnosticName: default);
             for (var i = 0; i < setup.AiAllies; i++)
-                Spawn(entityManager, new CombatantId { Value = next++ }, BattleSetup.AllyOf(setup.Ai, i), named: false);
+                Spawn(entityManager, new CombatantId { Value = next++ }, BattleSetup.AllyOf(setup.Ai, i), diagnosticName: default);
             session.Begin(battleStartTick, request.Owner, human, ai);
             return BattleRequestOutcome.Started;
         }
 
-        /// <summary>Last completed tick: this system runs before the clock advances in the fixed step.</summary>
+        /// <summary>Last completed tick at either boundary; this system never advances the clock.</summary>
         uint CurrentTick => m_Clock.GetSingleton<SimulationClock>().Tick;
 
         /// <summary>
@@ -157,11 +160,11 @@ namespace MLFLegends.Combat
         }
 
         /// <remarks>
-        /// <paramref name="named"/>: only the two leaders get an Entities Hierarchy name. Entity names live in a process-wide
-        /// store of 16 384 unique strings that is never emptied until a domain reload, and IDs are never reused, so a name per
-        /// combatant would fill it after about 40 restarts of a 200 vs 200 battle (an Editor error, then no names at all).
+        /// Only leaders receive one of two constant diagnostic role names. Entity names live in a process-wide
+        /// store until domain reload; appending a never-reused ID would grow that store on every battle.
+        /// Allies stay unnamed. CombatantId is the only authoritative identity, never this display name.
         /// </remarks>
-        CombatantId Spawn(EntityManager entityManager, CombatantId id, in CombatantSetup setup, bool named)
+        CombatantId Spawn(EntityManager entityManager, CombatantId id, in CombatantSetup setup, FixedString64Bytes diagnosticName)
         {
             var entity = entityManager.CreateEntity(m_CombatantArchetype); // InCombat starts enabled
             entityManager.SetComponentData(entity, id);
@@ -169,12 +172,8 @@ namespace MLFLegends.Combat
             entityManager.SetComponentData(entity, new CombatPosition { Value = setup.Position });
             entityManager.SetComponentData(entity, new CombatFacing { Value = setup.Facing });
 
-            if (named)
-            {
-                FixedString64Bytes name = "Combatant ";
-                name.Append(id.Value);
-                entityManager.SetName(entity, name);
-            }
+            if (!diagnosticName.IsEmpty)
+                entityManager.SetName(entity, diagnosticName);
 
             return id;
         }

@@ -160,8 +160,8 @@ does not reproduce it (also not over 100 lead32 ticks without a frame end), and 
 1. **Fixed:** entity names filled Entities' process-wide name store. `Spawn` named every combatant `Combatant <id>`;
    the store keeps 16 384 unique names until a domain reload and IDs are never reused, so ~40 restarts of a 200 vs 200
    battle produced one Editor error (`Max unique Entity Name capacity exceeded`, a 0.25 s stall in the first run) and
-   then no names at all. Only the two leaders are named now (`BOOTSTRAP.md`); regression test
-   `RepeatedLargeRostersKeepNamingTheLeaders`.
+   then no names at all. The initial fix named only the two leaders (`BOOTSTRAP.md`); historical regression test
+   `RepeatedLargeRostersKeepNamingTheLeaders` (replaced by the bounded-name regression in #19; see follow-up below).
 2. **Open, for the command processor owner (#4):** the cost of a full pending store dominates everything else
    measured: ≈ 726 µs per tick at 400 combatants × 32 kept commands, ≈ 7.4 ms per 10-tick catch-up frame (Burst on,
    Editor). The processor walks the whole pending buffer and rebuilds its key map every tick. Producers that submit
@@ -201,3 +201,12 @@ Per N in 2 / 100 / 400, Burst on and off, repetitions 1 / 2 / 3 (mean µs per ti
   GC.Alloc count (all series) | chunks | queue buffer high-water | per-frame native peak/end
 Notes / deviations:
 ```
+
+### Naming follow-up (#19, formerly #26, 2026-10-26)
+
+The historical benchmark's two ID-derived leader names still grew the global store by two strings per
+battle. Bootstrap now uses the constant role names `Combatant Human` / `Combatant AI`; all allies stay
+unnamed and identity stays exclusively in `CombatantId`. This bounds the bootstrap actor-name contribution
+to two strings for the entire process/domain, including repeated new Worlds without Domain Reload.
+The 45-session mixed-roster naming regression is prepared but NOT RUN without Unity. No performance
+measurements were rerun or changed by this follow-up; the historical timing values above remain historical.

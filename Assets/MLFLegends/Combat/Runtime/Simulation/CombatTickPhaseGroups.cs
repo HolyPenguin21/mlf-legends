@@ -26,6 +26,7 @@ namespace MLFLegends.Combat
     /// runs last in this group and decides which commands are accepted.
     /// </summary>
     [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
+    [UpdateAfter(typeof(CombatClockSystem))]
     public partial class CombatCommandCollectionSystemGroup : CombatTickPhaseSystemGroup
     {
     }
