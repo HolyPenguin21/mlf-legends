@@ -269,3 +269,24 @@ Updated every `GetName` expectation and the Domain Reload smoke instructions. Ad
 inspects every actor over 45 alternating 1v1/200v200 Start/End and Restart sessions, requiring exactly the
 same two nonempty names and fresh IDs on every iteration. **Unity execution: NOT RUN**. No global store
 mutation/reset, mutable naming counter, additional singleton, spawner or identity lookup was introduced.
+
+### Checks actually executed for this delivery
+
+- **PASS — static syntax only:** tree-sitter C# parser, all 32 C# source files, zero syntax errors.
+  This does not compile Unity references, source generators, Burst or tests.
+- **PASS — JSON / Unity identity metadata:** all 5 asmdef/package JSON files parse; all 69 asset `.meta`
+  GUIDs are valid and unique; the new test has its own `.meta`.
+- **PASS — diff hygiene:** `git diff main --check` has no whitespace errors. Fresh `git fetch origin main`
+  confirmed base `d817b88bdbf9b7eefb86b81dc3321ed92ad330c6` still current.
+- **PASS — source preservation comparison:** lifecycle `OnUpdate`, `Apply`, `DestroyCombatants`, `Despawn`,
+  `OnDestroy` method bodies and every clock method body equal the base. Queue/processor/ID allocator,
+  original replay tests/driver, #17 command test source, Windows runner and Burst investigation document
+  are byte-for-byte unchanged. No runtime class/struct added. Checked the two lifecycle memberships,
+  explicit clock/collection ordering annotations and exactly two literal actor-name callsites.
+- **NOT RUN — actual Unity compilation, all EditMode/PlayMode regressions (including existing ID/queue/replay
+  suites), performance rerun and manual Domain Reload GUI scenario.** No Unity executable, assemblies or
+  display are available. No stubbed substitute was used and no runtime test result is inferred from source checks.
+
+Review risk: automatic scheduling of the same handle in both groups and the ordering annotations must be
+confirmed in Unity 6000.5.4f1 / Entities 6.5.0. The default-world membership/order test and attribute-driven
+replay worlds cover this when run. Cleanup is next-frame bounded while paused, not synchronous at unload.

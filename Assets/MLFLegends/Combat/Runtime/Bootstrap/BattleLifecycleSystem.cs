@@ -9,10 +9,10 @@ namespace MLFLegends.Combat
     /// allocates <see cref="CombatantId"/>. Applies <see cref="BattleRequest"/>s between fixed steps, including paused frames.
     /// </summary>
     /// <remarks>
-    /// Runs in Initialization (even on paused frames) and at the start of every fixed step, before <see cref="CombatClockSystem"/> advances the tick, where
-    /// <see cref="SimulationClock.Tick"/> is still the last completed tick: a battle started here has
-    /// <c>BattleStartTick = Tick</c> and its first simulated tick is <c>Tick + 1</c>, the step that follows
-    /// in the same update. Because it runs before every catch-up step, a request made during tick T (e.g. an
+    /// Runs in Initialization (even on paused frames) and at the start of every fixed step, before
+    /// <see cref="CombatClockSystem"/> advances the tick. <see cref="SimulationClock.Tick"/> is still the last
+    /// completed tick: a battle started here has <c>BattleStartTick = Tick</c> and its first simulated tick
+    /// is <c>Tick + 1</c>, the next real fixed step. Because it runs before every catch-up step, a request made during tick T (e.g. an
     /// end of battle decided in the state-update phase) is applied before tick T + 1 runs any combat phase.
     /// Start/restart order: check every precondition (including <see cref="CombatCommandQueue.CanResetForBattle"/>)
     /// → destroy the previous battle's combatants → <see cref="CombatCommandQueue.ResetForBattle"/> → spawn the
