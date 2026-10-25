@@ -131,6 +131,15 @@ The script waits for the `Unity.exe` process itself (default timeout 60 min, `-T
 - **Prevention:** do not open, copy or test the project with its `Library/` under a non-ASCII path. If the message comes back, reimport the Core RP package folder or delete `Library/` (full reimport).
 - **Editor data upgrades committed together:** URP global settings `m_RuntimeSettings`, `PC_RPAsset` shader prefiltering, `DefaultVolumeProfile` new fields, Standalone batching entry, new `EntitiesClientSettings.asset` and `SceneTemplateSettings.json`. These are automatic migrations by Unity 6000.5.4f1 / URP 17.5 on project open, unrelated to the error.
 
+## Stage 01 closure policy (owner decision, 2026-10-25; PENDING)
+
+- **Stage 01 is not yet closed.** #7 2/100/400 ECS benchmark is in progress. After its integration review, process pending Stage 01 technical debt **#17 (Unicode project path / Burst regression)** and **#19 (End on pause and disabled Domain Reload Play Mode QA)** before opening Stage 02.
+- **#17 remains unresolved** despite PR #21 local reimport success: a genuine retest of the original Burst failure on Unicode-path is still needed.
+- **#19 manual QA remains NOT RUN** until an agent or the owner actually performs Enter/Exit Play Mode with domain reload disabled. A recorded `NOT RUN` does not mean verified.
+- **Issue #23 final audit:** manager checks actual `main`, every single owner/clock/queue/spawner/ID, cleanup and pending command lifetimes, replay equivalence, measured perf and regression suite evidence. New Stage 01-specific failures become tracked fixes, not ignored notes.
+- **Stage 02 handoff:** prepare a complete Russian context message for a **new session** only after the closeout review, with exact merge HEAD, outstanding future-stage Issues, proven test status and first planned Stage 02 work. Tick-aligned input Issue #22 belongs to Stage 02 and is not considered unresolved Stage 01 implementation.
+- The visual gameplay scene remains scheduled **after Stage 03 sprite rendering**.
+
 ## Stage-specific profiling
 - 1v1: response timing, invalid actions, front/back guard, dash, injury capability limits.
 - 4v4, 16v16, 50v50, 200v200: sim time/tick, collision pairs, AI decisions, GPU batches, allocations, sprite sorting and camera.
