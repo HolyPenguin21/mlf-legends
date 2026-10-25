@@ -23,6 +23,13 @@
 - **Stage 00 (2026-10-25):** owner confirmed all prepared Unity tests passed. Record **OWNER-REPORTED PASS**, without asserting the assistant independently reviewed run logs.
 - **Agent management (2026-10-25):** assistant prepares GitHub Issues with technical scope, dependencies, acceptance criteria and PR review; Stage 01 is broken down into Issues #2–#7. Other agents work on separate branches, do not merge independently. Manager keeps ROADMAP and QA current.
 
+## Visual-scene milestone (owner decision, 2026-10-25)
+
+- Follow the existing roadmap in order: Stage 01 ECS, Stage 02 movement/camera, Stage 03 GPU sprite renderer.
+- **No early temporary gameplay scene, capsule/proxy visual fighters or separate demo/vertical slice during Stage 02.** Camera and movement are implemented against the existing ECS authority and testable without an early display scene.
+- Create the first **visible** scene only **after the sprite renderer is implemented and usable in Stage 03**, integrating the already-built movement and camera with actual sprite-backed combatants. This is not a request to defer all technical scenes: `CombatSmoke.unity` remains as the Stage 01 test/smoke scene.
+- Do not create gameplay parallel paths solely to make the visual scene work. Stage 03 should display ECS state; combat attacks are not promised until Stage 05.
+
 ## Battle restart and time policy (manager decision, 2026-10-25)
 
 - **Do not recreate or reset the default Unity ECS World when restarting an individual fight.** A real World teardown is reserved for ending the application/game World, not for ordinary fight restart. World-scoped `SimulationClock` stays the single fixed-step authority and its unsigned `Tick` stays monotonic.
