@@ -80,6 +80,15 @@ The script requires a nonzero NUnit test count with all tests passing; it saves 
 - **Core documentation mismatch: RESOLVED.** Manager updated `Core/CombatantId.cs` XML summary and `Core/CONTRACTS.md` to state IDs are unique **within the World** and never reused across battle restarts. No code or public API behavior changed.
 - **Remaining integration boundaries:** `BattleSession.LastOutcome` reports last request in a batch rather than a per-request ledger; intentional current lightweight diagnostic. Requests currently only apply at frame boundaries, and `CombatSmokeBootstrap` may hold a static *owner token* but no static combat entities/state. Profiling 400 actors (#7) must reuse the real spawn/ID allocator path.
 
+## Stage 01 stabilization — Native lifetime review (Issue #12 / PR #15; 2026-10-25)
+
+- **Delivery: PASS.** PR #15 merged into `main` at commit `4ccc4222c58307ca9164f453de9c8d7bbb2ef1b9`; Issue #12 closed.
+- **Manager static review: PASS.** Six native Temp scratch containers in `CombatCommandProcessorSystem.OnUpdate` now have explicit end-of-use `Dispose`; previous over-reservation of the processed-command list was removed. All three ephemeral `EntityQuery` objects built in `CombatCommandQueue.ResetForBattle` now have matched `Dispose`, including explicit validation-failure branches; reset scratch array is disposed too. No duplicate queue, additional time source, altered priority rules or changes to Bootstrap.
+- **Agent-reported execution:** Unity 6000.5.4f1 EditMode **72/72 PASS**, PlayMode **6/6 PASS**, including a new catch-up/400-combatant scenario with up to 12,800 pending commands across several 16-fixed-tick frames. Test XML reported in PR but not independently reviewed or executed by manager.
+- **Important allocation nuance:** native `Allocator.Temp` is automatically reclaimed at frame end; explicit `Dispose` is good resource-lifetime hygiene but does **not** establish that the peak per-frame Temp memory is reclaimed sooner. Persistent `EntityQuery` retention through World lifetime was the substantive corrected defect; measurements are deferred to Issue #7.
+- **Non-blocking follow-up for Issue #14:** `BattleRequest.Submit` (`Bootstrap/BattleSession.cs`) and `CombatSmokeBootstrap.TryGetEntityManager` still construct persistent `EntityQuery` instances and do not dispose them. A scoped improvement is recorded as a comment on Issue #14, to be addressed in its existing Bootstrap-owned correction PR.
+- **Next in stabilization: Issue #10**, dedicated Windows PowerShell test runner process-wait fix, before full Stage 01 replay and performance tests.
+
 ## Stage-specific profiling
 - 1v1: response timing, invalid actions, front/back guard, dash, injury capability limits.
 - 4v4, 16v16, 50v50, 200v200: sim time/tick, collision pairs, AI decisions, GPU batches, allocations, sprite sorting and camera.
@@ -110,3 +119,7 @@ The script requires a nonzero NUnit test count with all tests passing; it saves 
 | 2026-10-25 | No-domain-reload Play Mode scenario | NOT RUN | Manual scenario required; Issue #14 |
 | 2026-10-25 | Catch-up End timing and reset atomicity | FOLLOW-UP / NON-BLOCKING FOR #5 | Issue #14, schedule before integration tests #6 |
 | 2026-10-25 | Core CombatantId scope mismatch | RESOLVED — DOCUMENTATION | Updated class XML comment and Core/CONTRACTS.md to World-scoped uniqueness |
+| 2026-10-25 | Stage 01 stabilization #12 merged | PASS — MANAGER STATIC REVIEW | PR #15; Temp scratch disposal and persistent query disposal; no ECS architecture changes |
+| 2026-10-25 | Stage 01 stabilization Unity tests EditMode 72/72, PlayMode 6/6 | AGENT-REPORTED PASS | PR #15; raw XML and Unity execution not independently verified |
+| 2026-10-25 | Bootstrap transient EntityQuery lifetime | FOLLOW-UP / NON-BLOCKING | Added to Issue #14 (BattleSession / CombatSmokeBootstrap) |
+| 2026-10-25 | Unity test runner | NEXT / OPEN | Issue #10, after #12 and before replay suite #6 |
