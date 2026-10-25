@@ -290,3 +290,36 @@ mutation/reset, mutable naming counter, additional singleton, spawner or identit
 Review risk: automatic scheduling of the same handle in both groups and the ordering annotations must be
 confirmed in Unity 6000.5.4f1 / Entities 6.5.0. The default-world membership/order test and attribute-driven
 replay worlds cover this when run. Cleanup is next-frame bounded while paused, not synchronous at unload.
+
+### Bottom-up follow-up review of PR #28 (2026-10-26)
+
+Re-read the complete production path: Core identity/enabled state → allocator → queue preflight/reset,
+processor buffers and AppliedCombatCommand → clock/phase ordering → lifecycle batch copy/clear and
+structural changes → bootstrap enable/disable/owner tokens → manual, attribute-driven replay and
+benchmark Worlds. No additional runtime defect was established by source inspection. Runtime code,
+queue/ID rules, #17 sources and the original replay/benchmark sources are unchanged by this follow-up.
+
+Two test defects were corrected:
+
+1. Default-world polling helpers created EntityManager-owned persistent EntityQueries without disposing
+   them; the new pause waits amplified the pre-existing resource leak. All queries in the affected
+   PlayMode fixture now have an explicit using lifetime, as does the new EditMode RequestCount helper.
+   The temporary entity array used during smoke-scene inspection is also disposed immediately.
+2. The previous PR revision changed the real smoke-scene switch test into a pause-only test, losing its
+   ordinary-time counterpart. Both normal and paused scene replacement/final unload now run through
+   the same scenario in separate UnityTests. Async scene operations use an unscaled bounded wait.
+
+Additional missing integration coverage was prepared:
+
+- End/Restart requested on the **last** catch-up tick, then Initialization without any intervening tick:
+  1v1 and 200v200, pending/submitted/results cleanup, owner/ID replacement and first resumed relative tick 1.
+  Earlier tests requested on the first catch-up tick, so the next fixed boundary could mask this case.
+- Restart + owned End before the first World tick: no live battle, no retained request and no revival.
+- Real EndFixedStep ECB playback before frame-boundary cleanup for 1v1/200v200. A test-only, disabled-auto-
+  creation probe records an actor position write plus an End request; the write must play back in its
+  producing tick before Initialization destroys the actor. No new runtime writer/destructor was added.
+
+**Actually executed:** all 32 C# files parsed without syntax errors; JSON/meta identity checks and
+`git diff --check` passed; source comparison confirms this follow-up changes tests/docs only and #17
+remains untouched. **NOT RUN:** Unity compilation, the additional/retained EditMode/PlayMode scenarios,
+profiles and the Domain Reload GUI scenario. Unity remains unavailable; source review is not runtime PASS.

@@ -1,6 +1,7 @@
 using MLFLegends.Combat;
 using NUnit.Framework;
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace MLFLegends.Tests.EditMode
 {
@@ -9,8 +10,14 @@ namespace MLFLegends.Tests.EditMode
         // Initialization is a real frame boundary, not a fixed step or a second lifecycle instance.
         void InitializeFrame() => m_World.GetExistingSystemManaged<InitializationSystemGroup>().Update();
 
-        int RequestCount => Manager.GetBuffer<BattleRequest>(
-            Manager.CreateEntityQuery(typeof(BattleSession)).GetSingletonEntity()).Length;
+        int RequestCount
+        {
+            get
+            {
+                using var session = Manager.CreateEntityQuery(typeof(BattleSession));
+                return Manager.GetBuffer<BattleRequest>(session.GetSingletonEntity()).Length;
+            }
+        }
 
         [TestCase((ushort)0)]
         [TestCase((ushort)199)]
@@ -145,6 +152,7 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(LiveIds, Is.Empty);
             Assert.That(RequestCount, Is.Zero);
         }
+
         [TestCase((ushort)0)]
         [TestCase((ushort)199)]
         public void ExtraPausedFrameBoundariesPreserveCanonicalReplayAcrossRestart(ushort allies)
@@ -177,5 +185,123 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(frames.PendingCount, Is.Zero);
         }
 
+        [TestCase(BattleRequestKind.End, (ushort)0)]
+        [TestCase(BattleRequestKind.End, (ushort)199)]
+        [TestCase(BattleRequestKind.Restart, (ushort)0)]
+        [TestCase(BattleRequestKind.Restart, (ushort)199)]
+        public void RequestFromLastCatchUpTickIsAppliedByTheNextFrameWithoutAnotherTick(BattleRequestKind kind, ushort allies)
+        {
+            var setup = Roster(allies, allies);
+            var recorder = AddToPhase<TickRecorder>(typeof(CombatPublicationSystemGroup));
+            var requester = AddToPhase<InStepRequester>(typeof(CombatStateUpdateSystemGroup));
+            Request(BattleRequest.Start(setup, owner: 5));
+            Step(2);
+            var previous = Session;
+            var ids = LiveIds;
+            Submit(Cmd(previous.HumanCombatant, Tick + 6));
+            requester.OnTick = Tick + 3; // final catch-up step, with no subsequent fixed boundary in this frame
+            requester.Request = kind == BattleRequestKind.End
+                ? BattleRequest.End(owner: 5) : BattleRequest.Restart(setup, owner: 6);
+            StepInOneFrame(3);
+            var tick = Tick;
+            var records = recorder.Ticks.Count;
+            Assert.That(Session.Owner, Is.EqualTo(5u), "The last requesting tick finishes before cleanup.");
+            Assert.That(LiveIds, Is.EqualTo(ids));
+            Assert.That(RequestCount, Is.EqualTo(1));
+            Assert.That(PendingCount, Is.EqualTo(1));
+            Submit(Cmd(previous.HumanCombatant, tick + 1));
+
+            InitializeFrame();
+
+            Assert.That(Tick, Is.EqualTo(tick));
+            Assert.That(recorder.Ticks.Count, Is.EqualTo(records), "No phase or fake tick ran in Initialization.");
+            Assert.That(RequestCount, Is.Zero);
+            Assert.That(PendingCount, Is.Zero);
+            Assert.That(Outcomes, Is.Empty);
+            Assert.That(Manager.GetBuffer<CombatCommandSubmission>(QueueEntity).Length, Is.Zero);
+            Assert.That(Find(previous.HumanCombatant), Is.EqualTo(Entity.Null));
+            if (kind == BattleRequestKind.End)
+            {
+                Assert.That(Session.LastOutcome, Is.EqualTo(BattleRequestOutcome.Ended));
+                Assert.That(LiveIds, Is.Empty);
+            }
+            else
+            {
+                Assert.That(Session.LastOutcome, Is.EqualTo(BattleRequestOutcome.Started));
+                Assert.That(Session.Owner, Is.EqualTo(6u));
+                Assert.That(Session.BattleNumber, Is.EqualTo(previous.BattleNumber + 1));
+                Assert.That(Session.BattleStartTick, Is.EqualTo(tick));
+                Assert.That(LiveIds.Length, Is.EqualTo(setup.CombatantCount));
+                Assert.That(Session.HumanCombatant.Value, Is.GreaterThan(ids[ids.Length - 1]));
+            }
+            recorder.Ticks.Clear();
+            StepInOneFrame(3);
+            if (kind == BattleRequestKind.Restart)
+                Assert.That(Session.RelativeTick(recorder.Ticks[0].Tick), Is.EqualTo(1u));
+            else
+                Assert.That(LiveIds, Is.Empty);
+            Assert.That(PendingCount, Is.Zero);
+        }
+
+        [Test]
+        public void EnableThenDisableBeforeAnyTickLeavesNoBattleOrQueuedRequest()
+        {
+            BattleRequest.Submit(Manager, BattleRequest.Restart(BattleSetup.Default, owner: 7));
+            BattleRequest.Submit(Manager, BattleRequest.End(owner: 7));
+            InitializeFrame();
+            Assert.That(Tick, Is.Zero);
+            Assert.That(Session.BattleNumber, Is.EqualTo(1u));
+            Assert.That(Session.LastOutcome, Is.EqualTo(BattleRequestOutcome.Ended));
+            Assert.That(Session.IsActive, Is.False);
+            Assert.That(LiveIds, Is.Empty);
+            Assert.That(RequestCount, Is.Zero);
+            InitializeFrame();
+            Step();
+            Assert.That(Session.BattleNumber, Is.EqualTo(1u));
+            Assert.That(LiveIds, Is.Empty);
+        }
+
+        [TestCase((ushort)0)]
+        [TestCase((ushort)199)]
+        public void EndFixedEcbPlaysBackBeforeFrameBoundaryCleanup(ushort allies)
+        {
+            // Exercise the documented ECB lifetime contract with the real ECB system, not a direct write.
+            var end = m_World.CreateSystemManaged<EndFixedStepSimulationEntityCommandBufferSystem>();
+            m_FixedStep.AddSystemToUpdateList(end);
+            m_FixedStep.SortSystems();
+            Request(BattleRequest.Start(Roster(allies, allies), owner: 8));
+            var actor = Find(Session.HumanCombatant);
+            var probe = AddToPhase<EndFixedExitProbe>(typeof(CombatStateUpdateSystemGroup));
+            probe.Actor = actor;
+
+            Step();
+
+            Assert.That(Manager.GetComponentData<CombatPosition>(actor).Value, Is.EqualTo(new float3(12f, 0f, 0f)),
+                "The producing tick's EndFixedStep buffer has played back before paused-frame cleanup.");
+            Assert.That(Session.IsActive, Is.True);
+            Assert.That(RequestCount, Is.EqualTo(1));
+            var tick = Tick;
+            InitializeFrame();
+            Assert.That(Tick, Is.EqualTo(tick));
+            Assert.That(Manager.Exists(actor), Is.False);
+            Assert.That(LiveIds, Is.Empty);
+            Step();
+            Assert.That(LiveIds, Is.Empty, "There is no deferred ECB left targeting the destroyed actor.");
+        }
+
+        [DisableAutoCreation]
+        partial class EndFixedExitProbe : SystemBase
+        {
+            public Entity Actor;
+
+            protected override void OnUpdate()
+            {
+                if (!EntityManager.Exists(Actor))
+                    return;
+                var ecb = World.GetExistingSystemManaged<EndFixedStepSimulationEntityCommandBufferSystem>().CreateCommandBuffer();
+                ecb.SetComponent(Actor, new CombatPosition { Value = new float3(12f, 0f, 0f) });
+                BattleRequest.Submit(EntityManager, BattleRequest.End(owner: 8));
+            }
+        }
     }
 }

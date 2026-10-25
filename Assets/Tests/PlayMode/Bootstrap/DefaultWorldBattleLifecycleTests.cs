@@ -24,15 +24,21 @@ namespace MLFLegends.Tests.PlayMode
 
         static EntityManager Manager => DefaultWorld.EntityManager;
 
-        static BattleSession Session => Manager.CreateEntityQuery(typeof(BattleSession)).GetSingleton<BattleSession>();
+        static T Singleton<T>() where T : unmanaged, IComponentData
+        {
+            using var query = Manager.CreateEntityQuery(typeof(T));
+            return query.GetSingleton<T>();
+        }
 
-        static uint Tick => Manager.CreateEntityQuery(typeof(SimulationClock)).GetSingleton<SimulationClock>().Tick;
+        static BattleSession Session => Singleton<BattleSession>();
+
+        static uint Tick => Singleton<SimulationClock>().Tick;
 
         static uint[] LiveIds
         {
             get
             {
-                var query = Manager.CreateEntityQuery(new EntityQueryDesc
+                using var query = Manager.CreateEntityQuery(new EntityQueryDesc
                 {
                     All = new ComponentType[] { typeof(CombatantId) },
                     Options = EntityQueryOptions.IgnoreComponentEnabledState,
@@ -75,7 +81,8 @@ namespace MLFLegends.Tests.PlayMode
             var initialization = DefaultWorld.GetExistingSystemManaged<InitializationSystemGroup>();
             using (var members = initialization.GetAllSystems(Allocator.Temp))
                 Assert.That(members.IndexOf(lifecycle), Is.GreaterThanOrEqualTo(0), "The same handle also runs on paused frames.");
-            Assert.That(Manager.CreateEntityQuery(typeof(BattleSession)).CalculateEntityCount(), Is.EqualTo(1));
+            using (var sessions = Manager.CreateEntityQuery(typeof(BattleSession)))
+                Assert.That(sessions.CalculateEntityCount(), Is.EqualTo(1));
             Assert.That(Session.State, Is.EqualTo(BattleState.Idle), "Nothing starts a battle without a request.");
         }
 
@@ -182,8 +189,8 @@ namespace MLFLegends.Tests.PlayMode
 
                 yield return new WaitForSeconds(0.1f);
                 Assert.That(battle.RelativeTick(Tick), Is.GreaterThanOrEqualTo(1u), "The battle is simulated on the shared clock.");
-                var humanQuery = Manager.CreateEntityQuery(typeof(CombatantId), typeof(AppliedCombatCommand));
-                Assert.That(humanQuery.CalculateEntityCount(), Is.EqualTo(2), "Both combatants are consumers of the command processor.");
+                using (var humanQuery = Manager.CreateEntityQuery(typeof(CombatantId), typeof(AppliedCombatCommand)))
+                    Assert.That(humanQuery.CalculateEntityCount(), Is.EqualTo(2), "Both combatants are consumers of the command processor.");
 
                 // A second bootstrap replaces the fighters instead of duplicating them.
                 second = new GameObject("Combat bootstrap 2", typeof(CombatSmokeBootstrap));
@@ -230,8 +237,7 @@ namespace MLFLegends.Tests.PlayMode
         static IEnumerator LoadSmokeSceneAdditive()
         {
             var load = EditorSceneManager.LoadSceneAsyncInPlayMode(SmokeScenePath, new LoadSceneParameters(LoadSceneMode.Additive));
-            while (!load.isDone)
-                yield return null;
+            yield return Until(() => load.isDone);
         }
 
         static Scene[] SmokeScenes() => Enumerable.Range(0, SceneManager.sceneCount).Select(SceneManager.GetSceneAt)
@@ -240,7 +246,14 @@ namespace MLFLegends.Tests.PlayMode
         // The real scene asset; the async order of a scene switch: the next scene is enabled before the previous one
         // is disabled, so the previous bootstrap's end arrives after the next bootstrap's restart.
         [UnityTest]
-        public IEnumerator SmokeSceneStartsItsBattleAndASceneSwitchNeitherStopsNorDuplicatesIt()
+        public IEnumerator SmokeSceneStartsItsBattleAndASceneSwitchNeitherStopsNorDuplicatesIt() =>
+            SmokeSceneSwitch(paused: false);
+
+        [UnityTest]
+        public IEnumerator PausedSmokeSceneSwitchAndFinalUnloadDoNotNeedAFixedTick() =>
+            SmokeSceneSwitch(paused: true);
+
+        static IEnumerator SmokeSceneSwitch(bool paused)
         {
             yield return null;
             Assert.That(Session.State, Is.EqualTo(BattleState.Idle));
@@ -254,26 +267,29 @@ namespace MLFLegends.Tests.PlayMode
                 Assert.That(first.State, Is.EqualTo(BattleState.Active));
                 Assert.That(first.Owner, Is.Not.Zero);
                 Assert.That(LiveIds, Is.EqualTo(new[] { first.HumanCombatant.Value, first.AiCombatant.Value }));
-                var human = Manager.CreateEntityQuery(typeof(CombatantId)).ToEntityArray(Allocator.Temp)
-                    .ToArray().Single(e => Manager.GetComponentData<CombatantId>(e).Value == first.HumanCombatant.Value);
+                Entity human;
+                using (var actors = Manager.CreateEntityQuery(typeof(CombatantId)))
+                using (var entities = actors.ToEntityArray(Allocator.Temp))
+                    human = entities.ToArray().Single(e => Manager.GetComponentData<CombatantId>(e).Value == first.HumanCombatant.Value);
                 Assert.That(Manager.GetComponentData<CombatTeam>(human).Value, Is.EqualTo(1));
                 Assert.That(Manager.GetComponentData<CombatPosition>(human).Value.x, Is.EqualTo(-2f));
                 Assert.That(Manager.GetComponentData<CombatFacing>(human).Value, Is.EqualTo(FacingDirection.Right));
 
-                Time.timeScale = 0;
+                if (paused)
+                    Time.timeScale = 0;
                 yield return null;
                 pausedTick = Tick;
                 // Switch: load the next copy, then unload the previous one.
                 yield return LoadSmokeSceneAdditive();
                 var previous = SmokeScenes().First();
                 var unload = SceneManager.UnloadSceneAsync(previous);
-                while (!unload.isDone)
-                    yield return null;
+                yield return Until(() => unload.isDone);
                 yield return Until(() => Session.Owner != first.Owner);
                 yield return null; // allow the old scene's queued End to reach Initialization
 
                 var next = Session;
-                Assert.That(Tick, Is.EqualTo(pausedTick));
+                if (paused)
+                    Assert.That(Tick, Is.EqualTo(pausedTick));
                 Assert.That(SmokeScenes().Length, Is.EqualTo(1));
                 Assert.That(next.State, Is.EqualTo(BattleState.Active), "The late end of the unloaded scene did not stop the next battle.");
                 Assert.That(next.Owner, Is.Not.EqualTo(first.Owner));
@@ -283,7 +299,8 @@ namespace MLFLegends.Tests.PlayMode
                 foreach (var scene in SmokeScenes())
                     SceneManager.UnloadSceneAsync(scene);
                 yield return Until(() => SmokeScenes().Length == 0 && !Session.IsActive);
-                Assert.That(Tick, Is.EqualTo(pausedTick));
+                if (paused)
+                    Assert.That(Tick, Is.EqualTo(pausedTick));
                 Assert.That(LiveIds, Is.Empty);
             }
             finally
