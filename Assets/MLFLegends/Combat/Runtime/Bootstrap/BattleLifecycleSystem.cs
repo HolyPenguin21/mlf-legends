@@ -23,10 +23,9 @@ namespace MLFLegends.Combat
     [BurstCompile]
     // The SAME instance drains the SAME buffer at both boundaries. Initialization never advances time.
     // Normal fixed-step ordering places us after the OrderFirst BeginFixedStep ECB; the clock follows us.
-    // OrderFirst in Initialization also makes UpdateBefore(CombatClockSystem) redundant there (clock is absent).
+    // Fixed-only CombatClockSystem owns the dependency; no cross-group ordering constraint belongs here.
     [UpdateInGroup(typeof(InitializationSystemGroup), OrderFirst = true)]
     [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
-    [UpdateBefore(typeof(CombatClockSystem))]
     public partial struct BattleLifecycleSystem : ISystem
     {
         Entity m_Session;

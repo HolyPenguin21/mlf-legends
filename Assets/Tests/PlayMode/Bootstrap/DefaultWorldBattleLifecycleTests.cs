@@ -61,7 +61,7 @@ namespace MLFLegends.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator DefaultWorldHasOneLifecycleOwnerThatRunsAtTheStartOfEachFixedStep()
+        public IEnumerator DefaultWorldHasOneLifecycleOwnerAndTheCompleteFixedStepOrder()
         {
             yield return null;
             Assert.That(DefaultWorld, Is.Not.Null, "Entities default world bootstrap is expected in Play Mode.");
@@ -71,16 +71,28 @@ namespace MLFLegends.Tests.PlayMode
             Assert.That(lifecycle, Is.Not.EqualTo(SystemHandle.Null));
             using (var members = fixedStep.GetAllSystems(Allocator.Temp))
             {
-                var lifecycleIndex = members.IndexOf(lifecycle);
-                Assert.That(lifecycleIndex, Is.GreaterThanOrEqualTo(0));
-                Assert.That(lifecycleIndex, Is.LessThan(members.IndexOf(DefaultWorld.GetExistingSystem<CombatClockSystem>())),
-                    "Requests are applied between fixed steps, before the clock advances to the next tick.");
-                Assert.That(lifecycleIndex, Is.LessThan(members.IndexOf(DefaultWorld.GetExistingSystem<CombatCommandCollectionSystemGroup>())));
+                var order = new[]
+                {
+                    members.IndexOf(DefaultWorld.GetExistingSystem<BeginFixedStepSimulationEntityCommandBufferSystem>()),
+                    members.IndexOf(lifecycle),
+                    members.IndexOf(DefaultWorld.GetExistingSystem<CombatClockSystem>()),
+                    members.IndexOf(DefaultWorld.GetExistingSystem<CombatCommandCollectionSystemGroup>()),
+                    members.IndexOf(DefaultWorld.GetExistingSystem<CombatStateUpdateSystemGroup>()),
+                    members.IndexOf(DefaultWorld.GetExistingSystem<CombatPublicationSystemGroup>()),
+                    members.IndexOf(DefaultWorld.GetExistingSystem<EndFixedStepSimulationEntityCommandBufferSystem>()),
+                };
+                Assert.That(order, Is.All.GreaterThanOrEqualTo(0));
+                Assert.That(order, Is.Ordered.Ascending.And.Unique,
+                    "Begin ECB -> Lifecycle -> Clock -> Collection -> State -> Publication -> End ECB.");
             }
 
             var initialization = DefaultWorld.GetExistingSystemManaged<InitializationSystemGroup>();
             using (var members = initialization.GetAllSystems(Allocator.Temp))
+            {
                 Assert.That(members.IndexOf(lifecycle), Is.GreaterThanOrEqualTo(0), "The same handle also runs on paused frames.");
+                Assert.That(members.IndexOf(DefaultWorld.GetExistingSystem<CombatClockSystem>()), Is.EqualTo(-1),
+                    "Initialization must not advance the clock.");
+            }
             using (var sessions = Manager.CreateEntityQuery(typeof(BattleSession)))
                 Assert.That(sessions.CalculateEntityCount(), Is.EqualTo(1));
             Assert.That(Session.State, Is.EqualTo(BattleState.Idle), "Nothing starts a battle without a request.");
