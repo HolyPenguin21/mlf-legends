@@ -40,6 +40,7 @@ World time comes from Entities' `UpdateWorldTimeSystem`: `UnityEngine.Time.delta
 SimulationSystemGroup
 └─ FixedStepSimulationSystemGroup                  (runs N times per frame, N = elapsed / TickDuration)
    ├─ BeginFixedStepSimulationEntityCommandBufferSystem   (Unity, OrderFirst)
+   ├─ BattleLifecycleSystem                               (OrderFirst, #5/#14) battle requests; Tick = last completed tick
    ├─ CombatClockSystem                                   (OrderFirst) Tick += 1
    ├─ CombatCommandCollectionSystemGroup                  producers in fixed order, then #4 processor (OrderLast)
    ├─ CombatStateUpdateSystemGroup                        single owners of combat state (Stage 02+)
@@ -48,6 +49,9 @@ SimulationSystemGroup
 ```
 
 - The tick number of the step is available before commands for that step are collected.
+- The battle lifecycle owner runs before the clock, i.e. at the boundary between two steps, also between the
+  catch-up steps of one frame. It reads the clock and never writes it (see `Bootstrap/BOOTSTRAP.md`); it is not
+  a combat phase and also runs while the clock is stopped, so a battle can still be ended.
 - Future systems join a phase with `[UpdateInGroup(typeof(<phase group>))]`; they never update
   `SimulationClock` and never run combat logic outside these groups.
 - Only owners from later issues fill the groups; no placeholder processors are added here.
@@ -57,8 +61,10 @@ SimulationSystemGroup
 ## Tick semantics
 - `uint`, `0` = `SimulationClock.NoTick` = "no tick yet"; never simulated, never valid for a command.
 - The first simulated tick is `1`. Each fixed step increments exactly once, before every phase.
-- Inside the fixed step `Tick` is the tick being simulated. Outside it, `Tick` is the last completed
-  tick and the next one is `Tick + 1` (what a frame-rate producer targets).
+- From `CombatClockSystem` on (every combat phase) `Tick` is the tick being simulated. Outside the fixed
+  step, and inside it before the clock (`BeginFixedStepSimulationEntityCommandBufferSystem`,
+  `BattleLifecycleSystem`), `Tick` is the last completed tick and the next one is `Tick + 1` (what a
+  frame-rate producer targets).
 - Upper bound: `uint.MaxValue` (~828 days at 60 Hz). The clock never wraps to `0` and never repeats a
   tick: on the step after `LastTick` it logs an error and removes `SimulationClockRunning`, which stops
   the clock and every phase in that same step. The battle must end.

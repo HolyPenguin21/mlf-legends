@@ -14,7 +14,8 @@ using UnityEditor.SceneManagement;
 namespace MLFLegends.Tests.PlayMode
 {
     // Battles in the auto-created default world, driven like a scene does it: through CombatSmokeBootstrap.
-    // Every test ends its battle, so the default world is left without combatants.
+    // Every test ends its battle, so the default world is left without combatants. Requests are applied at the start
+    // of the next fixed step, so the tests wait for the next tick (NextTick), not for a number of render frames.
     public class DefaultWorldBattleLifecycleTests
     {
         static World DefaultWorld => World.DefaultGameObjectInjectionWorld;
@@ -39,22 +40,34 @@ namespace MLFLegends.Tests.PlayMode
             }
         }
 
+        // Waits until at least one fixed step ran after this call, i.e. requests submitted before it were applied.
+        static IEnumerator NextTick()
+        {
+            var tick = Tick;
+            var deadline = Time.realtimeSinceStartup + 5f;
+            while (Tick == tick)
+            {
+                Assert.That(Time.realtimeSinceStartup, Is.LessThan(deadline), "No fixed step ran (Time.timeScale = 0?).");
+                yield return null;
+            }
+        }
+
         [UnityTest]
-        public IEnumerator DefaultWorldHasOneLifecycleOwnerThatRunsBeforeTheFixedStep()
+        public IEnumerator DefaultWorldHasOneLifecycleOwnerThatRunsAtTheStartOfEachFixedStep()
         {
             yield return null;
             Assert.That(DefaultWorld, Is.Not.Null, "Entities default world bootstrap is expected in Play Mode.");
 
-            var simulation = DefaultWorld.GetExistingSystemManaged<SimulationSystemGroup>();
             var fixedStep = DefaultWorld.GetExistingSystemManaged<FixedStepSimulationSystemGroup>();
             var lifecycle = DefaultWorld.GetExistingSystem<BattleLifecycleSystem>();
             Assert.That(lifecycle, Is.Not.EqualTo(SystemHandle.Null));
-            using (var members = simulation.GetAllSystems(Allocator.Temp))
+            using (var members = fixedStep.GetAllSystems(Allocator.Temp))
             {
                 var lifecycleIndex = members.IndexOf(lifecycle);
                 Assert.That(lifecycleIndex, Is.GreaterThanOrEqualTo(0));
-                Assert.That(lifecycleIndex, Is.LessThan(members.IndexOf(fixedStep.SystemHandle)),
-                    "Requests are applied between fixed steps, before the next tick.");
+                Assert.That(lifecycleIndex, Is.LessThan(members.IndexOf(DefaultWorld.GetExistingSystem<CombatClockSystem>())),
+                    "Requests are applied between fixed steps, before the clock advances to the next tick.");
+                Assert.That(lifecycleIndex, Is.LessThan(members.IndexOf(DefaultWorld.GetExistingSystem<CombatCommandCollectionSystemGroup>())));
             }
 
             Assert.That(Manager.CreateEntityQuery(typeof(BattleSession)).CalculateEntityCount(), Is.EqualTo(1));
@@ -69,7 +82,7 @@ namespace MLFLegends.Tests.PlayMode
             GameObject second = null, returning = null;
             try
             {
-                yield return null;
+                yield return NextTick();
                 var battle = Session;
                 Assert.That(battle.State, Is.EqualTo(BattleState.Active));
                 Assert.That(LiveIds, Is.EqualTo(new[] { battle.HumanCombatant.Value, battle.AiCombatant.Value }));
@@ -82,15 +95,15 @@ namespace MLFLegends.Tests.PlayMode
 
                 // A second bootstrap replaces the fighters instead of duplicating them.
                 second = new GameObject("Combat bootstrap 2", typeof(CombatSmokeBootstrap));
-                yield return null;
+                yield return NextTick();
                 Assert.That(LiveIds.Length, Is.EqualTo(2));
                 Assert.That(LiveIds.Min(), Is.GreaterThan(battle.AiCombatant.Value));
 
                 // Leaving the scene: bootstraps are destroyed, the battle ends.
                 Object.Destroy(first.gameObject);
                 Object.Destroy(second);
-                yield return null;
-                yield return null;
+                yield return null; // Destroy (and OnDisable) happens at the end of this frame
+                yield return NextTick();
                 Assert.That(LiveIds, Is.Empty);
                 Assert.That(Session.State, Is.EqualTo(BattleState.Idle));
                 var tickAfterLeaving = Tick;
@@ -98,7 +111,7 @@ namespace MLFLegends.Tests.PlayMode
 
                 // Returning: a fresh battle in the same World with new IDs and the clock still running.
                 returning = new GameObject("Combat bootstrap 3", typeof(CombatSmokeBootstrap));
-                yield return null;
+                yield return NextTick();
                 Assert.That(LiveIds.Length, Is.EqualTo(2));
                 Assert.That(LiveIds.Min(), Is.GreaterThan(lastId));
                 Assert.That(Session.BattleStartTick, Is.GreaterThanOrEqualTo(tickAfterLeaving));
@@ -115,7 +128,7 @@ namespace MLFLegends.Tests.PlayMode
             }
 
             yield return null;
-            yield return null;
+            yield return NextTick();
             Assert.That(LiveIds, Is.Empty, "The test leaves no combatant in the default world.");
         }
 
@@ -142,7 +155,7 @@ namespace MLFLegends.Tests.PlayMode
             try
             {
                 yield return LoadSmokeSceneAdditive();
-                yield return null;
+                yield return NextTick();
                 var first = Session;
                 Assert.That(first.State, Is.EqualTo(BattleState.Active));
                 Assert.That(first.Owner, Is.Not.Zero);
@@ -159,8 +172,7 @@ namespace MLFLegends.Tests.PlayMode
                 var unload = SceneManager.UnloadSceneAsync(previous);
                 while (!unload.isDone)
                     yield return null;
-                yield return null;
-                yield return null;
+                yield return NextTick();
 
                 var next = Session;
                 Assert.That(SmokeScenes().Length, Is.EqualTo(1));
@@ -178,8 +190,7 @@ namespace MLFLegends.Tests.PlayMode
 
             for (var i = 0; i < 5 && SmokeScenes().Length > 0; i++)
                 yield return null;
-            yield return null;
-            yield return null;
+            yield return NextTick();
             Assert.That(SmokeScenes(), Is.Empty);
             Assert.That(LiveIds, Is.Empty, "Leaving the scene ends its battle.");
             Assert.That(Session.State, Is.EqualTo(BattleState.Idle));

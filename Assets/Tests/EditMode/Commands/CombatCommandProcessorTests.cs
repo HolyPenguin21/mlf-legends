@@ -647,6 +647,30 @@ namespace MLFLegends.Tests.EditMode
         }
 
         [Test]
+        public void CanResetForBattleAnswersExactlyLikeResetForBattleWithoutSideEffects()
+        {
+            Step(5);
+            Assert.That(CombatCommandQueue.CanResetForBattle(Manager, 4), Is.False, "Tick in the past.");
+            Assert.That(CombatCommandQueue.CanResetForBattle(Manager, 5), Is.True);
+            CombatCommandQueue.ResetForBattle(Manager, 7);
+            Assert.That(CombatCommandQueue.CanResetForBattle(Manager, 6), Is.False, "Boundary would move back.");
+            Assert.That(CombatCommandQueue.CanResetForBattle(Manager, 7), Is.True);
+
+            // A rejected reset, checked or thrown, leaves the queue as it was.
+            var combatant = Spawn(1);
+            Step(); // tick 6, before the boundary
+            Submit(Cmd(1, 9, moveX: 1));
+            Assert.That(CombatCommandQueue.CanResetForBattle(Manager, 6), Is.False);
+            Assert.That(() => CombatCommandQueue.ResetForBattle(Manager, 6), Throws.TypeOf<ArgumentOutOfRangeException>());
+            Assert.That(SubmissionCount, Is.EqualTo(1));
+            Assert.That(Queue.BattleStartTick, Is.EqualTo(7u));
+            Assert.That(Manager.Exists(combatant), Is.True);
+
+            using (var world = new World("MLF Legends command test without processor"))
+                Assert.That(CombatCommandQueue.CanResetForBattle(world.EntityManager, 0), Is.False);
+        }
+
+        [Test]
         public void ResetForBattleRequiresTheProcessor()
         {
             using (var world = new World("MLF Legends command test without processor"))

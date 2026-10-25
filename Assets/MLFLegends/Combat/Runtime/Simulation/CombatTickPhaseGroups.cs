@@ -4,7 +4,8 @@ namespace MLFLegends.Combat
 {
     // Ordering anchors for the phases of one fixed simulation tick. They contain no logic and no
     // systems yet; future owners join them with [UpdateInGroup]. Order inside FixedStepSimulationSystemGroup:
-    // CombatClockSystem (first) → command collection → state update → publication. See SIMULATION.md.
+    // BattleLifecycleSystem (battle requests, before the tick advances) → CombatClockSystem → command collection
+    // → state update → publication. See SIMULATION.md.
 
     /// <summary>
     /// Base of the combat phase groups: a phase runs only while the world's clock runs, so no

@@ -136,56 +136,79 @@ namespace MLFLegends.Combat
         /// <exception cref="InvalidOperationException">The world has no command processor.</exception>
         /// <exception cref="ArgumentOutOfRangeException">
         /// <paramref name="battleStartTick"/> is before the current tick or before the previous boundary.
+        /// Checked before anything changes; <see cref="CanResetForBattle"/> tells in advance.
         /// </exception>
         public static void ResetForBattle(EntityManager entityManager, uint battleStartTick)
         {
             // Burst-compatible on purpose (no params arrays, boxing or formatted messages): #5 may call it
             // from a Burst-compiled ISystem.
-            // Queries built from an EntityManager are Persistent and stay alive until the World is disposed, and
-            // this runs on every battle start, restart and end: each one is disposed right after its last use,
-            // before any throw (Burst skips finally blocks on exceptions).
-            var builder = new EntityQueryBuilder(Allocator.Temp);
-            var queueQuery = builder.WithAllRW<CombatCommandQueue>().Build(entityManager);
-            builder.Reset();
-            var clockQuery = builder.WithAll<SimulationClock>().Build(entityManager);
-            builder.Reset();
-
-            var hasQueue = queueQuery.CalculateEntityCount() == 1;
-            var queueEntity = hasQueue ? queueQuery.GetSingletonEntity() : Entity.Null;
-            var tickInPast = hasQueue && !clockQuery.IsEmpty && battleStartTick < clockQuery.GetSingleton<SimulationClock>().Tick;
-            queueQuery.Dispose();
-            clockQuery.Dispose();
-
-            if (!hasQueue)
+            switch (CheckReset(entityManager, battleStartTick, out var queueEntity))
             {
-                builder.Dispose();
-                throw new InvalidOperationException("ResetForBattle requires exactly one CombatCommandQueue (CombatCommandProcessorSystem).");
-            }
-            if (tickInPast)
-            {
-                builder.Dispose();
-                throw new ArgumentOutOfRangeException(nameof(battleStartTick), "A battle cannot start on an already simulated tick.");
+                case ResetCheck.NoQueue:
+                    throw new InvalidOperationException("ResetForBattle requires exactly one CombatCommandQueue (CombatCommandProcessorSystem).");
+                case ResetCheck.TickInPast:
+                    throw new ArgumentOutOfRangeException(nameof(battleStartTick), "A battle cannot start on an already simulated tick.");
+                case ResetCheck.BoundaryMovesBack:
+                    throw new ArgumentOutOfRangeException(nameof(battleStartTick), "Battle boundaries never move back.");
             }
 
             var queue = entityManager.GetComponentData<CombatCommandQueue>(queueEntity);
-            if (battleStartTick < queue.m_BattleStartTick)
-            {
-                builder.Dispose();
-                throw new ArgumentOutOfRangeException(nameof(battleStartTick), "Battle boundaries never move back.");
-            }
-
             entityManager.GetBuffer<CombatCommandSubmission>(queueEntity).Clear();
             entityManager.GetBuffer<PendingCombatCommand>(queueEntity).Clear();
             entityManager.GetBuffer<CombatCommandResult>(queueEntity).Clear();
             queue.m_BattleStartTick = battleStartTick;
             entityManager.SetComponentData(queueEntity, queue);
 
+            // Queries built from an EntityManager are Persistent and stay alive until the World is disposed, and
+            // this runs on every battle start, restart and end: disposed right after its last use.
+            var builder = new EntityQueryBuilder(Allocator.Temp);
             var appliedQuery = builder.WithAllRW<AppliedCombatCommand>().Build(entityManager);
             builder.Dispose();
             var cleared = new NativeArray<AppliedCombatCommand>(appliedQuery.CalculateEntityCount(), Allocator.Temp);
             appliedQuery.CopyFromComponentDataArray(cleared);
             cleared.Dispose();
             appliedQuery.Dispose();
+        }
+
+        /// <summary>
+        /// Whether <see cref="ResetForBattle"/> with the same arguments would succeed now: the same checks,
+        /// without any side effect. Lets the battle lifecycle owner reject a request before it destroys the
+        /// previous battle's combatants, instead of failing halfway. Burst-compatible.
+        /// </summary>
+        public static bool CanResetForBattle(EntityManager entityManager, uint battleStartTick) =>
+            CheckReset(entityManager, battleStartTick, out _) == ResetCheck.Valid;
+
+        enum ResetCheck : byte
+        {
+            Valid,
+            NoQueue,
+            TickInPast,
+            BoundaryMovesBack,
+        }
+
+        /// <summary>The single set of preconditions of <see cref="ResetForBattle"/>. Never throws.</summary>
+        static ResetCheck CheckReset(EntityManager entityManager, uint battleStartTick, out Entity queueEntity)
+        {
+            // Persistent queries (see ResetForBattle) are disposed before returning.
+            var builder = new EntityQueryBuilder(Allocator.Temp);
+            var queueQuery = builder.WithAllRW<CombatCommandQueue>().Build(entityManager);
+            builder.Reset();
+            var clockQuery = builder.WithAll<SimulationClock>().Build(entityManager);
+            builder.Dispose();
+
+            var hasQueue = queueQuery.CalculateEntityCount() == 1;
+            queueEntity = hasQueue ? queueQuery.GetSingletonEntity() : Entity.Null;
+            var tickInPast = hasQueue && !clockQuery.IsEmpty && battleStartTick < clockQuery.GetSingleton<SimulationClock>().Tick;
+            queueQuery.Dispose();
+            clockQuery.Dispose();
+
+            if (!hasQueue)
+                return ResetCheck.NoQueue;
+            if (tickInPast)
+                return ResetCheck.TickInPast;
+            return battleStartTick < entityManager.GetComponentData<CombatCommandQueue>(queueEntity).m_BattleStartTick
+                ? ResetCheck.BoundaryMovesBack
+                : ResetCheck.Valid;
         }
     }
 }

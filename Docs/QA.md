@@ -78,7 +78,7 @@ The script waits for the `Unity.exe` process itself (default timeout 60 min, `-T
 - **Atomicity follow-up #14:** In `Start`/`End`, prior actors are destroyed before `ResetForBattle` validates the queue boundary. Current caller passes current clock tick so a failure is not reachable under contract, but any future erroneous boundary can leave a partial cleanup; require a preflight before destructive operations.
 - **Domain Reload disabled:** Unity Enter/Exit Play Mode with domain reload turned off was not exercised, since the agent's tests do not toggle that editor setting. Record as **NOT RUN**; include manual QA scenario in #14, do not claim a regression.
 - **Core documentation mismatch: RESOLVED.** Manager updated `Core/CombatantId.cs` XML summary and `Core/CONTRACTS.md` to state IDs are unique **within the World** and never reused across battle restarts. No code or public API behavior changed.
-- **Remaining integration boundaries:** `BattleSession.LastOutcome` reports last request in a batch rather than a per-request ledger; intentional current lightweight diagnostic. Requests currently only apply at frame boundaries, and `CombatSmokeBootstrap` may hold a static *owner token* but no static combat entities/state. Profiling 400 actors (#7) must reuse the real spawn/ID allocator path.
+- **Remaining integration boundaries:** `BattleSession.LastOutcome` reports last request in a batch rather than a per-request ledger; intentional current lightweight diagnostic. Requests currently only apply at frame boundaries (superseded by #14: start of every fixed step), and `CombatSmokeBootstrap` may hold a static *owner token* but no static combat entities/state. Profiling 400 actors (#7) must reuse the real spawn/ID allocator path.
 
 ## Stage 01 stabilization — Native lifetime review (Issue #12 / PR #15; 2026-10-25)
 
@@ -96,6 +96,14 @@ The script waits for the `Unity.exe` process itself (default timeout 60 min, `-T
 - **Agent-reported Windows checks:** PowerShell 5.1 and Unity 6000.5.4f1: EditMode **72/72 PASS**, PlayMode **6/6 PASS**, spaced ASCII project/editor paths **72/72 PASS**, mocked negative controls for invalid/missing XML, nonzero process exits, locked project, and timeout all correctly FAIL. Results reported in PR #16; manager did not personally run Unity.
 - **Nonblocking defect (Issue #17):** Under a Windows project path containing Cyrillic characters, one Burst-related test failed (EditMode **71/72**, `ResetFromABurstSystemInTheCollectionPhaseRejectsThatTicksCommands`). Script properly returned FAIL. Root cause is **unknown**, do not call it a proved Burst engine bug. Working practice meanwhile: ASCII project path; investigate later with environment and logs. Tests under Cyrillic path are **not** PASS.
 - **Next implementation: Issue #14**, battle lifecycle timing/atomicity and Bootstrap native query cleanup; #6 replay tests and #7 benchmarking remain pending its review.
+
+## Stage 01 stabilization — battle lifecycle hardening (Issue #14; agent report, IN REVIEW)
+
+- **Change:** `BattleLifecycleSystem` moved from `SimulationSystemGroup` (once per frame, before the fixed group) to the start of every fixed step, before `CombatClockSystem`; same single owner, clock and standard `FixedStepSimulationSystemGroup`. `Start`/`Restart`/`End` call the queue's own `CombatCommandQueue.CanResetForBattle` (shared checks with `ResetForBattle`) before destroying combatants and otherwise return `CommandQueueRejected` with no side effect. `BattleRequest.Submit` and `CombatSmokeBootstrap.TryGetEntityManager` dispose their `EntityQuery`.
+- **Behavior change to review:** requests now apply at the start of the next fixed step, not the next render frame. Frames without a fixed step (`Time.timeScale = 0`, frame rate above 60 Hz) apply nothing until the next step; tick timeline unchanged. PlayMode tests wait for the next tick instead of one frame.
+- **Agent-run (Unity 6000.5.4f1, batchmode, ASCII project path, `Tools/Run-UnityTests.ps1`):** EditMode **82/82 PASS** (72 existing + 10 new), PlayMode **6/6 PASS**. Negative control (lifecycle removed from the fixed step in the test world = old frame-boundary owner, and `CanResetForBattle` check removed from `Start`): 9 of the new tests FAIL as expected, e.g. "No combatant of the ended battle on tick 4" and `ArgumentOutOfRangeException` after the destroy. Manager did not run these.
+- **Query lifetime:** no leak metric measured; covered by a 50× `Restart`/`End` regression sequence through `Submit` and the existing scene-switch PlayMode test.
+- **Domain Reload disabled (manual):** checklist in `Assets/MLFLegends/Combat/Runtime/Bootstrap/BOOTSTRAP.md`, section "Manual check". **NOT RUN** (batchmode agent session; Enter Play Mode settings were not toggled). Non-blocking.
 
 ## Stage-specific profiling
 - 1v1: response timing, invalid actions, front/back guard, dash, injury capability limits.
@@ -134,3 +142,5 @@ The script waits for the `Unity.exe` process itself (default timeout 60 min, `-T
 | 2026-10-25 | Test runner supported-path execution | AGENT-REPORTED PASS | Unity EditMode 72/72, PlayMode 6/6, ASCII paths incl. spaces |
 | 2026-10-25 | Burst regression on Cyrillic project path | AGENT-REPORTED FAIL / FOLLOW-UP | EditMode 71/72, one Burst-test failure, Issue #17; root cause unknown |
 | 2026-10-25 | Battle lifecycle hardening | NEXT / OPEN | Issue #14, then #6 integration replay and #7 performance |
+| 2026-10-25 | Issue #14 Unity tests EditMode 82/82, PlayMode 6/6 + negative control | AGENT-REPORTED PASS | Branch `feature/stage01-14`; manager has not executed or inspected raw XML |
+| 2026-10-25 | Issue #14 no-domain-reload manual Play Mode checklist | NOT RUN | Checklist in Bootstrap/BOOTSTRAP.md |

@@ -69,7 +69,11 @@ namespace MLFLegends.Combat
                 return false;
 
             entityManager = world.EntityManager;
-            return !entityManager.CreateEntityQuery(typeof(BattleSession)).IsEmptyIgnoreFilter;
+            // Persistent until the World is disposed, and this runs on every enable/disable: released here.
+            var query = entityManager.CreateEntityQuery(typeof(BattleSession));
+            var hasSession = !query.IsEmptyIgnoreFilter;
+            query.Dispose();
+            return hasSession;
         }
     }
 }

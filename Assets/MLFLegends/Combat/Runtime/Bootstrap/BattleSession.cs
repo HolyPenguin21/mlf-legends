@@ -96,11 +96,20 @@ namespace MLFLegends.Combat
 
         /// <summary>End with an <see cref="BattleRequest.Owner"/> that did not start the running battle.</summary>
         NotOwner = 10,
+
+        /// <summary>
+        /// Start, Restart or End whose command queue reset is invalid on this tick
+        /// (<see cref="CombatCommandQueue.CanResetForBattle"/> is false, e.g. another caller of
+        /// <see cref="CombatCommandQueue.ResetForBattle"/> moved the boundary past the current tick).
+        /// Checked before anything is destroyed: the running battle, its combatants and IDs are kept.
+        /// </summary>
+        CommandQueueRejected = 11,
     }
 
     /// <summary>
     /// A request to the battle lifecycle. Anyone may append it (main thread); <see cref="BattleLifecycleSystem"/>
-    /// applies all requests in append order at the next boundary between fixed steps.
+    /// applies all requests in append order at the next boundary between fixed steps: the start of the next
+    /// fixed step, before its tick advances (also between catch-up steps of one frame).
     /// </summary>
     [InternalBufferCapacity(0)]
     public struct BattleRequest : IBufferElementData
@@ -132,12 +141,15 @@ namespace MLFLegends.Combat
         /// <exception cref="InvalidOperationException">The world has no <see cref="BattleLifecycleSystem"/>.</exception>
         public static void Submit(EntityManager entityManager, in BattleRequest request)
         {
+            // A query built from an EntityManager is Persistent until the World is disposed: released before any throw.
             var builder = new EntityQueryBuilder(Allocator.Temp);
             var query = builder.WithAllRW<BattleRequest>().Build(entityManager);
             builder.Dispose();
-            if (query.CalculateEntityCount() != 1)
+            var session = query.CalculateEntityCount() == 1 ? query.GetSingletonEntity() : Entity.Null;
+            query.Dispose();
+            if (session == Entity.Null)
                 throw new InvalidOperationException("BattleRequest.Submit requires exactly one BattleSession (BattleLifecycleSystem).");
-            entityManager.GetBuffer<BattleRequest>(query.GetSingletonEntity()).Add(request);
+            entityManager.GetBuffer<BattleRequest>(session).Add(request);
         }
     }
 
