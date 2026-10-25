@@ -10,7 +10,7 @@ Unity **6000.5.4f1** — 2.5D mass-action fighting game, designed for 1v1 throug
 2. Open the repository root in Unity Hub using **6000.5.4f1**.
 3. The project currently references **Universal Render Pipeline 17.5.0** and **Input System 1.19.0**. The package manifest now includes **Entities 6.5.0** and **Entities Graphics 6.5.0**; the lockfile also lists Burst 1.8.29 and Collections 6.5.0. Unity 6000.5 distributes Entities and Entities Graphics as Editor-matched core packages.
 4. In Unity Package Manager verify that all packages resolve without errors. Preserve the committed `Packages/manifest.json` and `Packages/packages-lock.json`; core-package versions follow the Editor.
-5. Pull the Stage 00 test branch/PR, then run tests from **Window > General > Test Runner** (EditMode followed by PlayMode), or on Windows use `Tools/Run-UnityTests.ps1` with Unity closed. See `Docs/QA.md` for exact commands and evidence requirements. No test is passed until actually executed.
+5. If Unity testing becomes available, run **Window > General > Test Runner** (EditMode and PlayMode), or the Windows `Tools/Run-UnityTests.ps1` script with Unity closed. See `Docs/QA.md`. **Unity testing is not required to deliver commits or merge PRs**; unexecuted checks remain recorded as NOT RUN, never reported as passed.
 
 Do not commit generated `Library/`, `Temp/`, `Logs/` or `UserSettings/`. **Do** commit relevant Unity `.meta` files.
 
@@ -24,6 +24,6 @@ Do not commit generated `Library/`, `Temp/`, `Logs/` or `UserSettings/`. **Do** 
 
 ## Working rules
 
-Current scope is **combat only**. Complete and validate duel 1v1 first, then 4v4, 16v16, 50v50, finally 200v200. All scales must use the same gameplay rules; no separate duel physics or attack pipeline. Development changes require dependency review, targeted tests, regression validation and explicit QA status.
+Current scope is **combat only**. Complete and validate duel 1v1 first, then 4v4, 16v16, 50v50, finally 200v200. All scales must use the same gameplay rules; no separate duel physics or attack pipeline. Development changes require dependency review, all **available** targeted/static checks and explicit QA status. The project owner has decided that unavailable Unity Editor tests must **not block commit, merge or push**; test evidence can follow later.
 
 Campaign aging, inheritance, recruiting and strategy simulation are deferred.
