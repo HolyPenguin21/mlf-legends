@@ -19,6 +19,17 @@
 5. Open **one PR per Issue**, targeting `main`. The agent does not merge their own PR.
 6. Report a concise list of changed files, new or removed systems, tests actually run (or NOT RUN), known risks, and PR link.
 
+## Managing parallel nonblocking follow-ups
+
+The technical manager must not leave discovered corrective work as informal remarks. Record each nonblocking fix in GitHub Issues with a precise owner, scope, regression checks and dependencies. The manager chooses when to dispatch it to an agent instead of asking the project owner to manually schedule each follow-up.
+
+- **Before a consuming task:** fix if it affects correctness, lifecycle ownership, test trustworthiness, or the measurements of a subsequent step.
+- **At the stage's stabilization window:** group narrow follow-ups after main implementation and before final integration/replay/performance checks, with separate PRs.
+- **End of stage:** defer cosmetic/low-impact cleanup not required by downstream work, while keeping open issues visible.
+- Avoid contradictory parallel edits to the same files. Only the owner-approved integration sequence determines what is ready; passing unavailable tests is never assumed.
+
+**Current Stage 01 dispatch order:** #5 main bootstrap → #12 Native Temp handling → #10 Unity test runner → #6 replay/integration tests → #7 performance baseline. #6 and #7 may run in parallel after both fixes, if agents keep distinct file ownership.
+
 ## Stage 01 integration graph
 
 ```text
