@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using MLFLegends.Combat;
@@ -13,9 +14,10 @@ using Is = UnityEngine.TestTools.Constraints.Is;
 
 namespace MLFLegends.Tests.EditMode
 {
-    // Isolated test worlds with the real clock, processor and lifecycle system. The lifecycle system is updated
-    // between fixed steps (Boundary), as SimulationSystemGroup does before FixedStepSimulationSystemGroup.
-    public class BattleLifecycleTests
+    // Isolated test worlds with the real clock, processor and lifecycle system, ordered in the fixed step as in the
+    // default world. Most tests apply requests with Boundary(): the lifecycle update alone, which is what the start of
+    // the next fixed step does before the clock advances. Tests named "...InsideAFixedStep..." go through the group.
+    public partial class BattleLifecycleTests
     {
         World m_World;
         FixedStepSimulationSystemGroup m_FixedStep;
@@ -47,8 +49,11 @@ namespace MLFLegends.Tests.EditMode
             var collection = world.CreateSystemManaged<CombatCommandCollectionSystemGroup>();
             collection.AddSystemToUpdateList(world.CreateSystem<CombatCommandProcessorSystem>());
             fixedStep.AddSystemToUpdateList(collection);
-            fixedStep.SortSystems();
+            fixedStep.AddSystemToUpdateList(world.CreateSystemManaged<CombatStateUpdateSystemGroup>());
+            fixedStep.AddSystemToUpdateList(world.CreateSystemManaged<CombatPublicationSystemGroup>());
             lifecycle = world.CreateSystem<BattleLifecycleSystem>();
+            fixedStep.AddSystemToUpdateList(lifecycle);
+            fixedStep.SortSystems();
             return world;
         }
 
@@ -93,7 +98,17 @@ namespace MLFLegends.Tests.EditMode
             }
         }
 
-        // The frame boundary where the lifecycle applies requests.
+        // Several fixed steps in one render frame (catch-up), half a tick past the last one; stays below
+        // World.MaximumDeltaTime so no tick is dropped (as in CombatCommandProcessorTests).
+        void StepInOneFrame(int ticks)
+        {
+            var dt = (double)SimulationTiming.TickDuration;
+            m_World.SetTime(new TimeData((m_Frame + ticks - 0.5) * dt, (float)(ticks * dt)));
+            m_FixedStep.Update();
+            m_Frame += (uint)ticks;
+        }
+
+        // The point where the lifecycle applies requests: the start of the next fixed step, before the clock.
         void Boundary() => m_Lifecycle.Update(m_World.Unmanaged);
 
         BattleRequestOutcome Request(BattleRequest request)
@@ -607,6 +622,244 @@ namespace MLFLegends.Tests.EditMode
         {
             Boundary();
             Assert.That(() => Boundary(), Is.Not.AllocatingGCMemory());
+        }
+
+        // ---- requests and the fixed step (#14) ----
+
+        [Test]
+        public void LifecycleRunsInTheFixedStepBeforeTheClockAdvances()
+        {
+            using var members = m_FixedStep.GetAllSystems(Allocator.Temp);
+            var lifecycle = members.IndexOf(m_Lifecycle);
+            Assert.That(lifecycle, Is.GreaterThanOrEqualTo(0));
+            Assert.That(lifecycle, Is.LessThan(members.IndexOf(m_World.GetExistingSystem<CombatClockSystem>())));
+            Assert.That(lifecycle, Is.LessThan(members.IndexOf(m_World.GetExistingSystem<CombatCommandCollectionSystemGroup>())));
+        }
+
+        [TestCase(0)]
+        [TestCase(3)]
+        public void RequestFromAFrameIsAppliedAtTheStartOfTheNextFixedStep(int ticksBefore)
+        {
+            Step(ticksBefore);
+            BattleRequest.Submit(Manager, BattleRequest.Start(BattleSetup.Default));
+            if (ticksBefore > 0)
+            {
+                m_FixedStep.Update(); // a render frame that runs no fixed step
+                Assert.That(Session.State, Is.EqualTo(BattleState.Idle), "Nothing is applied, and nothing simulated, without a step.");
+            }
+
+            Step();
+
+            var session = Session;
+            Assert.That(session.LastOutcome, Is.EqualTo(BattleRequestOutcome.Started));
+            Assert.That(session.BattleStartTick, Is.EqualTo((uint)ticksBefore), "BattleStartTick is the last completed tick.");
+            Assert.That(Queue.BattleStartTick, Is.EqualTo(session.BattleStartTick));
+            Assert.That(Tick, Is.EqualTo(session.BattleStartTick + 1));
+            Assert.That(session.RelativeTick(Tick), Is.EqualTo(1u), "The step that applied the start simulates relative tick 1.");
+            Assert.That(Manager.GetComponentData<AppliedCombatCommand>(Find(session.HumanCombatant)).Command.Tick, Is.EqualTo(Tick),
+                "The new combatants already took part in that tick's command processing.");
+        }
+
+        [TestCase(typeof(CombatCommandCollectionSystemGroup))]
+        [TestCase(typeof(CombatStateUpdateSystemGroup))]
+        [TestCase(typeof(CombatPublicationSystemGroup))]
+        public void EndRequestedInsideAFixedStepStopsTheBattleBeforeTheNextCatchUpTick(Type phase)
+        {
+            var recorder = AddToPhase<TickRecorder>(typeof(CombatPublicationSystemGroup));
+            var requester = AddToPhase<InStepRequester>(phase);
+            Request(BattleRequest.Start(BattleSetup.Default, owner: 5));
+            Step(2);
+            var battle = Session;
+            var endTick = Tick + 1;
+            // Commands of this battle for every tick of the coming catch-up frame.
+            for (var t = endTick; t < endTick + 3; t++)
+                Submit(Cmd(battle.HumanCombatant, t), Cmd(battle.AiCombatant, t, source: CommandSource.AI));
+            requester.OnTick = endTick;
+            requester.Request = BattleRequest.End(owner: 5);
+            recorder.Ticks.Clear();
+
+            StepInOneFrame(3);
+
+            Assert.That(Tick, Is.EqualTo(endTick + 2), "One render frame ran three catch-up ticks.");
+            Assert.That(recorder.Ticks.Select(r => r.Tick), Is.EqualTo(new[] { endTick, endTick + 1, endTick + 2 }));
+            var ids = new[] { battle.HumanCombatant.Value, battle.AiCombatant.Value };
+            Assert.That(recorder.Ticks[0].InCombat, Is.EqualTo(ids), "The tick that requested the end completes.");
+            Assert.That(recorder.Ticks[0].Accepted, Is.EqualTo(2));
+            foreach (var later in recorder.Ticks.Skip(1))
+            {
+                Assert.That(later.InCombat, Is.Empty, $"No combatant of the ended battle on tick {later.Tick}.");
+                Assert.That(later.Results, Is.Zero, $"No command of the ended battle is processed on tick {later.Tick}.");
+            }
+
+            Assert.That(Session.State, Is.EqualTo(BattleState.Idle));
+            Assert.That(Session.LastOutcome, Is.EqualTo(BattleRequestOutcome.Ended));
+            Assert.That(Queue.BattleStartTick, Is.EqualTo(endTick), "The queue is reset at the end of the requesting tick.");
+            Assert.That(PendingCount, Is.Zero);
+            Assert.That(CombatantQuery.CalculateEntityCount(), Is.Zero);
+        }
+
+        [Test]
+        public void RestartRequestedInsideAFixedStepStartsTheNextBattleOnTheFollowingCatchUpTick()
+        {
+            var recorder = AddToPhase<TickRecorder>(typeof(CombatPublicationSystemGroup));
+            var requester = AddToPhase<InStepRequester>(typeof(CombatStateUpdateSystemGroup));
+            Request(BattleRequest.Start(BattleSetup.Default, owner: 1));
+            Step(2);
+            var first = Session;
+            var restartTick = Tick + 1;
+            for (var t = restartTick; t < restartTick + 3; t++)
+                Submit(Cmd(first.HumanCombatant, t), Cmd(first.AiCombatant, t, source: CommandSource.AI));
+            requester.OnTick = restartTick;
+            requester.Request = BattleRequest.Restart(OtherSetup, owner: 2);
+            recorder.Ticks.Clear();
+
+            StepInOneFrame(3);
+
+            var second = Session;
+            Assert.That(second.LastOutcome, Is.EqualTo(BattleRequestOutcome.Started));
+            Assert.That(second.BattleNumber, Is.EqualTo(2u));
+            Assert.That(second.Owner, Is.EqualTo(2u));
+            Assert.That(second.BattleStartTick, Is.EqualTo(restartTick), "The requesting tick is the last tick of battle 1.");
+            Assert.That(Queue.BattleStartTick, Is.EqualTo(restartTick));
+            Assert.That(LiveIds, Is.EqualTo(new[] { 3u, 4u }), "Exactly two fresh fighters.");
+            AssertCombatant(second.HumanCombatant, OtherSetup.Human);
+
+            Assert.That(recorder.Ticks[0].InCombat, Is.EqualTo(new[] { 1u, 2u }));
+            Assert.That(recorder.Ticks[1].InCombat, Is.EqualTo(new[] { 3u, 4u }));
+            Assert.That(second.RelativeTick(recorder.Ticks[1].Tick), Is.EqualTo(1u), "The next catch-up tick is relative tick 1.");
+            Assert.That(recorder.Ticks.Skip(1).Select(r => r.Results), Is.All.Zero, "Battle-1 commands never reach battle 2.");
+            Assert.That(Manager.GetComponentData<AppliedCombatCommand>(Find(second.HumanCombatant)).WasSubmitted, Is.False);
+        }
+
+        [Test]
+        public void InvalidQueueResetIsRejectedBeforeAnyCombatantIsDestroyed()
+        {
+            Request(BattleRequest.Start(BattleSetup.Default, owner: 1));
+            Step(2);
+            var before = Session;
+            var entities = LiveIds.Select(id => Find(new CombatantId { Value = id })).ToArray();
+            var sessionEntity = Manager.CreateEntityQuery(typeof(BattleSession)).GetSingletonEntity();
+
+            // A foreign, erroneous caller moves the queue boundary past the current tick.
+            var boundary = Tick + 3;
+            CombatCommandQueue.ResetForBattle(Manager, boundary);
+            Assert.That(CombatCommandQueue.CanResetForBattle(Manager, Tick), Is.False);
+
+            Assert.That(Request(BattleRequest.Restart(OtherSetup, owner: 2)), Is.EqualTo(BattleRequestOutcome.CommandQueueRejected));
+            Assert.That(Request(BattleRequest.End(owner: 1)), Is.EqualTo(BattleRequestOutcome.CommandQueueRejected));
+            Assert.That(Request(BattleRequest.Start(OtherSetup)), Is.EqualTo(BattleRequestOutcome.AlreadyActive));
+
+            var after = Session;
+            Assert.That(after.State, Is.EqualTo(BattleState.Active));
+            Assert.That(after.Owner, Is.EqualTo(1u));
+            Assert.That(after.BattleNumber, Is.EqualTo(before.BattleNumber));
+            Assert.That(after.BattleStartTick, Is.EqualTo(before.BattleStartTick));
+            Assert.That(after.HumanCombatant, Is.EqualTo(before.HumanCombatant));
+            Assert.That(after.AiCombatant, Is.EqualTo(before.AiCombatant));
+            Assert.That(LiveIds.Select(id => Find(new CombatantId { Value = id })), Is.EqualTo(entities), "The same entities survive.");
+            Assert.That(Manager.GetComponentData<CombatantIdAllocator>(sessionEntity).LastIssued, Is.EqualTo(2u), "No ID consumed.");
+            Assert.That(Queue.BattleStartTick, Is.EqualTo(boundary), "The lifecycle never resets a rejected queue.");
+
+            // A rejection does not stop the rest of the batch.
+            BattleRequest.Submit(Manager, BattleRequest.Restart(OtherSetup, owner: 2));
+            BattleRequest.Submit(Manager, BattleRequest.Despawn(before.AiCombatant));
+            Boundary();
+            Assert.That(Session.LastOutcome, Is.EqualTo(BattleRequestOutcome.Despawned));
+            Assert.That(LiveIds, Is.EqualTo(new[] { before.HumanCombatant.Value }));
+
+            // Once the clock reaches the boundary the queue accepts the reset again.
+            Step(3);
+            Assert.That(Tick, Is.EqualTo(boundary));
+            Assert.That(Request(BattleRequest.Restart(OtherSetup, owner: 2)), Is.EqualTo(BattleRequestOutcome.Started));
+            Assert.That(Session.BattleStartTick, Is.EqualTo(boundary));
+            Assert.That(LiveIds, Is.EqualTo(new[] { 3u, 4u }));
+        }
+
+        // Regression sequence for the released Submit query; not a leak measurement.
+        [Test]
+        public void RepeatedRestartAndEndThroughTheFixedStepKeepOneSessionAndTwoFighters()
+        {
+            var seen = new HashSet<uint>();
+            for (var battle = 1u; battle <= 50; battle++)
+            {
+                BattleRequest.Submit(Manager, BattleRequest.Restart(BattleSetup.Default, owner: battle));
+                Step();
+                Assert.That(Session.BattleNumber, Is.EqualTo(battle));
+                Assert.That(Session.RelativeTick(Tick), Is.EqualTo(1u));
+                Assert.That(LiveIds.Length, Is.EqualTo(2));
+                foreach (var id in LiveIds)
+                    Assert.That(seen.Add(id), Is.True, $"ID {id} reused in battle {battle}.");
+
+                BattleRequest.Submit(Manager, BattleRequest.End(owner: battle));
+                Step();
+                Assert.That(Session.State, Is.EqualTo(BattleState.Idle));
+                Assert.That(CombatantQuery.CalculateEntityCount(), Is.Zero);
+            }
+
+            Assert.That(Manager.CreateEntityQuery(typeof(BattleSession)).CalculateEntityCount(), Is.EqualTo(1));
+        }
+
+        // ---- test systems ----
+
+        T AddToPhase<T>(Type phase) where T : SystemBase, new()
+        {
+            var system = m_World.CreateSystemManaged<T>();
+            var group = (ComponentSystemGroup)m_World.GetExistingSystemManaged(phase);
+            group.AddSystemToUpdateList(system);
+            group.SortSystems();
+            return system;
+        }
+
+        // A requester inside the fixed step (e.g. a future defeat owner), in the phase the test chooses.
+        [DisableAutoCreation]
+        partial class InStepRequester : SystemBase
+        {
+            public uint OnTick;
+            public BattleRequest Request;
+
+            protected override void OnUpdate()
+            {
+                if (SystemAPI.GetSingleton<SimulationClock>().Tick == OnTick)
+                    BattleRequest.Submit(EntityManager, Request);
+            }
+        }
+
+        // What each tick simulated, read in the publication phase.
+        [DisableAutoCreation]
+        partial class TickRecorder : SystemBase
+        {
+            public readonly List<TickRecord> Ticks = new List<TickRecord>();
+            EntityQuery m_InCombat;
+
+            protected override void OnCreate() => m_InCombat = GetEntityQuery(ComponentType.ReadOnly<CombatantId>(), ComponentType.ReadOnly<InCombat>());
+
+            protected override void OnUpdate()
+            {
+                using var ids = m_InCombat.ToComponentDataArray<CombatantId>(Allocator.Temp);
+                var results = SystemAPI.GetSingletonBuffer<CombatCommandResult>(true);
+                var accepted = 0;
+                for (var i = 0; i < results.Length; i++)
+                {
+                    if (results[i].Outcome == CommandOutcome.Accepted)
+                        accepted++;
+                }
+
+                Ticks.Add(new TickRecord
+                {
+                    Tick = SystemAPI.GetSingleton<SimulationClock>().Tick,
+                    InCombat = ids.ToArray().Select(id => id.Value).OrderBy(v => v).ToArray(),
+                    Accepted = accepted,
+                    Results = results.Length,
+                });
+            }
+        }
+
+        struct TickRecord
+        {
+            public uint Tick;
+            public uint[] InCombat;
+            public int Accepted;
+            public int Results;
         }
     }
 }

@@ -9,18 +9,21 @@ namespace MLFLegends.Combat
     /// allocates <see cref="CombatantId"/>. Applies <see cref="BattleRequest"/>s between fixed steps.
     /// </summary>
     /// <remarks>
-    /// Runs every frame right before <see cref="FixedStepSimulationSystemGroup"/>, where
-    /// <see cref="SimulationClock.Tick"/> is the last completed tick: a battle started here has
-    /// <c>BattleStartTick = Tick</c> and its first simulated tick is <c>Tick + 1</c>.
-    /// Start/restart order: destroy the previous battle's combatants → <see cref="CombatCommandQueue.ResetForBattle"/>
-    /// → spawn the new combatants with fresh IDs. Never touches the <see cref="World"/>, the clock or entities
-    /// without <see cref="CombatantId"/>. Lifetime equals the World; <c>OnCreate</c> throws if a
+    /// Runs at the start of every fixed step, before <see cref="CombatClockSystem"/> advances the tick, where
+    /// <see cref="SimulationClock.Tick"/> is still the last completed tick: a battle started here has
+    /// <c>BattleStartTick = Tick</c> and its first simulated tick is <c>Tick + 1</c>, the step that follows
+    /// in the same update. Because it runs before every catch-up step, a request made during tick T (e.g. an
+    /// end of battle decided in the state-update phase) is applied before tick T + 1 runs any combat phase.
+    /// Start/restart order: check every precondition (including <see cref="CombatCommandQueue.CanResetForBattle"/>)
+    /// → destroy the previous battle's combatants → <see cref="CombatCommandQueue.ResetForBattle"/> → spawn the
+    /// new combatants with fresh IDs. Never touches the <see cref="World"/>, the clock or entities without
+    /// <see cref="CombatantId"/>. Lifetime equals the World; <c>OnCreate</c> throws if a
     /// <see cref="BattleSession"/> already exists, so a world never has two lifecycle owners. See BOOTSTRAP.md.
     /// </remarks>
     [BurstCompile]
-    [UpdateInGroup(typeof(SimulationSystemGroup), OrderFirst = true)]
-    [UpdateAfter(typeof(BeginSimulationEntityCommandBufferSystem))]
-    [UpdateBefore(typeof(FixedStepSimulationSystemGroup))]
+    [UpdateInGroup(typeof(FixedStepSimulationSystemGroup), OrderFirst = true)]
+    [UpdateAfter(typeof(BeginFixedStepSimulationEntityCommandBufferSystem))]
+    [UpdateBefore(typeof(CombatClockSystem))]
     public partial struct BattleLifecycleSystem : ISystem
     {
         Entity m_Session;
@@ -92,7 +95,10 @@ namespace MLFLegends.Combat
                         return BattleRequestOutcome.NotActive;
                     if (request.Owner != 0 && request.Owner != session.Owner)
                         return BattleRequestOutcome.NotOwner;
-                    DestroyCombatants(entityManager);
+                    var tick = CurrentTick;
+                    if (!CombatCommandQueue.CanResetForBattle(entityManager, tick))
+                        return BattleRequestOutcome.CommandQueueRejected;
+                    DestroyCombatants(entityManager, tick);
                     session.Finish();
                     return BattleRequestOutcome.Ended;
                 case BattleRequestKind.Despawn:
@@ -115,26 +121,33 @@ namespace MLFLegends.Combat
                 return BattleRequestOutcome.AlreadyActive;
             if (m_RunningClock.IsEmpty)
                 return BattleRequestOutcome.ClockStopped;
+            var battleStartTick = CurrentTick;
+            if (!CombatCommandQueue.CanResetForBattle(entityManager, battleStartTick))
+                return BattleRequestOutcome.CommandQueueRejected;
             if (!allocator.TryReserve(2, out var first))
                 return BattleRequestOutcome.IdsExhausted;
 
             // Also drops the previous battle's command boundary, pending commands and results.
-            var battleStartTick = DestroyCombatants(entityManager);
+            DestroyCombatants(entityManager, battleStartTick);
             var human = Spawn(entityManager, new CombatantId { Value = first }, setup.Human);
             var ai = Spawn(entityManager, new CombatantId { Value = first + 1 }, setup.Ai);
             session.Begin(battleStartTick, request.Owner, human, ai);
             return BattleRequestOutcome.Started;
         }
 
-        /// <summary>Destroys every combatant, then clears the command queue at the current tick, which it returns.</summary>
-        uint DestroyCombatants(EntityManager entityManager)
+        /// <summary>Last completed tick: this system runs before the clock advances in the fixed step.</summary>
+        uint CurrentTick => m_Clock.GetSingleton<SimulationClock>().Tick;
+
+        /// <summary>
+        /// Destroys every combatant, then clears the command queue at <paramref name="tick"/>. Callers check
+        /// <see cref="CombatCommandQueue.CanResetForBattle"/> first, so the reset cannot throw after the destroy.
+        /// </summary>
+        void DestroyCombatants(EntityManager entityManager, uint tick)
         {
             if (!m_Combatants.IsEmptyIgnoreFilter)
                 entityManager.DestroyEntity(m_Combatants);
 
-            var tick = m_Clock.GetSingleton<SimulationClock>().Tick;
             CombatCommandQueue.ResetForBattle(entityManager, tick);
-            return tick;
         }
 
         CombatantId Spawn(EntityManager entityManager, CombatantId id, in CombatantSetup setup)

@@ -40,6 +40,7 @@ World time comes from Entities' `UpdateWorldTimeSystem`: `UnityEngine.Time.delta
 SimulationSystemGroup
 └─ FixedStepSimulationSystemGroup                  (runs N times per frame, N = elapsed / TickDuration)
    ├─ BeginFixedStepSimulationEntityCommandBufferSystem   (Unity, OrderFirst)
+   ├─ BattleLifecycleSystem                               (OrderFirst, #5/#14) battle requests; Tick = last completed tick
    ├─ CombatClockSystem                                   (OrderFirst) Tick += 1
    ├─ CombatCommandCollectionSystemGroup                  producers in fixed order, then #4 processor (OrderLast)
    ├─ CombatStateUpdateSystemGroup                        single owners of combat state (Stage 02+)
@@ -48,6 +49,9 @@ SimulationSystemGroup
 ```
 
 - The tick number of the step is available before commands for that step are collected.
+- The battle lifecycle owner runs before the clock, i.e. at the boundary between two steps, also between the
+  catch-up steps of one frame. It reads the clock and never writes it (see `Bootstrap/BOOTSTRAP.md`); it is not
+  a combat phase and also runs while the clock is stopped, so a battle can still be ended.
 - Future systems join a phase with `[UpdateInGroup(typeof(<phase group>))]`; they never update
   `SimulationClock` and never run combat logic outside these groups.
 - Only owners from later issues fill the groups; no placeholder processors are added here.
