@@ -1,6 +1,6 @@
 # MLF Legends — Quality assurance and evidence
 
-**Scope note:** GitHub repository and serialized Unity project settings can be reviewed, but compilation or play-mode execution has **not** been performed by this assistant. Never confuse configuration inspection with passed Editor tests.
+**Scope note:** GitHub repository and serialized Unity project settings can be reviewed, but Editor tests have **not** been performed directly by this assistant. On **2026-10-25**, the project owner reported **all Stage 00 tests PASSED**. This is an **owner-reported PASS**, without attached XML/log evidence; it is not an independently audited run.
 
 **Non-blocking delivery rule (approved 2026-10-25):** The owner currently cannot run Unity tests from their environment. This MUST NOT block committing, merging or pushing requested changes, nor prevent moving on to subsequent implementation tasks. Perform every feasible static check, label Unity checks **NOT RUN**, record the residual risk and verify later when execution becomes possible. Delivery is not the same as test approval.
 
@@ -17,10 +17,10 @@
 - [ ] Verify Unity Editor imports the two core packages without package or compiler errors.
 - [ ] Verify package dependency resolution in the editor.
 - [x] Created EditMode and PlayMode test assemblies with committed `.meta` GUIDs; staged ECS lifecycle, URP asset, and SampleScene load smoke tests on feature branch.
-- [ ] Execute test suites successfully in Unity Editor; capture results XML/Console.
-- [ ] Open a gameplay smoke scene and check Console/Play Mode.
+- [x] **OWNER-REPORTED PASS (2026-10-25):** all Stage 00 EditMode and PlayMode tests passed, per project owner. XML/Editor logs not provided; independent verification not performed.
+- [ ] Retain optional independent scene/Console review for later; owner-reported passing PlayMode test includes existing SampleScene load.
 - [ ] CI remains pending local tests and a viable Unity license/runner strategy; no GitHub Actions workflow currently configured.
-- [ ] Log test evidence; only then promote Stage 00 to VERIFIED.
+- [x] Record owner-reported test PASS and accept Stage 00 for planning purposes. CI and independent log review remain optional follow-ups; do not represent them as completed.
 
 ## How to run tests (Windows; Unity Editor must be closed)
 
