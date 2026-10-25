@@ -5,8 +5,8 @@
 ## Target platform and project state
 - Unity **6000.5.4f1**, Universal 3D URP **17.5.0**, 3D environment.
 - Existing repo includes Unity template project. URP renderer is assigned in GraphicsSettings and QualitySettings.
-- Initial template packages include Input System 1.19.0, Burst 1.8.29 transitively, Collections 6.5.0 transitively. **Entities and Entities Graphics are not yet installed**.
-- Core combat design must not assume installed ECS APIs until versions are resolved and compiled in Editor.
+- Initial template packages include Input System 1.19.0, Burst 1.8.29 transitively, Collections 6.5.0 transitively. **Entities 6.5.0 and Entities Graphics 6.5.0 are installed in manifest and package lock**.
+- Use the ECS APIs bundled with Unity 6000.5.4f1 and Entities 6.5.0; Stage 00 test pass was reported by the project owner, with logs unavailable for independent review.
 
 ## Architectural goals
 One authoritative sim handles player, duel AI and hundreds of combatants; presentation, UI, VFX and animation never apply damage or dictate hit frames. Use Unity ECS/DOTS + Burst for performance-critical processing, with a fixed simulation step. Rendering frame rate is independent. The combat core must remain applicable to 200 vs 200 even during initial 1v1 tuning.
