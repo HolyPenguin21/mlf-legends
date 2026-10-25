@@ -64,8 +64,10 @@ SimulationSystemGroup
   the clock and every phase in that same step. The battle must end.
 - The tick is **world-scoped, not battle-scoped**: it counts fixed steps since the world was created,
   including time before any combatant exists. Loading a Unity scene does not reset it (the default
-  world outlives scenes). Consumers that need "ticks since battle start" (replays #6, logs) store the
-  battle's start tick; they never reset or rewrite the clock.
+  world outlives scenes). Bootstrap (#5) records `BattleStartTick = SimulationClock.Tick` at a
+  fixed-tick-safe boundary; first battle action is on absolute tick `BattleStartTick + 1`.
+  Replay tests (#6) use `relativeTick = absoluteTick - BattleStartTick`. This is not a second
+  accumulator or clock; nothing resets or rewrites the World clock.
 
 ## Lifetime and worlds
 - Clock lifetime = `World` lifetime. `CombatClockSystem` is the only creator and destroyer; nobody
@@ -76,8 +78,11 @@ SimulationSystemGroup
   `SimulationClock` entity.
 - No static state. Exiting Play Mode disposes the default world with its clock; entering Play Mode
   again (domain reload on or off) creates a new world whose clock starts at `0`. A battle restart that
-  needs `Tick` back at `0` recreates the world (#5 owns battle bootstrap and decides whether that is
-  needed); there is no in-place reset and no second writer.
+  begins a new battle **in the same default World**, without resetting the World clock. Bootstrap
+  (#5) clears only prior battle-owned entities and state, invokes the canonical command-queue cleanup
+  (#4), preserves monotonic non-reused Combatant IDs within the World, captures a new battle start
+  tick and spawns fresh fighters. Real World disposal is separate (Play Mode/app shutdown).
+  There is no in-place clock reset and no second writer.
 - Default runtime world: auto-created through the default `WorldSystemFilter` (game worlds only, not
   the Editor world). Tests build an isolated `World`, create `FixedStepSimulationSystemGroup` first and
   then `CombatClockSystem`, and call the group `Update()` directly; that world never touches the
