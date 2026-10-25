@@ -42,11 +42,14 @@
 - [x] URP 17.5.0 referenced in manifest and URP assets selected in Graphics and PC Quality settings.
 - [x] Initial documentation created in `Docs/`.
 - [ ] Confirm 3D renderer asset and smoke scene are valid inside Editor.
-- [ ] Install and **resolve in Unity** compatible Entities, Burst, Collections and optional Entities Graphics packages; currently Entities / Entities Graphics are missing in manifest.
+- [x] Entities **6.5.0** and Entities Graphics **6.5.0** are declared and locked; Burst **1.8.29** and Collections **6.5.0** also appear in lockfile (configuration verified).
+- [ ] Confirm the Editor imports and resolves all core/registry packages without errors (execution pending).
 - [ ] Record and commit dependency versions after Package Manager resolution.
-- [ ] Define asmdefs and baseline EditMode test, set up play-mode smoke test.
-- [ ] Run Editor C# compile without errors and smoke scene in Play Mode.
-- [ ] Establish GitHub Actions checks with suitable Unity licensing; otherwise document blocker and local checks.
+- [x] Add separate EditMode/PlayMode test assemblies, ECS/URP unit smoke tests and existing SampleScene load test on Stage 00 feature branch.
+- [x] Add a Windows PowerShell test runner and ignore generated results.
+- [ ] Run and pass the EditMode and PlayMode tests in Editor and record XML/Console evidence.
+- [ ] Verify Editor C# compile without errors and load SampleScene in Play Mode (not yet executed).
+- [ ] Evaluate GitHub Actions Unity test runner and licensing after local tests pass; CI currently deferred, not configured.
 - [ ] Log all test evidence and close stage 00 only when actually verified.
 
 ## Delivery policy
