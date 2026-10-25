@@ -20,6 +20,9 @@
 - Implementation roadmap 00–13, quality gates, maintainable clear ownership and systematic dependency checks.
 - **Delivery policy (2026-10-25): Unity runtime/EditMode/PlayMode checks are NOT a blocking condition for commit, PR merge, push or continued implementation when the user cannot execute them.** Always run feasible static checks, mark unexecuted Unity checks **NOT RUN** in QA, and leave them for later verification. Never claim unexecuted tests passed; distinguish delivery from verified completion.
 
+- **Stage 00 (2026-10-25):** owner confirmed all prepared Unity tests passed. Record **OWNER-REPORTED PASS**, without asserting the assistant independently reviewed run logs.
+- **Agent management (2026-10-25):** assistant prepares GitHub Issues with technical scope, dependencies, acceptance criteria and PR review; Stage 01 is broken down into Issues #2–#7. Other agents work on separate branches, do not merge independently. Manager keeps ROADMAP and QA current.
+
 ## Deferred but previously discussed — campaign
 - Strategic campaign is turn-based with months or years per turn.
 - Individual character age, illness, injury, potential growth/decline, inheritance, childbirth and recruitment.
