@@ -7,12 +7,25 @@ namespace MLFLegends.Combat
     // CombatClockSystem (first) → command collection → state update → publication. See SIMULATION.md.
 
     /// <summary>
+    /// Base of the combat phase groups: a phase runs only while the world's clock runs, so no
+    /// combat system ever updates without a freshly advanced <see cref="SimulationClock.Tick"/>.
+    /// </summary>
+    public abstract partial class CombatTickPhaseSystemGroup : ComponentSystemGroup
+    {
+        protected override void OnCreate()
+        {
+            base.OnCreate();
+            RequireForUpdate<SimulationClockRunning>();
+        }
+    }
+
+    /// <summary>
     /// Phase 1 of a tick: producers (player input adapter, AI) write their <c>CombatCommand</c> for the
     /// current <see cref="SimulationClock.Tick"/> in a fixed order; the single command processor (#4)
     /// runs last in this group and decides which commands are accepted.
     /// </summary>
     [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
-    public partial class CombatCommandCollectionSystemGroup : ComponentSystemGroup
+    public partial class CombatCommandCollectionSystemGroup : CombatTickPhaseSystemGroup
     {
     }
 
@@ -22,7 +35,7 @@ namespace MLFLegends.Combat
     /// </summary>
     [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
     [UpdateAfter(typeof(CombatCommandCollectionSystemGroup))]
-    public partial class CombatStateUpdateSystemGroup : ComponentSystemGroup
+    public partial class CombatStateUpdateSystemGroup : CombatTickPhaseSystemGroup
     {
     }
 
@@ -32,7 +45,7 @@ namespace MLFLegends.Combat
     /// </summary>
     [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
     [UpdateAfter(typeof(CombatStateUpdateSystemGroup))]
-    public partial class CombatPublicationSystemGroup : ComponentSystemGroup
+    public partial class CombatPublicationSystemGroup : CombatTickPhaseSystemGroup
     {
     }
 }

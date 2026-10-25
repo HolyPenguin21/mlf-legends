@@ -3,6 +3,8 @@ using MLFLegends.Combat;
 using NUnit.Framework;
 using Unity.Core;
 using Unity.Entities;
+using UnityEngine;
+using UnityEngine.TestTools;
 using UnityEngine.TestTools.Constraints;
 using Is = UnityEngine.TestTools.Constraints.Is;
 
@@ -171,30 +173,31 @@ namespace MLFLegends.Tests.EditMode
         }
 
         [Test]
+        public void ClockOwnsTheFixedStepTimestep()
+        {
+            using (var world = new World("MLF Legends clock timestep test"))
+            {
+                var fixedStep = world.CreateSystemManaged<FixedStepSimulationSystemGroup>();
+                fixedStep.Timestep = 0.5f; // anything but the Unity default, which also happens to be 1/60
+                world.CreateSystem<CombatClockSystem>();
+                Assert.That(fixedStep.Timestep, Is.EqualTo(SimulationTiming.TickDuration));
+            }
+        }
+
+        [Test]
+        public void ClockCreationFailsWithoutAFixedStepGroup()
+        {
+            using (var world = new World("MLF Legends clock without fixed step"))
+            {
+                Assert.That(() => world.CreateSystem<CombatClockSystem>(), Throws.Exception);
+                Assert.That(ClockQuery(world).CalculateEntityCount(), Is.Zero);
+            }
+        }
+
+        [Test]
         public void TickIsAdvancedBeforeEveryCombatPhaseInPhaseOrder()
         {
-            var log = new List<string>();
-            var phases = new ComponentSystemGroup[]
-            {
-                m_World.CreateSystemManaged<CombatCommandCollectionSystemGroup>(),
-                m_World.CreateSystemManaged<CombatStateUpdateSystemGroup>(),
-                m_World.CreateSystemManaged<CombatPublicationSystemGroup>(),
-            };
-            var probes = new PhaseProbe[]
-            {
-                m_World.CreateSystemManaged<CommandCollectionProbe>(),
-                m_World.CreateSystemManaged<StateUpdateProbe>(),
-                m_World.CreateSystemManaged<PublicationProbe>(),
-            };
-
-            // Add in reverse so the order comes from the attributes, not from insertion order.
-            for (var i = phases.Length - 1; i >= 0; i--)
-            {
-                probes[i].Log = log;
-                phases[i].AddSystemToUpdateList(probes[i]);
-                m_FixedStep.AddSystemToUpdateList(phases[i]);
-            }
-            m_FixedStep.SortSystems();
+            var log = AddPhasesWithProbes(m_World, m_FixedStep);
 
             RenderOneTickPerFrame(m_World, m_FixedStep, ref m_Frame);
             RenderOneTickPerFrame(m_World, m_FixedStep, ref m_Frame);
@@ -204,6 +207,73 @@ namespace MLFLegends.Tests.EditMode
                 "collection:1", "state:1", "publication:1",
                 "collection:2", "state:2", "publication:2",
             }));
+        }
+
+        [Test]
+        public void CombatPhasesDoNotRunWithoutAClock()
+        {
+            using (var world = new World("MLF Legends phases without clock"))
+            {
+                var fixedStep = world.CreateSystemManaged<FixedStepSimulationSystemGroup>();
+                var log = AddPhasesWithProbes(world, fixedStep);
+
+                uint frame = 0;
+                for (var i = 0; i < 3; i++)
+                    RenderOneTickPerFrame(world, fixedStep, ref frame);
+
+                Assert.That(log, Is.Empty);
+            }
+        }
+
+        [Test]
+        public void LastTickStopsTheClockAndEveryPhaseInsteadOfRepeatingATick()
+        {
+            var log = AddPhasesWithProbes(m_World, m_FixedStep);
+            var manager = m_World.EntityManager;
+            var clockEntity = ClockQuery(m_World).GetSingletonEntity();
+            manager.SetComponentData(clockEntity, SimulationClock.AtTick(SimulationClock.LastTick - 1));
+
+            RenderOneTickPerFrame(m_World, m_FixedStep, ref m_Frame);
+            var last = SimulationClock.LastTick;
+            Assert.That(Tick(m_World), Is.EqualTo(last));
+            Assert.That(log, Is.EqualTo(new[] { $"collection:{last}", $"state:{last}", $"publication:{last}" }));
+
+            log.Clear();
+            LogAssert.Expect(LogType.Error, "SimulationClock reached its last tick; the clock and combat phases stopped.");
+            RenderOneTickPerFrame(m_World, m_FixedStep, ref m_Frame);
+            RenderOneTickPerFrame(m_World, m_FixedStep, ref m_Frame);
+
+            Assert.That(Tick(m_World), Is.EqualTo(last), "The tick never wraps to NoTick.");
+            Assert.That(log, Is.Empty, "No phase may run again with an already simulated tick.");
+            Assert.That(manager.HasComponent<SimulationClockRunning>(clockEntity), Is.False);
+            Assert.That(ClockQuery(m_World).CalculateEntityCount(), Is.EqualTo(1));
+        }
+
+        static List<string> AddPhasesWithProbes(World world, FixedStepSimulationSystemGroup fixedStep)
+        {
+            var log = new List<string>();
+            var phases = new ComponentSystemGroup[]
+            {
+                world.CreateSystemManaged<CombatCommandCollectionSystemGroup>(),
+                world.CreateSystemManaged<CombatStateUpdateSystemGroup>(),
+                world.CreateSystemManaged<CombatPublicationSystemGroup>(),
+            };
+            var probes = new PhaseProbe[]
+            {
+                world.CreateSystemManaged<CommandCollectionProbe>(),
+                world.CreateSystemManaged<StateUpdateProbe>(),
+                world.CreateSystemManaged<PublicationProbe>(),
+            };
+
+            // Add in reverse so the order comes from the attributes, not from insertion order.
+            for (var i = phases.Length - 1; i >= 0; i--)
+            {
+                probes[i].Log = log;
+                phases[i].AddSystemToUpdateList(probes[i]);
+                fixedStep.AddSystemToUpdateList(phases[i]);
+            }
+            fixedStep.SortSystems();
+            return log;
         }
 
         abstract partial class PhaseProbe : SystemBase

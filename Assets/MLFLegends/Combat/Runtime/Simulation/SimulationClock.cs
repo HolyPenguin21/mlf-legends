@@ -55,5 +55,20 @@ namespace MLFLegends.Combat
             m_Tick = next;
             return true;
         }
+
+        /// <summary>Test seam only: a clock positioned at <paramref name="tick"/>.</summary>
+        internal static SimulationClock AtTick(uint tick) => new SimulationClock { m_Tick = tick };
+    }
+
+    /// <summary>
+    /// Tag on the clock entity while the clock can still advance. The clock and every combat phase
+    /// group require it, so no combat phase runs in a world without a clock or after the clock stopped.
+    /// </summary>
+    /// <remarks>
+    /// Added and removed only by <see cref="CombatClockSystem"/>. A plain (non-enableable) tag on
+    /// purpose: <c>RequireForUpdate</c> ignores the enabled state of enableable components.
+    /// </remarks>
+    public struct SimulationClockRunning : IComponentData
+    {
     }
 }

@@ -10,9 +10,9 @@ namespace MLFLegends.Combat
     /// the start of every fixed simulation step, before any combat phase of that step runs.
     /// </summary>
     /// <remarks>
-    /// Lifetime equals the <see cref="World"/>: <c>OnCreate</c> creates the one clock singleton and
-    /// applies <see cref="SimulationTiming.TickDuration"/> to the world's
-    /// <see cref="FixedStepSimulationSystemGroup"/>; <c>OnDestroy</c> removes the clock. There is no
+    /// Lifetime equals the <see cref="World"/>: <c>OnCreate</c> creates the one clock singleton (with
+    /// <see cref="SimulationClockRunning"/>) and applies <see cref="SimulationTiming.TickDuration"/> to
+    /// the world's <see cref="FixedStepSimulationSystemGroup"/>; <c>OnDestroy</c> removes the clock. There is no
     /// static state, so leaving and re-entering Play Mode (with or without domain reload) builds a
     /// fresh world whose clock starts again at <see cref="SimulationClock.NoTick"/>.
     /// <c>OnCreate</c> throws if a <see cref="SimulationClock"/> already exists, so a second
@@ -39,7 +39,10 @@ namespace MLFLegends.Combat
 
             // Throws if a clock already exists in this world.
             m_Clock = state.EntityManager.CreateSingleton(new SimulationClock(), nameof(SimulationClock));
+            state.EntityManager.AddComponent<SimulationClockRunning>(m_Clock);
             fixedStepGroup.Timestep = SimulationTiming.TickDuration;
+
+            state.RequireForUpdate<SimulationClockRunning>();
         }
 
         public void OnDestroy(ref SystemState state)
@@ -48,7 +51,9 @@ namespace MLFLegends.Combat
                 state.EntityManager.DestroyEntity(m_Clock);
         }
 
-        [BurstCompile]
+        // Synchronous in the Editor: the first tick already runs Burst code instead of swapping from the
+        // managed fallback mid-session (which made tick-time measurements order-dependent). No effect on AOT builds.
+        [BurstCompile(CompileSynchronously = true)]
         public void OnUpdate(ref SystemState state)
         {
             // GetSingletonRW also fails loudly if a second clock was added behind the owner's back.
@@ -56,9 +61,10 @@ namespace MLFLegends.Combat
             if (!clock.TryAdvance())
             {
                 // Unreachable in practice (~828 days of continuous simulation at 60 Hz). The tick never
-                // wraps to 0 and is never simulated twice: the clock stops and the battle must end.
-                Debug.LogError("SimulationClock reached its last tick; the clock stopped advancing.");
-                state.Enabled = false;
+                // wraps to 0 and is never simulated twice: removing the tag stops the clock and, in this
+                // same step, every combat phase group. The battle must end.
+                Debug.LogError("SimulationClock reached its last tick; the clock and combat phases stopped.");
+                state.EntityManager.RemoveComponent<SimulationClockRunning>(m_Clock);
             }
         }
     }

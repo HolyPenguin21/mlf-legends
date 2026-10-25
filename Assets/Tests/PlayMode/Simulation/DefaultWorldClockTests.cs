@@ -37,6 +37,7 @@ namespace MLFLegends.Tests.PlayMode
 
             var clockQuery = world.EntityManager.CreateEntityQuery(typeof(SimulationClock));
             Assert.That(clockQuery.CalculateEntityCount(), Is.EqualTo(1));
+            Assert.That(world.EntityManager.HasComponent<SimulationClockRunning>(clockQuery.GetSingletonEntity()), Is.True);
             var before = clockQuery.GetSingleton<SimulationClock>().Tick;
 
             // Wait in time, not frames: fast frames alone must not be what advances the tick.
