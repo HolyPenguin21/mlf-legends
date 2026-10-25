@@ -1,0 +1,88 @@
+# Combat command processor (Stage 01.3, Issue #4)
+
+One queue, one processor, one application point for player and AI commands. This folder implements
+rules 1–6 of `Core/CONTRACTS.md` ("Command contract") on the fixed tick of `Simulation/SIMULATION.md`.
+It never writes position, facing, `InCombat`, the clock or any other combat state, and has no
+movement, attack or AI logic.
+
+## Pieces
+
+| Type | Role | Writer |
+|---|---|---|
+| `CombatCommandQueue` | Singleton: `BattleStartTick`, `LastProcessedTick`, bounds, `ResetForBattle`. Its entity holds the three buffers below. | processor; `ResetForBattle` |
+| `CombatCommandSubmission` (buffer) | Producer inbox. Producers only append. | producers (player input adapter, AI) |
+| `PendingCombatCommand` (buffer, internal) | Valid future commands, submission order, ≤ `MaxPendingCommands`. | processor |
+| `CombatCommandResult` (buffer) | Outcome of every command processed on `LastProcessedTick`, sorted by (`Combatant`, `Tick`, submission order). | processor |
+| `AppliedCombatCommand` (per combatant) | The command each in-combat combatant executes on the current tick (accepted or implicit None). Input of the Stage 02+ state owners. | processor |
+| `CombatCommandProcessorSystem` | The single consumer and applier. `OrderLast` in `CombatCommandCollectionSystemGroup`. | — |
+
+`CombatCommandProcessorSystem` creates the queue entity in `OnCreate` (a second instance throws, so a
+world never has two processors) and destroys it in `OnDestroy`. It adds `AppliedCombatCommand` to every
+entity with `CombatantId` + `InCombat` that lacks it, so the spawner (#5) needs no command-specific setup.
+
+## Producing commands
+```csharp
+SystemAPI.GetSingletonBuffer<CombatCommandSubmission>().Add(new CombatCommandSubmission(command));
+```
+- Inside `CombatCommandCollectionSystemGroup` (before the processor): target the current
+  `SimulationClock.Tick`. The order of producer systems in that group is the submission order.
+- Outside the fixed step (frame-rate input): target `Tick + 1` (or up to `MaxLeadTicks` ahead).
+- Never write `AppliedCombatCommand` or any combat component. No `UnityEngine.Input` in the processor.
+
+## Policy per tick T (same rules for every `Source`)
+Validation, in this order, at submission processing:
+
+| Case | Outcome |
+|---|---|
+| `Tick == 0` | `InvalidTick` |
+| `Combatant` = `CombatantId.Invalid` | `InvalidCombatant` |
+| `MoveX`/`MoveZ` ∉ −1..1, undefined `Held`/`Pressed` bits, `Source` ∉ {Player, AI} | `InvalidValue` |
+| `Tick <= BattleStartTick` (previous battle / already started tick) | `BeforeBattleStart` |
+| `Tick < T` | `Stale` |
+| `Tick > T + MaxLeadTicks` (32) | `TooFarAhead` |
+| `T < Tick <= T + 32` | `Deferred`, kept pending; `QueueFull` if the pending store is full |
+| `Tick == T` | resolved below |
+
+Resolution of the commands for T (pending ones first, then this tick's submissions, i.e. submission order):
+
+| Case | Outcome |
+|---|---|
+| No entity with that `CombatantId` and enabled `InCombat` (never spawned, defeated, despawned) | `UnknownCombatant` (all commands of that key) |
+| First command for (`Combatant`, T) | `Accepted` |
+| Later command, equal to the accepted one | `Duplicate` |
+| Later command that differs (values or `Source`, e.g. player vs AI) | `Conflict`; never merged, never overwrites |
+| Pending command whose tick passed without processing (processor did not run) | `Stale` |
+| In-combat combatant without an accepted command | no result entry; `AppliedCombatCommand` = None for T, `WasSubmitted == false` |
+
+A submitted None command is a normal `Accepted` command (`WasSubmitted == true`).
+
+## Order and cost
+- Commands for T are sorted by (`CombatantId`, submission order); results by (`CombatantId`, `Tick`,
+  submission order). Nothing depends on chunk or `EntityQuery` order. The only order-sensitive input is
+  the submission order itself (rule 3: first wins).
+- Per tick: one pass over pending + submissions, one sort of the processed commands, one pass over
+  in-combat combatants with an O(1) hash lookup. O(C log C + N); no combatant × command scan.
+- Bounds: pending ≤ `MaxPendingCommands` = 400 × 32 = 12 800 × 16 B ≈ 200 KB. Submissions and results
+  hold at most one tick of commands and are cleared every tick. `AppliedCombatCommand` is 16 B per
+  combatant. Temporary data is `Allocator.Temp`, freed at the end of the update. No Entity handles
+  are kept between ticks.
+
+## Battle cleanup (contract for #5)
+`CombatCommandQueue.ResetForBattle(EntityManager, uint battleStartTick)` — call when a battle ends and
+when the next one begins in the same World (the World and `SimulationClock` are not recreated):
+- clears submissions, pending commands and results, resets `AppliedCombatCommand` on all entities;
+- stores `battleStartTick`: any later command with `Tick <= battleStartTick` is `BeforeBattleStart`,
+  so the first accepted tick is `battleStartTick + 1` and relative battle tick = `Tick - BattleStartTick`;
+- throws if `battleStartTick` is before the current `SimulationClock.Tick` or before the previous
+  boundary; never touches the clock, combatants or other systems.
+
+Call it on the main thread at a tick boundary: between fixed steps (where `Tick` is the last completed
+tick, the usual `BattleStartTick`) or in the command-collection phase before the processor. #5 owns the
+battle lifecycle and its `BattleStartTick`; it passes that value here. A late producer targeting an old
+combatant after the reset is rejected as `UnknownCombatant` because IDs are never reused in a World.
+
+## Not implemented here
+Derived edges (rule 7, e.g. "fresh direction press" for dash) are not produced yet: no consumer exists
+before Stage 02 and the dash rule is not specified. When needed they are added to this processor
+(computed from the previous `AppliedCombatCommand` before it is overwritten), not to a new system.
+Action legality (stamina, locks) belongs to later rule owners.
