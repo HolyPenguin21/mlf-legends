@@ -23,6 +23,15 @@
 - **Stage 00 (2026-10-25):** owner confirmed all prepared Unity tests passed. Record **OWNER-REPORTED PASS**, without asserting the assistant independently reviewed run logs.
 - **Agent management (2026-10-25):** assistant prepares GitHub Issues with technical scope, dependencies, acceptance criteria and PR review; Stage 01 is broken down into Issues #2–#7. Other agents work on separate branches, do not merge independently. Manager keeps ROADMAP and QA current.
 
+## Battle restart and time policy (manager decision, 2026-10-25)
+
+- **Do not recreate or reset the default Unity ECS World when restarting an individual fight.** A real World teardown is reserved for ending the application/game World, not for ordinary fight restart. World-scoped `SimulationClock` stays the single fixed-step authority and its unsigned `Tick` stays monotonic.
+- **Battle session is not a second clock:** the battle bootstrap (#5) records an absolute `BattleStartTick` at a fixed-tick-safe boundary. Relative fight time is `SimulationClock.Tick - BattleStartTick`; the first simulated action belongs to relative tick 1. Replay tests (#6) record relative ticks and seed so the same sequence does not depend on World uptime.
+- On restart, the battle lifecycle owner must stop/clear old actors and battle-only state, call the canonical command processor (#4) to clear queues/accepted history, then spawn new actors. No leftover future command, cached Entity handle or battle-local result may leak between fights.
+- **Combatant IDs are monotonic and non-reusable throughout one World**, including repeated battles, allocated by one bootstrap owner (#5); this prevents late commands targeting a new fighter by reusing an ID. The allocator must reject exhaustion rather than wrap to `0`.
+- Avoid implementing a second world, second clock, a session-time accumulator or duplicate command processor. Test repeated fights in the same World, plus separate-new-World isolation.
+- If `SimulationClock` reaches `uint.MaxValue`, treating the World as exhausted and requiring a deliberate restart of the real World is an exceptional case, not a normal battle-restart mechanism.
+
 ## Deferred but previously discussed — campaign
 - Strategic campaign is turn-based with months or years per turn.
 - Individual character age, illness, injury, potential growth/decline, inheritance, childbirth and recruitment.
