@@ -3,8 +3,8 @@
 ## Governing rules
 - Focus **only on combat** until the owner explicitly reopens campaign design.
 - One authoritative ECS combat architecture from 1v1 through 200v200, without a separate duel/mass code path.
-- Stage states: NOT STARTED / IN PROGRESS / BLOCKED / VERIFIED. Only VERIFIED after acceptance and regression evidence.
-- Each change: inspect current code and call sites → define owner and boundaries → implement → targeted tests → bottom-up dependency audit → regression tests → commit/PR → update QA and roadmap.
+- Stage states: NOT STARTED / IN PROGRESS / BLOCKED / VERIFIED. Only VERIFIED after acceptance and regression evidence. **Delivery and verification are independent**: lack of Unity Editor access is not a gate for committing, merging, pushing or continuing implementation when the owner authorizes delivery.
+- Each change: inspect current code and call sites → define owner and boundaries → implement → all **available** static/automated tests → bottom-up dependency audit → commit/PR/merge when authorized → update QA and roadmap. Unavailable Unity tests are recorded as NOT RUN, not invented as passing.
 - Don't silently introduce duplicate systems, unjustified architecture or redundant per-entity MonoBehaviours.
 - Unity version: **6000.5.4f1**; repository: https://github.com/HolyPenguin21/mlf-legends; main branch: `main`.
 - Template: **Universal 3D (URP)**, chosen for 3D terrain with sprite characters. URP 17.5.0 in current manifest.
@@ -50,7 +50,7 @@
 - [ ] Run and pass the EditMode and PlayMode tests in Editor and record XML/Console evidence.
 - [ ] Verify Editor C# compile without errors and load SampleScene in Play Mode (not yet executed).
 - [ ] Evaluate GitHub Actions Unity test runner and licensing after local tests pass; CI currently deferred, not configured.
-- [ ] Log all test evidence and close stage 00 only when actually verified.
+- [ ] Log eventual Unity test evidence and close Stage 00 as VERIFIED only when actually verified. **This is not a blocker for delivery or beginning Stage 01**; unverified items remain visible.
 
 ## Delivery policy
-Existing Unity-generated project content is preserved. Code changes belong in focused commits/PRs and must not be merged before authorization. Update status and QA together whenever completing milestones.
+Existing Unity-generated project content is preserved. Code changes belong in focused commits/PRs and must not be merged before authorization. **Project-owner rule (2026-10-25): Unity Editor tests must never block commit/merge/push when the owner cannot run them from the current environment.** Perform available static checks, report risks, mark runtime tests **NOT RUN**, and leave them outstanding for a later verification opportunity. Do not mislabel delivery as VERIFIED. Update status and QA together whenever delivering milestones.
