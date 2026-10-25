@@ -65,3 +65,6 @@ crashlytics-build.properties
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Locally generated Unity Test Framework XML reports and Editor logs
+/TestResults/
