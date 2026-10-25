@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Linq;
 using MLFLegends.Combat;
@@ -7,6 +8,7 @@ using Unity.Entities;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using Object = UnityEngine.Object;
 #if UNITY_EDITOR
 using UnityEditor.SceneManagement;
 #endif
@@ -14,8 +16,8 @@ using UnityEditor.SceneManagement;
 namespace MLFLegends.Tests.PlayMode
 {
     // Battles in the auto-created default world, driven like a scene does it: through CombatSmokeBootstrap.
-    // Every test ends its battle, so the default world is left without combatants. Requests are applied at the start
-    // of the next fixed step, so the tests wait for the next tick (NextTick), not for a number of render frames.
+    // Every test ends its battle. Paused tests wait for lifecycle state with an unscaled deadline;
+    // simulation assertions wait for a real fixed tick. No test advances the default world manually.
     public class DefaultWorldBattleLifecycleTests
     {
         static World DefaultWorld => World.DefaultGameObjectInjectionWorld;
@@ -70,8 +72,98 @@ namespace MLFLegends.Tests.PlayMode
                 Assert.That(lifecycleIndex, Is.LessThan(members.IndexOf(DefaultWorld.GetExistingSystem<CombatCommandCollectionSystemGroup>())));
             }
 
+            var initialization = DefaultWorld.GetExistingSystemManaged<InitializationSystemGroup>();
+            using (var members = initialization.GetAllSystems(Allocator.Temp))
+                Assert.That(members.IndexOf(lifecycle), Is.GreaterThanOrEqualTo(0), "The same handle also runs on paused frames.");
             Assert.That(Manager.CreateEntityQuery(typeof(BattleSession)).CalculateEntityCount(), Is.EqualTo(1));
             Assert.That(Session.State, Is.EqualTo(BattleState.Idle), "Nothing starts a battle without a request.");
+        }
+
+        static IEnumerator Until(Func<bool> condition)
+        {
+            var deadline = Time.realtimeSinceStartup + 5f;
+            while (!condition())
+            {
+                Assert.That(Time.realtimeSinceStartup, Is.LessThan(deadline), "Lifecycle did not reach the expected state.");
+                yield return null;
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator PausedFramesApplyStartRestartAndEndForDuelAndLargeRosterWithoutSimulation()
+        {
+            yield return NextTick(); // consume the rate manager's mandatory first step before pausing
+            var scale = Time.timeScale;
+            try
+            {
+                Time.timeScale = 0;
+                yield return null;
+                var tick = Tick;
+                foreach (var allies in new ushort[] { 0, 199 })
+                {
+                    var setup = BattleSetup.Default;
+                    setup.HumanAllies = setup.AiAllies = allies;
+                    var number = Session.BattleNumber;
+                    BattleRequest.Submit(Manager, BattleRequest.Start(setup, owner: 101));
+                    yield return Until(() => Session.BattleNumber == number + 1);
+                    Assert.That(LiveIds.Length, Is.EqualTo(setup.CombatantCount));
+                    Assert.That(Tick, Is.EqualTo(tick));
+                    var oldId = Session.AiCombatant.Value;
+                    BattleRequest.Submit(Manager, BattleRequest.Restart(setup, owner: 102));
+                    yield return Until(() => Session.BattleNumber == number + 2);
+                    Assert.That(Session.Owner, Is.EqualTo(102u));
+                    Assert.That(LiveIds.Min(), Is.GreaterThan(oldId));
+                    Assert.That(Session.RelativeTick(Tick), Is.Zero);
+                    BattleRequest.Submit(Manager, BattleRequest.End(owner: 101));
+                    yield return Until(() => Session.LastOutcome == BattleRequestOutcome.NotOwner);
+                    Assert.That(Session.IsActive, Is.True);
+                    BattleRequest.Submit(Manager, BattleRequest.End(owner: 102));
+                    yield return Until(() => !Session.IsActive);
+                    Assert.That(Tick, Is.EqualTo(tick));
+                    Assert.That(LiveIds, Is.Empty);
+                }
+                Time.timeScale = scale;
+                yield return NextTick();
+                Assert.That(LiveIds, Is.Empty, "Unpause does not replay any processed request.");
+            }
+            finally
+            {
+                Time.timeScale = scale;
+                BattleRequest.Submit(Manager, BattleRequest.End());
+            }
+            yield return Until(() => !Session.IsActive);
+        }
+
+        [UnityTest]
+        public IEnumerator DisablingBootstrapOnPauseEndsItsBattleBeforeUnpause()
+        {
+            yield return NextTick();
+            var scale = Time.timeScale;
+            var bootstrap = new GameObject("Paused bootstrap", typeof(CombatSmokeBootstrap));
+            try
+            {
+                yield return NextTick();
+                Time.timeScale = 0;
+                yield return null;
+                var tick = Tick;
+                bootstrap.SetActive(false);
+                yield return Until(() => !Session.IsActive);
+                Assert.That(LiveIds, Is.Empty);
+                Assert.That(Tick, Is.EqualTo(tick));
+                bootstrap.SetActive(true);
+                yield return Until(() => Session.IsActive);
+                Assert.That(LiveIds.Length, Is.EqualTo(2));
+                Assert.That(Tick, Is.EqualTo(tick));
+                Time.timeScale = scale;
+                yield return NextTick();
+                Assert.That(Session.RelativeTick(Tick), Is.GreaterThanOrEqualTo(1u));
+            }
+            finally
+            {
+                Time.timeScale = scale;
+                Object.Destroy(bootstrap);
+            }
+            yield return Until(() => !Session.IsActive);
         }
 
         [UnityTest]
@@ -152,6 +244,8 @@ namespace MLFLegends.Tests.PlayMode
         {
             yield return null;
             Assert.That(Session.State, Is.EqualTo(BattleState.Idle));
+            var scale = Time.timeScale;
+            uint pausedTick = 0;
             try
             {
                 yield return LoadSmokeSceneAdditive();
@@ -166,30 +260,38 @@ namespace MLFLegends.Tests.PlayMode
                 Assert.That(Manager.GetComponentData<CombatPosition>(human).Value.x, Is.EqualTo(-2f));
                 Assert.That(Manager.GetComponentData<CombatFacing>(human).Value, Is.EqualTo(FacingDirection.Right));
 
+                Time.timeScale = 0;
+                yield return null;
+                pausedTick = Tick;
                 // Switch: load the next copy, then unload the previous one.
                 yield return LoadSmokeSceneAdditive();
                 var previous = SmokeScenes().First();
                 var unload = SceneManager.UnloadSceneAsync(previous);
                 while (!unload.isDone)
                     yield return null;
-                yield return NextTick();
+                yield return Until(() => Session.Owner != first.Owner);
+                yield return null; // allow the old scene's queued End to reach Initialization
 
                 var next = Session;
+                Assert.That(Tick, Is.EqualTo(pausedTick));
                 Assert.That(SmokeScenes().Length, Is.EqualTo(1));
                 Assert.That(next.State, Is.EqualTo(BattleState.Active), "The late end of the unloaded scene did not stop the next battle.");
                 Assert.That(next.Owner, Is.Not.EqualTo(first.Owner));
                 Assert.That(next.BattleNumber, Is.EqualTo(first.BattleNumber + 1));
                 Assert.That(LiveIds, Is.EqualTo(new[] { next.HumanCombatant.Value, next.AiCombatant.Value }));
                 Assert.That(next.HumanCombatant.Value, Is.GreaterThan(first.AiCombatant.Value));
+                foreach (var scene in SmokeScenes())
+                    SceneManager.UnloadSceneAsync(scene);
+                yield return Until(() => SmokeScenes().Length == 0 && !Session.IsActive);
+                Assert.That(Tick, Is.EqualTo(pausedTick));
+                Assert.That(LiveIds, Is.Empty);
             }
             finally
             {
+                Time.timeScale = scale;
                 foreach (var scene in SmokeScenes())
                     SceneManager.UnloadSceneAsync(scene);
             }
-
-            for (var i = 0; i < 5 && SmokeScenes().Length > 0; i++)
-                yield return null;
             yield return NextTick();
             Assert.That(SmokeScenes(), Is.Empty);
             Assert.That(LiveIds, Is.Empty, "Leaving the scene ends its battle.");

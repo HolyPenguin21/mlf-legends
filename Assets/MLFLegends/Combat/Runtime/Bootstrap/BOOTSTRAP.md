@@ -9,7 +9,7 @@ folder has no movement, attack, input or AI logic.
 
 | Type | Role | Writer |
 |---|---|---|
-| `BattleLifecycleSystem` | The single creator/destroyer of combatant entities and the only caller of `CombatCommandQueue.ResetForBattle`. Applies `BattleRequest`s at the start of every fixed step. | — |
+| `BattleLifecycleSystem` | The single creator/destroyer of combatant entities and the only caller of `CombatCommandQueue.ResetForBattle`. Applies `BattleRequest`s in Initialization and before every fixed tick, including catch-up. | — |
 | `BattleSession` | Singleton: `State`, `BattleStartTick`, `BattleNumber`, `HumanCombatant`, `AiCombatant`, `Owner`, `LastOutcome`. Its entity holds the request buffer and the allocator. | lifecycle system |
 | `BattleRequest` (buffer) | `Start`, `Restart`, `End`, `Despawn(id)`, optional `Owner` token. Appended by anyone on the main thread (`BattleRequest.Submit`). | requesters |
 | `CombatantIdAllocator` (internal) | Monotonic, non-reusing for the whole World lifetime; never wraps to `0`. | lifecycle system |
@@ -20,38 +20,47 @@ folder has no movement, attack, input or AI logic.
 two owners) and `OnDestroy` removes it together with any remaining combatant. Exiting Play Mode disposes
 the default World with everything in it; entering it again starts with IDs from 1 and battle number 0.
 
-## Where it runs
-`FixedStepSimulationSystemGroup`, `OrderFirst`, after `BeginFixedStepSimulationEntityCommandBufferSystem` and
-**before** `CombatClockSystem`, i.e. at the start of **every** fixed step, catch-up steps included. That is a
-boundary between fixed steps: the clock has not advanced yet, so `SimulationClock.Tick` is the last completed
-tick, the command processor has already handled it, and the step that follows in the same update is `Tick + 1`.
-Requests are therefore never applied in the command-collection, state-update or publication phase of a tick.
-Still one owner, one clock and the standard fixed-step group: only the position of the lifecycle system changed.
+## Where it runs (#19)
+The **same `BattleLifecycleSystem` instance** is a member of both `InitializationSystemGroup`
+(`OrderFirst`) and `FixedStepSimulationSystemGroup` (normal ordering bucket). There is one session,
+one request buffer, one allocator and one `OnUpdate`/`Apply` path, not two lifecycle owners.
 
-```text
-frame N    Update: UI / MonoBehaviour submits Start ..................................... queued
-frame N+1  step 1: Lifecycle (applies Start, BattleStartTick = T) -> Clock T+1 (relative 1) -> Collection -> State -> Publication
-           step 2: Lifecycle (nothing)                             -> Clock T+2 (relative 2) -> Collection -> State (submits End) -> Publication
-           step 3: Lifecycle (applies End, queue boundary = T+2)   -> Clock T+3 -> phases see no combatant of the ended battle
-```
+- Initialization is a main-thread boundary outside combat phases. It runs on rendered frames even with
+  `Time.timeScale = 0`, without calling the fixed-step group, clock, command processor or combat phases.
+- Inside each fixed step the order remains **BeginFixedStep ECB → Lifecycle → Clock → Collection →
+  State → Publication → EndFixedStep ECB**. Lifecycle and clock use the normal bucket, after the
+  `OrderFirst` BeginFixedStep ECB; Lifecycle orders itself before Clock, Collection explicitly after Clock.
+  In Initialization, Lifecycle's `OrderFirst` already precedes the clock's default bucket, so its
+  `UpdateBefore(Clock)` constraint is redundant there; the clock is not added to Initialization.
+- Both boundaries read `SimulationClock.Tick` as the last completed tick. Each call copies and clears
+  the request buffer before structural changes. The next call sees an empty buffer, so no request or
+  queue reset is repeated merely because the system belongs to two groups.
 
 | Request made | Applied |
 |---|---|
-| between frames (UI, `MonoBehaviour`, test) | at the start of the next fixed step, before its tick |
-| inside tick T, any phase (collection, state update, publication) | tick T completes; applied at the start of tick T + 1, also when T + 1 is a catch-up step of the same frame |
+| UI / MonoBehaviour / scene OnDisable | next Initialization or fixed boundary, whichever runs first |
+| inside tick T, any combat phase | after T completes, before T + 1; also between catch-up ticks in the same frame |
+| on pause with no further fixed ticks | next frame's Initialization; no simulated tick is manufactured |
 
-A frame that runs no fixed step (high frame rate, `Time.timeScale = 0`) applies nothing and simulates nothing:
-requests wait for the next step, so the tick timeline is the same as if they had been applied at once. Readers
-of `BattleSession` (UI, tests) see the change after the next tick, not after the next frame; while paused, a
-requested end keeps the combatants until the simulation resumes. The very first fixed step of a World always
-runs (Entities' catch-up manager steps at t = 0), so a request made before it is applied immediately.
+Start and Restart also apply while paused: they replace the roster with fresh IDs, clear old commands,
+and record the unchanged tick as `BattleStartTick`. Relative time remains 0 until the first real fixed
+step after resume, which is relative tick 1. End removes even defeated combatants, clears command stores
+through the existing `ResetForBattle`, and makes the session Idle. Nothing is replayed on resume.
 
-**Entity command buffers.** Combatants can now be destroyed between two ticks of the same frame. A system inside
-the fixed step that records commands for combatants must use the fixed-step buffers
-(`BeginFixedStepSimulationEntityCommandBufferSystem`, played back before this system, or
-`EndFixedStepSimulationEntityCommandBufferSystem`, played back at the end of the same tick), never
-`EndSimulationEntityCommandBufferSystem` or later: those play back after further ticks may have destroyed the
-target. No system uses an ECB yet.
+The guarantee is **next safe boundary**, not synchronous removal in `Submit`/`OnDisable`: after a scene
+unloads, its owned End is consumed by the next Initialization even if the game stays paused. If the World
+is disposed before then (application/Play Mode exit), World teardown removes its entities instead.
+Async scene ownership is unchanged: Restart(B), End(A) leaves B alive, whether processed together or on
+separate paused frames. Enable then disable before any tick gives Restart(A), End(A), leaving no actors.
+The rate manager's mandatory first World step at t = 0 is unchanged; pause tests first consume it.
+
+**Entity command buffers / jobs.** `EntityManager` structural operations synchronize relevant ECS jobs.
+No runtime combat system currently records ECB operations. Future combatant structural operations must use
+`EndFixedStepSimulationEntityCommandBufferSystem` and play back in the producing tick. Do not defer actor
+handles to BeginFixedStep of the next tick, Initialization, EndSimulation or a later frame: paused-frame
+lifecycle cleanup can destroy those actors before playback. Request buffers store IDs/values, never Entity
+handles. This tightens the old permission to use next-tick BeginFixedStep ECBs; there are no existing
+producers to migrate. Do not add another spawner/destructor or flush arbitrary ECBs from scene callbacks.
 
 ## Combatant created by `Start`
 
@@ -116,7 +125,7 @@ owner, `BattleStartTick` and the queue stay as they were, and the next requests 
 Nothing in the lifecycle path throws mid-batch, so a batch never loses its remaining requests or the
 session/allocator write-back. Such a boundary clears itself once the clock reaches it.
 
-## Start / restart sequence (start of a fixed step, before the clock advances)
+## Start / restart sequence (either safe boundary, before the next tick advances)
 0. Check: setup, state, running clock, `CombatCommandQueue.CanResetForBattle(Tick)`, ID reservation.
 1. Destroy every entity with `CombatantId` (also defeated, i.e. `InCombat` disabled). Nothing else is destroyed.
 2. `CombatCommandQueue.ResetForBattle(EntityManager, SimulationClock.Tick)`: drops submissions, pending and
@@ -124,8 +133,7 @@ session/allocator write-back. Such a boundary clears itself once the clock reach
 3. Spawn the human, the AI and their allies with new IDs (`Setup.CombatantCount`, reserved in step 0).
 4. `BattleSession`: `Active`, `BattleStartTick = SimulationClock.Tick`, `BattleNumber + 1`.
 
-`End` does steps 0 (owner, queue check), 1–2 and sets `Idle`. After a start the clock advances in the same
-fixed step to absolute tick `BattleStartTick + 1` = relative tick 1 (`BattleSession.RelativeTick(tick) = tick - BattleStartTick`); commands for `Tick <= BattleStartTick`
+`End` does steps 0 (owner, queue check), 1–2 and sets `Idle`. The next real fixed step advances to absolute tick `BattleStartTick + 1` = relative tick 1 (`BattleSession.RelativeTick(tick) = tick - BattleStartTick`); commands for `Tick <= BattleStartTick`
 are rejected by the processor as `BeforeBattleStart`. `BattleStartTick` is a recorded value, not a clock.
 Because IDs are never reused, a late command for a previous battle's combatant is `UnknownCombatant`.
 No `Entity` handle or ID→Entity cache is kept between updates.
@@ -156,9 +164,14 @@ Not automated (no Editor automation for this). Record the result in `Docs/QA.md`
 4. Repeat Enter/Exit 3 times: each entry again shows `Combatant 1`/`Combatant 2`, `BattleNumber` 1, a clock
    starting near tick 0 (a new World each time; the static owner counter of `CombatSmokeBootstrap` keeps
    growing between sessions, which is harmless).
-5. In Play Mode, disable the bootstrap GameObject: the combatants disappear after the next tick. Enable it again:
+5. In Play Mode, disable the bootstrap GameObject: the combatants disappear at the next safe boundary, including while paused. Enable it again:
    `Combatant 3` and `Combatant 4`, `BattleNumber` 2.
-6. Restore the Enter Play Mode setting.
+6. In Play Mode set `Time.timeScale = 0` from the debugger/test harness after at least one fixed tick.
+   Disable/enable the bootstrap and unload/reload CombatSmoke additively. Verify End removes all actors on
+   the next rendered frame, Restart changes IDs without advancing Tick, and a late old-owner End does not
+   stop the replacement scene's battle. Restore `timeScale = 1`: no old command executes; the new battle's
+   first real simulated tick is relative tick 1. Check Console for errors/leaks.
+7. Restore the Enter Play Mode setting and timeScale.
 
 ## Not implemented here
 Input and AI producers, movement, attacks, collisions, rendering. Large rosters (#7) are the `Start` above with

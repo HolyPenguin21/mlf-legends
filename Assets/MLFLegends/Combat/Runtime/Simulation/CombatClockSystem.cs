@@ -22,7 +22,7 @@ namespace MLFLegends.Combat
     /// nothing in combat code accumulates frame time on its own.
     /// </remarks>
     [BurstCompile]
-    [UpdateInGroup(typeof(FixedStepSimulationSystemGroup), OrderFirst = true)]
+    [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
     [UpdateAfter(typeof(BeginFixedStepSimulationEntityCommandBufferSystem))]
     public partial struct CombatClockSystem : ISystem
     {

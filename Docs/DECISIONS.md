@@ -60,3 +60,15 @@
 - GitHub Actions/Unity licensing and test runner configuration.
 
 Any change to accepted decisions requires explicit conversation and an entry here.
+
+## Pause-safe battle lifecycle (#19, implementation 2026-10-26)
+
+- Schedule the same existing `BattleLifecycleSystem` in Initialization and before each fixed tick.
+  Apply all request kinds at the next safe boundary, including paused frames; never invoke fake ticks.
+- `BattleStartTick` records the last completed absolute tick at either boundary. A paused Start/Restart
+  remains at relative tick 0 until the first real tick after resume (relative tick 1).
+- Preserve the one request drain, owner-token checks, atomic preflight, ID allocator and queue reset path.
+- Combatant ECB writes must play back at EndFixedStep in their producing tick. Next-tick BeginFixedStep
+  playback can outlive paused-frame actor cleanup; no current runtime producer needs migration.
+- Unity execution and Domain Reload GUI verification remain NOT RUN in this environment; #17's Windows
+  gate and #23's independent manager review remain open. Delivery is not verified Stage 01 completion.

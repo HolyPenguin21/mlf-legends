@@ -6,10 +6,10 @@ namespace MLFLegends.Combat
 {
     /// <summary>
     /// Owner of the battle lifecycle and the single place that creates and destroys combatant entities and
-    /// allocates <see cref="CombatantId"/>. Applies <see cref="BattleRequest"/>s between fixed steps.
+    /// allocates <see cref="CombatantId"/>. Applies <see cref="BattleRequest"/>s between fixed steps, including paused frames.
     /// </summary>
     /// <remarks>
-    /// Runs at the start of every fixed step, before <see cref="CombatClockSystem"/> advances the tick, where
+    /// Runs in Initialization (even on paused frames) and at the start of every fixed step, before <see cref="CombatClockSystem"/> advances the tick, where
     /// <see cref="SimulationClock.Tick"/> is still the last completed tick: a battle started here has
     /// <c>BattleStartTick = Tick</c> and its first simulated tick is <c>Tick + 1</c>, the step that follows
     /// in the same update. Because it runs before every catch-up step, a request made during tick T (e.g. an
@@ -21,8 +21,11 @@ namespace MLFLegends.Combat
     /// <see cref="BattleSession"/> already exists, so a world never has two lifecycle owners. See BOOTSTRAP.md.
     /// </remarks>
     [BurstCompile]
-    [UpdateInGroup(typeof(FixedStepSimulationSystemGroup), OrderFirst = true)]
-    [UpdateAfter(typeof(BeginFixedStepSimulationEntityCommandBufferSystem))]
+    // The SAME instance drains the SAME buffer at both boundaries. Initialization never advances time.
+    // Normal fixed-step ordering places us after the OrderFirst BeginFixedStep ECB; the clock follows us.
+    // OrderFirst in Initialization also makes UpdateBefore(CombatClockSystem) redundant there (clock is absent).
+    [UpdateInGroup(typeof(InitializationSystemGroup), OrderFirst = true)]
+    [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
     [UpdateBefore(typeof(CombatClockSystem))]
     public partial struct BattleLifecycleSystem : ISystem
     {
@@ -141,7 +144,7 @@ namespace MLFLegends.Combat
             return BattleRequestOutcome.Started;
         }
 
-        /// <summary>Last completed tick: this system runs before the clock advances in the fixed step.</summary>
+        /// <summary>Last completed tick at either boundary; this system never advances the clock.</summary>
         uint CurrentTick => m_Clock.GetSingleton<SimulationClock>().Tick;
 
         /// <summary>

@@ -230,3 +230,33 @@ The script waits for the `Unity.exe` process itself (default timeout 60 min, `-T
 | 2026-10-26 | Unicode/Burst Issue #17 | OPEN / WINDOWS QA PENDING | Repro on physical ASCII/Cyrillic Windows paths remains mandatory for Stage 01 closure |
 | 2026-10-26 | Bootstrap lifecycle + bounded naming Issue #19 | NEXT / READY | Unified implementation and tests; former #26 closed as duplicate only, not fixed |
 | 2026-10-26 | Stage 01 closeout Issue #23 | BLOCKED BY OUTSTANDING QA | Require review/disposition for both #17 and #19 before new-session Stage 02 |
+
+## Issue #19 — pause-safe lifecycle, implementation checks (2026-10-26)
+
+Base: `main` `d817b88` (PR #27 already merged). Scope: Bootstrap plus existing clock/phase ordering
+annotations needed to retain `BeginFixedStep ECB → Lifecycle → Clock → Collection`; no clock logic,
+command rules, #17 Burst tests/import diagnostics/runner, #25 optimization or Stage 02 work changed.
+
+**Before:** requests only drained before fixed steps; a paused End/OnDisable could leave the old session,
+actors and future commands indefinitely. **After:** the same lifecycle handle also drains at Initialization
+on every rendered frame, including pause. Start/Restart/End apply at the next safe boundary, not
+synchronously in a scene callback; no fake tick, second queue consumer, session owner or destructor.
+The buffer is cleared once per batch; repeated empty boundary calls do not repeat a reset. Owned End
+still cannot end another scene's battle. Start/Restart retain full preflight and non-reused IDs.
+
+| Check | Evidence / status |
+|---|---|
+| Bottom-up ownership/dependency review | Source reviewed: Core IDs/InCombat → queue validation/reset/processor → clock and phases → allocator/session/lifecycle → bootstrap OnEnable/OnDisable → EditMode, PlayMode, replay and benchmark world construction. Single writers retained. |
+| 1v1 + 200v200 paused-frame Start/Restart/End, pending/submitted/result cleanup, disabled actors, ID and first-relative-tick invariants | Added `BattleFrameBoundaryTests`; **NOT RUN — Unity Editor/runtime absent**. |
+| Repeated lifecycle calls do not reprocess Restart / clear newly submitted command | Added sentinel-command regression at a second Initialization followed by fixed tick; **NOT RUN**. |
+| Old-owner End with replacement Restart in same / separate paused frames; invalid Restart atomicity | Added frame-boundary regressions; **NOT RUN**. |
+| End from all 3 phases / Restart during catch-up, duel and 400 actors | Extended existing `BattleLifecycleTests`; **NOT RUN**. Existing ordinary tick, queue rejection, clock exhaustion, ID exhaustion, cleanup tests retained. |
+| Canonical replay with extra lifecycle-only paused frames vs fixed boundaries | Added 1v1/200v200 replay comparison over 3 Restart sessions and final catch-up End; **NOT RUN**. Existing full command/replay suites retained. |
+| Actual Time.timeScale=0, unpause, bootstrap disable/enable, real additive CombatSmoke replacement/unload | Extended default-world PlayMode tests with unscaled waits and finally restoration; **NOT RUN**. |
+| Enter/Exit Play Mode with Domain Reload disabled (both scene reload modes) | **NOT RUN**. Environment probe: no Unity/Unity Hub executable or Unity assemblies found; no display (`DISPLAY` unset). A GUI session could not be launched. Follow `Bootstrap/BOOTSTRAP.md`, record evidence before #23 disposition. |
+
+Future actor ECB writes must play back in the producing tick's EndFixedStep, because paused-frame cleanup
+can precede the next BeginFixedStep. No runtime ECB producer exists today. Review this contract when later
+stages add jobs/structural writes. Real Unity 6000.5.4f1 / Entities 6.5.0 compilation, automatic dual-group
+registration/order, all EditMode/PlayMode suites and the Domain Reload GUI scenario remain verification
+risks, not claimed PASS. #17 remains OPEN and its Windows evidence is independent; Stage 01 is not closed.
