@@ -2,7 +2,7 @@
 
 Unity **6000.5.4f1** — 2.5D mass-action fighting game, designed for 1v1 through 200 vs 200 combat in the same authoritative ECS simulation.
 
-**Status:** Stage 00 / Unity project bootstrap **IN PROGRESS**. A Unity Universal 3D (URP) template project is already committed. Its Editor compile, smoke scene and automated tests have **not** yet been verified.
+**Status:** Stage 00 **ACCEPTED BY OWNER** (all prepared Unity tests reported PASS on 2026-10-25; independent logs not attached). Stage 01 **READY**, with GitHub Issues #2–#7. Unity Universal 3D (URP) project committed.
 
 ## Starting the project
 
@@ -21,6 +21,7 @@ Do not commit generated `Library/`, `Temp/`, `Logs/` or `UserSettings/`. **Do** 
 - [Combat specification](Docs/COMBAT_SPEC.md)
 - [Accepted decisions](Docs/DECISIONS.md)
 - [QA / execution evidence](Docs/QA.md)
+- [Agent workflow and Stage 01 handoff](Docs/AGENT_WORKFLOW.md)
 
 ## Working rules
 
