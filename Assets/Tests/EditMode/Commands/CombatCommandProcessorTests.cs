@@ -77,6 +77,16 @@ namespace MLFLegends.Tests.EditMode
             }
         }
 
+        // Several fixed steps in one render frame (catch-up), half a tick past the last one; stays below
+        // World.MaximumDeltaTime (20 ticks at 60 Hz) so no tick is dropped.
+        void StepInOneFrame(int ticks)
+        {
+            var dt = (double)SimulationTiming.TickDuration;
+            m_World.SetTime(new TimeData((m_Frame + ticks - 0.5) * dt, (float)(ticks * dt)));
+            m_FixedStep.Update();
+            m_Frame += (uint)ticks;
+        }
+
         // Frame-rate producer: writes between fixed steps.
         void Submit(params CombatCommand[] commands)
         {
@@ -505,6 +515,61 @@ namespace MLFLegends.Tests.EditMode
                         Assert.That(applied.MoveX, Is.EqualTo((sbyte)((tick + i) % 3 - 1)), $"id {i + 1} tick {tick}");
                 }
             }
+        }
+
+        [Test]
+        public void FullPendingStoreWithFourHundredCombatantsSurvivesCatchUpFramesAndABattleReset()
+        {
+            const int count = 400;
+            const uint lead = CombatCommandQueue.MaxLeadTicks;
+            const int ticksPerFrame = 16;
+            var entities = new Entity[count];
+            for (var i = 0; i < count; i++)
+                entities[i] = Spawn((uint)(i + 1));
+
+            // Every tick each combatant gets a command for the tick and an equal one a full lead ahead, so the
+            // pending store reaches MaxPendingCommands and, once due, the earlier one wins over a Duplicate.
+            static sbyte Move(int id, uint tick) => (sbyte)((id + tick) % 3 - 1);
+            m_First.Produce = t => Enumerable.Range(1, count).Select(id => Cmd((uint)id, t, moveX: Move(id, t))).ToArray();
+            m_Second.Produce = t => Enumerable.Range(1, count).Select(id => Cmd((uint)id, t + lead, moveX: Move(id, t + lead))).ToArray();
+
+            Step();
+            for (var frame = 0; frame < 4; frame++)
+            {
+                StepInOneFrame(ticksPerFrame);
+                var tick = Tick;
+                Assert.That(tick, Is.EqualTo(1u + (uint)((frame + 1) * ticksPerFrame)), "One render frame runs every catch-up tick.");
+                Assert.That(Queue.LastProcessedTick, Is.EqualTo(tick));
+
+                var results = Results;
+                var duplicates = tick > lead ? count : 0;
+                Assert.That(results.Length, Is.EqualTo(2 * count + duplicates), $"tick {tick}");
+                Assert.That(results.Count(r => r.Outcome == CommandOutcome.Accepted), Is.EqualTo(count));
+                Assert.That(results.Count(r => r.Outcome == CommandOutcome.Deferred), Is.EqualTo(count));
+                Assert.That(results.Count(r => r.Outcome == CommandOutcome.Duplicate), Is.EqualTo(duplicates));
+                Assert.That(PendingCount, Is.EqualTo(count * (int)Math.Min(tick, lead)));
+                for (var i = 0; i < count; i++)
+                {
+                    var applied = Applied(entities[i]).Command;
+                    Assert.That(applied.Tick, Is.EqualTo(tick));
+                    Assert.That(applied.MoveX, Is.EqualTo(Move(i + 1, tick)), $"id {i + 1} tick {tick}");
+                }
+            }
+            Assert.That(PendingCount, Is.EqualTo(CombatCommandQueue.MaxPendingCommands));
+
+            // New battle in the same World: none of the 12 800 kept commands may survive the reset.
+            m_First.Produce = null;
+            m_Second.Produce = null;
+            CombatCommandQueue.ResetForBattle(Manager, Tick);
+            Assert.That(PendingCount, Is.Zero);
+            Assert.That(SubmissionCount, Is.Zero);
+            Assert.That(Results, Is.Empty);
+            Assert.That(entities.All(e => Applied(e).Command.Tick == SimulationClock.NoTick));
+
+            StepInOneFrame(ticksPerFrame);
+            Assert.That(Results, Is.Empty);
+            Assert.That(PendingCount, Is.Zero);
+            Assert.That(entities.All(e => Applied(e).Command.Tick == Tick && !Applied(e).WasSubmitted));
         }
 
         [Test]
