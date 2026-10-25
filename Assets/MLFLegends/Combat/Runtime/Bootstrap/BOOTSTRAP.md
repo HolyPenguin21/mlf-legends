@@ -10,11 +10,11 @@ folder has no movement, attack, input or AI logic.
 | Type | Role | Writer |
 |---|---|---|
 | `BattleLifecycleSystem` | The single creator/destroyer of combatant entities and the only caller of `CombatCommandQueue.ResetForBattle`. Applies `BattleRequest`s. | — |
-| `BattleSession` | Singleton: `State`, `BattleStartTick`, `BattleNumber`, `HumanCombatant`, `AiCombatant`, `LastOutcome`. Its entity holds the request buffer and the allocator. | lifecycle system |
-| `BattleRequest` (buffer) | `Start`, `Restart`, `End`, `Despawn(id)`. Appended by anyone on the main thread (`BattleRequest.Submit`). | requesters |
+| `BattleSession` | Singleton: `State`, `BattleStartTick`, `BattleNumber`, `HumanCombatant`, `AiCombatant`, `Owner`, `LastOutcome`. Its entity holds the request buffer and the allocator. | lifecycle system |
+| `BattleRequest` (buffer) | `Start`, `Restart`, `End`, `Despawn(id)`, optional `Owner` token. Appended by anyone on the main thread (`BattleRequest.Submit`). | requesters |
 | `CombatantIdAllocator` (internal) | Monotonic, non-reusing for the whole World lifetime; never wraps to `0`. | lifecycle system |
 | `BattleSetup` / `CombatantSetup` | Team, position and facing of the human and the AI combatant. Values, not state. | — |
-| `CombatSmokeBootstrap` | Optional `MonoBehaviour` for a scene: `Restart` on enable, `End` on disable/destroy. No combat state. | — |
+| `CombatSmokeBootstrap` | Optional `MonoBehaviour` for a scene: owned `Restart` on enable, owned `End` on disable/destroy. No combat state. | — |
 
 `BattleLifecycleSystem.OnCreate` creates the session entity (a second instance throws, so a world never has
 two owners) and `OnDestroy` removes it together with any remaining combatant. Exiting Play Mode disposes
@@ -49,8 +49,14 @@ effect (no destroy, no queue reset, no ID consumed).
 |---|---|---|
 | `Start(setup)` | starts | `AlreadyActive` |
 | `Restart(setup)` | starts | ends the battle and starts a new one in the same step |
-| `End` | `NotActive` | destroys all combatants, resets the queue, `Idle` |
+| `End(owner)` | `NotActive` | destroys all combatants, resets the queue, `Idle`; `NotOwner` if `owner != 0` did not start this battle |
 | `Despawn(id)` | `NotActive` | destroys that combatant (`UnknownCombatant` if none); the other is untouched |
+
+**Owner.** `Start`/`Restart` store the request's `Owner` in `BattleSession.Owner` (0 = unowned); a `Restart`
+takes a running battle over. An `End` with a non-zero owner only ends that owner's battle, an `End` with 0 ends
+any. This keeps requesters that come and go independent: on an async scene switch Unity enables the next
+scene's bootstrap (its `Restart`) before it disables the previous one (its late `End`), which is then
+`NotOwner` instead of stopping the new battle.
 
 `Start`/`Restart` are rejected with `InvalidSetup` (equal teams, facing not ±1, non-finite position),
 `ClockStopped` (the clock reached `SimulationClock.LastTick`: this World cannot host a new battle, restart the
@@ -75,8 +81,11 @@ BattleRequest.Submit(world.EntityManager, BattleRequest.Start(BattleSetup.Defaul
 // ... next frame, before the first fixed step of the battle:
 var session = query.GetSingleton<BattleSession>(); // HumanCombatant, AiCombatant, BattleStartTick
 ```
-In a scene: add `CombatSmokeBootstrap` to one GameObject (`Assets/Scenes/CombatSmoke.unity`). Use one per
-scene; disabling it ends the battle of the World.
+In a scene: add `CombatSmokeBootstrap` to one GameObject (`Assets/Scenes/CombatSmoke.unity`). Disabling it
+ends the battle only if that bootstrap started it (the latest enabled bootstrap owns the battle).
+
+Requests are applied at the next frame boundary, not the next tick: a request made inside a fixed step (e.g. a
+later defeat owner ending the battle) lets the remaining catch-up ticks of that frame run first.
 
 ## Not implemented here
 Input and AI producers, movement, attacks, collisions, rendering. A spawn of many combatants for the

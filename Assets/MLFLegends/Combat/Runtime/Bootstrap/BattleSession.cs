@@ -58,7 +58,10 @@ namespace MLFLegends.Combat
         /// <summary>End the running battle (if any) and start a new one.</summary>
         Restart = 2,
 
-        /// <summary>End the running battle; <see cref="BattleRequestOutcome.NotActive"/> when idle.</summary>
+        /// <summary>
+        /// End the running battle; <see cref="BattleRequestOutcome.NotActive"/> when idle. With a non-zero
+        /// <see cref="BattleRequest.Owner"/>, only a battle started by that owner is ended.
+        /// </summary>
         End = 3,
 
         /// <summary>Destroy one combatant of the running battle. Its ID is never reused.</summary>
@@ -90,6 +93,9 @@ namespace MLFLegends.Combat
 
         /// <summary>Not enough <see cref="CombatantId"/> values left in this World; IDs never wrap to 0.</summary>
         IdsExhausted = 9,
+
+        /// <summary>End with an <see cref="BattleRequest.Owner"/> that did not start the running battle.</summary>
+        NotOwner = 10,
     }
 
     /// <summary>
@@ -105,11 +111,20 @@ namespace MLFLegends.Combat
         /// <summary>Target of <see cref="BattleRequestKind.Despawn"/>.</summary>
         public CombatantId Combatant;
 
-        public static BattleRequest Start(in BattleSetup setup) => new BattleRequest { Kind = BattleRequestKind.Start, Setup = setup };
+        /// <summary>
+        /// Requester token, 0 = none. Recorded by Start/Restart as <see cref="BattleSession.Owner"/>; an End with a
+        /// non-zero owner ends only that owner's battle, so a requester that leaves (e.g. a scene being unloaded after
+        /// the next scene already restarted the battle) cannot end a battle someone else started.
+        /// </summary>
+        public uint Owner;
 
-        public static BattleRequest Restart(in BattleSetup setup) => new BattleRequest { Kind = BattleRequestKind.Restart, Setup = setup };
+        public static BattleRequest Start(in BattleSetup setup, uint owner = 0) =>
+            new BattleRequest { Kind = BattleRequestKind.Start, Setup = setup, Owner = owner };
 
-        public static BattleRequest End() => new BattleRequest { Kind = BattleRequestKind.End };
+        public static BattleRequest Restart(in BattleSetup setup, uint owner = 0) =>
+            new BattleRequest { Kind = BattleRequestKind.Restart, Setup = setup, Owner = owner };
+
+        public static BattleRequest End(uint owner = 0) => new BattleRequest { Kind = BattleRequestKind.End, Owner = owner };
 
         public static BattleRequest Despawn(CombatantId combatant) => new BattleRequest { Kind = BattleRequestKind.Despawn, Combatant = combatant };
 
@@ -140,6 +155,7 @@ namespace MLFLegends.Combat
         BattleRequestOutcome m_LastOutcome;
         uint m_BattleStartTick;
         uint m_BattleNumber;
+        uint m_Owner;
         CombatantId m_Human;
         CombatantId m_Ai;
 
@@ -162,17 +178,21 @@ namespace MLFLegends.Combat
         /// <summary>Combatant controlled by AI in the current battle; <see cref="CombatantId.Invalid"/> when idle.</summary>
         public CombatantId AiCombatant => m_Ai;
 
+        /// <summary><see cref="BattleRequest.Owner"/> of the request that started the current battle; 0 when idle or unowned.</summary>
+        public uint Owner => m_Owner;
+
         /// <summary>Outcome of the last applied <see cref="BattleRequest"/>.</summary>
         public BattleRequestOutcome LastOutcome => m_LastOutcome;
 
-        /// <summary>Battle-relative tick: 1 on the first simulated tick of the battle.</summary>
+        /// <summary>Battle-relative tick: 1 on the first simulated tick of the battle. Only for ticks at or after <see cref="BattleStartTick"/>.</summary>
         public uint RelativeTick(uint absoluteTick) => absoluteTick - m_BattleStartTick;
 
         internal void SetOutcome(BattleRequestOutcome outcome) => m_LastOutcome = outcome;
 
-        internal void Begin(uint battleStartTick, CombatantId human, CombatantId ai)
+        internal void Begin(uint battleStartTick, uint owner, CombatantId human, CombatantId ai)
         {
             m_State = BattleState.Active;
+            m_Owner = owner;
             m_BattleStartTick = battleStartTick;
             m_BattleNumber++;
             m_Human = human;
@@ -182,6 +202,7 @@ namespace MLFLegends.Combat
         internal void Finish()
         {
             m_State = BattleState.Idle;
+            m_Owner = 0;
             m_Human = CombatantId.Invalid;
             m_Ai = CombatantId.Invalid;
         }

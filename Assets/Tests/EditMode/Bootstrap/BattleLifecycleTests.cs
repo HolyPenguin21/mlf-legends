@@ -272,6 +272,34 @@ namespace MLFLegends.Tests.EditMode
         }
 
         [Test]
+        public void CommandsForTheNextBattlesTicksSubmittedInThePreviousBattleNeverReachIt()
+        {
+            Request(BattleRequest.Start(BattleSetup.Default));
+            Step(2);
+            var first = Session;
+            // Every tick the next battle will simulate first, for both old combatants: pending and in the inbox.
+            for (var lead = 1u; lead <= CombatCommandQueue.MaxLeadTicks; lead++)
+                Submit(Cmd(first.HumanCombatant, Tick + lead), Cmd(first.AiCombatant, Tick + lead, source: CommandSource.AI));
+            Step();
+            Assert.That(PendingCount, Is.EqualTo(2 * ((int)CombatCommandQueue.MaxLeadTicks - 1)));
+            for (var lead = 1u; lead <= CombatCommandQueue.MaxLeadTicks; lead++)
+                Submit(Cmd(first.HumanCombatant, Tick + lead, moveX: -1));
+
+            Request(BattleRequest.Restart(BattleSetup.Default));
+            var second = Session;
+            var oldIds = new[] { first.HumanCombatant.Value, first.AiCombatant.Value };
+            for (var i = 0; i <= CombatCommandQueue.MaxLeadTicks; i++)
+            {
+                Step();
+                var results = Manager.GetBuffer<CombatCommandResult>(QueueEntity).AsNativeArray().ToArray();
+                Assert.That(results.Where(r => oldIds.Contains(r.Command.Combatant.Value)), Is.Empty,
+                    $"No command of battle 1 is even processed on relative tick {second.RelativeTick(Tick)} of battle 2.");
+                Assert.That(Manager.GetComponentData<AppliedCombatCommand>(Find(second.HumanCombatant)).WasSubmitted, Is.False);
+                Assert.That(Manager.GetComponentData<AppliedCombatCommand>(Find(second.AiCombatant)).WasSubmitted, Is.False);
+            }
+        }
+
+        [Test]
         public void RestartReplacesTheFightersInOneStep()
         {
             Request(BattleRequest.Start(BattleSetup.Default));
@@ -356,6 +384,42 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(Queue.BattleStartTick, Is.EqualTo(boundary), "A rejected end does not reset the queue again.");
             Assert.That(CombatantQuery.CalculateEntityCount(), Is.Zero);
             Assert.That(Session.BattleNumber, Is.EqualTo(1u));
+        }
+
+        [Test]
+        public void OwnedEndOnlyEndsTheBattleOfItsOwner()
+        {
+            Assert.That(Request(BattleRequest.Restart(BattleSetup.Default, owner: 1)), Is.EqualTo(BattleRequestOutcome.Started));
+            Assert.That(Session.Owner, Is.EqualTo(1u));
+
+            Assert.That(Request(BattleRequest.End(owner: 2)), Is.EqualTo(BattleRequestOutcome.NotOwner));
+            Assert.That(LiveIds, Is.EqualTo(new[] { 1u, 2u }), "A rejected end has no side effect.");
+            Assert.That(Session.State, Is.EqualTo(BattleState.Active));
+
+            Request(BattleRequest.Restart(BattleSetup.Default, owner: 2));
+            Assert.That(Session.Owner, Is.EqualTo(2u), "A restart takes the battle over.");
+            Assert.That(Request(BattleRequest.End(owner: 1)), Is.EqualTo(BattleRequestOutcome.NotOwner));
+            Assert.That(Request(BattleRequest.End(owner: 2)), Is.EqualTo(BattleRequestOutcome.Ended));
+            Assert.That(Session.Owner, Is.Zero);
+
+            Request(BattleRequest.Start(BattleSetup.Default, owner: 7));
+            Assert.That(Request(BattleRequest.End()), Is.EqualTo(BattleRequestOutcome.Ended), "An unowned end ends any battle.");
+        }
+
+        [Test]
+        public void LateEndOfAPreviousSceneDoesNotStopTheBattleOfTheNextScene()
+        {
+            Request(BattleRequest.Restart(BattleSetup.Default, owner: 1));
+
+            // Async scene switch: the next scene's bootstrap is enabled before the previous one is disabled.
+            BattleRequest.Submit(Manager, BattleRequest.Restart(BattleSetup.Default, owner: 2));
+            BattleRequest.Submit(Manager, BattleRequest.End(owner: 1));
+            Boundary();
+
+            Assert.That(Session.LastOutcome, Is.EqualTo(BattleRequestOutcome.NotOwner));
+            Assert.That(Session.State, Is.EqualTo(BattleState.Active));
+            Assert.That(Session.Owner, Is.EqualTo(2u));
+            Assert.That(LiveIds, Is.EqualTo(new[] { 3u, 4u }));
         }
 
         [Test]

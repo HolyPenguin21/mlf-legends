@@ -5,7 +5,11 @@ using NUnit.Framework;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+#if UNITY_EDITOR
+using UnityEditor.SceneManagement;
+#endif
 
 namespace MLFLegends.Tests.PlayMode
 {
@@ -114,5 +118,72 @@ namespace MLFLegends.Tests.PlayMode
             yield return null;
             Assert.That(LiveIds, Is.Empty, "The test leaves no combatant in the default world.");
         }
+
+#if UNITY_EDITOR
+        const string SmokeScenePath = "Assets/Scenes/CombatSmoke.unity";
+
+        static IEnumerator LoadSmokeSceneAdditive()
+        {
+            var load = EditorSceneManager.LoadSceneAsyncInPlayMode(SmokeScenePath, new LoadSceneParameters(LoadSceneMode.Additive));
+            while (!load.isDone)
+                yield return null;
+        }
+
+        static Scene[] SmokeScenes() => Enumerable.Range(0, SceneManager.sceneCount).Select(SceneManager.GetSceneAt)
+            .Where(scene => scene.path == SmokeScenePath && scene.isLoaded).ToArray();
+
+        // The real scene asset; the async order of a scene switch: the next scene is enabled before the previous one
+        // is disabled, so the previous bootstrap's end arrives after the next bootstrap's restart.
+        [UnityTest]
+        public IEnumerator SmokeSceneStartsItsBattleAndASceneSwitchNeitherStopsNorDuplicatesIt()
+        {
+            yield return null;
+            Assert.That(Session.State, Is.EqualTo(BattleState.Idle));
+            try
+            {
+                yield return LoadSmokeSceneAdditive();
+                yield return null;
+                var first = Session;
+                Assert.That(first.State, Is.EqualTo(BattleState.Active));
+                Assert.That(first.Owner, Is.Not.Zero);
+                Assert.That(LiveIds, Is.EqualTo(new[] { first.HumanCombatant.Value, first.AiCombatant.Value }));
+                var human = Manager.CreateEntityQuery(typeof(CombatantId)).ToEntityArray(Allocator.Temp)
+                    .ToArray().Single(e => Manager.GetComponentData<CombatantId>(e).Value == first.HumanCombatant.Value);
+                Assert.That(Manager.GetComponentData<CombatTeam>(human).Value, Is.EqualTo(1));
+                Assert.That(Manager.GetComponentData<CombatPosition>(human).Value.x, Is.EqualTo(-2f));
+                Assert.That(Manager.GetComponentData<CombatFacing>(human).Value, Is.EqualTo(FacingDirection.Right));
+
+                // Switch: load the next copy, then unload the previous one.
+                yield return LoadSmokeSceneAdditive();
+                var previous = SmokeScenes().First();
+                var unload = SceneManager.UnloadSceneAsync(previous);
+                while (!unload.isDone)
+                    yield return null;
+                yield return null;
+                yield return null;
+
+                var next = Session;
+                Assert.That(SmokeScenes().Length, Is.EqualTo(1));
+                Assert.That(next.State, Is.EqualTo(BattleState.Active), "The late end of the unloaded scene did not stop the next battle.");
+                Assert.That(next.Owner, Is.Not.EqualTo(first.Owner));
+                Assert.That(next.BattleNumber, Is.EqualTo(first.BattleNumber + 1));
+                Assert.That(LiveIds, Is.EqualTo(new[] { next.HumanCombatant.Value, next.AiCombatant.Value }));
+                Assert.That(next.HumanCombatant.Value, Is.GreaterThan(first.AiCombatant.Value));
+            }
+            finally
+            {
+                foreach (var scene in SmokeScenes())
+                    SceneManager.UnloadSceneAsync(scene);
+            }
+
+            for (var i = 0; i < 5 && SmokeScenes().Length > 0; i++)
+                yield return null;
+            yield return null;
+            yield return null;
+            Assert.That(SmokeScenes(), Is.Empty);
+            Assert.That(LiveIds, Is.Empty, "Leaving the scene ends its battle.");
+            Assert.That(Session.State, Is.EqualTo(BattleState.Idle));
+        }
+#endif
     }
 }

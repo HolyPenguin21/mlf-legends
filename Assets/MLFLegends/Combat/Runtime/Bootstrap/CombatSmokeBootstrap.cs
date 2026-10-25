@@ -11,7 +11,9 @@ namespace MLFLegends.Combat
     /// <remarks>
     /// Only appends <see cref="BattleRequest"/>s; <see cref="BattleLifecycleSystem"/> creates and destroys the
     /// combatants. A restart is used on enable so that a second bootstrap, or a scene reload, replaces the
-    /// fighters instead of duplicating them.
+    /// fighters instead of duplicating them. The end request carries this bootstrap's owner token, so it ends
+    /// only the battle this bootstrap started: with an async scene load the next scene's bootstrap is enabled
+    /// before the previous one is disabled, and that late end must not stop the new battle.
     /// </remarks>
     [DisallowMultipleComponent]
     public sealed class CombatSmokeBootstrap : MonoBehaviour
@@ -22,6 +24,10 @@ namespace MLFLegends.Combat
         [SerializeField] byte m_AiTeam = 2;
         [SerializeField] Vector3 m_AiPosition = new Vector3(2f, 0f, 0f);
         [SerializeField] FacingDirection m_AiFacing = FacingDirection.Left;
+
+        // Owner token per enable; only needs to differ between bootstraps that are alive at the same time.
+        static uint s_LastOwner;
+        uint m_Owner;
 
         public BattleSetup Setup => new BattleSetup
         {
@@ -38,15 +44,21 @@ namespace MLFLegends.Combat
                 return;
             }
 
+            m_Owner = ++s_LastOwner;
+            if (m_Owner == 0)
+                m_Owner = ++s_LastOwner; // 0 means "no owner"
+
             if (TryGetEntityManager(out var entityManager))
-                BattleRequest.Submit(entityManager, BattleRequest.Restart(setup));
+                BattleRequest.Submit(entityManager, BattleRequest.Restart(setup, m_Owner));
         }
 
         void OnDisable()
         {
             // On Play Mode exit the default world may already be disposed; it takes its combatants with it.
-            if (TryGetEntityManager(out var entityManager))
-                BattleRequest.Submit(entityManager, BattleRequest.End());
+            // Nothing to end if this bootstrap never requested a battle (invalid setup).
+            if (m_Owner != 0 && TryGetEntityManager(out var entityManager))
+                BattleRequest.Submit(entityManager, BattleRequest.End(m_Owner));
+            m_Owner = 0;
         }
 
         static bool TryGetEntityManager(out EntityManager entityManager)

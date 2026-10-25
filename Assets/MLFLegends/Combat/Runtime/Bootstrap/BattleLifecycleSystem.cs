@@ -86,10 +86,12 @@ namespace MLFLegends.Combat
             {
                 case BattleRequestKind.Start:
                 case BattleRequestKind.Restart:
-                    return Start(entityManager, request.Setup, request.Kind == BattleRequestKind.Restart, ref session, ref allocator);
+                    return Start(entityManager, request, ref session, ref allocator);
                 case BattleRequestKind.End:
                     if (!session.IsActive)
                         return BattleRequestOutcome.NotActive;
+                    if (request.Owner != 0 && request.Owner != session.Owner)
+                        return BattleRequestOutcome.NotOwner;
                     DestroyCombatants(entityManager);
                     session.Finish();
                     return BattleRequestOutcome.Ended;
@@ -102,13 +104,14 @@ namespace MLFLegends.Combat
             }
         }
 
-        BattleRequestOutcome Start(EntityManager entityManager, in BattleSetup setup, bool restart,
+        BattleRequestOutcome Start(EntityManager entityManager, in BattleRequest request,
             ref BattleSession session, ref CombatantIdAllocator allocator)
         {
             // Every check before any side effect: a rejected (re)start leaves the running battle untouched.
+            var setup = request.Setup;
             if (!setup.IsValid)
                 return BattleRequestOutcome.InvalidSetup;
-            if (session.IsActive && !restart)
+            if (session.IsActive && request.Kind != BattleRequestKind.Restart)
                 return BattleRequestOutcome.AlreadyActive;
             if (m_RunningClock.IsEmpty)
                 return BattleRequestOutcome.ClockStopped;
@@ -119,7 +122,7 @@ namespace MLFLegends.Combat
             var battleStartTick = DestroyCombatants(entityManager);
             var human = Spawn(entityManager, new CombatantId { Value = first }, setup.Human);
             var ai = Spawn(entityManager, new CombatantId { Value = first + 1 }, setup.Ai);
-            session.Begin(battleStartTick, human, ai);
+            session.Begin(battleStartTick, request.Owner, human, ai);
             return BattleRequestOutcome.Started;
         }
 
