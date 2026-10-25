@@ -27,8 +27,9 @@ behaviour. All combat simulation code lives in the single assembly `MLFLegends.C
 ## Identity and lifetime
 - Immutable identity = `CombatantId` + `CombatTeam`, separate from mutable state
   (`CombatPosition`, `CombatFacing`, `InCombat`).
-- `CombatantId.Value` is unique per battle, never reused (also not after defeat or despawn); `0` is
-  invalid. The spawner (#5) is the only allocator.
+- `CombatantId.Value` is unique per ECS `World`, never reused across battles (also not after defeat or
+  despawn); `0` is invalid. The battle lifecycle spawner (#5) is the only allocator. A fresh `World`
+  may restart the ID sequence, while an ordinary battle restart in the same World must not.
 - `Entity` handles are valid only inside one `World` and are recycled after destruction; anything
   persistent, ordered, addressed from outside or replayed uses `CombatantId`.
 - Deterministic iteration order, when required, is ascending `CombatantId`, not chunk order.
