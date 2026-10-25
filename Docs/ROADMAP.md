@@ -66,9 +66,9 @@
 
 After merged Issue #5 (PR #13), execute narrow follow-ups **before final validation and performance baselining**:
 
-1. **Issue #12 — Commands Temp Native-container lifetime:** narrow corrective PR in `Commands/`, before #6 regression/replay tests and #7 performance baseline. Confirm actual issue and resolve without speculative architecture changes. Unity Temp allocations are automatically reclaimed; no leak has been independently demonstrated.
-2. **Issue #10 — PowerShell Unity test runner waiting:** separate tooling-only PR, before #6 so subsequent automated tests have a reliable local runner. Do not change ECS runtime here.
-3. **Issue #14 — Battle lifecycle safety:** ensure an `End` emitted during a fixed step prevents old-session gameplay on the remaining catch-up ticks, and failed Reset/restart never leaves a half-destroyed battle. Same lifecycle owner, no second clock. Document optional no-domain-reload Play Mode QA as NOT RUN if unavailable.
+1. **Issue #12 — Commands Temp Native-container lifetime: COMPLETED.** [PR #15](https://github.com/HolyPenguin21/mlf-legends/pull/15) merged as `4ccc4222c58307ca9164f453de9c8d7bbb2ef1b9`. Native Temp container lifetimes made explicit; real persistent `EntityQuery` retention in `ResetForBattle` fixed. Agent reports **72/72 EditMode, 6/6 PlayMode PASS**; manager static review confirms six Temp scratch containers and all three dynamically created queries disposed. Native Temp allocator's per-frame reclamation still determines actual frame peak, to be profiled in #7.
+2. **Issue #10 — PowerShell Unity test runner waiting: NEXT.** Focused tooling-only PR before #6. Preserve accurate exit code, fresh XML and handling of paths containing spaces; no runtime or ECS changes.
+3. **Issue #14 — Battle lifecycle safety:** ensure an `End` emitted during a fixed step prevents old-session gameplay on the remaining catch-up ticks, and failed Reset/restart never leaves a half-destroyed battle. Also dispose dynamically created Bootstrap `EntityQuery` objects in `BattleRequest.Submit` and `CombatSmokeBootstrap.TryGetEntityManager` (identified in PR #15 review). Same lifecycle owner, no second clock. Document no-domain-reload Play Mode QA as NOT RUN if unavailable.
 4. **Issue #6 — Replay and integrated behavior tests:** execute/review against the post-fix runtime including multi-battle same-World behavior.
 5. **Issue #7 — 2/100/400-light-actor performance baseline:** final measurements after fixes. May develop alongside #6 when ownership scopes do not overlap.
 
