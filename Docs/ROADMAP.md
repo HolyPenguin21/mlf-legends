@@ -54,12 +54,12 @@
 
 ## Stage 01 progress and integration order (2026-10-25)
 - [x] **01.1 / Issue #2 — Core contracts**: merged as [PR #8](https://github.com/HolyPenguin21/mlf-legends/pull/8), commit `74de551e7bc4e1f213e7af1c688c1a2db78212cb`. Single runtime asmdef, `CombatantId`, `CombatTeam`, `CombatPosition`, `CombatFacing`, `InCombat`, `CombatCommand` and `Core/CONTRACTS.md`. Static architecture review passed; Unity runtime tests not independently rerun. Status: **MERGED / RUNTIME UNVERIFIED**.
-- [ ] **01.2 / Issue #3 — Single fixed-step clock**: READY for agent after #2. Detailed manager handoff added to Issue #3.
-- [ ] **01.3 / Issue #4 — Command processor**: BLOCKED until #3 merged.
-- [ ] **01.4 / Issue #5 — Two combatants bootstrap**: BLOCKED until #4 merged.
-- [ ] **01.5 / Issue #6 — Replay/behavior tests**: BLOCKED until #5 merged.
+- [x] **01.2 / Issue #3 — Single fixed-step clock**: PR #9 merged as `1c98d1f982bea8e7776101382b2585fa16a89fd3`. One World-scoped 60Hz fixed-step clock, separate phase order, tick 1 first, no double writer. Agent reported Unity EditMode **15/15** and PlayMode **2/2 PASS**; manager inspected code and tests but did not run Unity independently. Status: MERGED / AGENT-REPORTED PASS.
+- [ ] **01.3 / Issue #4 — Command processor**: READY; #3 merged. Must provide single battle-queue clear contract for #5; same monotonic World clock, no recycled IDs across battle restarts.
+- [ ] **01.4 / Issue #5 — Two combatants bootstrap**: BLOCKED until #4 merged. **Manager restart decision**: re-use default ECS World, preserve clock and ID allocator, clear prior battle state, capture `BattleStartTick`, spawn fresh actors.
+- [ ] **01.5 / Issue #6 — Replay/behavior tests**: BLOCKED until #5 merged. Verify `relativeTick = absoluteTick - BattleStartTick` and two sessions in one World without leaked actors/commands.
 - [ ] **01.6 / Issue #7 — Baseline ECS 400-lite benchmark**: BLOCKED until #5 merged; can run in parallel with #6.
-- **Architectural ownership:** only Issue #3 writes the authoritative tick. Only Issue #4 consumes commands. Issue #5 allocates unique `CombatantId`. Future movement/collisions own authoritative `CombatPosition`, not Stage 01 clock.
+- **Architectural ownership:** only Issue #3 writes the authoritative World tick. Only Issue #4 consumes and clears commands. Issue #5 owns battle lifecycle and monotonic non-reusable-in-World `CombatantId`. Future movement/collisions own authoritative `CombatPosition`, not Stage 01 clock. Stage 01.2 review flagged non-blocking `Tools/Run-UnityTests.ps1` issue #10.
 - Unknown Unity execution status must remain explicit; **not a blocker** for delivering approved PRs.
 
 ## Delivery policy
