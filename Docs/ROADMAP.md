@@ -14,7 +14,7 @@
 | Stage | Work | Acceptance | Status |
 |---|---|---|---|
 | 00 | GitHub/Unity/URP bootstrap, dependencies, folders, test harness, CI feasibility | Source tracked; editor/packages committed; tests owner-reported PASS; CI and independent evidence deferred | ACCEPTED (OWNER) |
-| 01 | ECS simulation, fixed-step scheduler, entity data, command buffer, seeded tests | Two simulated combatants reproduce same results with same inputs/seed; no render-state authority | READY — issues #2–#7 |
+| 01 | ECS simulation, fixed-step scheduler, entity data, command buffer, seeded tests | Two simulated combatants reproduce same results with same inputs/seed; no render-state authority | IN PROGRESS — #2 merged; #3 ready |
 | 02 | Movement and camera | 2.5D move, jump, orientation, fixed angle orthographic camera, follow/zoom/pan; frame-rate-independent control | NOT STARTED |
 | 03 | GPU sprite rendering | Atlas animation, direction/frame selection, stable depth sorting, optional equipment layers, instancing/indirect render assessment | NOT STARTED |
 | 04 | Collisions | Custom actor/world collision, spatial index, masses, allies yield, enemies block, knockback | NOT STARTED |
@@ -51,6 +51,16 @@
 - [x] Owner-reported test pass implies Stage 00 test assemblies compiled and SampleScene smoke test succeeded; independent Console audit remains pending.
 - [ ] Evaluate GitHub Actions Unity test runner and licensing after local tests pass; CI currently deferred, not configured.
 - [x] Stage 00 **ACCEPTED by owner** based on reported PASS for all tests, 2026-10-25. Retain missing XML/CI as follow-up; don't imply independently VERIFIED. Stage 01 can proceed.
+
+## Stage 01 progress and integration order (2026-10-25)
+- [x] **01.1 / Issue #2 — Core contracts**: merged as [PR #8](https://github.com/HolyPenguin21/mlf-legends/pull/8), commit `74de551e7bc4e1f213e7af1c688c1a2db78212cb`. Single runtime asmdef, `CombatantId`, `CombatTeam`, `CombatPosition`, `CombatFacing`, `InCombat`, `CombatCommand` and `Core/CONTRACTS.md`. Static architecture review passed; Unity runtime tests not independently rerun. Status: **MERGED / RUNTIME UNVERIFIED**.
+- [ ] **01.2 / Issue #3 — Single fixed-step clock**: READY for agent after #2. Detailed manager handoff added to Issue #3.
+- [ ] **01.3 / Issue #4 — Command processor**: BLOCKED until #3 merged.
+- [ ] **01.4 / Issue #5 — Two combatants bootstrap**: BLOCKED until #4 merged.
+- [ ] **01.5 / Issue #6 — Replay/behavior tests**: BLOCKED until #5 merged.
+- [ ] **01.6 / Issue #7 — Baseline ECS 400-lite benchmark**: BLOCKED until #5 merged; can run in parallel with #6.
+- **Architectural ownership:** only Issue #3 writes the authoritative tick. Only Issue #4 consumes commands. Issue #5 allocates unique `CombatantId`. Future movement/collisions own authoritative `CombatPosition`, not Stage 01 clock.
+- Unknown Unity execution status must remain explicit; **not a blocker** for delivering approved PRs.
 
 ## Delivery policy
 Existing Unity-generated project content is preserved. Code changes belong in focused commits/PRs and must not be merged before authorization. **Project-owner rule (2026-10-25): Unity Editor tests must never block commit/merge/push when the owner cannot run them from the current environment.** Perform available static checks, report risks, mark runtime tests **NOT RUN**, and leave them outstanding for a later verification opportunity. Do not mislabel delivery as VERIFIED. Update status and QA together whenever delivering milestones.
