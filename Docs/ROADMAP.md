@@ -28,6 +28,14 @@
 | 12 | 200v200 scale | ECS/Burst/rendering/perf benchmark on 400 actors; profile collisions, AI, render, frame pacing | NOT STARTED |
 | 13 | Magic and destruction | Prepared spells, multiple resources, systemic area effects, destructible objects/terrain, nav changes | NOT STARTED |
 
+## First visible gameplay scene — owner decision (2026-10-25)
+
+- Preserve stage order: finish **Stage 01** baseline ECS profiling (#7), then **Stage 02** movement and fixed-angle camera, then **Stage 03** sprite rendering.
+- **Do not** create a new visually playable/demo battle scene in Stage 02 using capsules, placeholder GameObjects or other substitute fighter graphics. Movement and camera in Stage 02 are verified through ECS state/integration tests and existing technical smoke infrastructure, not a new user-facing scene.
+- **After the sprite renderer is working in Stage 03**, assemble the first visible battle test scene: orthographic camera, simple 3D arena and sprite-rendered fighters reflecting canonical ECS state. Integrate the Stage 02 movement/camera there; no separate gameplay model or render-driven simulation.
+- Existing `Assets/Scenes/CombatSmoke.unity` is a **technical ECS smoke scene**, not a visual gameplay milestone, and can remain for automated/debug checks. No request to remove it.
+- The first attack-capable fight remains a later milestone (Stage 05+); the complete 1v1 prototype is Stage 09. Do not promise visual attacks or finished combat at Stage 03.
+
 ## Early risk probes (not separate feature architectures)
 - During 01 benchmark fixed-step loop and spatial query overhead at 400 basic entities.
 - During 03 prove sprite instancing, sorting and equipment passes on actual target GPU before asset pipeline locks.
@@ -62,6 +70,17 @@
 - **Architectural ownership:** only Issue #3 writes the authoritative World tick. Only Issue #4 consumes and clears commands; its `ResetForBattle` API is invoked by #5, never copied. Issue #5 owns battle lifecycle and monotonic non-reusable-in-World `CombatantId`. Future movement/collisions own authoritative `CombatPosition`, not Stage 01 clock. Tooling issue #10 and Commands Temp cleanup issue #12 are scoped follow-ups, not blockers for bootstrap.
 - Unknown Unity execution status must remain explicit; **not a blocker** for delivering approved PRs.
 
+## Stage 01 closure gate — owner decision (2026-10-25)
+
+**Do not start Stage 02 immediately after completing the main Stage 01 performance benchmark.** The owner requires the following sequence, with each implementation reviewed against actual `main`:
+
+1. **Issue #7** — finish and review the real 2/100/400 ECS benchmark; document measured values, hardware, workload, Burst mode and regressions.
+2. **Issue #17** — investigate and correct or demonstrably resolve the Unicode-path/Burst regression. Prior `.urtshader` local reimport success (PR #21) is not proof that the original Burst test passes under a Unicode project path.
+3. **Issue #19** — resolve the paused-battle End/scene-exit behavior and perform no-domain-reload Play Mode QA if the Editor GUI is available; record unperformed checks without inventing PASS.
+4. **Issue #23** — final Stage 01 technical-debt audit (Core → Simulation → Commands → Bootstrap → Replay → Performance), registry of any further issues, final QA and performance summary, and preparation of a **standalone handoff message for a new Stage 02 conversation** with exact `main` commit and contractual context.
+
+**Completion criterion:** Stage 01 technical debt must be explicitly resolved and reviewed; if a manual check cannot be performed, record it as outstanding and seek the owner's decision rather than silently marking it complete. Stage 02 **Issue #22**, frame-rate-independent input sampling, is planned work that requires a future real input adapter; it is not preemptively implemented as Stage 01 debt. The first visible user-facing fight scene remains **after Stage 03 sprite rendering**, not Stage 02.
+
 ## Stage 01 stabilization window — manager scheduling decision (2026-10-25)
 
 After merged Issue #5 (PR #13), execute narrow follow-ups **before final validation and performance baselining**:
@@ -71,8 +90,8 @@ After merged Issue #5 (PR #13), execute narrow follow-ups **before final validat
 3. **Issue #14 — Battle lifecycle safety: COMPLETED.** [PR #18](https://github.com/HolyPenguin21/mlf-legends/pull/18) merged as `6983ad874e604f9a22baeadc2b63b8c6b7b23ad7`. The same lifecycle owner now runs before the clock on **each** fixed tick (including catch-up), checks `CanResetForBattle` through canonical queue validation before destroying actors, and releases ephemeral Bootstrap queries. Agent reports **82/82 EditMode, 6/6 PlayMode PASS**; manager inspected code and tests. Pause/Domain Reload scenarios remain tracked separately in #19.
 4. **Issue #6 — Replay and integrated behavior tests: COMPLETED.** PR #20 merged; 16 scenarios, agent-reported 98/98 EditMode and 6/6 PlayMode pass. Replay coverage is limited to existing clock, commands and lifecycle; no fake RNG or combat mechanics added.
 5. **Issue #7 — 2/100/400-light-actor performance baseline: NEXT.** Handoff posted. Manager authorizes **minimal extension of the existing single Bootstrap Spawn/CombatantIdAllocator** to create larger rosters while preserving 1v1, provided the agent documents exact contract and boundary checks. The performance harness must not run managed replay string-recording within measurement windows. Require actual native/GC and time measurements on stated machine/Unity/Burst settings.
-6. **Issue #17 — Unicode Windows project path / Burst test investigation (LOW PRIORITY):** reported by agent #10 as one Burst-related test failing 71/72 only under Cyrillic path, while ASCII paths pass 72/72. Cause unknown. Defer until after Stage 01 integration/performance where a suitable Windows test environment is available; do not silence or misclassify the failure.
-7. **Issue #19 — End while paused / no-domain-reload QA (DEFERRED):** optional gameplay lifecycle decision before adding pause UI, menu exit or save/load. No Stage 01 integration blocker. No-domain-reload manually NOT RUN.
+6. **Issue #17 — Unicode Windows project path / Burst test investigation (STAGE 01 DEBT, AFTER #7):** reported by agent #10 as one Burst-related test failing 71/72 under Cyrillic path, while ASCII paths passed 72/72. Cause unknown; PR #21 only corrected cached shader import failures. Investigate with equivalent Unity environments and actual logs before closing Stage 01, without hiding the original failure.
+7. **Issue #19 — End while paused / no-domain-reload QA (STAGE 01 DEBT, AFTER #17):** review safe End/scene exit at `Time.timeScale=0` in the existing lifecycle owner and attempt manual domain-reload-disabled QA. Previously NOT RUN: remain transparent about what is or is not verified. Resolve/review before Stage 02 handoff.
 8. **Issue #22 — Tick-aligned input sampling (STAGE 02):** replay tests show per-render-frame `Tick+1` producers are pacing-dependent. Define Held/Pressed handling and command scheduling when real input adapters arrive; no Stage 01 benchmark blocker.
 9. **PR #21 — URP shader import/cache recovery and serialized Editor settings (MERGED):** agent reports cached failed `.urtshader` imports were repaired by reimporting 16 shaders locally and that subsequent 98/98 EditMode, 6/6 PlayMode tests passed. Serialized URP/ProjectSettings updates are in `main`; review rendering settings when Stage 03 work starts. Does not change combat ECS runtime. This evidence does not yet prove Unicode Burst Issue #17 is fixed.
 

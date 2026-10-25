@@ -141,6 +141,15 @@ The script waits for the `Unity.exe` process itself (default timeout 60 min, `-T
 - **Tests (agent-run, ASCII worktree path `D:/Unity/Project/mlf-s7`, `Tools/Run-UnityTests.ps1`):** EditMode **114/114 PASS** (98 existing + 10 roster + 6 performance), PlayMode **6/6 PASS**. Performance category alone, Burst on and `--burst-disable-compilation`: 6/6 each. Mutation controls (temporary, reverted): naming every ally → 2 failures; reserving 2 IDs → 8; no AI allies → 9; no team-size bound → 3.
 - **Not covered / NOT RUN:** player build measurement; worker-thread scaling (no jobs in Stage 01); movement, collisions, spatial queries, AI, rendering; GC bytes (counter returns 0 in the Editor's Mono); Temp scratch inside Unity's reserved allocator (not observable).
 
+## Stage 01 closure policy (owner decision, 2026-10-25; PENDING)
+
+- **Stage 01 is not yet closed.** #7 2/100/400 ECS benchmark is in progress. After its integration review, process pending Stage 01 technical debt **#17 (Unicode project path / Burst regression)** and **#19 (End on pause and disabled Domain Reload Play Mode QA)** before opening Stage 02.
+- **#17 remains unresolved** despite PR #21 local reimport success: a genuine retest of the original Burst failure on Unicode-path is still needed.
+- **#19 manual QA remains NOT RUN** until an agent or the owner actually performs Enter/Exit Play Mode with domain reload disabled. A recorded `NOT RUN` does not mean verified.
+- **Issue #23 final audit:** manager checks actual `main`, every single owner/clock/queue/spawner/ID, cleanup and pending command lifetimes, replay equivalence, measured perf and regression suite evidence. New Stage 01-specific failures become tracked fixes, not ignored notes.
+- **Stage 02 handoff:** prepare a complete Russian context message for a **new session** only after the closeout review, with exact merge HEAD, outstanding future-stage Issues, proven test status and first planned Stage 02 work. Tick-aligned input Issue #22 belongs to Stage 02 and is not considered unresolved Stage 01 implementation.
+- The visual gameplay scene remains scheduled **after Stage 03 sprite rendering**.
+
 ## Stage-specific profiling
 - 1v1: response timing, invalid actions, front/back guard, dash, injury capability limits.
 - 4v4, 16v16, 50v50, 200v200: sim time/tick, collision pairs, AI decisions, GPU batches, allocations, sprite sorting and camera.
