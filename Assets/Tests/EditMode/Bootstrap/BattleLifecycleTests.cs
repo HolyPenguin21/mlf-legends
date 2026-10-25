@@ -630,6 +630,28 @@ namespace MLFLegends.Tests.EditMode
         // ---- requests and the fixed step (#14) ----
 
         [Test]
+        public void OnlyTheFixedStepClockDeclaresTheLifecycleOrderingDependency()
+        {
+            // Correct relative order alone cannot catch a constraint aimed at a system absent from Initialization.
+            var lifecycle = typeof(BattleLifecycleSystem);
+            Assert.That(Attribute.GetCustomAttributes(lifecycle, typeof(UpdateBeforeAttribute)), Is.Empty);
+            Assert.That(Attribute.GetCustomAttributes(lifecycle, typeof(UpdateAfterAttribute)), Is.Empty);
+            var lifecycleGroups = Attribute.GetCustomAttributes(lifecycle, typeof(UpdateInGroupAttribute))
+                .Cast<UpdateInGroupAttribute>().Select(a => a.GroupType);
+            Assert.That(lifecycleGroups, Is.EquivalentTo(new[]
+                { typeof(InitializationSystemGroup), typeof(FixedStepSimulationSystemGroup) }));
+
+            var clock = typeof(CombatClockSystem);
+            var clockGroups = Attribute.GetCustomAttributes(clock, typeof(UpdateInGroupAttribute))
+                .Cast<UpdateInGroupAttribute>().Select(a => a.GroupType);
+            Assert.That(clockGroups, Is.EqualTo(new[] { typeof(FixedStepSimulationSystemGroup) }));
+            var clockAfter = Attribute.GetCustomAttributes(clock, typeof(UpdateAfterAttribute))
+                .Cast<UpdateAfterAttribute>().Select(a => a.SystemType);
+            Assert.That(clockAfter, Is.EqualTo(new[] { typeof(BattleLifecycleSystem) }),
+                "BeginFixedStep ECB already precedes the normal bucket through OrderFirst.");
+        }
+
+        [Test]
         public void LifecycleRunsInTheFixedStepBeforeTheClockAdvances()
         {
             using var members = m_FixedStep.GetAllSystems(Allocator.Temp);

@@ -330,3 +330,35 @@ Additional missing integration coverage was prepared:
 `git diff --check` passed; source comparison confirms this follow-up changes tests/docs only and #17
 remains untouched. **NOT RUN:** Unity compilation, the additional/retained EditMode/PlayMode scenarios,
 profiles and the Domain Reload GUI scenario. Unity remains unavailable; source review is not runtime PASS.
+
+## Issue #19 — fixed-only ordering annotation follow-up (2026-10-26)
+
+Base: fresh `main` `d6acf7b104f7165b2347cd4d5a6097ab87fd25b9`, after manager review of merged PR #28.
+Removed Lifecycle's `UpdateBefore(CombatClockSystem)`. Fixed-only Clock now declares
+`UpdateAfter(BattleLifecycleSystem)` instead of the redundant cross-bucket dependency on BeginFixedStep ECB.
+BeginFixedStep `OrderFirst` and EndFixedStep `OrderLast`, the two memberships of the same lifecycle handle,
+Collection/State/Publication dependencies and every runtime method body are unchanged. No new systems,
+BattleRequest processing, queue rules, identities, names or pause behavior were introduced.
+
+Bottom-up source review: queue preflight/reset and actor cleanup → lifecycle drain/session/allocator →
+clock and phase dependencies → bootstrap owner tokens → isolated/manual, replay/benchmark and default
+World construction. Only annotations/comments changed in runtime source. A new annotation regression
+rejects the old declarations even when their resulting relative order happened to be correct. The
+attribute-driven replay order test and default-world PlayMode test verify the complete seven-system
+chain and the same Lifecycle handle in Initialization with no Clock there:
+
+`BeginFixedStep ECB → Lifecycle → Clock → Collection → State → Publication → EndFixedStep ECB`.
+
+Actually executed:
+- **PASS, static only:** all 32 C# files parsed with zero syntax errors; all runtime method bodies compared
+  byte-for-byte to base; no processing change. The annotation graph permits exactly the required chain
+  among 5,040 permutations, using Unity's documented built-in OrderFirst/OrderLast bucket contract.
+- **PASS:** 5 asmdef/package JSON files parse; 69 unique valid meta GUIDs; `git diff --check` clean.
+  #17 test source, Windows runner and investigation document unchanged.
+- **NOT RUN:** Unity compilation/source generation/Burst; annotation and actual order tests; retained
+  1v1/200v200 lifecycle, ID, queue, catch-up, pause/unpause, scene, naming and replay regressions;
+  performance rerun; manual Domain Reload GUI scenario. No Unity executable/assemblies/display available.
+
+Actual Editor sorting logs, including intentionally partial clock/command test Worlds that omit Lifecycle,
+remain unobserved; source checks are not proof of warning-free runtime sorting. #17 remains open and #23
+independent manager acceptance remains required. This follow-up is prepared for review, not merged.

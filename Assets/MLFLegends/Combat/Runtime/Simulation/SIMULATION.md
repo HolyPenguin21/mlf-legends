@@ -53,8 +53,10 @@ SimulationSystemGroup
   catch-up steps of one frame. It reads the clock and never writes it (see `Bootstrap/BOOTSTRAP.md`); it is not
   a combat phase. The same lifecycle handle also belongs to Initialization (`OrderFirst`), so End and
   Restart apply on paused frames with no fixed step. Initialization does not update the clock, processor
-  or phases. Fixed lifecycle and clock use the normal ordering bucket after BeginFixedStep; Collection
-  explicitly follows Clock. See Bootstrap's ECB lifetime restriction: actor ECBs must play back at the
+  or phases. Fixed lifecycle and clock use the normal ordering bucket after the `OrderFirst`
+  BeginFixedStep ECB. Fixed-only Clock declares `UpdateAfter(BattleLifecycleSystem)`; Collection explicitly
+  follows Clock. Lifecycle has no cross-group UpdateBefore/After constraint, and Clock has no redundant
+  UpdateAfter targeting the OrderFirst ECB. See Bootstrap's ECB lifetime restriction: actor ECBs must play back at the
   end of their producing fixed tick, not be retained until the next BeginFixedStep.
 - Future systems join a phase with `[UpdateInGroup(typeof(<phase group>))]`; they never update
   `SimulationClock` and never run combat logic outside these groups.

@@ -23,7 +23,7 @@ namespace MLFLegends.Combat
     /// </remarks>
     [BurstCompile]
     [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
-    [UpdateAfter(typeof(BeginFixedStepSimulationEntityCommandBufferSystem))]
+    [UpdateAfter(typeof(BattleLifecycleSystem))]
     public partial struct CombatClockSystem : ISystem
     {
         Entity m_Clock;

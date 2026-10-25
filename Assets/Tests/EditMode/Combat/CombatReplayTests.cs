@@ -187,6 +187,13 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(new[] { begin, lifecycle, clock, collection, state, publication, end }, Is.Ordered.Ascending.And.Unique,
                 "Begin ECB -> lifecycle -> clock -> collection -> state update -> publication -> End ECB, from the systems' own attributes.");
 
+            using (var initialization = w.World.GetExistingSystemManaged<InitializationSystemGroup>().GetAllSystems(Allocator.Temp))
+            {
+                Assert.That(initialization.IndexOf(w.World.GetExistingSystem<BattleLifecycleSystem>()), Is.GreaterThanOrEqualTo(0),
+                    "Attribute-driven bootstrap puts the same lifecycle handle in both groups.");
+                Assert.That(initialization.IndexOf(w.World.GetExistingSystem<CombatClockSystem>()), Is.EqualTo(-1));
+            }
+
             using var producers = w.World.GetExistingSystemManaged<CombatCommandCollectionSystemGroup>().GetAllSystems(Allocator.Temp);
             Assert.That(producers.IndexOf(w.World.GetExistingSystem<PlayerCommandProducer>()),
                 Is.LessThan(producers.IndexOf(w.World.GetExistingSystem<AiCommandProducer>())));

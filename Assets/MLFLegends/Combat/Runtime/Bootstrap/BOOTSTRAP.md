@@ -29,9 +29,10 @@ one request buffer, one allocator and one `OnUpdate`/`Apply` path, not two lifec
   `Time.timeScale = 0`, without calling the fixed-step group, clock, command processor or combat phases.
 - Inside each fixed step the order remains **BeginFixedStep ECB → Lifecycle → Clock → Collection →
   State → Publication → EndFixedStep ECB**. Lifecycle and clock use the normal bucket, after the
-  `OrderFirst` BeginFixedStep ECB; Lifecycle orders itself before Clock, Collection explicitly after Clock.
-  In Initialization, Lifecycle's `OrderFirst` already precedes the clock's default bucket, so its
-  `UpdateBefore(Clock)` constraint is redundant there; the clock is not added to Initialization.
+  `OrderFirst` BeginFixedStep ECB. Fixed-only Clock declares `UpdateAfter(BattleLifecycleSystem)`;
+  Collection explicitly follows Clock. Clock needs no explicit dependency on BeginFixedStep: its
+  `OrderFirst` bucket already precedes Lifecycle and Clock. Lifecycle declares no UpdateBefore/After
+  constraint, since Clock exists only in FixedStep and must not be an ordering target in Initialization.
 - Both boundaries read `SimulationClock.Tick` as the last completed tick. Each call copies and clears
   the request buffer before structural changes. The next call sees an empty buffer, so no request or
   queue reset is repeated merely because the system belongs to two groups.
