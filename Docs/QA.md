@@ -89,6 +89,14 @@ The script waits for the `Unity.exe` process itself (default timeout 60 min, `-T
 - **Non-blocking follow-up for Issue #14:** `BattleRequest.Submit` (`Bootstrap/BattleSession.cs`) and `CombatSmokeBootstrap.TryGetEntityManager` still construct persistent `EntityQuery` instances and do not dispose them. A scoped improvement is recorded as a comment on Issue #14, to be addressed in its existing Bootstrap-owned correction PR.
 - **Next in stabilization: Issue #10**, dedicated Windows PowerShell test runner process-wait fix, before full Stage 01 replay and performance tests.
 
+## Stage 01 stabilization — Unity batch test runner (Issue #10 / PR #16; 2026-10-25)
+
+- **GitHub delivery: PASS.** PR #16 merged into `main` at commit `7e6238bc94cf9a12ad5b17d76c9af475edad76df`; Issue #10 closed.
+- **Manager static inspection:** reviewed all changes in `Tools/Run-UnityTests.ps1` and `Docs/QA.md` and verified no Unity ECS runtime/packages/test assemblies changed. Process launch uses `System.Diagnostics.Process` with explicit PID waiting and timeout rather than direct `& Unity.exe`; arguments are quoted, project version/lockfile checked; previous XML/log deleted; new `/test-run` XML must contain positive total and all passed plus exit 0. Failed run, timeout and missing XML produce nonzero script result.
+- **Agent-reported Windows checks:** PowerShell 5.1 and Unity 6000.5.4f1: EditMode **72/72 PASS**, PlayMode **6/6 PASS**, spaced ASCII project/editor paths **72/72 PASS**, mocked negative controls for invalid/missing XML, nonzero process exits, locked project, and timeout all correctly FAIL. Results reported in PR #16; manager did not personally run Unity.
+- **Nonblocking defect (Issue #17):** Under a Windows project path containing Cyrillic characters, one Burst-related test failed (EditMode **71/72**, `ResetFromABurstSystemInTheCollectionPhaseRejectsThatTicksCommands`). Script properly returned FAIL. Root cause is **unknown**, do not call it a proved Burst engine bug. Working practice meanwhile: ASCII project path; investigate later with environment and logs. Tests under Cyrillic path are **not** PASS.
+- **Next implementation: Issue #14**, battle lifecycle timing/atomicity and Bootstrap native query cleanup; #6 replay tests and #7 benchmarking remain pending its review.
+
 ## Stage-specific profiling
 - 1v1: response timing, invalid actions, front/back guard, dash, injury capability limits.
 - 4v4, 16v16, 50v50, 200v200: sim time/tick, collision pairs, AI decisions, GPU batches, allocations, sprite sorting and camera.
@@ -122,4 +130,7 @@ The script waits for the `Unity.exe` process itself (default timeout 60 min, `-T
 | 2026-10-25 | Stage 01 stabilization #12 merged | PASS — MANAGER STATIC REVIEW | PR #15; Temp scratch disposal and persistent query disposal; no ECS architecture changes |
 | 2026-10-25 | Stage 01 stabilization Unity tests EditMode 72/72, PlayMode 6/6 | AGENT-REPORTED PASS | PR #15; raw XML and Unity execution not independently verified |
 | 2026-10-25 | Bootstrap transient EntityQuery lifetime | FOLLOW-UP / NON-BLOCKING | Added to Issue #14 (BattleSession / CombatSmokeBootstrap) |
-| 2026-10-25 | Unity test runner | NEXT / OPEN | Issue #10, after #12 and before replay suite #6 |
+| 2026-10-25 | Unity test runner #10 | MERGED / MANAGER STATIC REVIEW | PR #16; PowerShell Process wait, fresh XML/exit checks; no gameplay changes |
+| 2026-10-25 | Test runner supported-path execution | AGENT-REPORTED PASS | Unity EditMode 72/72, PlayMode 6/6, ASCII paths incl. spaces |
+| 2026-10-25 | Burst regression on Cyrillic project path | AGENT-REPORTED FAIL / FOLLOW-UP | EditMode 71/72, one Burst-test failure, Issue #17; root cause unknown |
+| 2026-10-25 | Battle lifecycle hardening | NEXT / OPEN | Issue #14, then #6 integration replay and #7 performance |
