@@ -11,12 +11,27 @@
 - [x] `ProjectSettings/GraphicsSettings.asset` points to a render pipeline asset; QualitySettings PC quality also points to a render pipeline asset.
 - [x] Initial project documentation added (README, Docs/ROADMAP, ARCHITECTURE, COMBAT_SPEC, DECISIONS, QA).
 - [ ] Confirm renderer asset and smoke scene instantiate correctly in Unity Editor.
-- [ ] Install, resolve and commit suitable Entities and (if selected) Entities Graphics package versions. They do not appear as top-level dependencies in currently inspected `manifest.json`.
+- [x] User added `com.unity.entities` **6.5.0** and `com.unity.entities.graphics` **6.5.0** to manifest and lockfile. Both are Unity 6000.5 core packages.
+- [ ] Verify Unity Editor imports the two core packages without package or compiler errors.
 - [ ] Verify package dependency resolution in the editor.
-- [ ] Create assembly definitions and EditMode baseline test; execute test.
+- [x] Created EditMode and PlayMode test assemblies with committed `.meta` GUIDs; staged ECS lifecycle, URP asset, and SampleScene load smoke tests on feature branch.
+- [ ] Execute test suites successfully in Unity Editor; capture results XML/Console.
 - [ ] Open a gameplay smoke scene and check Console/Play Mode.
-- [ ] Set up actual GitHub Actions Unity test/build checks (or record missing runner/license as blocker).
+- [ ] CI remains pending local tests and a viable Unity license/runner strategy; no GitHub Actions workflow currently configured.
 - [ ] Log test evidence; only then promote Stage 00 to VERIFIED.
+
+## How to run tests (Windows; Unity Editor must be closed)
+
+In Unity GUI: open **Window > General > Test Runner**; run **EditMode** tests, then **PlayMode** tests. Use Unity 6000.5.4f1.
+
+In PowerShell from repository root:
+
+```powershell
+.\Tools\Run-UnityTests.ps1 -EditorPath 'C:\Program Files\Unity\Hub\Editor\6000.5.4f1\Editor\Unity.exe' -Mode EditMode
+.\Tools\Run-UnityTests.ps1 -EditorPath 'C:\Program Files\Unity\Hub\Editor\6000.5.4f1\Editor\Unity.exe' -Mode PlayMode
+```
+
+The script requires a nonzero NUnit test count with all tests passing; it saves XML and Editor log to ignored `TestResults/`. Command-line testing can require an available Editor license. If either suite fails, send the Unity Console/Editor log and test result XML; do not mark stage 00 complete.
 
 ## Required review/check method
 1. Inspect code and existing callers before modifying.
@@ -39,4 +54,6 @@
 | 2026-10-25 | GitHub App access to new repository | PASS | Repository appears in installation-scoped list |
 | 2026-10-25 | GitHub first write | PASS | README commit `5514e8d21c0f3020de93d582fc5daf456a3a0a9e` |
 | 2026-10-25 | Unity version and package manifest review | CONFIG VERIFIED | GitHub file contents |
+| 2026-10-25 | Entities and Entities Graphics package manifests | CONFIG VERIFIED | 6.5.0 declared and locked in repo |
+| 2026-10-25 | Stage 00 smoke test suites and local runner | AUTHORED, NOT RUN | Feature branch `chore/stage-00-ecs-smoke-tests` |
 | 2026-10-25 | Unity compiler, EditMode/PlayMode tests | NOT RUN | No Editor process/tool results |
