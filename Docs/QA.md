@@ -4,6 +4,16 @@
 
 **Non-blocking delivery rule (approved 2026-10-25):** The owner currently cannot run Unity tests from their environment. This MUST NOT block committing, merging or pushing requested changes, nor prevent moving on to subsequent implementation tasks. Perform every feasible static check, label Unity checks **NOT RUN**, record the residual risk and verify later when execution becomes possible. Delivery is not the same as test approval.
 
+## Owner disposition: Stage 02 begins with deferred Stage 01 Unity QA (2026-10-26)
+
+**Current status: Stage 01 CODE ACCEPTED / STATIC AUDIT PASS; UNITY VERIFIED = NO.** The owner explicitly approved starting Stage 02 immediately rather than waiting for external Unity tests. [Issue #23](https://github.com/HolyPenguin21/mlf-legends/issues/23) independent bottom-up code audit has been CLOSED as completed. **Do not reclassify unexecuted runtime tests as passing.**
+
+Open [Issue #30](https://github.com/HolyPenguin21/mlf-legends/issues/30) is the **single verification-debt tracker** for actual project import/compile, full EditMode/PlayMode on current HEAD after PR #28/#29, fixed-step sort warnings (including partial Clock and Commands test Worlds that omit Lifecycle), paused scene lifecycle and manual Enter/Exit Play Mode with Domain Reload disabled, and (if feasible) updated full-frame ECS performance. Status **NOT RUN** until XML, Editor.log and/or manual QA evidence from the owner's next Unity session arrives. Historical 114/114 EditMode, 6/6 PlayMode and 2/100/400 measurements remain agent-reported on older code; not a current Unity PASS.
+
+Original [#17](https://github.com/HolyPenguin21/mlf-legends/issues/17) Unicode/Cyrillic Windows-path Burst regression remains OPEN and **NOT RUN** in controlled trials (PR #27 diagnostics only); it is separate from general QA #30. [#25](https://github.com/HolyPenguin21/mlf-legends/issues/25) full-pending cost remains a future conditional performance concern. [#22](https://github.com/HolyPenguin21/mlf-legends/issues/22) is future Stage 02 input pacing.
+
+**Stage 02 first task:** [#31](https://github.com/HolyPenguin21/mlf-legends/issues/31) canonical fixed-tick ECS movement X/Z plus jump Y; when the first PR arrives manager reviews bottom-up and records Unity tests as RUN/PASS/FAIL/NOT RUN exactly as evidenced. Stage 02 may progress with `NOT RUN` only when no observed critical compiler/runtime defect blocks dependent work.
+
 ## Stage 00 findings and checklist
 - [x] `HolyPenguin21/mlf-legends` exists; GitHub App repository access repaired and write validated.
 - [x] `Assets/`, `Packages/` and `ProjectSettings/` exist in `main`.
@@ -379,3 +389,7 @@ Actually executed:
 Actual Editor sorting logs, including intentionally partial clock/command test Worlds that omit Lifecycle,
 remain unobserved; source checks are not proof of warning-free runtime sorting. #17 remains open and #23
 independent manager acceptance remains required. This follow-up **was merged as PR #29**, but its actual Unity test execution remains NOT RUN.
+
+## Acceptance history supersession (2026-10-26)
+
+Earlier entries calling #23 a blocker of Stage 02, or describing #19/#26 as not yet merged, are historical dated notes. **Current controlling status:** #19 fixed and closed via merged PR #28 + #29; #23 static audit completed and closed by owner-approved transition; #30 deferred Unity evidence OPEN; #17 Cyrillic path Burst OPEN; Stage 02 #31 IN PROGRESS as a dispatched task. These statuses supersede the earlier sequence without rewriting historical agent claims.
