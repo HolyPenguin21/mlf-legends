@@ -28,3 +28,6 @@
 *.dll binary
 *.ttf binary
 *.otf binary
+
+# Raw Unity test evidence (XML, Editor.log, TSV): stored byte-exact, no line-ending normalisation
+Docs/Evidence/** -text

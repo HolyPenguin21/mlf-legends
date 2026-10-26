@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="7" result="Failed(Child)" total="7" passed="6" failed="1" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-26 10:36:02Z" end-time="2026-10-26 10:37:03Z" duration="60,6572935">
+  <test-suite type="TestSuite" id="1000" name="mlf-legends" fullname="mlf-legends" runstate="Runnable" testcasecount="239" result="Failed" site="Child" start-time="2026-10-26 10:36:02Z" end-time="2026-10-26 10:37:03Z" duration="60.657294" total="7" passed="6" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1282" name="MLFLegends.Tests.EditMode.dll" fullname="D:/Unity/Project/mlf-s7/Library/ScriptAssemblies/MLFLegends.Tests.EditMode.dll" runstate="Runnable" testcasecount="239" result="Failed" site="Child" start-time="2026-10-26 10:36:02Z" end-time="2026-10-26 10:37:03Z" duration="60.643148" total="7" passed="6" failed="1" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="5760" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1283" name="MLFLegends" fullname="MLFLegends" runstate="Runnable" testcasecount="239" result="Failed" site="Child" start-time="2026-10-26 10:36:02Z" end-time="2026-10-26 10:37:03Z" duration="60.635402" total="7" passed="6" failed="1" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1284" name="Tests" fullname="MLFLegends.Tests" runstate="Runnable" testcasecount="239" result="Failed" site="Child" start-time="2026-10-26 10:36:02Z" end-time="2026-10-26 10:37:03Z" duration="60.632780" total="7" passed="6" failed="1" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestSuite" id="1285" name="EditMode" fullname="MLFLegends.Tests.EditMode" runstate="Runnable" testcasecount="239" result="Failed" site="Child" start-time="2026-10-26 10:36:02Z" end-time="2026-10-26 10:37:03Z" duration="60.630025" total="7" passed="6" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-suite type="TestFixture" id="1252" name="CombatBaselineTests" fullname="MLFLegends.Tests.EditMode.CombatBaselineTests" classname="MLFLegends.Tests.EditMode.CombatBaselineTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-10-26 10:36:02Z" end-time="2026-10-26 10:37:02Z" duration="60.243829" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="Performance" />
+              </properties>
+              <test-suite type="ParameterizedMethod" id="1256" name="Baseline" fullname="MLFLegends.Tests.EditMode.CombatBaselineTests.Baseline" classname="MLFLegends.Tests.EditMode.CombatBaselineTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-26 10:36:02Z" end-time="2026-10-26 10:36:38Z" duration="35.334648" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="Timeout" value="1800000" />
+                </properties>
+                <test-case id="1253" name="Baseline(2)" fullname="MLFLegends.Tests.EditMode.CombatBaselineTests.Baseline(2)" methodname="Baseline" classname="MLFLegends.Tests.EditMode.CombatBaselineTests" runstate="Runnable" seed="1709721059" result="Passed" start-time="2026-10-26 10:36:02Z" end-time="2026-10-26 10:36:05Z" duration="2.866702" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[[Stage 02.2 #33 baseline] 2 combatants: 66 rows written to D:\Unity\Project\mlf-s7\TestResults\performance\stage02-33-burst-off-n2.tsv
+]]></output>
+                </test-case>
+                <test-case id="1254" name="Baseline(100)" fullname="MLFLegends.Tests.EditMode.CombatBaselineTests.Baseline(100)" methodname="Baseline" classname="MLFLegends.Tests.EditMode.CombatBaselineTests" runstate="Runnable" seed="1996664622" result="Passed" start-time="2026-10-26 10:36:05Z" end-time="2026-10-26 10:36:13Z" duration="7.499302" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[[Stage 02.2 #33 baseline] 100 combatants: 66 rows written to D:\Unity\Project\mlf-s7\TestResults\performance\stage02-33-burst-off-n100.tsv
+]]></output>
+                </test-case>
+                <test-case id="1255" name="Baseline(400)" fullname="MLFLegends.Tests.EditMode.CombatBaselineTests.Baseline(400)" methodname="Baseline" classname="MLFLegends.Tests.EditMode.CombatBaselineTests" runstate="Runnable" seed="1241940877" result="Passed" start-time="2026-10-26 10:36:13Z" end-time="2026-10-26 10:36:38Z" duration="24.955501" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[[Stage 02.2 #33 baseline] 400 combatants: 66 rows written to D:\Unity\Project\mlf-s7\TestResults\performance\stage02-33-burst-off-n400.tsv
+]]></output>
+                </test-case>
+              </test-suite>
+              <test-suite type="ParameterizedMethod" id="1260" name="FrameNativeMemory" fullname="MLFLegends.Tests.EditMode.CombatBaselineTests.FrameNativeMemory" classname="MLFLegends.Tests.EditMode.CombatBaselineTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-26 10:36:38Z" end-time="2026-10-26 10:37:02Z" duration="24.904331" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="Timeout" value="1800000" />
+                </properties>
+                <test-case id="1257" name="FrameNativeMemory(2)" fullname="MLFLegends.Tests.EditMode.CombatBaselineTests.FrameNativeMemory(2)" methodname="FrameNativeMemory" classname="MLFLegends.Tests.EditMode.CombatBaselineTests" runstate="Runnable" seed="1802004940" result="Passed" start-time="2026-10-26 10:36:38Z" end-time="2026-10-26 10:36:38Z" duration="0.412035" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[[Stage 02.2 #33 baseline] frame memory, 2 combatants: written to D:\Unity\Project\mlf-s7\TestResults\performance\stage02-33-burst-off-memory-n2.tsv
+]]></output>
+                </test-case>
+                <test-case id="1258" name="FrameNativeMemory(100)" fullname="MLFLegends.Tests.EditMode.CombatBaselineTests.FrameNativeMemory(100)" methodname="FrameNativeMemory" classname="MLFLegends.Tests.EditMode.CombatBaselineTests" runstate="Runnable" seed="865941525" result="Passed" start-time="2026-10-26 10:36:38Z" end-time="2026-10-26 10:36:43Z" duration="4.728786" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[[Stage 02.2 #33 baseline] frame memory, 100 combatants: written to D:\Unity\Project\mlf-s7\TestResults\performance\stage02-33-burst-off-memory-n100.tsv
+]]></output>
+                </test-case>
+                <test-case id="1259" name="FrameNativeMemory(400)" fullname="MLFLegends.Tests.EditMode.CombatBaselineTests.FrameNativeMemory(400)" methodname="FrameNativeMemory" classname="MLFLegends.Tests.EditMode.CombatBaselineTests" runstate="Runnable" seed="734664625" result="Passed" start-time="2026-10-26 10:36:43Z" end-time="2026-10-26 10:37:02Z" duration="19.762632" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[[Stage 02.2 #33 baseline] frame memory, 400 combatants: written to D:\Unity\Project\mlf-s7\TestResults\performance\stage02-33-burst-off-memory-n400.tsv
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestFixture" id="1261" name="PlayerInputBenchmarkTests" fullname="MLFLegends.Tests.EditMode.PlayerInputBenchmarkTests" classname="MLFLegends.Tests.EditMode.PlayerInputBenchmarkTests" runstate="Runnable" testcasecount="1" result="Failed" site="Child" start-time="2026-10-26 10:37:02Z" end-time="2026-10-26 10:37:03Z" duration="0.382266" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="Performance" />
+              </properties>
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1262" name="PlayerInputProducerCostPerTick" fullname="MLFLegends.Tests.EditMode.PlayerInputBenchmarkTests.PlayerInputProducerCostPerTick" methodname="PlayerInputProducerCostPerTick" classname="MLFLegends.Tests.EditMode.PlayerInputBenchmarkTests" runstate="Runnable" seed="1584482187" result="Failed" start-time="2026-10-26 10:37:02Z" end-time="2026-10-26 10:37:03Z" duration="0.381068" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  Expected: (Player, 1)
+  But was:  (Player, 0)
+]]></message>
+                  <stack-trace><![CDATA[at MLFLegends.Tests.EditMode.PlayerInputBenchmarkTests.AssertLastTick (System.Int32 combatants, System.Boolean attached) [0x000ea] in D:\Unity\Project\mlf-s7\Assets\Tests\EditMode\Performance\PlayerInputBenchmarkTests.cs:148
+at MLFLegends.Tests.EditMode.PlayerInputBenchmarkTests+<PlayerInputProducerCostPerTick>d__7.MoveNext () [0x00316] in D:\Unity\Project\mlf-s7\Assets\Tests\EditMode\Performance\PlayerInputBenchmarkTests.cs:99
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@1405238725ab\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+                </failure>
+                <output><![CDATA[Saving results to: C:/Users/Стас/AppData/LocalLow/DefaultCompany/mlf-legends\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

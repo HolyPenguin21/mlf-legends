@@ -97,6 +97,13 @@ N = 2 and N = 400 alike (managed SystemBase dispatch, one linear ID scan, one ac
 51.0-53.5 us, Burst off idle k1 N = 400 83.7-84.2 us. The camera and the Initialization/full Unity frame are not in this
 harness (NOT MEASURED).
 
+Re-measured after the manager review on `4d9e431` (same method; raw TSVs in `Docs/Evidence/22/4d9e431/`): Burst on,
+mean us per tick, run 1 reps 1/2/3 — detached k1 N = 2 15.7/15.6/15.8, N = 400 23.2/23.1/22.7; held k1 N = 2
+22.0/21.8/21.9, N = 400 29.0/29.0/29.4; held k10 N = 400 20.3/20.3/20.3. Burst off held k1 N = 400 93.1/91.2/93.4
+(detached 85.9/87.0/85.5). Same reading: about +7 us/tick at 1 tick/frame, +4 us/tick at 10. Existing benchmark unchanged
+(idle k1 N = 400 21.5-21.7 us Burst on, 83.9-84.2 us Burst off). GC.Alloc: 0 except a single sample in one detached series
+(run 1, N = 400, k1, rep 3; not in run 2; unattributed).
+
 ## How to run
 
 The tests are in `Assets/Tests/EditMode/Performance/` (category `Performance`) and also run as part of the normal

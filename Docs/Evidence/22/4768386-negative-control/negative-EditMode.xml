@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="4" result="Failed(Child)" total="4" passed="0" failed="4" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-26 11:14:47Z" end-time="2026-10-26 11:14:48Z" duration="0,6049676">
+  <test-suite type="TestSuite" id="1000" name="mlf-legends" fullname="mlf-legends" runstate="Runnable" testcasecount="244" result="Failed" site="Child" start-time="2026-10-26 11:14:47Z" end-time="2026-10-26 11:14:48Z" duration="0.604968" total="4" passed="0" failed="4" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1288" name="MLFLegends.Tests.EditMode.dll" fullname="D:/Unity/Project/mlf-s7/Library/ScriptAssemblies/MLFLegends.Tests.EditMode.dll" runstate="Runnable" testcasecount="244" result="Failed" site="Child" start-time="2026-10-26 11:14:47Z" end-time="2026-10-26 11:14:48Z" duration="0.592045" total="4" passed="0" failed="4" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="18612" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1289" name="MLFLegends" fullname="MLFLegends" runstate="Runnable" testcasecount="244" result="Failed" site="Child" start-time="2026-10-26 11:14:47Z" end-time="2026-10-26 11:14:48Z" duration="0.587762" total="4" passed="0" failed="4" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1290" name="Tests" fullname="MLFLegends.Tests" runstate="Runnable" testcasecount="244" result="Failed" site="Child" start-time="2026-10-26 11:14:47Z" end-time="2026-10-26 11:14:48Z" duration="0.583921" total="4" passed="0" failed="4" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestSuite" id="1291" name="EditMode" fullname="MLFLegends.Tests.EditMode" runstate="Runnable" testcasecount="244" result="Failed" site="Child" start-time="2026-10-26 11:14:47Z" end-time="2026-10-26 11:14:48Z" duration="0.580031" total="4" passed="0" failed="4" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-suite type="TestFixture" id="1203" name="CombatCameraControllerTests" fullname="MLFLegends.Tests.EditMode.CombatCameraControllerTests" classname="MLFLegends.Tests.EditMode.CombatCameraControllerTests" runstate="Runnable" testcasecount="6" result="Failed" site="Child" start-time="2026-10-26 11:14:47Z" end-time="2026-10-26 11:14:47Z" duration="0.361392" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1207" name="EndKeepsThePannedViewExactlyUntilANewTargetBinds" fullname="MLFLegends.Tests.EditMode.CombatCameraControllerTests.EndKeepsThePannedViewExactlyUntilANewTargetBinds" methodname="EndKeepsThePannedViewExactlyUntilANewTargetBinds" classname="MLFLegends.Tests.EditMode.CombatCameraControllerTests" runstate="Runnable" seed="1808514636" result="Failed" start-time="2026-10-26 11:14:47Z" end-time="2026-10-26 11:14:47Z" duration="0.345003" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  End keeps the pan.
+  Expected: (3.00, 0.00, 1.50)
+  But was:  (0.00, 0.00, 0.00)
+]]></message>
+                  <stack-trace><![CDATA[at MLFLegends.Tests.EditMode.CombatCameraControllerTests.EndKeepsThePannedViewExactlyUntilANewTargetBinds () [0x000f7] in D:\Unity\Project\mlf-s7\Assets\Tests\EditMode\Input\CombatCameraControllerTests.cs:162
+]]></stack-trace>
+                </failure>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1210" name="PlayerInputProducerTests" fullname="MLFLegends.Tests.EditMode.PlayerInputProducerTests" classname="MLFLegends.Tests.EditMode.PlayerInputProducerTests" runstate="Runnable" testcasecount="25" result="Failed" site="Child" start-time="2026-10-26 11:14:47Z" end-time="2026-10-26 11:14:48Z" duration="0.210471" total="3" passed="0" failed="3" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1232" name="AFreshTapRightAfterAttachingToARunningBattleReachesTheFirstTickOnce" fullname="MLFLegends.Tests.EditMode.PlayerInputProducerTests.AFreshTapRightAfterAttachingToARunningBattleReachesTheFirstTickOnce" methodname="AFreshTapRightAfterAttachingToARunningBattleReachesTheFirstTickOnce" classname="MLFLegends.Tests.EditMode.PlayerInputProducerTests" runstate="Runnable" seed="1132569506" result="Failed" start-time="2026-10-26 11:14:47Z" end-time="2026-10-26 11:14:48Z" duration="0.168055" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  Fresh taps after the attach.
+  Expected: Attack, Jump
+  But was:  None
+]]></message>
+                  <stack-trace><![CDATA[at MLFLegends.Tests.EditMode.PlayerInputProducerTests.AFreshTapRightAfterAttachingToARunningBattleReachesTheFirstTickOnce () [0x000cb] in D:\Unity\Project\mlf-s7\Assets\Tests\EditMode\Input\PlayerInputProducerTests.cs:619
+]]></stack-trace>
+                </failure>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1231" name="KeysHeldAcrossAResetOrDisableEnableCycleAreHeldNotPressed" fullname="MLFLegends.Tests.EditMode.PlayerInputProducerTests.KeysHeldAcrossAResetOrDisableEnableCycleAreHeldNotPressed" classname="MLFLegends.Tests.EditMode.PlayerInputProducerTests" runstate="Runnable" testcasecount="2" result="Failed" site="Child" start-time="2026-10-26 11:14:48Z" end-time="2026-10-26 11:14:48Z" duration="0.037483" total="2" passed="0" failed="2" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <failure>
+                  <message><![CDATA[One or more child tests had errors]]></message>
+                </failure>
+                <test-case id="1229" name="KeysHeldAcrossAResetOrDisableEnableCycleAreHeldNotPressed(False)" fullname="MLFLegends.Tests.EditMode.PlayerInputProducerTests.KeysHeldAcrossAResetOrDisableEnableCycleAreHeldNotPressed(False)" methodname="KeysHeldAcrossAResetOrDisableEnableCycleAreHeldNotPressed" classname="MLFLegends.Tests.EditMode.PlayerInputProducerTests" runstate="Runnable" seed="852611732" result="Failed" start-time="2026-10-26 11:14:48Z" end-time="2026-10-26 11:14:48Z" duration="0.019717" asserts="0">
+                  <properties>
+                    <property name="Description" value="soft reset" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <failure>
+                    <message><![CDATA[  A restored hold is not a press.
+  Expected: None
+  But was:  Jump, Guard
+]]></message>
+                    <stack-trace><![CDATA[at MLFLegends.Tests.EditMode.PlayerInputProducerTests.KeysHeldAcrossAResetOrDisableEnableCycleAreHeldNotPressed (System.Boolean disable) [0x0011b] in D:\Unity\Project\mlf-s7\Assets\Tests\EditMode\Input\PlayerInputProducerTests.cs:584
+]]></stack-trace>
+                  </failure>
+                </test-case>
+                <test-case id="1230" name="KeysHeldAcrossAResetOrDisableEnableCycleAreHeldNotPressed(True)" fullname="MLFLegends.Tests.EditMode.PlayerInputProducerTests.KeysHeldAcrossAResetOrDisableEnableCycleAreHeldNotPressed(True)" methodname="KeysHeldAcrossAResetOrDisableEnableCycleAreHeldNotPressed" classname="MLFLegends.Tests.EditMode.PlayerInputProducerTests" runstate="Runnable" seed="81315190" result="Failed" start-time="2026-10-26 11:14:48Z" end-time="2026-10-26 11:14:48Z" duration="0.016678" asserts="0">
+                  <properties>
+                    <property name="Description" value="disable, then enable (sync unsupported: reset)" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <failure>
+                    <message><![CDATA[  A restored hold is not a press.
+  Expected: None
+  But was:  Jump, Guard
+]]></message>
+                    <stack-trace><![CDATA[at MLFLegends.Tests.EditMode.PlayerInputProducerTests.KeysHeldAcrossAResetOrDisableEnableCycleAreHeldNotPressed (System.Boolean disable) [0x0011b] in D:\Unity\Project\mlf-s7\Assets\Tests\EditMode\Input\PlayerInputProducerTests.cs:584
+]]></stack-trace>
+                  </failure>
+                  <output><![CDATA[Saving results to: C:/Users/Стас/AppData/LocalLow/DefaultCompany/mlf-legends\TestResults.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

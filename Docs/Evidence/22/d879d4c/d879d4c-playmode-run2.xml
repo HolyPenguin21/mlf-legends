@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="18" result="Passed" total="18" passed="18" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-26 10:44:13Z" end-time="2026-10-26 10:44:15Z" duration="1,820057">
+  <test-suite type="TestSuite" id="1032" name="mlf-legends" fullname="mlf-legends" runstate="Runnable" testcasecount="18" result="Passed" start-time="2026-10-26 10:44:13Z" end-time="2026-10-26 10:44:15Z" duration="1.820057" total="18" passed="18" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1025" name="MLFLegends.Tests.PlayMode.dll" fullname="D:/Unity/Project/mlf-s7/Library/ScriptAssemblies/MLFLegends.Tests.PlayMode.dll" runstate="Runnable" testcasecount="18" result="Passed" start-time="2026-10-26 10:44:13Z" end-time="2026-10-26 10:44:15Z" duration="1.810194" total="18" passed="18" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="15892" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1026" name="MLFLegends" fullname="MLFLegends" runstate="Runnable" testcasecount="18" result="Passed" start-time="2026-10-26 10:44:13Z" end-time="2026-10-26 10:44:15Z" duration="1.809389" total="18" passed="18" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1027" name="Tests" fullname="MLFLegends.Tests" runstate="Runnable" testcasecount="18" result="Passed" start-time="2026-10-26 10:44:13Z" end-time="2026-10-26 10:44:15Z" duration="1.808849" total="18" passed="18" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1028" name="PlayMode" fullname="MLFLegends.Tests.PlayMode" runstate="Runnable" testcasecount="18" result="Passed" start-time="2026-10-26 10:44:13Z" end-time="2026-10-26 10:44:15Z" duration="1.808265" total="18" passed="18" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1001" name="DefaultWorldBattleLifecycleTests" fullname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests" classname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-10-26 10:44:13Z" end-time="2026-10-26 10:44:14Z" duration="0.452470" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1002" name="DefaultWorldHasOneLifecycleOwnerAndTheCompleteFixedStepOrder" fullname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests.DefaultWorldHasOneLifecycleOwnerAndTheCompleteFixedStepOrder" methodname="DefaultWorldHasOneLifecycleOwnerAndTheCompleteFixedStepOrder" classname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests" runstate="Runnable" seed="303890143" result="Passed" start-time="2026-10-26 10:44:13Z" end-time="2026-10-26 10:44:13Z" duration="0.040439" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1003" name="DefaultWorldJumpFreezesDuringTimeScaleZeroAndPausedRestartClearsMotion" fullname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests.DefaultWorldJumpFreezesDuringTimeScaleZeroAndPausedRestartClearsMotion" methodname="DefaultWorldJumpFreezesDuringTimeScaleZeroAndPausedRestartClearsMotion" classname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests" runstate="Runnable" seed="1732769893" result="Passed" start-time="2026-10-26 10:44:13Z" end-time="2026-10-26 10:44:13Z" duration="0.041185" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1005" name="DisablingBootstrapOnPauseEndsItsBattleBeforeUnpause" fullname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests.DisablingBootstrapOnPauseEndsItsBattleBeforeUnpause" methodname="DisablingBootstrapOnPauseEndsItsBattleBeforeUnpause" classname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests" runstate="Runnable" seed="733068964" result="Passed" start-time="2026-10-26 10:44:13Z" end-time="2026-10-26 10:44:14Z" duration="0.056056" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1004" name="PausedFramesApplyStartRestartAndEndForDuelAndLargeRosterWithoutSimulation" fullname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests.PausedFramesApplyStartRestartAndEndForDuelAndLargeRosterWithoutSimulation" methodname="PausedFramesApplyStartRestartAndEndForDuelAndLargeRosterWithoutSimulation" classname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests" runstate="Runnable" seed="623601247" result="Passed" start-time="2026-10-26 10:44:14Z" end-time="2026-10-26 10:44:14Z" duration="0.038549" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1008" name="PausedSmokeSceneSwitchAndFinalUnloadDoNotNeedAFixedTick" fullname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests.PausedSmokeSceneSwitchAndFinalUnloadDoNotNeedAFixedTick" methodname="PausedSmokeSceneSwitchAndFinalUnloadDoNotNeedAFixedTick" classname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests" runstate="Runnable" seed="1725766944" result="Passed" start-time="2026-10-26 10:44:14Z" end-time="2026-10-26 10:44:14Z" duration="0.044919" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are 2 audio listeners in the scene. Please ensure there is always exactly one audio listener in the scene.
+]]></output>
+              </test-case>
+              <test-case id="1006" name="SceneBootstrapStartsTwoCombatantsAndLeavingAndReturningLeaksNothing" fullname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests.SceneBootstrapStartsTwoCombatantsAndLeavingAndReturningLeaksNothing" methodname="SceneBootstrapStartsTwoCombatantsAndLeavingAndReturningLeaksNothing" classname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests" runstate="Runnable" seed="856249881" result="Passed" start-time="2026-10-26 10:44:14Z" end-time="2026-10-26 10:44:14Z" duration="0.183301" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1007" name="SmokeSceneStartsItsBattleAndASceneSwitchNeitherStopsNorDuplicatesIt" fullname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests.SmokeSceneStartsItsBattleAndASceneSwitchNeitherStopsNorDuplicatesIt" methodname="SmokeSceneStartsItsBattleAndASceneSwitchNeitherStopsNorDuplicatesIt" classname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests" runstate="Runnable" seed="298639314" result="Passed" start-time="2026-10-26 10:44:14Z" end-time="2026-10-26 10:44:14Z" duration="0.032868" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are 2 audio listeners in the scene. Please ensure there is always exactly one audio listener in the scene.
+]]></output>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1023" name="DefaultWorldClockTests" fullname="MLFLegends.Tests.PlayMode.DefaultWorldClockTests" classname="MLFLegends.Tests.PlayMode.DefaultWorldClockTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-26 10:44:14Z" end-time="2026-10-26 10:44:14Z" duration="0.252844" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1024" name="DefaultWorldHasOneClockAheadOfTheCombatPhases" fullname="MLFLegends.Tests.PlayMode.DefaultWorldClockTests.DefaultWorldHasOneClockAheadOfTheCombatPhases" methodname="DefaultWorldHasOneClockAheadOfTheCombatPhases" classname="MLFLegends.Tests.PlayMode.DefaultWorldClockTests" runstate="Runnable" seed="702346995" result="Passed" start-time="2026-10-26 10:44:14Z" end-time="2026-10-26 10:44:14Z" duration="0.252139" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1009" name="DefaultWorldCommandQueueTests" fullname="MLFLegends.Tests.PlayMode.DefaultWorldCommandQueueTests" classname="MLFLegends.Tests.PlayMode.DefaultWorldCommandQueueTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-26 10:44:14Z" end-time="2026-10-26 10:44:14Z" duration="0.254257" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1010" name="DefaultWorldHasOneProcessorLastInTheCollectionPhaseAndOneQueue" fullname="MLFLegends.Tests.PlayMode.DefaultWorldCommandQueueTests.DefaultWorldHasOneProcessorLastInTheCollectionPhaseAndOneQueue" methodname="DefaultWorldHasOneProcessorLastInTheCollectionPhaseAndOneQueue" classname="MLFLegends.Tests.PlayMode.DefaultWorldCommandQueueTests" runstate="Runnable" seed="1954200910" result="Passed" start-time="2026-10-26 10:44:14Z" end-time="2026-10-26 10:44:14Z" duration="0.253479" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1011" name="PlayerInputPlayModeTests" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" testcasecount="8" result="Passed" start-time="2026-10-26 10:44:14Z" end-time="2026-10-26 10:44:15Z" duration="0.550597" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1019" name="AdditiveSceneSwitchAndAdapterReenableKeepOneProducerAndOnePlayerCommandPerTick" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests.AdditiveSceneSwitchAndAdapterReenableKeepOneProducerAndOnePlayerCommandPerTick" methodname="AdditiveSceneSwitchAndAdapterReenableKeepOneProducerAndOnePlayerCommandPerTick" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" seed="1639111975" result="Passed" start-time="2026-10-26 10:44:14Z" end-time="2026-10-26 10:44:15Z" duration="0.196644" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are 2 audio listeners in the scene. Please ensure there is always exactly one audio listener in the scene.
+]]></output>
+              </test-case>
+              <test-case id="1020" name="CameraRebindsOnRestartAndHoldsItsViewWhenTheBattleEnds" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests.CameraRebindsOnRestartAndHoldsItsViewWhenTheBattleEnds" methodname="CameraRebindsOnRestartAndHoldsItsViewWhenTheBattleEnds" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" seed="791140235" result="Passed" start-time="2026-10-26 10:44:15Z" end-time="2026-10-26 10:44:15Z" duration="0.012301" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1018" name="FocusLossStopsTheFighterOnTheNextTickAndDropsPresses" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests.FocusLossStopsTheFighterOnTheNextTickAndDropsPresses" methodname="FocusLossStopsTheFighterOnTheNextTickAndDropsPresses" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" seed="1648239681" result="Passed" start-time="2026-10-26 10:44:15Z" end-time="2026-10-26 10:44:15Z" duration="0.095793" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1017" name="PauseCollectsNoPressWhilePanAndZoomStillWorkAndResumeUsesTheLiveHold" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests.PauseCollectsNoPressWhilePanAndZoomStillWorkAndResumeUsesTheLiveHold" methodname="PauseCollectsNoPressWhilePanAndZoomStillWorkAndResumeUsesTheLiveHold" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" seed="623539511" result="Passed" start-time="2026-10-26 10:44:15Z" end-time="2026-10-26 10:44:15Z" duration="0.071625" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1012" name="PlayerLoopProcessesInputBeforeTheFixedTicksAndRunsLateUpdateAfterThem" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests.PlayerLoopProcessesInputBeforeTheFixedTicksAndRunsLateUpdateAfterThem" methodname="PlayerLoopProcessesInputBeforeTheFixedTicksAndRunsLateUpdateAfterThem" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" seed="441181918" result="Passed" start-time="2026-10-26 10:44:15Z" end-time="2026-10-26 10:44:15Z" duration="0.007016" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[UnityEngine.InputSystem.InputSettings must be instantiated using the ScriptableObject.CreateInstance method instead of new InputSettings.
+]]></output>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1016" name="TapAndHoldReachTheRightTicksThroughTheRealPlayerLoop" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests.TapAndHoldReachTheRightTicksThroughTheRealPlayerLoop" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-26 10:44:15Z" end-time="2026-10-26 10:44:15Z" duration="0.163217" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                </properties>
+                <test-case id="1013" name="TapAndHoldReachTheRightTicksThroughTheRealPlayerLoop(30)" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests.TapAndHoldReachTheRightTicksThroughTheRealPlayerLoop(30)" methodname="TapAndHoldReachTheRightTicksThroughTheRealPlayerLoop" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" seed="194927456" result="Passed" start-time="2026-10-26 10:44:15Z" end-time="2026-10-26 10:44:15Z" duration="0.021098" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1014" name="TapAndHoldReachTheRightTicksThroughTheRealPlayerLoop(60)" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests.TapAndHoldReachTheRightTicksThroughTheRealPlayerLoop(60)" methodname="TapAndHoldReachTheRightTicksThroughTheRealPlayerLoop" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" seed="159749559" result="Passed" start-time="2026-10-26 10:44:15Z" end-time="2026-10-26 10:44:15Z" duration="0.032451" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1015" name="TapAndHoldReachTheRightTicksThroughTheRealPlayerLoop(120)" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests.TapAndHoldReachTheRightTicksThroughTheRealPlayerLoop(120)" methodname="TapAndHoldReachTheRightTicksThroughTheRealPlayerLoop" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" seed="1149082271" result="Passed" start-time="2026-10-26 10:44:15Z" end-time="2026-10-26 10:44:15Z" duration="0.108634" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestFixture" id="1021" name="SceneAndEcsSmokeTests" fullname="MLFLegends.Tests.PlayMode.SceneAndEcsSmokeTests" classname="MLFLegends.Tests.PlayMode.SceneAndEcsSmokeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-26 10:44:15Z" end-time="2026-10-26 10:44:15Z" duration="0.295992" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1022" name="SampleSceneLoadsAndEcsWorldSurvivesAFrame" fullname="MLFLegends.Tests.PlayMode.SceneAndEcsSmokeTests.SampleSceneLoadsAndEcsWorldSurvivesAFrame" methodname="SampleSceneLoadsAndEcsWorldSurvivesAFrame" classname="MLFLegends.Tests.PlayMode.SceneAndEcsSmokeTests" runstate="Runnable" seed="1369011105" result="Passed" start-time="2026-10-26 10:44:15Z" end-time="2026-10-26 10:44:15Z" duration="0.295282" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: C:/Users/Стас/AppData/LocalLow/DefaultCompany/mlf-legends\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

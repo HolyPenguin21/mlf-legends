@@ -1,6 +1,48 @@
 # MLF Legends — Quality assurance and evidence
 
-## Stage 02.3 + 02.4 / #22 agent verification (2026-10-26, branch `feature/stage02-22-input-camera`)
+## Stage 02.3 + 02.4 / #22 after manager review (2026-10-26, PR #37, branch `feature/stage02-22-input-camera`)
+
+**Tested code: `4d9e431bc7474cf7233f8edaec60f0c14df65ab0`** (its code equals `4768386`; only Markdown differs), clean detached
+checkout, same machine/versions/runner as below. **Raw XML, Editor.log and TSV are committed in `Docs/Evidence/22/`**
+(index: `Docs/Evidence/22/README.md`). Agent-run; the manager has not re-run Unity.
+
+| Run | Result |
+|---|---|
+| EditMode run 1 / run 2 | **PASS 244/244**, **PASS 244/244** (5 new review regressions) |
+| PlayMode run 1 / run 2 | **PASS 21/21**, **PASS 21/21** (3 new review regressions incl. the focus case ×2) |
+| Performance, `--burst-disable-compilation` | **PASS 7/7** (probe: Burst not executed) |
+| Negative control: the 8 review regressions against `4768386` + four mutations restoring the old behaviour | **0/4 EditMode, 0/4 PlayMode** — every regression FAILS on the reviewed defect (`Docs/Evidence/22/4768386-negative-control/`) |
+
+Review findings and their fixes (all in this PR, no new subsystems):
+1. **End moved a panned camera** (pan reset on losing the target). Now only a new valid target drops the pan; End/Idle keep
+   position, size and pan exactly. Regressions: EditMode `EndKeepsThePannedViewExactlyUntilANewTargetBinds` (first refresh
+   after End without input), PlayMode `CameraRebindsOnRestartAndHoldsItsViewWhenTheBattleEnds` (view captured before End).
+2. **A fresh tap right after attaching to a running battle was lost** (Attach unbound, the first tick re-cleared). Now Attach
+   binds to the current session. Regression: `AFreshTapRightAfterAttachingToARunningBattleReachesTheFirstTickOnce` (pre-attach
+   tap still dropped, Restart still drops old presses).
+3. **The adapter bound only in OnEnable.** It now follows `World.DefaultGameObjectInjectionWorld` (once per World, checked
+   each frame); the producer keeps the highest enable order. Regressions: PlayMode
+   `AdapterFollowsTheDefaultWorldWhenItAppearsOrIsReplaced` (no World → A → B → A, stale presses, replaced adapter does not
+   retake, destroy detaches), EditMode `TheHigherEnableOrderWinsWhicheverCaptureAttachesFirst`.
+4. **Focus regain with device reset/sync.** Buttons held across a focus change or device disable/enable/reset are blocked
+   until released. Regressions: PlayMode `RealFocusLossAndRegainWithDeviceResyncTurnsNoRestoredHoldIntoAPress`
+   (InputTestFixture's runtime focus → the Input System's real `OnFocusChanged`, runInBackground true and false, device
+   re-reporting held K/J/L: Held, no Jump/Attack; release → press jumps), EditMode
+   `KeysHeldAcrossAResetOrDisableEnableCycleAreHeldNotPressed` (soft reset; disable/enable). Real OS alt-tab: NOT RUN.
+
+Logs: no `error CS`/`warning CS`; one known intentional clock-less sorter warning per EditMode run; no `Leak Detected`;
+PlayMode only `No Graphics Device found` (environment). `ProjectSettings/TimeManager.asset` batchmode reformat reverted,
+not committed. Benchmark: GC.Alloc 0 in every held series and every existing-benchmark series; **one** GC.Alloc sample in
+one *detached* (inert producer) series (Burst on, run 1, N = 400, 1 tick/frame, rep 3, max frame 67.5 us), not reproduced
+in run 2; origin not attributed (the detached producer returns before any work).
+
+**NOT RUN:** owner GUI manual check (`Input/INPUT.md`); real hardware devices and real OS focus switching; Domain-Reload-
+disabled Play Mode with the new components; player build; cold import / Cyrillic path for this branch (#30/#17
+unchanged); camera and Initialization/full-frame cost.
+
+The earlier section below (`d879d4c`) is superseded: those runs did not cover the reviewed defects.
+
+## Stage 02.3 + 02.4 / #22 agent verification, first PR revision (2026-10-26) — SUPERSEDED by the section above
 
 **Tested code SHA: `d879d4cb47917bb72ed4d48a056487314a1818e3`** (later branch commits change Markdown only). Clean detached
 checkout in the ASCII worktree `D:/Unity/Project/mlf-s7` (warm Library), no local patches; Windows 11 Pro 10.0.26100, AMD
@@ -16,8 +58,8 @@ Ryzen 5 3600, 32 GB; Unity **6000.5.4f1**, Entities 6.5.0, Collections 6.5.0, Bu
 | EditMode `-testCategory Performance`, `--burst-disable-compilation` | **PASS 7/7** (probe: Burst code not executed, as intended) |
 | Burst-on Performance | inside both full EditMode runs; probe: Burst code executed |
 
-Evidence (XML, Editor.log, TSV) is kept outside Git in `TestResults/evidence-22-d879d4c/` on the agent machine and listed
-in the PR; it still has to be uploaded for raw-file review (the agent did not upload it).
+Evidence (XML, Editor.log, TSV) is now committed in `Docs/Evidence/22/d879d4c/` (and the failed `1408887` series in
+`Docs/Evidence/22/1408887-failed/`).
 Logs: no `error CS`/`warning CS`; one `Ignoring invalid [UpdateAfter] ... CombatClockSystem` per EditMode run, the known
 intentional clock-less fixture (`CombatClockTests.CombatPhasesDoNotRunWithoutAClock`); no new sorter warnings; no
 `Leak Detected` (warm Library); PlayMode logs only the environmental `No Graphics Device found` (Entities Graphics,

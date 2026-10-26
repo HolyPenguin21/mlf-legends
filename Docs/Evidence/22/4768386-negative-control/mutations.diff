@@ -1,0 +1,72 @@
+diff --git a/Assets/MLFLegends/Combat/Runtime/Input/PlayerInputAdapter.cs b/Assets/MLFLegends/Combat/Runtime/Input/PlayerInputAdapter.cs
+index 4271eff..894d565 100644
+--- a/Assets/MLFLegends/Combat/Runtime/Input/PlayerInputAdapter.cs
++++ b/Assets/MLFLegends/Combat/Runtime/Input/PlayerInputAdapter.cs
+@@ -56,8 +56,7 @@ void OnEnable()
+ 
+         void Update()
+         {
+-            if (m_Capture != null)
+-                SyncWorld();
++            // MUTATION M3: OnEnable-only binding
+         }
+ 
+         void OnDisable()
+diff --git a/Assets/MLFLegends/Combat/Runtime/Input/PlayerInputCapture.cs b/Assets/MLFLegends/Combat/Runtime/Input/PlayerInputCapture.cs
+index 1968f77..431df50 100644
+--- a/Assets/MLFLegends/Combat/Runtime/Input/PlayerInputCapture.cs
++++ b/Assets/MLFLegends/Combat/Runtime/Input/PlayerInputCapture.cs
+@@ -199,7 +199,7 @@ void OnPressed(CommandButtons button)
+         {
+             // Combat presses are not collected on pause or without focus; resuming never fires an old press. A button
+             // held across a focus change/device reset is re-reported by the device as a press: blocked until released.
+-            if (m_Focused && Time.timeScale > 0f && (m_Blocked & button) == 0)
++            if (m_Focused && Time.timeScale > 0f ) // MUTATION M4: no blocking
+                 m_Pressed |= button;
+         }
+ 
+diff --git a/Assets/MLFLegends/Combat/Runtime/Input/PlayerInputCommandSystem.cs b/Assets/MLFLegends/Combat/Runtime/Input/PlayerInputCommandSystem.cs
+index b959055..7880dcf 100644
+--- a/Assets/MLFLegends/Combat/Runtime/Input/PlayerInputCommandSystem.cs
++++ b/Assets/MLFLegends/Combat/Runtime/Input/PlayerInputCommandSystem.cs
+@@ -48,7 +48,7 @@ public bool Attach(PlayerInputCapture source, uint order = 0)
+             m_Source = source;
+             m_SourceOrder = order;
+             source.ClearEdges();
+-            if (m_Sessions.CalculateEntityCount() == 1)
++            if (false) // MUTATION M2: old Attach unbinds
+             {
+                 var session = m_Sessions.GetSingleton<BattleSession>();
+                 m_BoundBattle = session.BattleNumber;
+diff --git a/Assets/MLFLegends/Combat/Runtime/Presentation/CombatCameraController.cs b/Assets/MLFLegends/Combat/Runtime/Presentation/CombatCameraController.cs
+index f356635..82ea40a 100644
+--- a/Assets/MLFLegends/Combat/Runtime/Presentation/CombatCameraController.cs
++++ b/Assets/MLFLegends/Combat/Runtime/Presentation/CombatCameraController.cs
+@@ -224,8 +224,8 @@ bool TryReadTarget(World world, out Unity.Mathematics.float3 position)
+             var human = session.IsActive ? session.HumanCombatant : CombatantId.Invalid;
+             if (!human.IsValid)
+             {
+-                // Lost target (End/Idle): the last view, pan included, stays exactly where it was.
+                 m_Target = Entity.Null;
++                m_PanOffset = Vector3.zero; // MUTATION M1: old End behaviour
+                 return false;
+             }
+ 
+diff --git a/ProjectSettings/TimeManager.asset b/ProjectSettings/TimeManager.asset
+index 558a017..2e23a1f 100644
+--- a/ProjectSettings/TimeManager.asset
++++ b/ProjectSettings/TimeManager.asset
+@@ -3,7 +3,12 @@
+ --- !u!5 &1
+ TimeManager:
+   m_ObjectHideFlags: 0
+-  Fixed Timestep: 0.02
++  serializedVersion: 2
++  Fixed Timestep:
++    m_Count: 2822399
++    m_Rate:
++      m_Denominator: 1
++      m_Numerator: 141120000
+   Maximum Allowed Timestep: 0.33333334
+   m_TimeScale: 1
+   Maximum Particle Timestep: 0.03

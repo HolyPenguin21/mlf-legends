@@ -1,0 +1,89 @@
+# Date (UTC): 2026-10-26 10:36
+# CPU: AMD Ryzen 5 3600 6-Core Processor, 12 logical, 3593 MHz
+# RAM: 32699 MB
+# GPU (Unity): Null Device (Null)
+# OS: Windows 11  (10.0.26100)
+# Unity: 6000.5.4f1
+# Mode: Editor EditMode test runner, batchmode=True
+# Entities: 6.5.0
+# Collections: 6.5.0
+# Burst: 1.8.29
+# Burst compilation enabled: False
+# Burst code executes (probe job): False
+# Burst safety checks: True
+# Collections checks (ENABLE_UNITY_COLLECTIONS_CHECKS): True
+# Job debugger: True
+# Job worker count: 11
+# Managed code optimization: Release
+# Stopwatch: 10000000 Hz, high resolution True
+# GC byte counter works: False
+# Simulation rate: 60 Hz
+# Runtime scope: Stage 02.2 (#33): clock + lifecycle + commands + CombatFacingSystem + CombatMovementSystem; not the historical Stage 01 baseline
+# CombatMotion bytes per actor: 12
+scenario	combatants	rep	ticksPerFrame	samples	mean_us	median_us	p95_us	min_us	max_us	meanPerTick_us	gcAllocs	nativeDeltaBytes	note
+start	400	1	0	10	787.4	781.7	814.4	777.3	814.4	787.4	0	0	lifecycle update applying Start: queue reset + spawn
+first-tick	400	1	1	10	167.4	170.8	182.5	135.7	182.5	167.4	0	0	first fixed step: adds AppliedCombatCommand to every combatant
+end	400	1	0	10	61.5	61.6	70.1	54.6	70.1	61.5	0	0	lifecycle update applying End: destroy + queue reset
+restart	400	1	0	10	787.4	790.5	805.1	765.9	805.1	787.4	0	0	lifecycle update applying Restart: destroy + reset + spawn
+idle-k1	400	1	1	1000	84.6	83.7	87.5	83.1	136.7	84.6	0	352	full fixed-step group per frame (incl. test producer); 1000 frames x 1 ticks, editor frame between frames; chunks=4 (65536 B); queue buffers capacity=319488 B
+idle-k4	400	1	4	250	311.0	309.2	315.2	308.3	387.9	77.7	0	0	full fixed-step group per frame (incl. test producer); 250 frames x 4 ticks, editor frame between frames; chunks=4 (65536 B); queue buffers capacity=319488 B
+idle-k10	400	1	10	100	762.0	759.6	775.6	756.7	821.2	76.2	0	352	full fixed-step group per frame (incl. test producer); 100 frames x 10 ticks, editor frame between frames; chunks=4 (65536 B); queue buffers capacity=319488 B
+cmd-k1	400	1	1	1000	252.4	249.7	261.1	248.8	342.1	252.4	0	352	full fixed-step group per frame (incl. test producer); 1000 frames x 1 ticks, editor frame between frames; chunks=4 (65536 B); queue buffers capacity=319488 B
+cmd-k1:runtime	400	1	1	1000	224.4	222.1	233.1	221.3	303.1	224.4	0	352	frame minus the test producer's self-time
+cmd-k1:producer	400	1	1	1000	27.9	27.6	28.4	27.3	53.1	27.9	0	0	test producer self-time (submission), managed SystemBase
+cmd-k4	400	1	4	250	982.9	980.4	998.1	969.1	1081.8	245.7	0	0	full fixed-step group per frame (incl. test producer); 250 frames x 4 ticks, editor frame between frames; chunks=4 (65536 B); queue buffers capacity=319488 B
+cmd-k4:runtime	400	1	4	250	877.6	875.3	892.3	865.5	967.8	219.4	0	0	frame minus the test producer's self-time
+cmd-k4:producer	400	1	4	250	105.3	104.4	109.5	103.6	118.5	26.3	0	0	test producer self-time (submission), managed SystemBase
+cmd-k10	400	1	10	100	2441.2	2433.6	2473.7	2417.6	2566.3	244.1	0	352	full fixed-step group per frame (incl. test producer); 100 frames x 10 ticks, editor frame between frames; chunks=4 (65536 B); queue buffers capacity=319488 B
+cmd-k10:runtime	400	1	10	100	2181.3	2174.2	2214.8	2160.5	2285.8	218.1	0	352	frame minus the test producer's self-time
+cmd-k10:producer	400	1	10	100	259.9	258.7	265.3	256.3	280.5	26.0	0	0	test producer self-time (submission), managed SystemBase
+cmd-lead32-k1	400	1	1	1000	2183.1	2200.3	2270.6	1893.3	2971.7	2183.1	0	352	full fixed-step group per frame (incl. test producer); 1000 frames x 1 ticks, editor frame between frames; chunks=4 (65536 B); queue buffers capacity=319488 B
+cmd-lead32-k1:runtime	400	1	1	1000	2130.9	2148.8	2213.8	1840.3	2896.9	2130.9	0	352	frame minus the test producer's self-time
+cmd-lead32-k1:producer	400	1	1	1000	52.2	51.2	56.1	50.7	98.1	52.2	0	0	test producer self-time (submission), managed SystemBase
+cmd-lead32-k10	400	1	10	100	21758.9	21851.2	22324.0	19201.2	24138.4	2175.9	0	-1152	full fixed-step group per frame (incl. test producer); 100 frames x 10 ticks, editor frame between frames; chunks=4 (65536 B); queue buffers capacity=319488 B
+cmd-lead32-k10:runtime	400	1	10	100	21256.0	21357.2	21813.9	18707.7	23546.1	2125.6	0	-1152	frame minus the test producer's self-time
+cmd-lead32-k10:producer	400	1	10	100	502.8	497.7	527.5	491.7	592.3	50.3	0	0	test producer self-time (submission), managed SystemBase
+start	400	2	0	10	895.0	794.9	1112.5	777.6	1112.5	895.0	0	0	lifecycle update applying Start: queue reset + spawn
+first-tick	400	2	1	10	174.1	174.5	231.4	123.2	231.4	174.1	0	0	first fixed step: adds AppliedCombatCommand to every combatant
+end	400	2	0	10	69.0	65.3	108.5	49.5	108.5	69.0	0	0	lifecycle update applying End: destroy + queue reset
+restart	400	2	0	10	807.4	786.7	968.3	772.7	968.3	807.4	0	0	lifecycle update applying Restart: destroy + reset + spawn
+idle-k1	400	2	1	1000	90.6	83.7	127.7	83.1	154.2	90.6	0	352	full fixed-step group per frame (incl. test producer); 1000 frames x 1 ticks, editor frame between frames; chunks=4 (65536 B); queue buffers capacity=319488 B
+idle-k4	400	2	4	250	315.1	311.1	335.4	308.3	455.0	78.8	0	0	full fixed-step group per frame (incl. test producer); 250 frames x 4 ticks, editor frame between frames; chunks=4 (65536 B); queue buffers capacity=319488 B
+idle-k10	400	2	10	100	765.4	761.5	793.2	757.2	838.8	76.5	0	352	full fixed-step group per frame (incl. test producer); 100 frames x 10 ticks, editor frame between frames; chunks=4 (65536 B); queue buffers capacity=319488 B
+cmd-k1	400	2	1	1000	276.5	252.7	357.6	248.6	641.4	276.5	0	169392	full fixed-step group per frame (incl. test producer); 1000 frames x 1 ticks, editor frame between frames; chunks=4 (65536 B); queue buffers capacity=319488 B
+cmd-k1:runtime	400	2	1	1000	245.8	224.5	317.4	221.1	601.6	245.8	0	169392	frame minus the test producer's self-time
+cmd-k1:producer	400	2	1	1000	30.7	27.7	39.9	27.3	126.5	30.7	0	0	test producer self-time (submission), managed SystemBase
+cmd-k4	400	2	4	250	988.2	975.6	1039.6	968.3	1376.7	247.0	0	0	full fixed-step group per frame (incl. test producer); 250 frames x 4 ticks, editor frame between frames; chunks=4 (65536 B); queue buffers capacity=319488 B
+cmd-k4:runtime	400	2	4	250	882.4	870.8	929.5	864.6	1225.7	220.6	0	0	frame minus the test producer's self-time
+cmd-k4:producer	400	2	4	250	105.8	104.0	113.3	103.5	161.3	26.4	0	0	test producer self-time (submission), managed SystemBase
+cmd-k10	400	2	10	100	2822.2	2507.2	3441.1	2411.7	11246.8	282.2	0	0	full fixed-step group per frame (incl. test producer); 100 frames x 10 ticks, editor frame between frames; chunks=4 (65536 B); queue buffers capacity=319488 B
+cmd-k10:runtime	400	2	10	100	2529.6	2245.3	3068.2	2155.8	10876.5	253.0	0	0	frame minus the test producer's self-time
+cmd-k10:producer	400	2	10	100	292.6	265.9	374.9	255.9	426.2	29.3	0	0	test producer self-time (submission), managed SystemBase
+cmd-lead32-k1	400	2	1	1000	2192.7	2176.9	2342.7	1889.9	4154.7	2192.7	0	-224	full fixed-step group per frame (incl. test producer); 1000 frames x 1 ticks, editor frame between frames; chunks=4 (65536 B); queue buffers capacity=319488 B
+cmd-lead32-k1:runtime	400	2	1	1000	2140.1	2125.4	2274.8	1839.2	3978.3	2140.1	0	-224	frame minus the test producer's self-time
+cmd-lead32-k1:producer	400	2	1	1000	52.6	51.0	57.9	50.6	176.4	52.6	0	0	test producer self-time (submission), managed SystemBase
+cmd-lead32-k10	400	2	10	100	21621.9	21755.5	21974.0	19027.3	22358.5	2162.2	0	0	full fixed-step group per frame (incl. test producer); 100 frames x 10 ticks, editor frame between frames; chunks=4 (65536 B); queue buffers capacity=319488 B
+cmd-lead32-k10:runtime	400	2	10	100	21127.0	21261.8	21473.8	18528.9	21836.0	2112.7	0	0	frame minus the test producer's self-time
+cmd-lead32-k10:producer	400	2	10	100	494.8	493.1	508.5	490.3	522.5	49.5	0	0	test producer self-time (submission), managed SystemBase
+start	400	3	0	10	785.8	783.8	806.2	774.8	806.2	785.8	0	0	lifecycle update applying Start: queue reset + spawn
+first-tick	400	3	1	10	144.7	139.5	181.5	123.0	181.5	144.7	0	0	first fixed step: adds AppliedCombatCommand to every combatant
+end	400	3	0	10	56.4	54.1	69.1	49.1	69.1	56.4	0	0	lifecycle update applying End: destroy + queue reset
+restart	400	3	0	10	782.0	780.6	796.5	770.9	796.5	782.0	0	0	lifecycle update applying Restart: destroy + reset + spawn
+idle-k1	400	3	1	1000	85.3	83.8	90.2	83.1	175.1	85.3	0	352	full fixed-step group per frame (incl. test producer); 1000 frames x 1 ticks, editor frame between frames; chunks=4 (65536 B); queue buffers capacity=319488 B
+idle-k4	400	3	4	250	311.3	309.4	318.9	308.5	367.8	77.8	0	0	full fixed-step group per frame (incl. test producer); 250 frames x 4 ticks, editor frame between frames; chunks=4 (65536 B); queue buffers capacity=319488 B
+idle-k10	400	3	10	100	763.5	760.9	777.8	757.2	862.5	76.3	0	-224	full fixed-step group per frame (incl. test producer); 100 frames x 10 ticks, editor frame between frames; chunks=4 (65536 B); queue buffers capacity=319488 B
+cmd-k1	400	3	1	1000	251.8	249.8	258.1	248.8	365.0	251.8	0	352	full fixed-step group per frame (incl. test producer); 1000 frames x 1 ticks, editor frame between frames; chunks=4 (65536 B); queue buffers capacity=319488 B
+cmd-k1:runtime	400	3	1	1000	223.9	222.2	229.2	221.3	324.8	223.9	0	352	frame minus the test producer's self-time
+cmd-k1:producer	400	3	1	1000	27.8	27.6	28.5	27.2	42.6	27.8	0	0	test producer self-time (submission), managed SystemBase
+cmd-k4	400	3	4	250	982.4	974.1	1006.8	969.0	1406.5	245.6	0	0	full fixed-step group per frame (incl. test producer); 250 frames x 4 ticks, editor frame between frames; chunks=4 (65536 B); queue buffers capacity=319488 B
+cmd-k4:runtime	400	3	4	250	877.2	870.1	898.3	865.0	1258.1	219.3	0	0	frame minus the test producer's self-time
+cmd-k4:producer	400	3	4	250	105.2	104.0	108.6	103.4	148.4	26.3	0	0	test producer self-time (submission), managed SystemBase
+cmd-k10	400	3	10	100	2454.6	2422.5	2627.1	2410.8	2840.5	245.5	0	352	full fixed-step group per frame (incl. test producer); 100 frames x 10 ticks, editor frame between frames; chunks=4 (65536 B); queue buffers capacity=319488 B
+cmd-k10:runtime	400	3	10	100	2193.0	2163.2	2336.5	2154.0	2530.1	219.3	0	352	frame minus the test producer's self-time
+cmd-k10:producer	400	3	10	100	261.6	257.5	285.4	255.9	310.4	26.2	0	0	test producer self-time (submission), managed SystemBase
+cmd-lead32-k1	400	3	1	1000	2191.9	2185.7	2308.1	1889.9	3107.2	2191.9	0	-224	full fixed-step group per frame (incl. test producer); 1000 frames x 1 ticks, editor frame between frames; chunks=4 (65536 B); queue buffers capacity=319488 B
+cmd-lead32-k1:runtime	400	3	1	1000	2139.5	2134.0	2245.8	1838.5	3024.3	2139.5	0	-224	frame minus the test producer's self-time
+cmd-lead32-k1:producer	400	3	1	1000	52.4	51.2	57.2	50.6	109.9	52.4	0	0	test producer self-time (submission), managed SystemBase
+cmd-lead32-k10	400	3	10	100	21508.4	21787.5	21978.1	19050.2	22096.9	2150.8	0	-1152	full fixed-step group per frame (incl. test producer); 100 frames x 10 ticks, editor frame between frames; chunks=4 (65536 B); queue buffers capacity=319488 B
+cmd-lead32-k10:runtime	400	3	10	100	21014.4	21296.0	21483.4	18553.5	21605.3	2101.4	0	-1152	frame minus the test producer's self-time
+cmd-lead32-k10:producer	400	3	10	100	494.0	493.3	499.7	490.3	514.8	49.4	0	0	test producer self-time (submission), managed SystemBase
