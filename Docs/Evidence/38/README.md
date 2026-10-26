@@ -21,7 +21,11 @@ in licensing channel names; no serial/licence IDs or e-mail.
 
 Column meanings of the TSVs: `refresh_*_us` = `CombatSpriteRenderer.Refresh` (extraction + submission) CPU time;
 `camera_render_median_us` = `Camera.Render` CPU time; `gc_bytes_measured` = `GC.GetAllocatedBytesForCurrentThread` delta
-around Refresh over 120 measured frames after 30 warm-up frames; `draw_calls_median`/`setpass_median` =
+around Refresh over 120 measured frames after 30 warm-up frames (**unvalidated**, not proof of GC.Alloc=0); `draw_calls_median`/`setpass_median` =
 `UnityEditor.UnityStats` after each `Camera.Render` of a 512×512 target; `batches_median` = NOT RUN (only available via
 `ProfilerRecorder`, which batchmode does not publish); `submissions` = `RenderMeshPrimitives` calls (atlas pages).
 GPU time is not measured.
+
+
+Correction #41 adds calibrated byte/sample controls, synchronous Stats snapshots and per-sample TSV output.
+New execution status and collection instructions are in `../41/README.md`; no old raw evidence was rewritten.

@@ -1,5 +1,28 @@
 # MLF Legends — Quality assurance and evidence
 
+## Corrective #41 implementation (2026-10-26, `fix/38-depth-and-measurement`) — awaiting Unity evidence
+
+- Depth policy now uses connected projected-frame overlaps and a roster-independent maximum push of 0.0625 world
+  unit. Scale/trim/flip/selected page are read from the same atlas/renderer data. ID order remains deterministic.
+  Camera, shader, ECS authority, movement, spawner, collisions and packages are unchanged. Native buffers have matching
+  construction/disposal; bounds and anchors continue to consume the same bounded DepthOffset as the shader.
+- Added independent wall-colour readbacks at 2/100/400, page/ID/chunk permutations, offscreen commands, disable/re-enable
+  and Z changes; 400 coincident cards on two pages, then all 400 GPU layers peeled in ID order. Existing crossing,
+  jump/pan/zoom and 3D tests retained. A temporary legacy-policy mutation is supplied for the required negative control.
+- PlayMode GC bytes and current-thread GC.Alloc samples each have live 4096-byte and empty controls in the same process.
+  Unsupported columns say NOT MEASURED. If neither control works, allocation validation is Inconclusive / NOT RUN,
+  never PASS. The separate control test checks that the benchmark's zero-allocation assertion rejects the live allocation.
+- CPU total and value-copy extraction/submission Stats belong to one synchronous Refresh, captured before any yield;
+  Camera.Render and delayed render counters are separate. Profiler state, recorder scope, cameras, targets and readback
+  active target restore through finally. Per-frame raw TSV and controls supplement the summary, for both renderer modes.
+- Available checks: diff whitespace and source/numerical review only (independent wall ray and depth-slot precision).
+  **C# compilation, full EditMode, headless PlayMode, real GPU readback, legacy GPU negative control and new 2/100/400
+  benchmarks: NOT RUN** — no Unity Editor, dotnet/Mono or graphics device in this environment. No new XML/log/TSV or
+  GPU pass is claimed. Run/collection instructions: `Docs/Evidence/41/README.md`.
+- Historical #38 byte zeros remain **unvalidated**; old split timings sampled two different Refresh operations and
+  cannot be treated as a synchronous split. Raw #38 evidence is not modified. Art handshake, Game-view look,
+  Frame Debugger, GPU time, player build and Domain Reload disabled remain NOT RUN; #30/#17/#25 remain OPEN.
+
 ## Manager review of merged #38 / PR #39 + #40 (2026-10-26) — CHANGES REQUESTED
 
 Reviewed main `b997d48f0fcac8d74d1f6241e387db357e045d9d` bottom-up: manifest/parser/binding → CPU/GPU tables → card/trim/flip/anchors → shader/depth/bounds → ECS reads, World/lifecycle/owners → camera/scene → tests and raw evidence. Compared tested `8ea534f` to this main: no runtime/test/scene differences, only docs/evidence. **Manager did not run Unity** (no Unity, dotnet or Mono runtime here).
@@ -30,7 +53,8 @@ Findings and fixes:
 3. A superseded renderer extracted ECS every frame for nothing; it now neither reads nor draws (binding/selections kept).
 4. Extraction and submission CPU time are measured separately (`RenderStats`, TSV): submission ≈ 18 µs at every count;
    extraction median 12.3 / 52.7 / 189.1 µs for 2 / 100 / 400 (Editor batchmode; total 30.9 / 71.1 / 209.1 µs).
-   Draw calls 6 → 8, GC.Alloc 0, one instance buffer — unchanged.
+   Historical draw calls 6 → 8 and one instance buffer unchanged. Those split timings are not a same-call sample;
+   zero byte deltas are unvalidated GC evidence (see #41).
 5. Test gap: depth crossing was only checked with static poses. Added real fixed-tick movement (Z towards/through each
    other, then X pass at equal depth: exactly one front change) and a GPU step-by-step pass-through across pages.
 6. Docs: contract states binary body alpha (alpha < 128 not drawn), BOM/comments/trailing content, anchors may lie
@@ -66,7 +90,7 @@ the pivot; no magenta page padding sampled anywhere.
 
 **Measurements** (`stage03-sprites-n*.tsv`, run 2; Editor batchmode, 512² target, one atlas page):
 
-| Fighters | Refresh median / p95 (µs) | GC bytes (120 frames) | Draw calls without → with renderer | Instance buffers created | Instance buffer | Atlas pages + frame table |
+| Fighters | Refresh median / p95 (µs) | GC byte delta (120 frames; unvalidated) | Draw calls without → with renderer | Instance buffers created | Instance buffer | Atlas pages + frame table |
 |---|---|---|---|---|---|---|
 | 2 | 30.8 / 37.6 | 0 | 6 → 8 | 1 | 1 536 B | 126 976 + 96 B |
 | 100 | 70.9 / 88.0 | 0 | 6 → 8 | 1 | 3 072 B | 126 976 + 96 B |
@@ -74,7 +98,8 @@ the pivot; no magenta page padding sampled anywhere.
 
 Draw calls do not grow with fighters (+2 per camera render for one page: the forward pass plus, presumably, the SSAO
 DepthNormals prepass — per-pass attribution by Frame Debugger is NOT RUN). One `RenderMeshPrimitives` submission per page,
-no buffer re-creation and zero GC.Alloc per frame after warm-up. Batches: NOT RUN (ProfilerRecorder not published in
+no buffer re-creation. Recorded zero byte deltas have no validated live-allocation control and do not establish
+GC.Alloc=0. Batches: NOT RUN (ProfilerRecorder not published in
 batchmode). GPU time, full-frame cost and FPS: **NOT RUN / not claimed**; batchmode Editor CPU numbers are not a frame
 budget.
 
@@ -83,7 +108,7 @@ ready for the handshake); owner GUI look in the Game view, Frame Debugger per-pa
 Domain Reload disabled manual check; other GPUs/APIs (Vulkan/Metal/mobile renderer asset). #30/#17/#25 unchanged.
 
 **Known limits:** main-thread managed extraction (~0.2 ms at 400 in the Editor); Scene view does not show fighters (draws
-target the selected camera); only yaw 0° calibrated; depth tie-break worst case 0.8 units when 400 fighters coincide;
+target the selected camera); only yaw 0° calibrated; historical depth tie-break allowed 0.8 units at equal Z (fixed in #41 source, device validation pending);
 import settings are validated (size, compression, warnings for mipmaps/linear) but not enforced by a postprocessor.
 
 ## Manager re-review of merged PR #37 (2026-10-26)

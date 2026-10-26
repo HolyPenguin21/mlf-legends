@@ -14,6 +14,26 @@ Its own 2/100/400 measurements — extraction and submission CPU time, GC.Alloc,
 without the renderer, page/frame/instance memory — are produced by the PlayMode `[Category("Performance")]` test
 `CombatSpritePerformanceTests` with a graphics device and recorded in `Docs/QA.md` (raw TSVs in `Docs/Evidence/38/`).
 
+### Corrective #41 measurement contract — new run NOT RUN
+
+Current `CombatSpritePerformanceTests` records a live 4096-byte allocation and an empty control, on the calling thread
+in each PlayMode process. `gc_bytes_measured` is the sum of validated byte deltas over 120 manual Refresh regions;
+otherwise **NOT MEASURED**. `gc_alloc_samples` is the sum of separately validated `Recorder.Get("GC.Alloc")` current-thread
+sample counts over those regions; otherwise **NOT MEASURED**. A missing/ineffective pair of counters makes allocation
+validation Inconclusive / NOT RUN. A separate positive-control test must reject the live allocation via the same assertion.
+No allocation claim uses process/frame totals or the allocations of Camera.Render, test setup, TSV construction or yields.
+
+`refresh_*_us` now measures timestamps directly around one manual Refresh; `extract_*`/`submit_*` are a value-copy
+of that call's Stats before yielding. `camera_render_*` is separately timed. Delayed render counters remain separate;
+these are CPU measurements, not GPU time. `*-raw.tsv` holds every sample in both modes; `*-gc-controls.tsv` holds actual
+counter control results. Profiler/camera/RenderTexture cleanup runs on failure too. The no-renderer region provides an
+empty-call baseline with the same measurement machinery. Automatic LateUpdate outside that region is not measured.
+
+New costs (including the depth-overlap comparisons), zero-allocation result and same-call splits at **2/100/400 are
+NOT RUN** here: Unity Editor/D3D12 unavailable. Never transfer the historical ≈31/71/210 us to the corrected code.
+See `Docs/Evidence/41/README.md` for exact-SHA evidence collection. Old raw files remain unchanged; their byte zeros
+are unvalidated and their split columns refer to different Refresh calls. Existing ECS sample-recorder results are unaffected.
+
 ## Stage 02.1 measurement boundary (#31, 2026-10-26)
 
 All measured figures below are **historical Stage 01**, before the motion system (and before PR #28/#29).

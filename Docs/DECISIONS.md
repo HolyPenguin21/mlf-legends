@@ -25,8 +25,10 @@
   screen image of the art, upright-body depth, feet on the floor. Start calibration 96 px = 2 world units (one
   configurable scale). Flip mirrors geometry around the pivot (trim offset and image together), never only UVs.
 - **Depth:** alpha clip + ZWrite/ZTest in forward, DepthOnly and DepthNormalsOnly passes (PC renderer's SSAO uses
-  DepthNormals; no URP feature changed). Equal depth: render-only push of ≥ 0.002 units per card ordered by
-  (depth, CombatantId), lowest ID in front; constant bias 0.02 units towards the camera. `CombatPosition` untouched.
+  DepthNormals; no URP feature changed). Original roster-wide ≥0.002 gap is superseded by corrective #41:
+  overlapping projected rectangles form local components, requested 0.002 gap compressed into a fixed 0.0625-unit
+  total budget per component. Lower ID in front on ties across pages/chunks; bias 0.02 unchanged. `CombatPosition`
+  untouched. See SPRITES.md for precision/occlusion rationale and remaining device-validation limits.
 - **Order/ownership:** scene `CombatSpriteRenderer` in `LateUpdate` with `[DefaultExecutionOrder(100)]` after the camera;
   no ECS system/writer/tick. Later-enabled renderer owns a World + Camera; the other stays idle with one warning.
   Technical fixture generated in code for CombatSmoke (no PNG committed); art plugs in through a `SpriteAtlasCatalog`.

@@ -5,6 +5,8 @@ using System.Linq;
 using MLFLegends.Combat;
 using NUnit.Framework;
 using Unity.Mathematics;
+using Unity.Collections;
+using Unity.Entities;
 using UnityEngine;
 using UnityEngine.TestTools;
 using static MLFLegends.Tests.PlayMode.SpritePlayModeSupport;
@@ -306,6 +308,115 @@ namespace MLFLegends.Tests.PlayMode
             AssertImage(Render(), "22-zoomed-3px", airborne, standing);
             SetCamera(float3.zero, 1f);
             AssertImage(Render(), "23-zoomed-1px", airborne, standing);
+        }
+
+        // Only a fixture tag, used to change ECS chunks without changing presentation inputs.
+        struct ReorderFixture : IComponentData { }
+
+        [UnityTest]
+        public IEnumerator CloseWallOcclusionIsIndependentOfDistantRoster([Values(0, 49, 199)] int allies)
+        {
+            yield return RestartBattle(Duel(float3.zero, FacingDirection.Right, new float3(50f, 0f, 0f), FacingDirection.Left, allies));
+            using var query = Manager.CreateEntityQuery(typeof(CombatantId), typeof(CombatPosition), typeof(InCombat));
+            // Do not keep Temp allocations over any yield.
+            var entities = query.ToEntityArray(Allocator.Persistent);
+            try
+            {
+                var sorted = entities.ToArray().OrderBy(e => Manager.GetComponentData<CombatantId>(e).Value).ToArray();
+                var local = sorted[0];
+                var fighter = new Fighter { Support = float3.zero, Facing = FacingDirection.Right, Frame = "tech_a" };
+                for (var i = 0; i < sorted.Length; i++)
+                {
+                    Manager.SetComponentData(sorted[i], new CombatPosition { Value = i == 0 ? float3.zero : new float3(50f + i * 3f, 0f, 0f) });
+                    m_Renderer.SetFrame(Manager.GetComponentData<CombatantId>(sorted[i]), i % 2 == 0 ? "tech_a" : "tech_c");
+                }
+                AssertColor(PixelAt(Render(), fighter, -20.5f, 40.5f), TechnicalAtlasFixture.Red, "Control: local body visible before placing the wall.");
+                // Near face Z=-0.21, height 3. Expected colour is the opaque wall, independent of the depth algorithm.
+                Box("Close wall", new Vector3(0f, 1.5f, -0.20f), new Vector3(4f, 3f, 0.02f), Wall);
+                for (var phase = 0; phase < 4; phase++)
+                {
+                    if (phase == 1)
+                    {
+                        // Reverse IDs and swap pages: the local fighter becomes the highest ID.
+                        var ids = sorted.Select(e => Manager.GetComponentData<CombatantId>(e)).Reverse().ToArray();
+                        for (var i = 0; i < sorted.Length; i++)
+                        {
+                            Manager.SetComponentData(sorted[i], ids[i]);
+                            m_Renderer.SetFrame(ids[i], i % 2 == 0 ? "tech_c" : "tech_a");
+                            if (i % 2 == 0) Manager.AddComponent<ReorderFixture>(sorted[i]);
+                        }
+                        fighter.Frame = "tech_c";
+                    }
+                    if (phase == 2)
+                        for (var i = 1; i < sorted.Length; i++) Manager.SetComponentEnabled<InCombat>(sorted[i], false);
+                    if (phase == 3)
+                        for (var i = 1; i < sorted.Length; i++)
+                        {
+                            Manager.SetComponentEnabled<InCombat>(sorted[i], true);
+                            Manager.SetComponentData(sorted[i], new CombatPosition { Value = new float3(50f + i * 3f, 0f, i % 2 == 0 ? -2f : 2f) });
+                        }
+                    var tick = Tick;
+                    var remote = sorted[1];
+                    var remoteBefore = Manager.GetComponentData<CombatPosition>(remote).Value;
+                    if (phase != 2)
+                    {
+                        using var queue = Manager.CreateEntityQuery(typeof(CombatCommandQueue));
+                        var submissions = Manager.GetBuffer<CombatCommandSubmission>(queue.GetSingletonEntity());
+                        submissions.Add(new CombatCommandSubmission(new CombatCommand
+                        {
+                            Combatant = Manager.GetComponentData<CombatantId>(remote), Tick = tick + 1,
+                            MoveZ = 1, Source = CommandSource.AI,
+                        }));
+                    }
+                    yield return Until(() => Tick >= tick + 2);
+                    if (phase != 2)
+                        Assert.That(Manager.GetComponentData<CombatPosition>(remote).Value.z, Is.GreaterThan(remoteBefore.z),
+                            "An offscreen actor still executes its command through the authoritative simulation.");
+                    var pixels = Render();
+                    SaveEvidence(m_Readback, $"41-close-wall-n{sorted.Length}-phase{phase}");
+                    AssertColor(PixelAt(pixels, fighter, -20.5f, 40.5f), Wall, "Distant actors cannot pull the body through the close wall.");
+                    Assert.That(Manager.GetComponentData<CombatPosition>(local).Value, Is.EqualTo(float3.zero));
+                    Assert.That(m_Renderer.TryGetInstance(Manager.GetComponentData<CombatantId>(local), out var instance), Is.True);
+                    Assert.That(instance.DepthOffset, Is.EqualTo(0f), "Distant non-overlapping actors have no influence at all.");
+                }
+            }
+            finally { entities.Dispose(); }
+        }
+
+        [UnityTest]
+        public IEnumerator FourHundredCoincidentFightersKeepIdOrderAcrossPagesAndChunkChanges()
+        {
+            yield return RestartBattle(Duel(float3.zero, FacingDirection.Right, float3.zero, FacingDirection.Right, 199));
+            using var query = Manager.CreateEntityQuery(typeof(CombatantId), typeof(CombatPosition), typeof(InCombat));
+            using var entities = query.ToEntityArray(Allocator.Persistent);
+            var sorted = entities.ToArray().OrderBy(e => Manager.GetComponentData<CombatantId>(e).Value).ToArray();
+            var a = new Fighter { Support = float3.zero, Facing = FacingDirection.Right, Frame = "tech_a" };
+            var c = new Fighter { Support = float3.zero, Facing = FacingDirection.Right, Frame = "tech_c" };
+            for (var phase = 0; phase < 2; phase++)
+            {
+                for (var i = 0; i < sorted.Length; i++)
+                {
+                    Manager.SetComponentData(sorted[i], new CombatPosition { Value = float3.zero });
+                    Manager.SetComponentData(sorted[i], new CombatFacing { Value = FacingDirection.Right });
+                    m_Renderer.SetFrame(Manager.GetComponentData<CombatantId>(sorted[i]), (i + phase) % 2 == 0 ? "tech_a" : "tech_c");
+                    if (phase == 1 && i % 2 == 0) Manager.AddComponent<ReorderFixture>(sorted[i]);
+                }
+                var pixels = Render();
+                Assert.That(m_Renderer.Stats.Submissions, Is.EqualTo(2));
+                AssertImage(pixels, $"41-coincident-400-pages-{phase}", phase == 0 ? a : c, phase == 0 ? c : a);
+                Assert.That(m_Renderer.Extraction.MaxDepthOffset, Is.LessThanOrEqualTo(CombatSpriteExtraction.DepthOffsetBudget));
+            }
+            // Peel every layer on the actual GPU, not merely the first two visible IDs. At this overlap pixel
+            // tech_a is red and tech_c is white, independently of any computed offset. Phase 1 put c on even indices.
+            for (var i = 0; i < sorted.Length; i++)
+            {
+                var pixels = Render();
+                AssertColor(PixelAt(pixels, a, -20.5f, 40.5f), i % 2 == 0 ? TechnicalAtlasFixture.White : TechnicalAtlasFixture.Red,
+                    $"Lowest remaining ID at layer {i} wins across pages.");
+                if (i == 0 || i == 199 || i == 399) SaveEvidence(m_Readback, $"41-peel-400-layer-{i}");
+                Manager.SetComponentEnabled<InCombat>(sorted[i], false);
+                yield return null; // retire queued draws and native Temp scratch between readbacks
+            }
         }
 
         // ---------------------------------------------------------------- 3D geometry
