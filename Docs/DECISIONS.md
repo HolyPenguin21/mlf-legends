@@ -1,5 +1,12 @@
 # MLF Legends — Decision log
 
+## Combined Stage 02.3 + 02.4 delivery — owner decision (2026-10-26)
+
+- Owner requested combining real input (02.3) and fixed-angle orthographic camera (02.4). Expand existing [Issue #22](https://github.com/HolyPenguin21/mlf-legends/issues/22); one branch, one PR, joint acceptance. Substage numbers remain traceability labels. This supersedes any earlier requirement to deliver the camera in a separate PR.
+- Preserve separate responsibilities inside that delivery: Input System/raw device state → one producer in existing Collection/queue; presentation camera reads HumanCombatant/CombatPosition after simulation and writes only camera state. Held each tick, Pressed consumed once; pause/focus/Restart clear stale edges. Camera follow/pan/zoom keeps one fixed configurable angle; simulation stays independent of visibility.
+- Reuse existing InputSystem_Actions asset and CombatSmoke Main Camera where appropriate. Bindings/numeric camera settings are provisional and configurable. No alternate command queue, clock, combatant views, Cinemachine framework or early visual scene; the first sprite-backed visible scene remains Stage 03.
+- PR #36 / #35 is manager-accepted. #30 and #17 remain separate nonblocking QA; their latest findings are in QA.md. This decision prepares the combined implementation, it does not mark either substage implemented.
+
 ## Compile blocker remediation decision (2026-10-26)
 
 - Owner's project was compiled in Unity 6000.5.4f1 by the Stage 02.2 implementer. Current main failed with CS0579 from two `UpdateInGroup` attributes on `BattleLifecycleSystem` introduced by PR #28; the manager verified the duplicated annotations in source. This is a real, presently blocking build issue, not historical `NOT RUN`.
