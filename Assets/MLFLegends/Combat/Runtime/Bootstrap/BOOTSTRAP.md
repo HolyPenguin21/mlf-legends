@@ -93,7 +93,7 @@ default, `BattleSetup.Default`, `CombatSmokeBootstrap`) is the 1v1 duel, unchang
 | Team size | leader + allies, at most `BattleSetup.MaxCombatantsPerTeam` = 200 per team (`HumanAllies`, `AiAllies` ≤ 199), so ≤ 400 combatants. More is `InvalidSetup`, checked before any side effect. The bound matches the command queue's `MaxPendingCommands` = 400 × `MaxLeadTicks`. |
 | IDs | one `TryReserve(Setup.CombatantCount)` per start: human = `first`, AI = `first + 1`, human allies `first + 2 …`, then AI allies, consecutive. Too few IDs left → `IdsExhausted`, nothing consumed. |
 | Team, facing | the leader's. |
-| Position | ally `k` (0-based) of a leader at `P` facing `f` (±1): `P + (-f · (1 + k / 10), 0, k % 10 - 4.5) × AllySpacing` (1 world unit): rows of 10 along Z behind the leader. Deterministic; there is no movement, collision or AI yet, so overlap with the other team is irrelevant in Stage 01. |
+| Position | ally `k` (0-based) of a leader at `P` facing `f` (±1): `P + (-f · (1 + k / 10), 0, k % 10 - 4.5) × AllySpacing` (1 world unit): rows of 10 along Z behind the leader. Deterministic; Stage 02.1 adds movement but no collisions or AI, so actor overlap is still unresolved. |
 | Session | `HumanCombatant`/`AiCombatant` are the two leaders; allies are only entities. A restart destroys every combatant and reserves fresh IDs for the new roster, of any size. |
 
 Example: `HumanAllies = AiAllies = 199` is 200 vs 200 with IDs `first … first + 399`.
@@ -134,7 +134,7 @@ session/allocator write-back. Such a boundary clears itself once the clock reach
 1. Destroy every entity with `CombatantId` (also defeated, i.e. `InCombat` disabled). Nothing else is destroyed.
 2. `CombatCommandQueue.ResetForBattle(EntityManager, SimulationClock.Tick)`: drops submissions, pending and
    future commands, results and `AppliedCombatCommand` of the previous battle.
-3. Spawn the human, the AI and their allies with new IDs (`Setup.CombatantCount`, reserved in step 0).
+3. Spawn the human, the AI and their allies with new IDs (`Setup.CombatantCount`, reserved in step 0). The same private Spawn initialises `CombatMotion` with spawn Y support, zero vertical velocity and grounded = true (#31); no second spawner. Motion is destroyed with its entity on End/Restart/Despawn.
 4. `BattleSession`: `Active`, `BattleStartTick = SimulationClock.Tick`, `BattleNumber + 1`.
 
 `End` does steps 0 (owner, queue check), 1–2 and sets `Idle`. The next real fixed step advances to absolute tick `BattleStartTick + 1` = relative tick 1 (`BattleSession.RelativeTick(tick) = tick - BattleStartTick`); commands for `Tick <= BattleStartTick`
@@ -178,5 +178,5 @@ Not automated (no Editor automation for this). Record the result in `Docs/QA.md`
 7. Restore the Enter Play Mode setting and timeScale.
 
 ## Not implemented here
-Input and AI producers, movement, attacks, collisions, rendering. Large rosters (#7) are the `Start` above with
+Input and AI producers, movement integration, attacks, collisions, rendering (movement itself lives in Simulation/CombatMovementSystem, #31). Large rosters (#7) are the `Start` above with
 allies, reusing `Spawn` and the same allocator; the benchmark in `Assets/Tests/EditMode/Performance/` uses only that.

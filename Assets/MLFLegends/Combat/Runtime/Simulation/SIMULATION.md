@@ -1,8 +1,8 @@
 # Combat simulation tick (Stage 01.2, Issue #3)
 
 One fixed simulation tick drives every combat system, for a duel and for 200 vs 200 alike. The tick
-is independent of the render frame rate. This folder owns the tick counter and the phase order; it
-reads and writes no Core component.
+is independent of the render frame rate. Clock and phase groups own tick scheduling and do not
+write Core state; Stage 02.1 CombatMovementSystem in this folder owns position/motion integration.
 
 ## Pieces
 
@@ -12,7 +12,7 @@ reads and writes no Core component.
 | `SimulationClock` | Singleton `IComponentData`, one per combat `World`. `Tick` is a read-only `uint`. |
 | `SimulationClockRunning` | Tag on the clock entity while it can advance. Required by the clock and by every phase group. |
 | `CombatClockSystem` | Creates/destroys the clock, sets the fixed-step timestep, the **only writer** of `Tick` and of the tag. |
-| `CombatCommandCollectionSystemGroup`, `CombatStateUpdateSystemGroup`, `CombatPublicationSystemGroup` | Empty ordering anchors for the phases of a tick (base `CombatTickPhaseSystemGroup`). No logic. |
+| `CombatCommandCollectionSystemGroup`, `CombatStateUpdateSystemGroup`, `CombatPublicationSystemGroup` | Ordering anchors for the phases of a tick (base `CombatTickPhaseSystemGroup`). No logic. |
 
 ## Scheduling
 Unity Entities' standard `FixedStepSimulationSystemGroup` (catch-up rate manager) decides how many
@@ -43,7 +43,7 @@ SimulationSystemGroup
    ├─ BattleLifecycleSystem                               (#5/#14/#19) battle requests; Tick = last completed tick
    ├─ CombatClockSystem                                   (after Lifecycle) Tick += 1
    ├─ CombatCommandCollectionSystemGroup                  producers in fixed order, then #4 processor (OrderLast)
-   ├─ CombatStateUpdateSystemGroup                        single owners of combat state (Stage 02+)
+   ├─ CombatStateUpdateSystemGroup                        CombatMovementSystem (#31), then future state owners
    ├─ CombatPublicationSystemGroup                        read-only snapshots/events (later)
    └─ EndFixedStepSimulationEntityCommandBufferSystem     (Unity, OrderLast)
 ```
@@ -60,7 +60,7 @@ SimulationSystemGroup
   end of their producing fixed tick, not be retained until the next BeginFixedStep.
 - Future systems join a phase with `[UpdateInGroup(typeof(<phase group>))]`; they never update
   `SimulationClock` and never run combat logic outside these groups.
-- Only owners from later issues fill the groups; no placeholder processors are added here.
+- Concrete owners fill the groups: command processor in Collection, movement in State; no placeholder processors.
 - Phase groups require `SimulationClockRunning`: they never run in a world without a clock (e.g. an
   isolated test world that has no `CombatClockSystem`) or after the clock stopped.
 
@@ -99,3 +99,41 @@ SimulationSystemGroup
   the Editor world). Tests build an isolated `World`, create `FixedStepSimulationSystemGroup` first and
   then `CombatClockSystem`, and call the group `Update()` directly; that world never touches the
   default world or its clock.
+
+
+## Stage 02.1 movement (#31)
+
+`CombatMovementSystem` is the sole runtime integration writer of `CombatPosition` and `CombatMotion`.
+It belongs only to `CombatStateUpdateSystemGroup`. The Collection group (processor last) completes first;
+Publication reads the resulting positions and kinetics afterwards. No cross-group system-level sort target
+is needed. The same auto-created system is listed in `ReplayWorld.RuntimeSystems` and thus also runs in
+`CombatBenchmarkWorld`. It requires `SimulationClockRunning`, as does its parent phase; clock exhaustion
+stops integration. No second tick counter or elapsed-time accumulator is introduced.
+
+Each enabled `InCombat` with position, motion and applied command is integrated once per fixed step with
+`SimulationTiming.TickDuration`. X/Z = validated axes times speed times dt, with a fixed `1/sqrt(2)` scale
+when both axes are nonzero. No inertia: implicit or explicit None stops X/Z. Air control uses the same
+speed. `Pressed & Jump` applies the impulse only when grounded; Held alone does nothing, including after
+landing. Airborne presses are discarded, not buffered. Attack/Guard are not executed, facing is untouched.
+
+Vertical integration is semi-implicit Euler: impulse if eligible, subtract gravity * dt from velocity,
+then add velocity * dt to Y, then clamp landing and zero velocity. None still integrates gravity.
+`CombatMotion.GroundHeight` is initial spawn Y (any legal finite positive/negative Y), **temporary per-actor
+flat support**, not terrain physics. Spawn initialises velocity = 0 and grounded = true for leaders and
+allies alike. End/Despawn/Restart destroys motion with its entity; no cache or separate cleanup system.
+Initialization still processes paused requests without integrating or touching the clock. Actor ECBs
+remain restricted to playback at EndFixedStep of their producing tick, before possible paused cleanup.
+
+Central **provisional** tunables in `CombatMovementTuning` (not final balance):
+
+| Value | Initial tuning | Units |
+|---|---|---|
+| MoveSpeed | 4 | world units / simulated second |
+| JumpImpulse | 8 | world units / simulated second upward |
+| Gravity | 20 | world units / simulated second squared downward |
+
+One synchronous Burst pass, O(N), cached source-generated query, no managed/native scratch allocations,
+structural changes or ID/entity lookup in movement. Actual timings and Burst compilation are NOT RUN.
+Strict float mode avoids fast-math reassociation; replay assertions target the same Unity/Burst/platform,
+**not a promise of bit-identical floating-point across CPUs or platforms**. Stage 04 must replace the
+spawn-height support and add collision corrections inside this owner, not write a second position.
