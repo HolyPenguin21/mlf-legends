@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="4" result="Failed(Child)" total="4" passed="0" failed="4" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-26 14:06:13Z" end-time="2026-10-26 14:06:14Z" duration="0,8773045">
+  <test-suite type="TestSuite" id="1057" name="mlf-legends" fullname="mlf-legends" runstate="Runnable" testcasecount="37" result="Failed" site="Child" start-time="2026-10-26 14:06:13Z" end-time="2026-10-26 14:06:14Z" duration="0.877305" total="4" passed="0" failed="4" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1050" name="MLFLegends.Tests.PlayMode.dll" fullname="D:/Unity/Project/mlf-s7/Library/ScriptAssemblies/MLFLegends.Tests.PlayMode.dll" runstate="Runnable" testcasecount="37" result="Failed" site="Child" start-time="2026-10-26 14:06:13Z" end-time="2026-10-26 14:06:14Z" duration="0.866971" total="4" passed="0" failed="4" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="12724" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1051" name="MLFLegends" fullname="MLFLegends" runstate="Runnable" testcasecount="37" result="Failed" site="Child" start-time="2026-10-26 14:06:13Z" end-time="2026-10-26 14:06:14Z" duration="0.865710" total="4" passed="0" failed="4" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1052" name="Tests" fullname="MLFLegends.Tests" runstate="Runnable" testcasecount="37" result="Failed" site="Child" start-time="2026-10-26 14:06:13Z" end-time="2026-10-26 14:06:14Z" duration="0.864991" total="4" passed="0" failed="4" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestSuite" id="1053" name="PlayMode" fullname="MLFLegends.Tests.PlayMode" runstate="Runnable" testcasecount="37" result="Failed" site="Child" start-time="2026-10-26 14:06:13Z" end-time="2026-10-26 14:06:14Z" duration="0.864254" total="4" passed="0" failed="4" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-suite type="TestFixture" id="1025" name="CombatSpriteGraphicsTests" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" testcasecount="4" result="Failed" site="Child" start-time="2026-10-26 14:06:13Z" end-time="2026-10-26 14:06:14Z" duration="0.862241" total="4" passed="0" failed="4" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="Graphics" />
+              </properties>
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1028" name="JumpPanAndZoomKeepTheDepthOrder" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.JumpPanAndZoomKeepTheDepthOrder" methodname="JumpPanAndZoomKeepTheDepthOrder" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" seed="15128247" result="Failed" start-time="2026-10-26 14:06:13Z" end-time="2026-10-26 14:06:13Z" duration="0.577942" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  [20-airborne-near-over-standing-far] (76,114) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255); (77,114) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255); (78,114) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255); (79,114) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255); (80,114) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255); (81,114) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255); (82,114) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255); (83,114) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255); (84,114) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255); (85,114) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)
+  Expected: <empty>
+  But was:  < "(76,114) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)", "(77,114) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)", "(78,114) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)", "(79,114) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)", "(80,114) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)", "(81,114) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)", "(82,114) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)", "(83,114) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)", "(84,114) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)", "(85,114) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)" >
+]]></message>
+                  <stack-trace><![CDATA[at MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.AssertImage (UnityEngine.Color32[] pixels, System.String evidence, MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests+Fighter[] frontToBack) [0x0014a] in D:\Unity\Project\mlf-s7\Assets\Tests\PlayMode\Presentation\CombatSpriteGraphicsTests.cs:166
+at MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests+<JumpPanAndZoomKeepTheDepthOrder>d__34.MoveNext () [0x00116] in D:\Unity\Project\mlf-s7\Assets\Tests\PlayMode\Presentation\CombatSpriteGraphicsTests.cs:282
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@1405238725ab\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+                </failure>
+              </test-case>
+              <test-case id="1027" name="NearerFightersCoverFartherOnesAcrossPagesAndTiesFollowTheId" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.NearerFightersCoverFartherOnesAcrossPagesAndTiesFollowTheId" methodname="NearerFightersCoverFartherOnesAcrossPagesAndTiesFollowTheId" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" seed="402153934" result="Failed" start-time="2026-10-26 14:06:13Z" end-time="2026-10-26 14:06:14Z" duration="0.117463" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  [10-near-page1-over-far-page0] (76,60) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255); (77,60) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255); (78,60) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255); (79,60) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255); (80,60) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255); (81,60) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255); (82,60) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255); (83,60) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255); (84,60) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255); (85,60) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)
+  Expected: <empty>
+  But was:  < "(76,60) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)", "(77,60) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)", "(78,60) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)", "(79,60) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)", "(80,60) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)", "(81,60) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)", "(82,60) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)", "(83,60) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)", "(84,60) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)", "(85,60) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)" >
+]]></message>
+                  <stack-trace><![CDATA[at MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.AssertImage (UnityEngine.Color32[] pixels, System.String evidence, MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests+Fighter[] frontToBack) [0x0014a] in D:\Unity\Project\mlf-s7\Assets\Tests\PlayMode\Presentation\CombatSpriteGraphicsTests.cs:166
+at MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests+<NearerFightersCoverFartherOnesAcrossPagesAndTiesFollowTheId>d__33.MoveNext () [0x00111] in D:\Unity\Project\mlf-s7\Assets\Tests\PlayMode\Presentation\CombatSpriteGraphicsTests.cs:236
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@1405238725ab\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+                </failure>
+              </test-case>
+              <test-case id="1029" name="OpaqueGeometryOccludesInFrontAndNotBehindAndFeetStayOnTheFloor" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.OpaqueGeometryOccludesInFrontAndNotBehindAndFeetStayOnTheFloor" methodname="OpaqueGeometryOccludesInFrontAndNotBehindAndFeetStayOnTheFloor" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" seed="513987036" result="Failed" start-time="2026-10-26 14:06:14Z" end-time="2026-10-26 14:06:14Z" duration="0.032433" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  Even the head (an upright card, not a tilted one). expected RGBA(0, 0, 255, 255), got RGBA(90, 90, 90, 255)
+  Expected: True
+  But was:  False
+]]></message>
+                  <stack-trace><![CDATA[at MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.AssertColor (UnityEngine.Color32 actual, UnityEngine.Color32 expected, System.String message) [0x00000] in D:\Unity\Project\mlf-s7\Assets\Tests\PlayMode\Presentation\CombatSpriteGraphicsTests.cs:315
+at MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests+<OpaqueGeometryOccludesInFrontAndNotBehindAndFeetStayOnTheFloor>d__41.MoveNext () [0x0014a] in D:\Unity\Project\mlf-s7\Assets\Tests\PlayMode\Presentation\CombatSpriteGraphicsTests.cs:327
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@1405238725ab\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+                </failure>
+              </test-case>
+              <test-case id="1026" name="TrimFlipColoursHolesAndFramesLandOnTheExpectedPixels" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.TrimFlipColoursHolesAndFramesLandOnTheExpectedPixels" methodname="TrimFlipColoursHolesAndFramesLandOnTheExpectedPixels" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" seed="1035306020" result="Failed" start-time="2026-10-26 14:06:14Z" end-time="2026-10-26 14:06:14Z" duration="0.117823" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  [01-tech_a-right-and-left] (156,40) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255); (157,40) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255); (158,40) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255); (159,40) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255); (160,40) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255); (161,40) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255); (162,40) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255); (163,40) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255); (164,40) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255); (165,40) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)
+  Expected: <empty>
+  But was:  < "(156,40) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)", "(157,40) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)", "(158,40) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)", "(159,40) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)", "(160,40) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)", "(161,40) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)", "(162,40) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)", "(163,40) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)", "(164,40) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)", "(165,40) expected RGBA(0, 0, 0, 255) got RGBA(0, 255, 0, 255)" >
+]]></message>
+                  <stack-trace><![CDATA[at MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.AssertImage (UnityEngine.Color32[] pixels, System.String evidence, MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests+Fighter[] frontToBack) [0x0014a] in D:\Unity\Project\mlf-s7\Assets\Tests\PlayMode\Presentation\CombatSpriteGraphicsTests.cs:166
+at MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests+<TrimFlipColoursHolesAndFramesLandOnTheExpectedPixels>d__31.MoveNext () [0x0010c] in D:\Unity\Project\mlf-s7\Assets\Tests\PlayMode\Presentation\CombatSpriteGraphicsTests.cs:199
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@1405238725ab\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+                </failure>
+                <output><![CDATA[Saving results to: C:/Users/Стас/AppData/LocalLow/DefaultCompany/mlf-legends\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

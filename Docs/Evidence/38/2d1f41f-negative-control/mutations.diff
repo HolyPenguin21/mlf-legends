@@ -1,0 +1,43 @@
+diff --git a/Assets/MLFLegends/Combat/Runtime/Presentation/Sprites/CombatSprite.shader b/Assets/MLFLegends/Combat/Runtime/Presentation/Sprites/CombatSprite.shader
+index 8b368ea..f2b742d 100644
+--- a/Assets/MLFLegends/Combat/Runtime/Presentation/Sprites/CombatSprite.shader
++++ b/Assets/MLFLegends/Combat/Runtime/Presentation/Sprites/CombatSprite.shader
+@@ -78,10 +78,10 @@ Shader "MLF Legends/Combat Sprite"
+             // UV follows the authored rect; facing only mirrors the geometry (pivot offset and image together).
+             float v = card.w > card.y ? (yPx - card.y) / (card.w - card.y) : 0.0;
+             Varyings output;
+-            output.uv = float2(lerp(frame.uv.x, frame.uv.z, input.positionOS.x), lerp(frame.uv.y, frame.uv.w, v));
++            output.uv = float2(instance.facing < 0 ? lerp(frame.uv.z, frame.uv.x, input.positionOS.x) : lerp(frame.uv.x, frame.uv.z, input.positionOS.x), lerp(frame.uv.y, frame.uv.w, v)); // MUTATION 1: UV-only flip
+ 
+             float s = _PixelWorldSize;
+-            float3 positionWS = instance.position + _CardRight.xyz * (xPx * instance.facing * s);
++            float3 positionWS = instance.position + _CardRight.xyz * (xPx * s); // MUTATION 1
+             positionWS += yPx >= 0.0 ? _CardUp.xyz * (yPx * s) : _CardGround.xyz * (-yPx * s);
+             positionWS -= _CardView.xyz * (instance.depthOffset + _DepthBias);
+             output.positionCS = TransformWorldToHClip(positionWS);
+diff --git a/Assets/MLFLegends/Combat/Runtime/Presentation/Sprites/CombatSpriteExtraction.cs b/Assets/MLFLegends/Combat/Runtime/Presentation/Sprites/CombatSpriteExtraction.cs
+index d43c977..562bf16 100644
+--- a/Assets/MLFLegends/Combat/Runtime/Presentation/Sprites/CombatSpriteExtraction.cs
++++ b/Assets/MLFLegends/Combat/Runtime/Presentation/Sprites/CombatSpriteExtraction.cs
+@@ -251,7 +251,7 @@ static float ComputeDepthOffsets(NativeArray<float> keys, NativeArray<uint> ids,
+                 var rendered = math.min(item.Key, previous - separation);
+                 previous = rendered;
+                 // Keys are view depths, so the gap is the push along the view direction.
+-                var offset = item.Key - rendered;
++                var offset = 0f; // MUTATION 2: no tie-break
+                 offsets[item.Index] = offset;
+                 max = math.max(max, offset);
+             }
+diff --git a/Assets/MLFLegends/Combat/Runtime/Presentation/Sprites/SpriteCardMath.cs b/Assets/MLFLegends/Combat/Runtime/Presentation/Sprites/SpriteCardMath.cs
+index a27d6f0..57b9aa2 100644
+--- a/Assets/MLFLegends/Combat/Runtime/Presentation/Sprites/SpriteCardMath.cs
++++ b/Assets/MLFLegends/Combat/Runtime/Presentation/Sprites/SpriteCardMath.cs
+@@ -53,7 +53,7 @@ public static SpriteCardBasis FromCamera(float3 forward, float3 up)
+             var right = math.normalize(math.cross(new float3(0f, 1f, 0f), depthAxis));
+             var cos = math.max(math.dot(view, depthAxis), MinAxisScale);
+             var sin = math.max(-view.y, MinAxisScale);
+-            return new SpriteCardBasis(right, new float3(0f, 1f / cos, 0f), -depthAxis / sin, view, depthAxis, cos);
++            return new SpriteCardBasis(right, math.normalize(math.cross(view, right)), -math.normalize(math.cross(view, right)), view, depthAxis, cos); // MUTATION 3: camera-plane card
+         }
+ 
+         /// <summary>View depth key of a support point: larger is farther from the camera (the same for its whole card).</summary>

@@ -1,5 +1,50 @@
 # MLF Legends — Quality assurance and evidence
 
+## Stage 03.1 + 03.2 / #38 atlas contract and GPU sprite renderer (2026-10-26, branch `feature/stage03-atlas-renderer`)
+
+**Agent evidence, IN REVIEW, not merged.** Tested code: `2d1f41f` (clean checkout, ASCII worktree, warm Library); raw XML,
+Editor.log, TSV and PNG readbacks committed in `Docs/Evidence/38/` (index: `Docs/Evidence/38/README.md`). Machine: Windows 11,
+Ryzen 5 3600, 32 GB, RTX 2060 SUPER, Direct3D 12. The manager has not re-run Unity.
+
+| Run | Result |
+|---|---|
+| EditMode run 1 / run 2 (`-nographics`) | **PASS 323/323**, **PASS 323/323** (79 new #38 cases; existing suites and #7/#22 benchmarks unchanged) |
+| PlayMode run 1 / run 2 (`-nographics`) | **PASS 30/30**, **PASS 30/30**; 7 Graphics/Performance cases **Ignored = NOT RUN** (no device), by design |
+| PlayMode `-testCategory "Graphics;Performance"` with the D3D12 device, run 1 / run 2 | **PASS 7/7**, **PASS 7/7** |
+| Negative control (three temporary mutations: UV-only flip, no tie-break, camera-plane card) | **GPU 0/4, EditMode 8 of 21 targeted cases FAIL** — the tests detect the defects |
+| Logs | no C# errors/warnings, no shader errors, no `Leak Detected` |
+
+What the graphics tests prove (RenderTexture readback, whole-image comparison against an independently computed expected
+image; tool: `Camera.Render` + `Texture2D.ReadPixels`, PNGs in the evidence): real URP shader compile/render on D3D12;
+colours, transparency (hole shows the background/geometry behind), UV/trim/pivot and flip for asymmetric frames; frames
+hanging below the pivot; different frames in one batch and two pages of different sizes; nearer fighter covers the farther
+one across pages in both ID orders; equal depth and identical position → lower CombatantId in front, stable over frames;
+airborne fighter, pan and zoom (1/2/3 target pixels per source pixel); opaque box in front hides the lower body, a wall
+behind never covers the head, transparent pixels do not occlude, the floor neither hides the pivot row nor the part below
+the pivot; no magenta page padding sampled anywhere.
+
+**Measurements** (`stage03-sprites-n*.tsv`, run 2; Editor batchmode, 512² target, one atlas page):
+
+| Fighters | Refresh median / p95 (µs) | GC bytes (120 frames) | Draw calls without → with renderer | Instance buffers created | Instance buffer | Atlas pages + frame table |
+|---|---|---|---|---|---|---|
+| 2 | 30.8 / 37.6 | 0 | 6 → 8 | 1 | 1 536 B | 126 976 + 96 B |
+| 100 | 70.9 / 88.0 | 0 | 6 → 8 | 1 | 3 072 B | 126 976 + 96 B |
+| 400 | 209.7 / 266.2 | 0 | 6 → 8 | 1 | 12 288 B | 126 976 + 96 B |
+
+Draw calls do not grow with fighters (+2 per camera render for one page: the forward pass plus, presumably, the SSAO
+DepthNormals prepass — per-pass attribution by Frame Debugger is NOT RUN). One `RenderMeshPrimitives` submission per page,
+no buffer re-creation and zero GC.Alloc per frame after warm-up. Batches: NOT RUN (ProfilerRecorder not published in
+batchmode). GPU time, full-frame cost and FPS: **NOT RUN / not claimed**; batchmode Editor CPU numbers are not a frame
+budget.
+
+**NOT RUN / open:** art smoke with the artist's first real frame + JSON (no package yet; the contract and example are
+ready for the handshake); owner GUI look in the Game view, Frame Debugger per-pass breakdown, GPU timing, player build;
+Domain Reload disabled manual check; other GPUs/APIs (Vulkan/Metal/mobile renderer asset). #30/#17/#25 unchanged.
+
+**Known limits:** main-thread managed extraction (~0.2 ms at 400 in the Editor); Scene view does not show fighters (draws
+target the selected camera); only yaw 0° calibrated; depth tie-break worst case 0.8 units when 400 fighters coincide;
+import settings are validated (size, compression, warnings for mipmaps/linear) but not enforced by a postprocessor.
+
 ## Manager re-review of merged PR #37 (2026-10-26)
 
 **PASS — source and supplied raw evidence independently inspected; Unity not re-run by manager.** Reviewed main `72bb712920920f0f0ea742a4a86076baf904ff68`, merge `fc5fb675ee1a13de7ee839e40337e1cb78adcbb0`. Compared tested `4d9e431bc7474cf7233f8edaec60f0c14df65ab0` to reviewed main: only documentation, evidence and .gitattributes differ; no runtime/test/scene changes.
