@@ -189,9 +189,12 @@ namespace MLFLegends.Tests.EditMode
 
             using (var initialization = w.World.GetExistingSystemManaged<InitializationSystemGroup>().GetAllSystems(Allocator.Temp))
             {
-                Assert.That(initialization.IndexOf(w.World.GetExistingSystem<BattleLifecycleSystem>()), Is.GreaterThanOrEqualTo(0),
-                    "Attribute-driven bootstrap puts the same lifecycle handle in both groups.");
+                Assert.That(initialization.IndexOf(w.World.GetExistingSystem<BattleLifecycleInitializationProxy>()), Is.GreaterThanOrEqualTo(0),
+                    "Attribute-driven bootstrap puts the lifecycle's Initialization proxy into Initialization.");
+                Assert.That(initialization.IndexOf(w.World.GetExistingSystem<BattleLifecycleSystem>()), Is.EqualTo(-1),
+                    "The lifecycle itself has one group, FixedStep; the proxy updates that same instance.");
                 Assert.That(initialization.IndexOf(w.World.GetExistingSystem<CombatClockSystem>()), Is.EqualTo(-1));
+                Assert.That(steps.IndexOf(w.World.GetExistingSystem<BattleLifecycleInitializationProxy>()), Is.EqualTo(-1));
             }
 
             using var producers = w.World.GetExistingSystemManaged<CombatCommandCollectionSystemGroup>().GetAllSystems(Allocator.Temp);

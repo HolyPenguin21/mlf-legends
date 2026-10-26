@@ -9,7 +9,8 @@ namespace MLFLegends.Combat
     /// allocates <see cref="CombatantId"/>. Applies <see cref="BattleRequest"/>s between fixed steps, including paused frames.
     /// </summary>
     /// <remarks>
-    /// Runs in Initialization (even on paused frames) and at the start of every fixed step, before
+    /// Runs in Initialization (even on paused frames; updated there by <see cref="BattleLifecycleInitializationProxy"/>,
+    /// the same instance) and at the start of every fixed step, before
     /// <see cref="CombatClockSystem"/> advances the tick. <see cref="SimulationClock.Tick"/> is still the last
     /// completed tick: a battle started here has <c>BattleStartTick = Tick</c> and its first simulated tick
     /// is <c>Tick + 1</c>, the next real fixed step. Because it runs before every catch-up step, a request made during tick T (e.g. an
@@ -22,9 +23,9 @@ namespace MLFLegends.Combat
     /// </remarks>
     [BurstCompile]
     // The SAME instance drains the SAME buffer at both boundaries. Initialization never advances time.
+    // Only one [UpdateInGroup] is allowed (CS0579): FixedStep here, Initialization through the proxy.
     // Normal fixed-step ordering places us after the OrderFirst BeginFixedStep ECB; the clock follows us.
     // Fixed-only CombatClockSystem owns the dependency; no cross-group ordering constraint belongs here.
-    [UpdateInGroup(typeof(InitializationSystemGroup), OrderFirst = true)]
     [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
     public partial struct BattleLifecycleSystem : ISystem
     {

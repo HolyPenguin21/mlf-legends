@@ -89,9 +89,18 @@ namespace MLFLegends.Tests.PlayMode
             var initialization = DefaultWorld.GetExistingSystemManaged<InitializationSystemGroup>();
             using (var members = initialization.GetAllSystems(Allocator.Temp))
             {
-                Assert.That(members.IndexOf(lifecycle), Is.GreaterThanOrEqualTo(0), "The same handle also runs on paused frames.");
+                var proxy = TypeManager.GetSystemTypeIndex<BattleLifecycleInitializationProxy>();
+                Assert.That(members.AsArray().ToArray().Count(s => DefaultWorld.Unmanaged.GetSystemTypeIndex(s) == proxy), Is.EqualTo(1),
+                    "Paused frames reach the lifecycle through exactly one proxy.");
+                Assert.That(members.IndexOf(lifecycle), Is.EqualTo(-1), "The lifecycle itself has one group, FixedStep.");
                 Assert.That(members.IndexOf(DefaultWorld.GetExistingSystem<CombatClockSystem>()), Is.EqualTo(-1),
                     "Initialization must not advance the clock.");
+            }
+            using (var all = DefaultWorld.Unmanaged.GetAllSystems(Allocator.Temp))
+            {
+                var lifecycleType = TypeManager.GetSystemTypeIndex<BattleLifecycleSystem>();
+                Assert.That(all.ToArray().Count(s => DefaultWorld.Unmanaged.GetSystemTypeIndex(s) == lifecycleType), Is.EqualTo(1),
+                    "Exactly one lifecycle instance in the default world.");
             }
             using (var sessions = Manager.CreateEntityQuery(typeof(BattleSession)))
                 Assert.That(sessions.CalculateEntityCount(), Is.EqualTo(1));

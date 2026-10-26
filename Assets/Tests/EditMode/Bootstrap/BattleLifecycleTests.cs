@@ -53,8 +53,9 @@ namespace MLFLegends.Tests.EditMode
             fixedStep.AddSystemToUpdateList(world.CreateSystemManaged<CombatPublicationSystemGroup>());
             lifecycle = world.CreateSystem<BattleLifecycleSystem>();
             fixedStep.AddSystemToUpdateList(lifecycle);
+            // The lifecycle has one group (FixedStep); Initialization reaches the same instance through the proxy.
             var initialization = world.CreateSystemManaged<InitializationSystemGroup>();
-            initialization.AddSystemToUpdateList(lifecycle);
+            initialization.AddSystemToUpdateList(world.CreateSystem<BattleLifecycleInitializationProxy>());
             initialization.SortSystems();
             fixedStep.SortSystems();
             return world;
@@ -638,8 +639,15 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(Attribute.GetCustomAttributes(lifecycle, typeof(UpdateAfterAttribute)), Is.Empty);
             var lifecycleGroups = Attribute.GetCustomAttributes(lifecycle, typeof(UpdateInGroupAttribute))
                 .Cast<UpdateInGroupAttribute>().Select(a => a.GroupType);
-            Assert.That(lifecycleGroups, Is.EquivalentTo(new[]
-                { typeof(InitializationSystemGroup), typeof(FixedStepSimulationSystemGroup) }));
+            Assert.That(lifecycleGroups, Is.EqualTo(new[] { typeof(FixedStepSimulationSystemGroup) }),
+                "One [UpdateInGroup] only (CS0579); Initialization goes through the proxy.");
+
+            var proxy = typeof(BattleLifecycleInitializationProxy);
+            Assert.That(Attribute.GetCustomAttributes(proxy, typeof(UpdateBeforeAttribute)), Is.Empty);
+            Assert.That(Attribute.GetCustomAttributes(proxy, typeof(UpdateAfterAttribute)), Is.Empty);
+            var proxyGroups = Attribute.GetCustomAttributes(proxy, typeof(UpdateInGroupAttribute)).Cast<UpdateInGroupAttribute>().ToArray();
+            Assert.That(proxyGroups.Select(a => (a.GroupType, a.OrderFirst)),
+                Is.EqualTo(new[] { (typeof(InitializationSystemGroup), true) }));
 
             var clock = typeof(CombatClockSystem);
             var clockGroups = Attribute.GetCustomAttributes(clock, typeof(UpdateInGroupAttribute))
@@ -691,11 +699,13 @@ namespace MLFLegends.Tests.EditMode
         [TestCase(typeof(CombatCommandCollectionSystemGroup), 199)]
         [TestCase(typeof(CombatStateUpdateSystemGroup), 199)]
         [TestCase(typeof(CombatPublicationSystemGroup), 199)]
-        public void EndRequestedInsideAFixedStepStopsTheBattleBeforeTheNextCatchUpTick(Type phase, ushort allies)
+        public void EndRequestedInsideAFixedStepStopsTheBattleBeforeTheNextCatchUpTick(Type phase, int allies)
         {
+            // [TestCase] cannot bind an int literal to ushort; the conversion is checked, so 0..199 stay exact.
+            var roster = checked((ushort)allies);
             var recorder = AddToPhase<TickRecorder>(typeof(CombatPublicationSystemGroup));
             var requester = AddToPhase<InStepRequester>(phase);
-            Request(BattleRequest.Start(Roster(allies, allies), owner: 5));
+            Request(BattleRequest.Start(Roster(roster, roster), owner: 5));
             Step(2);
             var battle = Session;
             var ids = LiveIds;
