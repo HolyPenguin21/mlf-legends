@@ -86,12 +86,28 @@ namespace MLFLegends.Combat
                 return;
 
             Quantize(m_Move.ReadValue<Vector2>(), out moveX, out moveZ);
-            if (m_Attack.IsPressed())
+            if (IsHeld(m_Attack))
                 held |= CommandButtons.Attack;
-            if (m_Jump.IsPressed())
+            if (IsHeld(m_Jump))
                 held |= CommandButtons.Jump;
-            if (m_Guard.IsPressed())
+            if (IsHeld(m_Guard))
                 held |= CommandButtons.Guard;
+        }
+
+        /// <summary>
+        /// Device state of the action's bound buttons, not the action phase: a button already down when this capture was
+        /// enabled is Held at once (Button actions have no initial state check), still without a Pressed.
+        /// </summary>
+        static bool IsHeld(InputAction action)
+        {
+            var controls = action.controls;
+            for (var i = 0; i < controls.Count; i++)
+            {
+                if (controls[i].IsPressed())
+                    return true;
+            }
+
+            return false;
         }
 
         /// <summary>Returns the presses since the previous call and forgets them: each press reaches exactly one tick.</summary>

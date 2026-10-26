@@ -8,7 +8,7 @@ using Unity.Entities;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.Controls;
+using UnityEngine.InputSystem.LowLevel;
 
 namespace MLFLegends.Tests.EditMode
 {
@@ -40,6 +40,8 @@ namespace MLFLegends.Tests.EditMode
             m_TimeScale = Time.timeScale;
             m_Keyboard = InputSystem.AddDevice<Keyboard>();
             m_Gamepad = InputSystem.AddDevice<Gamepad>();
+            m_Keys.Clear();
+            m_Pad = default;
             m_Asset = AssetDatabase.LoadAssetAtPath<InputActionAsset>(ActionsPath);
             Assert.That(m_Asset, Is.Not.Null, ActionsPath);
             m_TickFrames.Clear();
@@ -96,15 +98,41 @@ namespace MLFLegends.Tests.EditMode
             m_Frame++;
         }
 
-        void Down(ButtonControl button) => Press(button, queueEventOnly: true);
+        // Full-state events with the explicit set of held keys/buttons. (InputTestFixture.Press queues delta events that copy
+        // the device's other bits at queue time, so several queued events of one device before one update would undo each
+        // other; a full state per event is what a real device report carries.)
+        readonly HashSet<Key> m_Keys = new HashSet<Key>();
+        GamepadState m_Pad;
 
-        void Up(ButtonControl button) => Release(button, queueEventOnly: true);
+        void Down(Key key)
+        {
+            m_Keys.Add(key);
+            InputSystem.QueueStateEvent(m_Keyboard, new KeyboardState(m_Keys.ToArray()));
+        }
+
+        void Up(Key key)
+        {
+            m_Keys.Remove(key);
+            InputSystem.QueueStateEvent(m_Keyboard, new KeyboardState(m_Keys.ToArray()));
+        }
 
         /// <summary>Press and release inside one Input System update: a tap shorter than any tick.</summary>
-        void Tap(ButtonControl button)
+        void Tap(Key key)
         {
-            Down(button);
-            Up(button);
+            Down(key);
+            Up(key);
+        }
+
+        void Pad(GamepadButton button, bool down)
+        {
+            m_Pad = m_Pad.WithButton(button, down);
+            InputSystem.QueueStateEvent(m_Gamepad, m_Pad);
+        }
+
+        void Stick(Vector2 value)
+        {
+            m_Pad.leftStick = value;
+            InputSystem.QueueStateEvent(m_Gamepad, m_Pad);
         }
 
         TickRecord Last => m_Replay.Records[m_Replay.Records.Count - 1];
@@ -178,31 +206,31 @@ namespace MLFLegends.Tests.EditMode
                 {
                     if (!dDown && t < 0.5)
                     {
-                        Down(m_Keyboard.dKey);
+                        Down(Key.D);
                         dDown = true;
                     }
                     else if (dDown && t >= 0.5)
                     {
-                        Up(m_Keyboard.dKey);
+                        Up(Key.D);
                         dDown = false;
                     }
 
                     if (tapPending && t >= 0.1)
                     {
-                        Tap(m_Keyboard.kKey);
+                        Tap(Key.K);
                         tapPending = false;
                         tapFrame = frame;
                     }
 
                     if (!kDown && t >= 1.2 && t < 2.2)
                     {
-                        Down(m_Keyboard.kKey);
+                        Down(Key.K);
                         kDown = true;
                         holdFrame = frame;
                     }
                     else if (kDown && t >= 2.2)
                     {
-                        Up(m_Keyboard.kKey);
+                        Up(Key.K);
                         kDown = false;
                     }
                 });
@@ -262,9 +290,9 @@ namespace MLFLegends.Tests.EditMode
             Frame(1);
             Frame(ticks, () =>
             {
-                Down(m_Keyboard.dKey);
-                Tap(m_Keyboard.kKey);
-                Down(m_Keyboard.lKey);
+                Down(Key.D);
+                Tap(Key.K);
+                Down(Key.L);
             });
             Frame(3);
 
@@ -281,7 +309,7 @@ namespace MLFLegends.Tests.EditMode
 
             Assert.That(Human(battle[0]).Motion.Grounded, Is.False, "The tap jumped.");
             var x = Human(Last).Position.x;
-            Frame(2, () => Up(m_Keyboard.dKey));
+            Frame(2, () => Up(Key.D));
             Assert.That(HumanCommand(Last).MoveX, Is.Zero);
             Assert.That(Human(Last).Position.x, Is.EqualTo(x), "Releasing stops on the next tick (no inertia).");
         }
@@ -291,12 +319,12 @@ namespace MLFLegends.Tests.EditMode
         {
             StartRig();
             Frame(1);
-            Frame(0, () => Tap(m_Keyboard.kKey));
-            Frame(0, () => Tap(m_Keyboard.kKey));
+            Frame(0, () => Tap(Key.K));
+            Frame(0, () => Tap(Key.K));
             Frame(0, () =>
             {
-                Tap(m_Keyboard.kKey);
-                Tap(m_Keyboard.jKey);
+                Tap(Key.K);
+                Tap(Key.J);
             });
             Frame(1);
             Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.Jump | CommandButtons.Attack));
@@ -304,10 +332,11 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.None), "Consumed by one tick.");
 
             // Land, then hold K for 2 s.
-            Frame(60);
+            for (var i = 0; i < 6; i++)
+                Frame(10);
             Assert.That(Human(Last).Motion.Grounded, Is.True);
             var before = BattleTicks().Length;
-            Frame(1, () => Down(m_Keyboard.kKey));
+            Frame(1, () => Down(Key.K));
             for (var i = 0; i < 120; i++)
                 Frame(1);
             var held = BattleTicks().Skip(before).ToArray();
@@ -326,8 +355,8 @@ namespace MLFLegends.Tests.EditMode
             var start = Human(Last).Position;
             Frame(1, () =>
             {
-                Down(m_Keyboard.wKey);
-                Down(m_Keyboard.aKey);
+                Down(Key.W);
+                Down(Key.A);
             });
             Assert.That((HumanCommand(Last).MoveX, HumanCommand(Last).MoveZ), Is.EqualTo(((sbyte)-1, (sbyte)1)), "W = +Z (world depth), A = −X.");
             var diagonal = Step * 0.70710677f;
@@ -336,8 +365,8 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(Human(Last).Facing, Is.EqualTo(FacingDirection.Left));
             Frame(1, () =>
             {
-                Up(m_Keyboard.wKey);
-                Up(m_Keyboard.aKey);
+                Up(Key.W);
+                Up(Key.A);
             });
             Assert.That(HumanCommand(Last).IsNone, Is.True);
 
@@ -348,7 +377,7 @@ namespace MLFLegends.Tests.EditMode
             };
             foreach (var (stick, x, z) in cases)
             {
-                Frame(1, () => Set(m_Gamepad.leftStick, stick, queueEventOnly: true));
+                Frame(1, () => Stick(stick));
                 Assert.That((HumanCommand(Last).MoveX, HumanCommand(Last).MoveZ), Is.EqualTo((x, z)), $"stick {stick}");
             }
         }
@@ -359,9 +388,10 @@ namespace MLFLegends.Tests.EditMode
             StartRig();
             Frame(1, () =>
             {
-                Down(m_Gamepad.buttonSouth);
-                Down(m_Gamepad.rightShoulder);
-                Tap(m_Gamepad.buttonWest);
+                Pad(GamepadButton.South, true);
+                Pad(GamepadButton.RightShoulder, true);
+                Pad(GamepadButton.West, true);
+                Pad(GamepadButton.West, false);
             });
             var command = HumanCommand(Last);
             Assert.That(command.Held, Is.EqualTo(CommandButtons.Jump | CommandButtons.Guard));
@@ -377,11 +407,11 @@ namespace MLFLegends.Tests.EditMode
             Frame(1);
             m_Replay.RequestInStep(typeof(CombatStateUpdateSystemGroup), battle: 1, relativeTick: 2,
                 BattleRequest.Restart(BattleSetup.Default));
-            Frame(0, () => Tap(m_Keyboard.kKey));
+            Frame(0, () => Tap(Key.K));
             Frame(4, () =>
             {
-                Down(m_Keyboard.dKey);
-                Tap(m_Keyboard.jKey); // pressed in battle 1's frame, consumed by its tick 2
+                Down(Key.D);
+                Tap(Key.J); // pressed in battle 1's frame, consumed by its tick 2
             });
             var first = BattleTicks(1);
             Assert.That(first.Length, Is.EqualTo(2), "Battle 1 ends after its tick 2; the Restart applies before the next catch-up tick.");
@@ -398,7 +428,7 @@ namespace MLFLegends.Tests.EditMode
             }
 
             // A press made while battle 2 runs, then a Restart between frames: the press belongs to battle 2 and is dropped.
-            Frame(0, () => Tap(m_Keyboard.kKey));
+            Frame(0, () => Tap(Key.K));
             m_Replay.Request(BattleRequest.Restart(BattleSetup.Default));
             Frame(3);
             Assert.That(BattleTicks(3).Select(r => HumanCommand(r).Pressed), Is.All.EqualTo(CommandButtons.None));
@@ -410,13 +440,13 @@ namespace MLFLegends.Tests.EditMode
         {
             StartRig();
             Frame(1);
-            Frame(0, () => Tap(m_Keyboard.kKey));
+            Frame(0, () => Tap(Key.K));
             m_Replay.Request(BattleRequest.End());
-            Frame(3, () => Down(m_Keyboard.dKey));
+            Frame(3, () => Down(Key.D));
             Assert.That(m_Replay.Records.Skip(1).All(r => !r.Active && r.Results.Length == 0), Is.True, "Idle: nothing submitted.");
             Assert.That(m_Capture.PendingPressed, Is.EqualTo(CommandButtons.None), "Idle ticks drop presses.");
 
-            Frame(0, () => Tap(m_Keyboard.jKey));
+            Frame(0, () => Tap(Key.J));
             m_Replay.Request(BattleRequest.Start(BattleSetup.Default));
             Frame(2);
             Assert.That(BattleTicks(2).Select(r => HumanCommand(r).Pressed), Is.All.EqualTo(CommandButtons.None),
@@ -426,13 +456,13 @@ namespace MLFLegends.Tests.EditMode
             // Defeat stand-in: a test disables InCombat (the future defeat owner's only write).
             var human = HumanEntity();
             m_Replay.Manager.SetComponentEnabled<InCombat>(human, false);
-            Frame(2, () => Tap(m_Keyboard.kKey));
+            Frame(2, () => Tap(Key.K));
             Assert.That(Last.Results, Is.Empty, "No command (and no UnknownCombatant) for a defeated human.");
             Assert.That(m_Capture.PendingPressed, Is.EqualTo(CommandButtons.None));
             m_Replay.Manager.SetComponentEnabled<InCombat>(human, true); // restore for the despawn case
 
             m_Replay.Request(BattleRequest.Despawn(m_Replay.Session.HumanCombatant));
-            Frame(2, () => Tap(m_Keyboard.kKey));
+            Frame(2, () => Tap(Key.K));
             Assert.That(Last.Results, Is.Empty, "No command for a despawned human.");
             Assert.That(Last.Combatant(Last.AiId).Applied.Command.Tick, Is.EqualTo(Last.Tick), "The AI keeps being simulated.");
         }
@@ -454,13 +484,13 @@ namespace MLFLegends.Tests.EditMode
         {
             StartRig();
             Frame(1);
-            Frame(0, () => Tap(m_Keyboard.jKey)); // a tap of the last unpaused frame, not consumed by any tick
+            Frame(0, () => Tap(Key.J)); // a tap of the last unpaused frame, not consumed by any tick
             Time.timeScale = 0f;
-            Frame(0, () => Tap(m_Keyboard.kKey));
+            Frame(0, () => Tap(Key.K));
             Frame(0, () =>
             {
-                Down(m_Keyboard.kKey);
-                Down(m_Keyboard.dKey);
+                Down(Key.K);
+                Down(Key.D);
             });
             Frame(0);
             Assert.That(m_Capture.PendingPressed, Is.EqualTo(CommandButtons.None));
@@ -476,8 +506,8 @@ namespace MLFLegends.Tests.EditMode
 
             Frame(1, () =>
             {
-                Up(m_Keyboard.kKey);
-                Down(m_Keyboard.kKey);
+                Up(Key.K);
+                Down(Key.K);
             });
             Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.Jump), "A fresh press after resume works.");
         }
@@ -486,11 +516,11 @@ namespace MLFLegends.Tests.EditMode
         public void FocusLossAndDeviceLossNeutraliseInputAndDropPresses()
         {
             StartRig();
-            Frame(1, () => Down(m_Keyboard.dKey));
+            Frame(1, () => Down(Key.D));
             Assert.That(HumanCommand(Last).MoveX, Is.EqualTo(1));
-            Frame(0, () => Tap(m_Keyboard.kKey));
+            Frame(0, () => Tap(Key.K));
             m_Capture.SetFocused(false);
-            Frame(1, () => Tap(m_Keyboard.jKey));
+            Frame(1, () => Tap(Key.J));
             Assert.That(HumanCommand(Last).IsNone, Is.True, "Unfocused: neutral, the fighter stops on the next tick.");
             var x = Human(Last).Position.x;
             m_Capture.SetFocused(true);
@@ -499,14 +529,15 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.None), "Presses around the focus change are dropped.");
             Assert.That(Human(Last).Position.x, Is.GreaterThan(x));
 
-            Frame(0, () => Tap(m_Keyboard.kKey));
+            Frame(0, () => Tap(Key.K));
             InputSystem.RemoveDevice(m_Keyboard);
             Frame(1);
             Assert.That(HumanCommand(Last).IsNone, Is.True, "Removed keyboard: no move, no press.");
             m_Keyboard = InputSystem.AddDevice<Keyboard>();
+            m_Keys.Clear();
             Frame(1);
             Assert.That(HumanCommand(Last).IsNone, Is.True, "A newly connected keyboard reports no stale state.");
-            Frame(1, () => Down(m_Keyboard.dKey));
+            Frame(1, () => Down(Key.D));
             Assert.That(HumanCommand(Last).MoveX, Is.EqualTo(1), "…and drives the fighter.");
         }
 
@@ -519,9 +550,9 @@ namespace MLFLegends.Tests.EditMode
             var second = new PlayerInputCapture(m_Asset);
             try
             {
-                Frame(0, () => Tap(m_Keyboard.kKey));
+                Frame(0, () => Tap(Key.K));
                 m_Producer.Attach(second);
-                Frame(2, () => Down(m_Keyboard.dKey));
+                Frame(2, () => Down(Key.D));
                 Assert.That(m_Producer.Source, Is.SameAs(second));
                 foreach (var record in BattleTicks())
                 {
@@ -533,13 +564,13 @@ namespace MLFLegends.Tests.EditMode
                 Assert.That(m_Producer.Detach(m_Capture), Is.False, "A replaced capture cannot detach its successor.");
                 Assert.That(m_Producer.Source, Is.SameAs(second));
                 Assert.That(m_Producer.Detach(second), Is.True);
-                Frame(2, () => Tap(m_Keyboard.kKey));
+                Frame(2, () => Tap(Key.K));
                 Assert.That(Last.Results, Is.Empty);
                 Assert.That(Human(Last).Applied.WasSubmitted, Is.False);
 
                 m_Producer.Attach(second);
                 second.Dispose();
-                Frame(1, () => Tap(m_Keyboard.kKey));
+                Frame(1, () => Tap(Key.K));
                 Assert.That(Last.Results, Is.Empty, "A disposed capture is ignored, without exceptions.");
                 Assert.That(second.TakePressed(), Is.EqualTo(CommandButtons.None));
             }
@@ -558,15 +589,15 @@ namespace MLFLegends.Tests.EditMode
             m_Replay.Request(BattleRequest.Start(BattleSetup.Default));
             Frame(3, () =>
             {
-                Down(m_Keyboard.dKey);
-                Tap(m_Keyboard.kKey);
+                Down(Key.D);
+                Tap(Key.K);
             });
             Assert.That(BattleTicks().All(r => r.Results.Length == 0 && !Human(r).Applied.WasSubmitted), Is.True, "Replay World: no producer.");
             m_Replay.Dispose();
 
             StartRig(attach: false);
             m_TickFrames.Clear();
-            Frame(3, () => Tap(m_Keyboard.kKey));
+            Frame(3, () => Tap(Key.K));
             Assert.That(BattleTicks().All(r => r.Results.Length == 0), Is.True, "Producer without capture: inert.");
             Assert.That(m_Producer.Source, Is.Null);
         }
@@ -606,16 +637,16 @@ namespace MLFLegends.Tests.EditMode
         public void SameAcceptedIntentionsFromPlayerAndAiGiveTheSameMovementAndFacing()
         {
             StartRig();
-            Frame(4, () => Down(m_Keyboard.dKey));
-            Frame(0, () => Tap(m_Keyboard.kKey));
-            Frame(5, () => Down(m_Keyboard.wKey));
+            Frame(4, () => Down(Key.D));
+            Frame(0, () => Tap(Key.K));
+            Frame(5, () => Down(Key.W));
             Frame(3, () =>
             {
-                Up(m_Keyboard.dKey);
-                Down(m_Keyboard.aKey);
+                Up(Key.D);
+                Down(Key.A);
             });
-            Frame(6, () => Up(m_Keyboard.wKey));
-            Frame(2, () => Up(m_Keyboard.aKey));
+            Frame(6, () => Up(Key.W));
+            Frame(2, () => Up(Key.A));
             var player = BattleTicks();
 
             using var ai = new ReplayWorld("AI replay");
@@ -648,8 +679,8 @@ namespace MLFLegends.Tests.EditMode
             var setup = BattleSetup.Default;
             setup.HumanAllies = setup.AiAllies = 199;
             StartRig(setup);
-            Frame(10, () => Down(m_Keyboard.dKey));
-            Frame(10, () => Tap(m_Keyboard.kKey));
+            Frame(10, () => Down(Key.D));
+            Frame(10, () => Tap(Key.K));
             foreach (var record in BattleTicks())
             {
                 Assert.That(record.Combatants.Length, Is.EqualTo(400));

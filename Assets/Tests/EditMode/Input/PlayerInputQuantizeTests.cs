@@ -45,7 +45,7 @@ namespace MLFLegends.Tests.EditMode
             var counts = new int[9];
             for (var degrees = 0; degrees < 360; degrees++)
             {
-                var radians = (degrees + 0.5f) * Mathf.Deg2Rad;
+                var radians = (degrees + 0.25f) * Mathf.Deg2Rad; // never on a 22.5° + k·45° boundary
                 PlayerInputCapture.Quantize(new Vector2(Mathf.Cos(radians), Mathf.Sin(radians)), out var x, out var z);
                 Assert.That(x != 0 || z != 0, Is.True, $"{degrees}°");
                 counts[(x + 1) * 3 + (z + 1)]++;
