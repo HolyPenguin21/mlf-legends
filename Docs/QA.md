@@ -4,6 +4,16 @@
 
 **Non-blocking delivery rule (approved 2026-10-25):** The owner currently cannot run Unity tests from their environment. This MUST NOT block committing, merging or pushing requested changes, nor prevent moving on to subsequent implementation tasks. Perform every feasible static check, label Unity checks **NOT RUN**, record the residual risk and verify later when execution becomes possible. Delivery is not the same as test approval.
 
+## Actual Unity results from Stage 02.2 PR #34, 2026-10-26 — compile blocker
+
+The implementer reports a real run under Unity 6000.5.4f1 / Entities 6.5.0 on ASCII Windows worktree `D:/Unity/Project/mlf-s7`. **Current unpatched main/PR #34 FAILS TO COMPILE:** `BattleLifecycleSystem.cs(28,6): CS0579 Duplicate 'UpdateInGroup' attribute`, introduced by PR #28. Manager independently confirmed two annotations in source (not independently run in Unity). This is a CONFIRMED SOURCE-LEVEL / AGENT-REPORTED COMPILE FAILURE, not a mere outstanding NOT RUN.
+
+Only a **TEMPORARY LOCAL UNCOMMITTED patch** replacing the initialization attribute with a thin proxy enabled an experimental run: **186/193 EditMode passed, 7 failed** (6 existing NUnit `TestCase` int-to-ushort bindings and 1 now-obsolete double-attribute expectation), **10/10 PlayMode passed**. Do **NOT** treat these as pass results for merged main. Logs/XML have not been independently reviewed here. Facing implementation in PR #34 is STATIC PASS, not verified clean-build PASS.
+
+Blocker correction [#35](https://github.com/HolyPenguin21/mlf-legends/issues/35) accepted as one narrow PR: only one lifecycle owner in FixedStep; tiny Initialization proxy delegates to same system; adjust Default/Replay/manual fixture order tests; fix six NUnit bindings; retain all pause/catch-up assertions and full EditMode+PlayMode verification. Earlier test sorting warnings: project-authored `PlayerCommandProducer` invalid ordering in isolated fixture; separately Unity-provided `FixedStepSimulationSystemGroup` warning. Distinguish their origin and never claim zero engine warnings without logs.
+
+QA debt #30 stays OPEN until actual clean-code tests are attached and verified. Separate Windows Unicode/Burst #17 remains OPEN.
+
 ## Owner disposition: Stage 02 begins with deferred Stage 01 Unity QA (2026-10-26)
 
 **Current status: Stage 01 CODE ACCEPTED / STATIC AUDIT PASS; UNITY VERIFIED = NO.** The owner explicitly approved starting Stage 02 immediately rather than waiting for external Unity tests. [Issue #23](https://github.com/HolyPenguin21/mlf-legends/issues/23) independent bottom-up code audit has been CLOSED as completed. **Do not reclassify unexecuted runtime tests as passing.**
