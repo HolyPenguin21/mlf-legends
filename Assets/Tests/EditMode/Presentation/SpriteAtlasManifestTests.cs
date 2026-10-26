@@ -205,8 +205,7 @@ namespace MLFLegends.Tests.EditMode
         [Test]
         public void CommentsAreNotJson()
         {
-            ParseInvalid(TechnicalAtlasFixture.ManifestJson.Replace("\"schema_version\": 1,", "// exporter note
-  \"schema_version\": 1,"));
+            ParseInvalid(TechnicalAtlasFixture.ManifestJson.Replace("\"schema_version\": 1,", "// exporter note\n  \"schema_version\": 1,"));
         }
 
         [TestCase("")]
