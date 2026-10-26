@@ -158,6 +158,9 @@ var session = query.GetSingleton<BattleSession>(); // HumanCombatant, AiCombatan
 ```
 In a scene: add `CombatSmokeBootstrap` to one GameObject (`Assets/Scenes/CombatSmoke.unity`). Disabling it
 ends the battle only if that bootstrap started it (the latest enabled bootstrap owns the battle).
+`CombatSmoke.unity` also holds *Player Input* (`PlayerInputAdapter`, #22) and its existing *Main Camera* with
+`CombatCameraController` (#22). Both only read `BattleSession`/combatants; neither sends requests, so the
+bootstrap's ownership rules are unchanged (see `Input/INPUT.md`, `Presentation/CAMERA.md`).
 
 A request made inside a fixed step (e.g. a later defeat owner ending the battle on tick T) is applied before
 tick T + 1, also when T + 1 is a catch-up step of the same render frame: no later tick runs combat logic of the
@@ -186,5 +189,7 @@ Not automated (no Editor automation for this). Record the result in `Docs/QA.md`
 7. Restore the Enter Play Mode setting and timeScale.
 
 ## Not implemented here
-Input and AI producers, movement integration, attacks, collisions, rendering (movement and facing live in Simulation/CombatMovementSystem #31 and CombatFacingSystem #33; Spawn only sets the initial facing). Large rosters (#7) are the `Start` above with
+AI producers, movement integration, attacks, collisions, rendering (player input lives in Input/ #22, the camera in
+Presentation/ #22, movement and facing in Simulation/CombatMovementSystem #31 and CombatFacingSystem #33; Spawn only sets
+the initial facing). Large rosters (#7) are the `Start` above with
 allies, reusing `Spawn` and the same allocator; the benchmark in `Assets/Tests/EditMode/Performance/` uses only that.

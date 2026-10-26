@@ -43,7 +43,7 @@ SimulationSystemGroup
    ├─ BeginFixedStepSimulationEntityCommandBufferSystem   (Unity, OrderFirst)
    ├─ BattleLifecycleSystem                               (#5/#14/#19) battle requests; Tick = last completed tick
    ├─ CombatClockSystem                                   (after Lifecycle) Tick += 1
-   ├─ CombatCommandCollectionSystemGroup                  producers in fixed order, then #4 processor (OrderLast)
+   ├─ CombatCommandCollectionSystemGroup                  PlayerInputCommandSystem (#22, default world), then #4 processor (OrderLast)
    ├─ CombatStateUpdateSystemGroup                        CombatFacingSystem (#33) → CombatMovementSystem (#31), then future state owners
    ├─ CombatPublicationSystemGroup                        read-only snapshots/events (later)
    └─ EndFixedStepSimulationEntityCommandBufferSystem     (Unity, OrderLast)
@@ -62,7 +62,12 @@ SimulationSystemGroup
   end of their producing fixed tick, not be retained until the next BeginFixedStep.
 - Future systems join a phase with `[UpdateInGroup(typeof(<phase group>))]`; they never update
   `SimulationClock` and never run combat logic outside these groups.
-- Concrete owners fill the groups: command processor in Collection, movement in State; no placeholder processors.
+- Concrete owners fill the groups: player producer and command processor in Collection, facing and movement in
+  State; no placeholder processors.
+- Around the fixed step (#22, verified in the real PlayerLoop): Input System events are processed in
+  `PreUpdate` (default dynamic update mode) before `SimulationSystemGroup` (end of `Update`), and the camera
+  updates in `LateUpdate` after it. Neither is a clock: input only feeds the Collection producer, the camera only
+  reads. See `Input/INPUT.md` and `Presentation/CAMERA.md`.
 - Phase groups require `SimulationClockRunning`: they never run in a world without a clock (e.g. an
   isolated test world that has no `CombatClockSystem`) or after the clock stopped.
 
@@ -72,7 +77,7 @@ SimulationSystemGroup
 - From `CombatClockSystem` on (every combat phase) `Tick` is the tick being simulated. Outside the fixed
   step, and inside it before the clock (`BeginFixedStepSimulationEntityCommandBufferSystem`,
   `BattleLifecycleSystem`), `Tick` is the last completed tick and the next one is `Tick + 1` (what a
-  frame-rate producer targets).
+  frame-rate producer would target; the player producer of #22 runs in Collection and targets `Tick`).
 - Upper bound: `uint.MaxValue` (~828 days at 60 Hz). The clock never wraps to `0` and never repeats a
   tick: on the step after `LastTick` it logs an error and removes `SimulationClockRunning`, which stops
   the clock and every phase in that same step. The battle must end.

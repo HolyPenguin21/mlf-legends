@@ -626,6 +626,17 @@ namespace MLFLegends.Tests.EditMode
             m_Capture.Sample(out var x, out var z, out var held);
             Assert.That((x, z, held), Is.EqualTo(((sbyte)0, (sbyte)0, CommandButtons.None)));
             Assert.That(() => new PlayerInputCapture(null), Throws.ArgumentNullException);
+            var incomplete = ScriptableObject.CreateInstance<InputActionAsset>();
+            try
+            {
+                Assert.That(() => new PlayerInputCapture(incomplete), Throws.ArgumentException, "No Player map.");
+                incomplete.AddActionMap(PlayerInputCapture.MapName).AddAction("Move");
+                Assert.That(() => new PlayerInputCapture(incomplete), Throws.ArgumentException, "No Attack/Jump/Guard.");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(incomplete);
+            }
         }
 
         // ---- shared command path ----

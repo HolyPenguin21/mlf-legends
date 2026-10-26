@@ -86,6 +86,22 @@ Pause cannot carry a press across it: a tap of the last unpaused 0-tick frame is
 Input System may report a key that is still physically down as a new press on its next device report; that is a real
 new device edge, not a replayed old one.
 
+## Manual check (owner GUI, record in Docs/QA.md; NOT RUN until performed)
+
+There are no fighter visuals before Stage 03: observe *Window > Entities > Hierarchy* (`Combatant Human` →
+`CombatPosition`, `CombatMotion`, `CombatFacing`, `AppliedCombatCommand`) and the Main Camera Transform/Inspector.
+1. Open `Assets/Scenes/CombatSmoke.unity`, enter Play Mode, click the Game view. Hold D/A/W/S: the human's X/Z change,
+   `AppliedCombatCommand.Source = Player`; release: it stops. Tap K: one jump; hold K: one jump only. J/L: `Held`/`Pressed`
+   Attack/Guard appear in the applied command, nothing else happens (no attacks/guard yet).
+2. Camera: it follows the human's X/Z; arrows pan, `=`/`-` and the wheel zoom (limits 2…20), Home recenters; the
+   rotation (40°, 0°, 0°) never changes; `Projection = Orthographic`.
+3. Set `Time.timeScale = 0` (debugger or a temporary tool): K/J taps and WASD do not change ECS state, pan/zoom still
+   work; restore 1 while holding D: the human moves, no jump from the paused taps.
+4. Alt-tab away while holding D: the human stops on the next tick; return: it moves again only while D is held.
+5. Disable/enable *Player Input*: control stops/resumes, no jump on enable. Disable/enable *Combat Bootstrap*: the
+   camera keeps its view while idle, then follows the new human with the pan reset.
+6. Repeat with *Enter Play Mode Settings* = *Do not reload Domain or Scene*: no Console errors, no leak warnings on exit.
+
 ## Tests
 
 - `Tests/EditMode/Input/PlayerInputProducerTests` (InputTestFixture virtual keyboard/gamepad + the real asset + the real

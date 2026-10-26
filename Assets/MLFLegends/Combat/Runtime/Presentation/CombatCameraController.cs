@@ -24,6 +24,8 @@ namespace MLFLegends.Combat
     {
         public const string MapName = "Camera";
 
+        static readonly string[] s_Actions = { "Pan", "Zoom", "ZoomStep", "Recenter" };
+
         [Tooltip("Asset with a Camera map (Pan, Zoom, ZoomStep, Recenter). Bindings are provisional and remappable.")]
         [SerializeField] InputActionAsset m_Actions;
 
@@ -104,7 +106,11 @@ namespace MLFLegends.Combat
             if (m_Actions == null)
                 return; // Follow still works; pan/zoom need the Camera map.
 
-            m_Map = m_Actions.FindActionMap(MapName, throwIfNotFound: true).Clone();
+            // Validated on the shared map first, so a misconfigured asset leaves no clone behind.
+            var shared = m_Actions.FindActionMap(MapName, throwIfNotFound: true);
+            foreach (var name in s_Actions)
+                shared.FindAction(name, throwIfNotFound: true);
+            m_Map = shared.Clone();
             m_Pan = m_Map.FindAction("Pan", throwIfNotFound: true);
             m_Zoom = m_Map.FindAction("Zoom", throwIfNotFound: true);
             m_ZoomStep = m_Map.FindAction("ZoomStep", throwIfNotFound: true);

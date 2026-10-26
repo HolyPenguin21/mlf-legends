@@ -8,7 +8,7 @@
 - Initial template packages include Input System 1.19.0, Burst 1.8.29 transitively, Collections 6.5.0 transitively. **Entities 6.5.0 and Entities Graphics 6.5.0 are installed in manifest and package lock**.
 - Use the ECS APIs bundled with Unity 6000.5.4f1 and Entities 6.5.0; Stage 00 test pass was reported by the project owner, with logs unavailable for independent review.
 
-**Current delivery boundary:** Stage 01 has one authoritative World-scoped `SimulationClock` and fixed-step phases; one command queue/processor publishing `AppliedCombatCommand`; one `BattleLifecycleSystem` that owns start/end/restart/IDs and runs in pre-clock FixedStep and, through the thin `BattleLifecycleInitializationProxy` (#35), in Initialization; and `BattleSetup` for 1v1 through 200v200. Stage 02.1 Issue #31 implements `CombatMovementSystem`, exactly one authoritative position/motion writer in the existing `CombatStateUpdateSystemGroup`; Stage 02.2 Issue #33 adds `CombatFacingSystem`, the single `CombatFacing` writer ordered before it. Live input, camera and later collision/renderer remain distinct stages/scopes. No visible scene until the Stage 03 GPU sprite renderer.
+**Current delivery boundary:** Stage 01 has one authoritative World-scoped `SimulationClock` and fixed-step phases; one command queue/processor publishing `AppliedCombatCommand`; one `BattleLifecycleSystem` that owns start/end/restart/IDs and runs in pre-clock FixedStep and, through the thin `BattleLifecycleInitializationProxy` (#35), in Initialization; and `BattleSetup` for 1v1 through 200v200. Stage 02.1 Issue #31 implements `CombatMovementSystem`, exactly one authoritative position/motion writer in the existing `CombatStateUpdateSystemGroup`; Stage 02.2 Issue #33 adds `CombatFacingSystem`, the single `CombatFacing` writer ordered before it. Stage 02.3 + 02.4 Issue #22 adds the real Unity Input System producer (one `PlayerInputCommandSystem` in Collection, before the processor) and one read-only orthographic `CombatCameraController` on the technical scene's existing camera (section below). Collision/renderer remain distinct stages/scopes. No visible scene until the Stage 03 GPU sprite renderer.
 
 ## Architectural goals
 One authoritative sim handles player, duel AI and hundreds of combatants; presentation, UI, VFX and animation never apply damage or dictate hit frames. Use Unity ECS/DOTS + Burst for performance-critical processing, with a fixed simulation step. Rendering frame rate is independent. The combat core must remain applicable to 200 vs 200 even during initial 1v1 tuning.
@@ -44,6 +44,22 @@ Spawn sets `CombatFacing` from `BattleSetup`; afterwards State's `CombatFacingSy
 `MoveX == 0` keeps the previous value, same rule for player, AI, grounded and airborne actors. No enemy
 auto-facing and no action locks yet; future attack/guard restrictions belong in this owner. The processor,
 movement and presentation never write facing. Details in `Simulation/SIMULATION.md`.
+
+## Stage 02.3 + 02.4 input and camera ownership (#22)
+
+Device events (Input System, default dynamic update, PlayerLoop `PreUpdate`) only change `PlayerInputCapture`: live
+device state plus not-yet-consumed press bits, owned by the scene `PlayerInputAdapter` (its own clone of the Player
+actions). On every real fixed tick, `PlayerInputCommandSystem` (Collection, before the processor) appends at most one
+`Player` `CombatCommand` for the current active in-combat `BattleSession.HumanCombatant` to the one existing queue:
+live Move/Held on every catch-up tick, Pressed once. It writes nothing else; there is no second queue, clock or
+accumulator, and no frame-rate `Tick + 1` producer. Replay/benchmark/manual worlds have no producer unless a test adds
+one. Pause, focus/device loss, End/Restart/new human and adapter replacement drop pending presses (`Input/INPUT.md`).
+
+`CombatCameraController` (scene camera, `LateUpdate` after the Update-phase simulation) reads the session and the
+human's `CombatPosition` and writes only its Transform/Camera: orthographic, fixed configurable angle, follow, pan and
+zoom (`Presentation/CAMERA.md`). It never filters simulation by visibility; input is world X/Z, not camera-relative.
+The chain is: actions/subscriptions → capture → producer → queue → processor → `AppliedCombatCommand` → Facing →
+Movement → `CombatPosition` → camera. Player and AI commands share every step after the producer.
 
 ## Physical rules
 Every living combatant has a lightweight body collider. Allies block and gently yield; player can push allied crowd with modest resistance. Enemies and walls remain solid. No ghost dash. Hits can cause stagger, launches, push-through waves and collisions with other bodies; custom ECS simplified physical resolution, not 400 dynamic Rigidbodies. Direct basic attacks don't damage friends; secondary magical/environment effects can.

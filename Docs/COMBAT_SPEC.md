@@ -13,6 +13,23 @@ A moderately paced Little Fighter 2 / Nekketsu-inspired 2.5D action brawler on t
 - L + **fresh press of direction**: one short directional defensive dash; forward/back, depth, diagonals allowed. No repeated dashing merely from holding a direction.
 Controls should be easily remappable. All input enters the same action command validation pipeline as AI.
 
+**Implemented input policy (Stage 02.3, #22; bindings provisional):** WASD = world X/Z (W = +Z depth, not
+camera-relative), J = Attack, K = Jump, L = Guard (also Space = Jump, Enter/left mouse = Attack; gamepad left stick,
+West, South, right shoulder). Attack and Guard are passed as intentions only; attacks, guard and L + direction dash
+are not implemented. Sampling: one player command per real fixed simulation tick, never per render frame; Move and
+Held are the live device state on every tick (also every catch-up tick of one frame); a press reaches exactly one
+tick — the first produced after it — so a tap shorter than a tick is never lost and holding a button never repeats it.
+Several presses of one button before a tick are one press. Analog sticks are quantized to the digital
+{-1, 0, +1} axes (dead zone 0.25, eight 45° sectors). **Pause** (`Time.timeScale = 0`) collects no combat presses;
+resuming uses the buttons actually held, with no synthetic press. **Focus loss** stops the fighter on the next tick and
+drops pending presses; so do device loss, End/Restart and a change of controlled fighter. Details: `Input/INPUT.md`.
+
+**Camera (Stage 02.4, #22; values provisional):** orthographic, one fixed configurable angle (40° pitch, 0° yaw by
+default) at every zoom level; follows the controlled fighter's authoritative position (ground plane; jump height is not
+followed by default), pan relative to follow (arrow keys / right stick, clamped, Home recenters), zoom by orthographic
+size within limits (`=`/`-`, mouse wheel, d-pad). Pan and zoom work while paused and never change the simulation; a
+new battle drops the pan. The camera never decides which fighters are simulated. Details: `Presentation/CAMERA.md`.
+
 ## Facing and directional movement (approved, 2026-10-26)
 
 The current 2.5D combat facing has two directions: **Left (world X negative)** and **Right (world X positive)**. Fighters automatically turn toward horizontal movement: on a fixed simulation tick with accepted `MoveX = +1`, they face Right; with accepted `MoveX = -1`, they face Left. This also applies during diagonals and jumps. **Pure depth movement (`MoveX = 0, MoveZ ≠ 0`) and standing still do not turn the character**; the previous horizontal facing remains. There is no automatic facing toward the closest enemy or backward-striding mode. Player and AI share the same rule, derived only from `AppliedCombatCommand`.

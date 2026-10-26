@@ -27,6 +27,8 @@ namespace MLFLegends.Combat
         // sin(22.5°): an axis counts when it is at least this fraction of the stick's magnitude, i.e. 8 equal sectors.
         const float k_AxisFraction = 0.38268343f;
 
+        static readonly string[] s_Actions = { "Move", "Attack", "Jump", "Guard" };
+
         readonly InputActionMap m_Map;
         readonly InputAction m_Move;
         readonly InputAction m_Attack;
@@ -47,8 +49,11 @@ namespace MLFLegends.Combat
             if (actions == null)
                 throw new ArgumentNullException(nameof(actions));
 
-            // Lookups first: a missing action throws before anything is subscribed or enabled.
-            m_Map = actions.FindActionMap(MapName, throwIfNotFound: true).Clone();
+            // Validated on the shared map first: a missing action throws before anything is cloned, subscribed or enabled.
+            var shared = actions.FindActionMap(MapName, throwIfNotFound: true);
+            foreach (var name in s_Actions)
+                shared.FindAction(name, throwIfNotFound: true);
+            m_Map = shared.Clone();
             m_Move = m_Map.FindAction("Move", throwIfNotFound: true);
             m_Attack = m_Map.FindAction("Attack", throwIfNotFound: true);
             m_Jump = m_Map.FindAction("Jump", throwIfNotFound: true);

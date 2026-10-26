@@ -46,7 +46,7 @@ behaviour. All combat simulation code lives in the single assembly `MLFLegends.C
 | `CombatMotion` | same private Spawn (#5/#31) | `CombatMovementSystem` (#31), ground support / vertical velocity / grounded byte | movement, replay / diagnostics |
 | `CombatFacing` | Spawner (#5) | `CombatFacingSystem` (#33), sign of accepted `MoveX`, before movement; not #4 | all |
 | `InCombat` (enableable) | Spawner (#5), enabled | single defeat owner (Stage 08), disable only | all simulation queries |
-| `CombatCommand` values | producers: player input adapter or AI | — (values, not state) | command processor (#4) only |
+| `CombatCommand` values | producers: `PlayerInputCommandSystem` (#22, human) or AI | — (values, not state) | command processor (#4) only |
 
 Producers never write combat state directly; their only output is `CombatCommand`. The record of
 which command was accepted, and any processor history, is owned by #4 under `Commands/`.
@@ -81,7 +81,9 @@ Rules (the processor #4 implements them; their outcome must be observable for te
 6. **Validation.** `MoveX`/`MoveZ` outside `-1..1` are rejected by the processor. Action legality
    (stamina, locks, injuries) belongs to later rule owners, identical for player and AI.
 7. **Edges.** Producers emit `Pressed` so taps between ticks are not lost; when several ticks run in
-   one frame, a press is reported in the first command only. Derived edges such as the "fresh
+   one frame, a press is reported in the first command only (implemented for the player by
+   `Input/INPUT.md`, #22: presses are consumed by the first produced tick; pause, focus/device loss and a
+   new battle/human binding drop them). Derived edges such as the "fresh
    direction press" for L + direction dash are computed by the processor from its own previous-tick
    state, not by producers.
 
