@@ -50,7 +50,9 @@ namespace MLFLegends.Combat
                 throw new ArgumentNullException(nameof(actions));
 
             // Validated on the shared map first: a missing action throws before anything is cloned, subscribed or enabled.
-            var shared = actions.FindActionMap(MapName, throwIfNotFound: true);
+            // FindActionMap returns null (does not throw) on an asset without maps.
+            var shared = actions.FindActionMap(MapName, throwIfNotFound: true)
+                ?? throw new ArgumentException($"No '{MapName}' action map in '{actions.name}'.", nameof(actions));
             foreach (var name in s_Actions)
                 shared.FindAction(name, throwIfNotFound: true);
             m_Map = shared.Clone();

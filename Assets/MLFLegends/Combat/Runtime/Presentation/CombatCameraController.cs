@@ -107,7 +107,8 @@ namespace MLFLegends.Combat
                 return; // Follow still works; pan/zoom need the Camera map.
 
             // Validated on the shared map first, so a misconfigured asset leaves no clone behind.
-            var shared = m_Actions.FindActionMap(MapName, throwIfNotFound: true);
+            var shared = m_Actions.FindActionMap(MapName, throwIfNotFound: true)
+                ?? throw new System.ArgumentException($"No '{MapName}' action map in '{m_Actions.name}'.");
             foreach (var name in s_Actions)
                 shared.FindAction(name, throwIfNotFound: true);
             m_Map = shared.Clone();

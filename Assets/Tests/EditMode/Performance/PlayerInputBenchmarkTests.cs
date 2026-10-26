@@ -46,8 +46,6 @@ namespace MLFLegends.Tests.EditMode
             var asset = AssetDatabase.LoadAssetAtPath<InputActionAsset>(PlayerInputProducerTests.ActionsPath);
             Assert.That(asset, Is.Not.Null);
             var keyboard = InputSystem.AddDevice<Keyboard>();
-            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.D));
-            InputSystem.Update();
             var report = new BenchmarkReport();
 
             foreach (var combatants in new[] { 2, 400 })
@@ -58,6 +56,10 @@ namespace MLFLegends.Tests.EditMode
                 collection.AddSystemToUpdateList(producer);
                 collection.SortSystems();
                 m_Capture = new PlayerInputCapture(asset);
+                // Pressed after the capture is enabled: its Move action sees the change in this update.
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.D));
+                InputSystem.Update();
 
                 var setup = BattleSetup.Default;
                 setup.HumanAllies = setup.AiAllies = (ushort)(combatants / 2 - 1);
