@@ -14,6 +14,14 @@ Original [#17](https://github.com/HolyPenguin21/mlf-legends/issues/17) Unicode/C
 
 **Stage 02 first task:** [#31](https://github.com/HolyPenguin21/mlf-legends/issues/31) canonical fixed-tick ECS movement X/Z plus jump Y; when the first PR arrives manager reviews bottom-up and records Unity tests as RUN/PASS/FAIL/NOT RUN exactly as evidenced. Stage 02 may progress with `NOT RUN` only when no observed critical compiler/runtime defect blocks dependent work.
 
+## Manager review of merged Stage 02.1 PR #32 (2026-10-26)
+
+- **Delivery:** [PR #32](https://github.com/HolyPenguin21/mlf-legends/pull/32) merged to main as `e5c58afcc40188ece29f4d296ae18d486be547ce`; [Issue #31](https://github.com/HolyPenguin21/mlf-legends/issues/31) closed. Actual latest source inspected bottom-up: CombatMotion, one CombatMovementSystem, initial component via existing BattleLifecycleSystem.Spawn, queue/clock and phase scheduling, replay snapshots, 39 authored movement EditMode cases, PlayMode paused restart and 2/100/400 benchmark harness.
+- **Verdict: STATIC PASS / no established runtime correctness or ownership defect.** Fixed dt, 8-direction normalized movement, Grounded+Jump Pressed, no infinite hold jumping, semi-implicit gravity and flat per-spawn-Y support, 1v1/100/400 same ECS path; End/Restart/Despawn removes motion with the actor. No second World, clock, command consumer or position writer.
+- **Test limitations: NOT RUN:** Unity import/Entities codegen/C# or Burst compilation; EditMode/PlayMode; warning-free default-world order; manual Domain Reload; post-change 2/100/400 timing and memory. Old Stage 01 figures do not verify Stage 02 motion. Append actual test evidence to QA debt #30 when available.
+- **Next Stage 02.2 test debt (not a blocker for #31):** `CombatReplayTests.RealSystemsRunInTheirDeclaredOrderInsideOneFixedStep`, `DefaultWorldBattleLifecycleTests.DefaultWorldHasOneLifecycleOwnerAndTheCompleteFixedStepOrder`, `CombatBaselineTests.AssertMovementOwner` each require the **whole** State group to contain exactly one movement system. The next facing/action-state writer will make this obsolete. Update them within that next scoped implementation to test Movement's uniqueness and phase ordering while allowing the additional explicit owner. See [#31 review comment](https://github.com/HolyPenguin21/mlf-legends/issues/31#issuecomment-6410821524). No premature test weakening.
+- **Future performance watchpoint:** the movement loop writes `CombatPosition` and `CombatMotion` each tick even when grounded/idle. This is correct today; profile effects on ECS change versions/render synchronization at Stage 03 before claiming an optimization is needed.
+
 ## Stage 02.1 implementation evidence (#31, 2026-10-26)
 
 Base main: `7ae5459d5b6a5ff9b37bc3750d452c8ce0ea7d41`. Separate PR branch; no autonomous merge.
@@ -442,4 +450,4 @@ independent manager acceptance remains required. This follow-up **was merged as 
 
 ## Acceptance history supersession (2026-10-26)
 
-Earlier entries calling #23 a blocker of Stage 02, or describing #19/#26 as not yet merged, are historical dated notes. **Current controlling status:** #19 fixed and closed via merged PR #28 + #29; #23 static audit completed and closed by owner-approved transition; #30 deferred Unity evidence OPEN; #17 Cyrillic path Burst OPEN; Stage 02 #31 IN PROGRESS as a dispatched task. These statuses supersede the earlier sequence without rewriting historical agent claims.
+Earlier entries calling #23 a blocker of Stage 02, or describing #19/#26 as not yet merged, are historical dated notes. **Current controlling status:** #19 fixed and closed via merged PR #28 + #29; #23 static audit completed and closed by owner-approved transition; #30 deferred Unity evidence OPEN; #17 Cyrillic path Burst OPEN; Stage 02 #31 implemented and manager STATIC PASS via merged PR #32 (Unity NOT RUN). These statuses supersede the earlier sequence without rewriting historical agent claims.
