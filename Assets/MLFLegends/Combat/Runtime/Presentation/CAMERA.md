@@ -27,7 +27,9 @@ not a combat system, has no per-fighter objects and never decides what is simula
 - **Timing:** `LateUpdate` (PlayerLoop `PreLateUpdate`), after the `Update`-phase `SimulationSystemGroup`; not a render
   callback. Pan/zoom use `Time.unscaledDeltaTime`, the existing presentation delta (not a combat clock), so they work at
   `Time.timeScale = 0` while the battle stays frozen. No smoothing/interpolation snapshot (Stage 03 decides).
-- **Binding:** a new battle number or human ID (Start/Restart) drops the pan offset and the cached entity; zoom is kept.
+- **Binding:** binding to a new **valid** target (Start/Restart, other human, new World) drops the pan offset and the
+  cached entity; zoom is kept. Losing the target (End/Idle) does not touch the pan: the first update after End leaves
+  position, size and pan exactly as they were (review #22); explicit pan/zoom input still works without a target.
   The cached entity is revalidated every frame (exists, same `CombatantId`, `InCombat` enabled) before use; Entity
   handles are recycled, IDs are not. Without a target (idle, End, Despawn, defeat, no/disposed World) the camera keeps
   its last focus and position, without exceptions and without writing ECS. A new World always rebinds.

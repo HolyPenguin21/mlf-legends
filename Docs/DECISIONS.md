@@ -28,6 +28,13 @@
 - **Camera:** `CombatCameraController` on CombatSmoke's existing Main Camera (now orthographic, 40° pitch); `LateUpdate`,
   unscaled presentation delta, read-only queries; pan dropped on a new battle, zoom kept; no Cinemachine, packages,
   smoothing pipeline, per-fighter objects or new scene. Altitude follow defaults to 0 (configurable).
+- **Manager review corrections (PR #37, 2026-10-26):** (1) losing the camera target (End/Idle) keeps pan and view exactly;
+  only a new valid target drops the pan. (2) `Attach` binds to the session current at that moment (presses before it are
+  dropped, fresh ones reach the next tick). (3) `PlayerInputAdapter` checks the default World every frame and moves its
+  binding when a World appears or is replaced; competition is resolved in the producer by enable order (latest enabled
+  wins whichever attaches first; each World tried once). (4) Buttons held across a focus change or a device
+  disable/enable/reset are blocked until the device reports them released, so a restored hold is Held, never Pressed;
+  conservative edge: a button released while unfocused and never re-reported loses its first press after regain.
 - **Assemblies:** `Unity.InputSystem` added to the runtime asmdef (Input/ and Presentation/ folders, no new runtime
   assembly); test asmdefs add `Unity.InputSystem` + `Unity.InputSystem.TestFramework`. Pure ECS suites stay device-free.
 

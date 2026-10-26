@@ -11,7 +11,7 @@ stay with their owners in `Simulation/`; player and AI commands are validated an
 |---|---|---|---|
 | `PlayerInputCapture` | plain class, `IDisposable` | Raw device state of the Player actions + presses not yet consumed (`CommandButtons` bits). Not a command queue: no tick, no combatant, no `CombatCommand`. | Created/disposed by the adapter (tests create their own). Owns a **clone** of the asset's Player map, its `performed` callbacks and one `InputSystem.onDeviceChange` / `onAfterUpdate` subscription. |
 | `PlayerInputCommandSystem` | `SystemBase`, `CombatCommandCollectionSystemGroup` | The single tick-aligned Player producer: per real fixed tick, one command for `BattleSession.HumanCombatant`, for the tick being simulated, before the processor (`OrderLast`). | One per World; auto-created in the default world, absent from replay/benchmark/manual worlds unless a test adds it. Holds a reference to the attached capture and the last binding (battle number, human ID); no static state. |
-| `PlayerInputAdapter` | `MonoBehaviour` (scene) | Scene glue: while enabled, owns one capture attached to the default world's producer; forwards application focus. | `CombatSmoke.unity` → *Player Input*. Disable/destroy detaches + disposes. |
+| `PlayerInputAdapter` | `MonoBehaviour` (scene) | Scene glue: while enabled, owns one capture and keeps it attached to the **current** default World's producer (checked on enable and once per frame: attaches when a World appears later, moves A → B without disable/enable); forwards application focus. | `CombatSmoke.unity` → *Player Input*. Disable/destroy detaches + disposes. A static enable counter only orders adapters (like the bootstrap owner token). |
 
 The actions asset is `Assets/InputSystem_Actions.inputactions` (also the project-wide actions). Nobody here enables or
 disables the shared asset or its maps: each capture enables and disposes only its own clone.
@@ -45,6 +45,9 @@ existing intentions only; attacks, guard and L + direction dash are later stages
 - **Taps:** press and release between two ticks give `Pressed` with `Held = None`. Several presses of a button before a
   tick are one bit (current contract; no repeat counting). A 0-tick render frame keeps its presses for the next tick.
 - **Held never creates Pressed.** A button already down when a capture is enabled is Held at once but never Pressed.
+- **Attach boundary:** `Attach` drops presses recorded before it and binds to the session as it is at that moment, so a
+  fresh tap made right after attaching to a running battle reaches its first tick (review #22); a later Start/Restart
+  is still a new binding that drops older presses.
 - **Not** a frame-rate `Tick + 1` producer (the pacing-dependent scheme of PR #20): commands are produced inside the
   fixed step, so 30/60/120 FPS and uneven pacing give one command per real tick.
 
@@ -77,14 +80,24 @@ The producer submits only for the **current, active, in-combat** `HumanCombatant
 | Battle idle, human despawned or `InCombat` disabled | no command (no `UnknownCombatant` noise), presses dropped |
 | New battle number or human ID (Start/Restart/End, also between catch-up ticks) | presses dropped before the first command of the new binding; Held/Move are the live state |
 | `Time.timeScale == 0` (pause) | presses ignored and dropped after every input update; on resume Held/Move are live, no synthetic Pressed |
-| Application focus lost / regained (`OnApplicationFocus`) | presses dropped; while unfocused Move/Held sample neutral, so the fighter stops on the next tick |
-| Device removed / disconnected / disabled / reset | presses dropped; the actions cancel the lost controls (neutral) |
-| Second adapter enabled (duplicate, additive scene switch) | the latest one attaches (previous capture detached); a replaced adapter's disable cannot detach its successor; still one producer |
+| Application focus lost / regained (`OnApplicationFocus`) | presses dropped; buttons held so far blocked (below); while unfocused Move/Held sample neutral, so the fighter stops on the next tick |
+| Device disabled / enabled / soft or hard reset (the Input System's own focus cycle) | presses dropped; buttons held before it blocked (below) |
+| Device removed / disconnected | presses dropped; the actions cancel the lost controls (neutral) |
+| Second adapter enabled (duplicate, additive scene switch) | the producer keeps the adapter with the highest enable order, whichever attaches first; a replaced adapter neither retakes control nor detaches its successor; still one producer |
+| Default World appears after the adapter was enabled, or is replaced A → B | the adapter detaches from A (if alive) and attaches to the new World's producer (stale presses dropped); each World is tried once, so an outranked adapter does not retry every frame |
 | Adapter disabled/destroyed, Play Mode exit | detach (if still attached) + dispose of the clone and every subscription; a disposed World is skipped |
 
-Pause cannot carry a press across it: a tap of the last unpaused 0-tick frame is dropped too. After a focus regain the
-Input System may report a key that is still physically down as a new press on its next device report; that is a real
-new device edge, not a replayed old one.
+Pause cannot carry a press across it: a tap of the last unpaused 0-tick frame is dropped too.
+
+**Held across a focus change or device reset (blocking).** With its default background behaviour the Input System
+soft-resets/disables devices on focus loss and re-enables + syncs (or resets) them on regain; a key that is still
+physically down then comes back through a sync or the next device report, which the action sees as a new press. The
+capture therefore blocks every button that was held (device state at the end of the previous Input System update) when
+focus changes or a device is disabled/enabled/reset: its presses are ignored until the device reports it released
+(a held → released transition in a later update; the synthetic release of the reset itself does not count). Result:
+a restored hold is Held without Pressed (no unwanted Jump/Attack); a button that was not held presses normally;
+release → press works. Conservative edge: a button held at the interruption, released while unfocused and never
+re-reported, loses its first press after regain (the next release unblocks it).
 
 ## Manual check (owner GUI, record in Docs/QA.md; NOT RUN until performed)
 
@@ -97,7 +110,8 @@ There are no fighter visuals before Stage 03: observe *Window > Entities > Hiera
    rotation (40°, 0°, 0°) never changes; `Projection = Orthographic`.
 3. Set `Time.timeScale = 0` (debugger or a temporary tool): K/J taps and WASD do not change ECS state, pan/zoom still
    work; restore 1 while holding D: the human moves, no jump from the paused taps.
-4. Alt-tab away while holding D: the human stops on the next tick; return: it moves again only while D is held.
+4. Alt-tab away while holding D: the human stops on the next tick; return: it moves again only while D is held. Hold K,
+   alt-tab away and back still holding K: no jump; release and press K: one jump.
 5. Disable/enable *Player Input*: control stops/resumes, no jump on enable. Disable/enable *Combat Bootstrap*: the
    camera keeps its view while idle, then follows the new human with the pan reset.
 6. Repeat with *Enter Play Mode Settings* = *Do not reload Domain or Scene*: no Console errors, no leak warnings on exit.
@@ -107,8 +121,11 @@ There are no fighter visuals before Stage 03: observe *Window > Entities > Hiera
 - `Tests/EditMode/Input/PlayerInputProducerTests` (InputTestFixture virtual keyboard/gamepad + the real asset + the real
   producer in a replay World): 30/60/120 FPS and variable pacing, 0/1/2/3/10 ticks per frame, taps, holds, diagonals,
   stick quantization, Restart between catch-up ticks, End/idle/despawn/defeat, pause, focus and device loss, attach /
-  replace / detach / dispose, replay worlds without adapter, player-vs-AI parity, 200 vs 200.
+  replace / detach / dispose, replay worlds without adapter, player-vs-AI parity, 200 vs 200; review regressions: a fresh
+  tap right after attaching to a running battle, enable-order priority, keys held across a reset or disable/enable cycle.
 - `Tests/EditMode/Input/PlayerInputQuantizeTests`: the quantization policy.
 - `Tests/PlayMode/Input/PlayerInputPlayModeTests`: real PlayerLoop order, real-loop taps/holds at 30/60/120 FPS
-  (`Time.captureFramerate`), pause, focus, additive scene switch/re-enable, camera follow/rebind (CombatSmoke).
+  (`Time.captureFramerate`), pause, focus, additive scene switch/re-enable, camera follow/rebind and the exact view on End
+  (CombatSmoke); the Input System's real focus cycle (test runtime focus, runInBackground on/off) with the device
+  re-reporting held K/J/L; an adapter following a default World that appears late or is replaced A → B → A.
 - `Tests/EditMode/Performance/PlayerInputBenchmarkTests`: producer cost, see `Docs/PERFORMANCE_BASELINE.md`.
