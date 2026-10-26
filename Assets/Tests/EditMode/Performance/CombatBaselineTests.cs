@@ -182,11 +182,11 @@ namespace MLFLegends.Tests.EditMode
 
         static int[] SceneObjectCounts() => new[]
         {
-            Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length,
-            Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length,
-            Object.FindObjectsByType<Rigidbody>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length,
-            Object.FindObjectsByType<Animator>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length,
-            Object.FindObjectsByType<NavMeshAgent>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length,
+            Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include).Length,
+            Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include).Length,
+            Object.FindObjectsByType<Rigidbody>(FindObjectsInactive.Include).Length,
+            Object.FindObjectsByType<Animator>(FindObjectsInactive.Include).Length,
+            Object.FindObjectsByType<NavMeshAgent>(FindObjectsInactive.Include).Length,
         };
 
         // ---- measurement helpers (everything outside the Stopwatch pair is untimed) ----

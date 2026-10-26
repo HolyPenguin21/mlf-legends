@@ -36,8 +36,10 @@ namespace MLFLegends.Tests.EditMode
         {
             var world = new World(name);
             fixedStep = world.CreateSystemManaged<FixedStepSimulationSystemGroup>();
-            // Same group members the clock is ordered against in the default world.
+            // Same group members the clock is ordered against in the default world. The lifecycle is the target of the
+            // clock's [UpdateAfter]; without it Entities ignores that attribute (logged). It stays inert here: no queue.
             fixedStep.AddSystemToUpdateList(world.CreateSystemManaged<BeginFixedStepSimulationEntityCommandBufferSystem>());
+            fixedStep.AddSystemToUpdateList(world.CreateSystem<BattleLifecycleSystem>());
             clock = world.CreateSystem<CombatClockSystem>();
             fixedStep.AddSystemToUpdateList(clock);
             fixedStep.SortSystems();
@@ -212,6 +214,8 @@ namespace MLFLegends.Tests.EditMode
         [Test]
         public void CombatPhasesDoNotRunWithoutAClock()
         {
+            // Deliberately clock-less: Entities logs that Collection's [UpdateAfter(CombatClockSystem)] is ignored. That
+            // one warning is this test's premise, not a registration error.
             using (var world = new World("MLF Legends phases without clock"))
             {
                 var fixedStep = world.CreateSystemManaged<FixedStepSimulationSystemGroup>();
