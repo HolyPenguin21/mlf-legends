@@ -1,5 +1,7 @@
 # Agent workflow — MLF Legends
 
+**Current high-priority dispatch (2026-10-26): [#35](https://github.com/HolyPenguin21/mlf-legends/issues/35) BLOCKS clean Unity build and Stage 02.3 integration.** Stage 02.2 facing #33/PR #34 merged and statically reviewed, but actual Unity compile in the agent's Windows ASCII worktree FAILED (CS0579 duplicate UpdateInGroup on the Stage 01 lifecycle). Local temporary proxy yielded 186/193 EditMode and 10/10 PlayMode, NOT a valid main PASS. Manager approved the narrow **Initialization proxy → same sole FixedStep lifecycle instance** and NUnit `int`→`ushort` binding correction in one reviewed PR; no second writer, no runtime architectural expansion. Logs and final clean EditMode/PlayMode tracked in #30. No Stage 02.3 input adapter merge before blocker resolution. Unicode/Burst #17 remains separate.
+
 ## Manager / developer division
 **Project owner** approves major scope changes and delegates GitHub Issues to developers or AI agents.
 
