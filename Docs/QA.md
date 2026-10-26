@@ -2,7 +2,7 @@
 
 ## Stage 03.1 + 03.2 / #38 atlas contract and GPU sprite renderer (2026-10-26, branch `feature/stage03-atlas-renderer`)
 
-**Agent evidence, IN REVIEW, not merged.** Tested code: `2d1f41f` (clean checkout, ASCII worktree, warm Library); raw XML,
+**Agent evidence, IN REVIEW ([PR #39](https://github.com/HolyPenguin21/mlf-legends/pull/39)), not merged.** Tested code: `2d1f41f` (clean checkout, ASCII worktree, warm Library); raw XML,
 Editor.log, TSV and PNG readbacks committed in `Docs/Evidence/38/` (index: `Docs/Evidence/38/README.md`). Machine: Windows 11,
 Ryzen 5 3600, 32 GB, RTX 2060 SUPER, Direct3D 12. The manager has not re-run Unity.
 
