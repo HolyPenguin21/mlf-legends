@@ -4,6 +4,61 @@
 
 **Non-blocking delivery rule (approved 2026-10-25):** The owner currently cannot run Unity tests from their environment. This MUST NOT block committing, merging or pushing requested changes, nor prevent moving on to subsequent implementation tasks. Perform every feasible static check, label Unity checks **NOT RUN**, record the residual risk and verify later when execution becomes possible. Delivery is not the same as test approval.
 
+## #35 + #30 Unity verification on the corrective branch (2026-10-26)
+
+**Status: Unity-verified on branch `fix/35-lifecycle-proxy` (PR pending manager review), no local patches.**
+Platform: Windows 11 Pro 10.0.26100, AMD Ryzen 5 3600, 32 GB; Unity **6000.5.4f1**, Entities 6.5.0, Collections 6.5.0,
+Burst 1.8.29, URP 17.5.0; `Tools/Run-UnityTests.ps1` (batchmode `-nographics`) on separate git worktrees.
+
+**Fixes in this branch**
+- CS0579: `BattleLifecycleSystem` keeps one `[UpdateInGroup(FixedStep)]`; new `BattleLifecycleInitializationProxy`
+  (Initialization, OrderFirst) updates the same existing instance. Default world auto-creates both,
+  `ReplayWorld.RuntimeSystems`/benchmark list both, manual lifecycle test worlds add the proxy.
+- NUnit: `EndRequestedInsideAFixedStep…` takes `int allies`, converted with `checked((ushort)allies)`; all 6 cases run.
+- Order tests now assert: one lifecycle instance per World (by system type), Initialization holds the proxy and not the
+  lifecycle, FixedStep holds the lifecycle and not the proxy, the proxy has only `UpdateInGroup(Initialization, OrderFirst)`,
+  the proxy really runs that instance (its `LastSystemVersion` advances) and drains the one buffer on a paused frame
+  with no tick or command phase; the proxy is inert without/after the lifecycle. Existing catch-up End/Restart tests unchanged.
+- Sorter warnings removed at their source (test registration; no Unity code touched): ReplayWorld now lists
+  `BeginSimulationEntityCommandBufferSystem` (target of Unity's FixedStep `[UpdateAfter]`) and sorts both test
+  producers together; clock/processor fixtures include the inert lifecycle (target of the clock's `[UpdateAfter]`).
+  Deprecated `FindObjectsByType(…, FindObjectsSortMode)` replaced (CS0618).
+
+**Unity runs (XML + Editor.log attached in #30)**
+
+| Run | SHA | Library | EditMode | PlayMode |
+|---|---|---|---|---|
+| ASCII worktree `D:/Unity/Project/mlf-s7`, run 1 | `f841bbf` | warm | 195/195 | 10/10 |
+| same, run 2 (new Unity process) | `f841bbf` | warm | 195/195 | 10/10 |
+| ASCII copy `D:/Unity/Project/mlf-s35-cold` | `f912f37` | cold import | 195/195 | — |
+| same, second process | `f912f37` | warm | 195/195 | 10/10 |
+| Cyrillic copy `D:/Unity/Project/млф-s35-кириллица` | `f912f37` | cold import | 195/195 | — |
+| same, second process | `f912f37` | warm | 195/195 | — |
+| Performance category, Burst on / off (`mlf-s7`) | `f912f37` | warm | 6/6 and 6/6 | — |
+
+`f841bbf..f912f37` changes documentation only. Compile: no `error CS`, no `warning CS` in project code.
+Remaining Entities warning: one `Ignoring invalid [UpdateAfter] on CombatCommandCollectionSystemGroup targeting
+CombatClockSystem` from `CombatClockTests.CombatPhasesDoNotRunWithoutAClock`, whose premise is a clock-less World
+(documented in the test). PlayMode logs `No Graphics Device found. Deformation systems will not run.` (Entities
+Graphics under `-nographics`; environment). The cold batchmode import again rewrote
+`Assets/Settings/UniversalRenderPipelineGlobalSettings.asset` in the test copy (known `-nographics` side effect, not
+committed). "Errors" in logs are the expected `LogAssert` clock-exhaustion messages and a licensing token notice.
+
+**#17 Unicode/Burst:** physical copies of one commit at an ASCII and a Cyrillic project path, each cold then warm:
+`ResetFromABurstSystemInTheCollectionPhaseRejectsThatTicksCommands` passed in all four runs with
+`BurstEnabled=True; Done=1; RanManaged=0` (Burst code executed); no failed imports in the Cyrillic cold log. The
+historical failure is **not reproduced** on this machine and Unity version; the root cause of the old report stays
+unknown (the user profile/temp path is Cyrillic in every run). Closing #17 is the manager's decision.
+
+**Manual GUI (owner, project `mlf-legends` on `fix/35-lifecycle-proxy`, Unity 6000.5.4f1 Editor):** reported
+**PASS** for: 1v1 start, bootstrap disable/enable repeated without entity accumulation; End/Restart at
+`Time.timeScale = 0`; duplicated bootstrap / late End of the previous owner (NotOwner) and additive scene switch;
+Enter/Exit Play Mode ×3 with *Do not reload Domain or Scene* and with *Reload Scene only*. Owner-reported; no log
+attached. 200v200, restart during movement/jump and several fixed ticks per frame have no GUI entry point: covered
+by the EditMode/PlayMode suites above (2/100/400 rosters, catch-up k = 2…18), not by manual checks.
+
+**Performance:** see `Docs/PERFORMANCE_BASELINE.md`, "Stage 02.2 + #35 measurement". GC.Alloc 0, no native drift.
+
 ## Actual Unity results from Stage 02.2 PR #34, 2026-10-26 — compile blocker
 
 The implementer reports a real run under Unity 6000.5.4f1 / Entities 6.5.0 on ASCII Windows worktree `D:/Unity/Project/mlf-s7`. **Current unpatched main/PR #34 FAILS TO COMPILE:** `BattleLifecycleSystem.cs(28,6): CS0579 Duplicate 'UpdateInGroup' attribute`, introduced by PR #28. Manager independently confirmed two annotations in source (not independently run in Unity). This is a CONFIRMED SOURCE-LEVEL / AGENT-REPORTED COMPILE FAILURE, not a mere outstanding NOT RUN.

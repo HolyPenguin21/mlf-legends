@@ -20,6 +20,50 @@ Stage 02.2 (#33) adds `CombatFacingSystem` (one linear pass reading `AppliedComb
 facing and one movement owner in State with facing first. Report scope says Stage 02.2 and outputs use
 `stage02-33-...`. Stage 02.2 costs at **2 / 100 / 400: NOT RUN**.
 
+## Stage 02.2 + #35 measurement (2026-10-26, measured)
+
+Commit `f912f37` (branch `fix/35-lifecycle-proxy`: Stage 02.1 movement, Stage 02.2 facing, #35 Initialization proxy),
+same machine as the historical baseline (Ryzen 5 3600, 32 GB, Windows 11 10.0.26100), Unity 6000.5.4f1 Editor
+batchmode `-nographics`, EditMode `-testCategory Performance` alone (6/6 passed per mode), Entities/Collections 6.5.0,
+Burst 1.8.29, safety checks + collections checks + job debugger on. Burst on: probe job executed Burst code; off:
+`--burst-disable-compilation`. The owner's Unity Editor was open on another project copy during the run (background
+load not controlled). The benchmark does not update Initialization, so the proxy is not in these numbers; requests are
+applied by updating the lifecycle handle directly, outside the measured ticks.
+
+Mean µs per tick (per request for start/end/restart), repetitions 1 / 2 / 3; last column N = 400 highest p95 per sample.
+GC.Alloc was **0** in every series, Burst on and off.
+
+| Burst on | N = 2 | N = 100 | N = 400 | N = 400 p95 | Stage 01 N = 400 |
+|---|---|---|---|---|---|
+| start | 21.6 / 21.4 / 21.8 | 70.7 / 72.2 / 70.6 | 221.5 / 221.7 / 218.9 | 251.7 | 197.8–205.8 |
+| first tick | 26.5 / 26.5 / 26.7 | 30.2 / 36.6 / 29.8 | 40.4 / 47.7 / 40.4 | 95.4 | 29.4–40.9 |
+| end | 18.0 / 18.0 / 17.9 | 19.7 / 22.0 / 20.0 | 22.6 / 24.1 / 22.9 | 37.0 | 21.2–30.0 |
+| restart | 20.6 / 21.0 / 20.8 | 67.8 / 68.9 / 71.6 | 214.9 / 215.7 / 219.9 | 257.8 | 190.9–191.6 |
+| idle, 1 tick/frame | 14.5 / 15.3 / 14.3 | 16.1 / 16.0 / 16.0 | 21.4 / 21.8 / 21.3 | 23.2 | 16.5–16.7 |
+| idle, 10 ticks/frame | 8.9 / 8.9 / 8.9 | 10.6 / 11.4 / 10.6 | 15.9 / 15.9 / 15.9 | 163.8 (frame) | 11.6 |
+| cmd, 1 tick/frame — runtime | 15.0 / 14.9 / 14.9 | 24.1 / 24.1 / 24.8 | 51.1 / 51.5 / 51.1 | 53.9 | 45.8–46.3 |
+| cmd, 4 ticks/frame — runtime | 10.4 / 10.5 / 10.5 | 19.8 / 19.5 / 19.6 | 47.7 / 46.8 / 47.0 | 212.1 (frame) | 41.7–41.9 |
+| cmd, 10 ticks/frame — runtime | 9.4 / 9.4 / 9.5 | 18.9 / 18.5 / 18.5 | 45.5 / 45.6 / 45.7 | 478.1 (frame) | 41.0–41.1 |
+| cmd-lead32, 1 tick/frame — runtime | 17.2 / 17.1 / 17.3 | 176.0 / 170.8 / 176.4 | 727.7 / 720.7 / 729.7 | 761.6 | 725.1–726.1 |
+| cmd-lead32, 10 ticks/frame — runtime | 11.5 / 11.6 / 11.5 | 171.8 / 172.0 / 164.4 | 720.1 / 735.6 / 715.1 | 7653.0 (frame) | 717.8–746.8 |
+
+| Burst off | N = 2 | N = 100 | N = 400 | Stage 01 N = 400 |
+|---|---|---|---|---|
+| start | 48.2 / 47.8 / 48.4 | 241.3 / 239.6 / 228.9 | 776.9 / 782.7 / 779.6 | 681.1–682.5 |
+| restart | 48.7 / 49.3 / 49.7 | 230.9 / 227.9 / 228.9 | 771.5 / 774.9 / 778.4 | 671.5–677.3 |
+| idle, 1 tick/frame | 23.0 / 22.9 / 23.4 | 38.2 / 38.8 / 38.5 | 84.6 / 84.6 / 84.8 | 44.8–45.1 |
+| cmd, 1 tick/frame — runtime | 22.2 / 22.3 / 22.3 | 68.0 / 67.9 / 68.1 | 223.0 / 223.1 / 224.0 | 183.7–184.7 |
+| cmd-lead32, 1 tick/frame — runtime | 28.9 / 28.7 / 29.3 | 488.3 / 488.0 / 496.6 | 2130.8 / 2117.5 / 2130.6 | 2108.5–2119.0 |
+
+Memory: combatant chunks 1 / 1 / 4 (16 / 16 / 64 KiB), queue buffer high-water 312 KB at N = 400, unchanged.
+Native growth per frame (cmd k1/k10, lead32 k1/**k18**, 100 frames × 3 reps): median and p95 0 B, at most one 64 KiB
+step, drift 0 B in every series, Burst on and off. Start/end/restart series: 0 B native growth in 35 of 36 (one single 64 KiB step in one N = 2 restart series, not repeated). GC.Alloc 0.
+
+Reading (measured, not optimised): with Burst the added State pass (facing + movement over N actors, plus two system
+dispatches) costs ≈ +2 µs/tick at N = 2 and ≈ +5 µs/tick at N = 400 (idle and cmd alike); spawn/restart ≈ +23 µs at
+N = 400 (`CombatMotion` initialisation). The full pending store still dominates (≈ 728 µs at N = 400, #25). Without
+Burst the managed movement/facing loops add ≈ 40 µs/tick at N = 400. No optimisation is proposed from these numbers.
+
 ## How to run
 
 The tests are in `Assets/Tests/EditMode/Performance/` (category `Performance`) and also run as part of the normal
