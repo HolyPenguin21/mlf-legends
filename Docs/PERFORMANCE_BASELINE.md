@@ -101,8 +101,12 @@ Re-measured after the manager review on `4d9e431` (same method; raw TSVs in `Doc
 mean us per tick, run 1 reps 1/2/3 — detached k1 N = 2 15.7/15.6/15.8, N = 400 23.2/23.1/22.7; held k1 N = 2
 22.0/21.8/21.9, N = 400 29.0/29.0/29.4; held k10 N = 400 20.3/20.3/20.3. Burst off held k1 N = 400 93.1/91.2/93.4
 (detached 85.9/87.0/85.5). Same reading: about +7 us/tick at 1 tick/frame, +4 us/tick at 10. Existing benchmark unchanged
-(idle k1 N = 400 21.5-21.7 us Burst on, 83.9-84.2 us Burst off). GC.Alloc: 0 except a single sample in one detached series
-(run 1, N = 400, k1, rep 3; not in run 2; unattributed).
+(idle k1 N = 400 21.5-21.7 us Burst on, 83.9-84.2 us Burst off). Input benchmark GC.Alloc: 0 except a single sample in one detached series
+(run 1, N = 400, k1, rep 3; not in run 2; unattributed). Manager raw-TSV review additionally found one GC.Alloc in each
+existing-benchmark Burst-off N = 2 Start rep 2 and rep 3 (`burst-off/stage02-33-burst-off-n2.tsv`). Those are lifecycle
+measurements, not attached input measurements; origins are not attributed. Do not generalize the zero samples in the
+held input series to every scenario. Paired Burst-on median-of-repetition input overhead is about +6–7 us at k1 and
++4 us at k10; camera and full-frame cost remain unmeasured.
 
 ## How to run
 

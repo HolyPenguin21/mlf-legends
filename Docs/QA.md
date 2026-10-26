@@ -1,9 +1,21 @@
 # MLF Legends — Quality assurance and evidence
 
+## Manager re-review of merged PR #37 (2026-10-26)
+
+**PASS — source and supplied raw evidence independently inspected; Unity not re-run by manager.** Reviewed main `72bb712920920f0f0ea742a4a86076baf904ff68`, merge `fc5fb675ee1a13de7ee839e40337e1cb78adcbb0`. Compared tested `4d9e431bc7474cf7233f8edaec60f0c14df65ab0` to reviewed main: only documentation, evidence and .gitattributes differ; no runtime/test/scene changes.
+
+The three confirmed defects are corrected: End preserves the panned view on its first refresh; Attach binds the current session without clearing fresh post-attach input on the first tick; the enabled adapter follows a late/replaced default World while enable-order arbitration preserves one source. Focus tests now drive InputManager focus handling and restored device state, rather than only calling the adapter callback. No new simulation owner, clock, queue or per-fighter GameObject was introduced.
+
+Read all five final NUnit XML files: EditMode **244/244 twice**, PlayMode **21/21 twice**, Burst-off Performance **7/7**; no skipped/failed cases. Final logs report exit 0 and no C# compiler errors/warnings or Leak Detected in these warm runs. The known clock-less fixture sorter warning, no-graphics PlayMode warning and explicit Burst-disabled warning remain qualified. Read the mutation diff and negative-control XML: all **4 EditMode + 4 PlayMode** selected cases fail at the intended reviewed behaviours. Negative-control mutation compilation has CS0162; this is not a warning in the final code.
+
+**Performance evidence qualification:** all attached/held input series have GC.Alloc 0; the known detached Burst-on run 1 N=400/k1/rep3 has one sample. Additionally, `4d9e431/burst-off/stage02-33-burst-off-n2.tsv` records **one GC.Alloc in each Start rep 2 and rep 3**. The earlier statement that every existing-benchmark series had zero samples was too broad. These samples are unattributed; they do not establish a producer regression or a leak. Burst-on paired median mean-per-tick input overhead is approximately **+6–7 us at k1**, **+4 us at k10**, for N=2/400. Camera and full-frame performance are not measured.
+
+**Known focus limitation, not hidden by the PASS:** a button released while unfocused, with no release state reported by the device, can lose its first press after focus returns; the following release unblocks it (documented in INPUT.md). Actual OS Alt-Tab/hardware validation, owner GUI checks, Domain Reload disabled with these components, player build and camera/full-frame measurements remain **NOT RUN**. #30/#17/#25 stay open in their existing scope. No blocking defect established in the requested fixes; Stage 02 input/camera implementation is manager-reviewed and Stage 03 planning may proceed.
+
 ## Stage 02.3 + 02.4 / #22 after manager review (2026-10-26, PR #37, branch `feature/stage02-22-input-camera`)
 
 **Merged on the owner's instruction as main `fc5fb675ee1a13de7ee839e40337e1cb78adcbb0` (2026-10-26).** Merged code equals the
-tested `4d9e431` (later commits: Markdown and evidence files only). Manager re-review of the corrections: not yet recorded.
+tested `4d9e431` (later commits: Markdown and evidence files only). Manager re-review: PASS with the evidence qualifications above.
 
 **Tested code: `4d9e431bc7474cf7233f8edaec60f0c14df65ab0`** (its code equals `4768386`; only Markdown differs), clean detached
 checkout, same machine/versions/runner as below. **Raw XML, Editor.log and TSV are committed in `Docs/Evidence/22/`**
@@ -35,7 +47,7 @@ Review findings and their fixes (all in this PR, no new subsystems):
 
 Logs: no `error CS`/`warning CS`; one known intentional clock-less sorter warning per EditMode run; no `Leak Detected`;
 PlayMode only `No Graphics Device found` (environment). `ProjectSettings/TimeManager.asset` batchmode reformat reverted,
-not committed. Benchmark: GC.Alloc 0 in every held series and every existing-benchmark series; **one** GC.Alloc sample in
+not committed. Benchmark: GC.Alloc 0 in every held input series; the Burst-off existing-benchmark N=2 Start reps 2 and 3 each record one sample (unattributed). **One** GC.Alloc sample in
 one *detached* (inert producer) series (Burst on, run 1, N = 400, 1 tick/frame, rep 3, max frame 67.5 us), not reproduced
 in run 2; origin not attributed (the detached producer returns before any work).
 
