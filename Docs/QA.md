@@ -1,5 +1,32 @@
 # MLF Legends — Quality assurance and evidence
 
+## #38 bottom-up recheck after the merge of PR #39 (2026-10-26, branch `fix/38-recheck`)
+
+Owner-requested re-audit (manifest/texture → geometry/UV/anchors → buffers/shader/depth → ECS reads/World lifetime →
+camera/URP → tests/benchmark → docs). Tested `8ea534f`, raw files in `Docs/Evidence/38/8ea534f/`: **EditMode 329/329 ×2,
+PlayMode 30/30 ×2 (8 GPU cases Ignored = NOT RUN without device), D3D12 Graphics+Performance 8/8 ×2**, no C#/shader
+errors or warnings, no leaks.
+
+Findings and fixes:
+1. **Defect:** a page imported without alpha (e.g. RGB24) was accepted — every rect would draw as an opaque box. Now
+   rejected (`has no alpha channel`); test with an RGB24 page.
+2. **Defect (found by the new test, run on `d3caf83`: 327/329):** the `com.unity.serialization` reader stops at the end
+   of the root value and silently ignores trailing content (`{…} x`, `{…} }`). Now rejected by a strings/escapes-aware
+   end-of-root check. A second root object, comments and a UTF-8 BOM (now tolerated) are covered by tests.
+3. A superseded renderer extracted ECS every frame for nothing; it now neither reads nor draws (binding/selections kept).
+4. Extraction and submission CPU time are measured separately (`RenderStats`, TSV): submission ≈ 18 µs at every count;
+   extraction median 12.3 / 52.7 / 189.1 µs for 2 / 100 / 400 (Editor batchmode; total 30.9 / 71.1 / 209.1 µs).
+   Draw calls 6 → 8, GC.Alloc 0, one instance buffer — unchanged.
+5. Test gap: depth crossing was only checked with static poses. Added real fixed-tick movement (Z towards/through each
+   other, then X pass at equal depth: exactly one front change) and a GPU step-by-step pass-through across pages.
+6. Docs: contract states binary body alpha (alpha < 128 not drawn), BOM/comments/trailing content, anchors may lie
+   outside the rect; SPRITES.md limits (exact for pitch ≈ 5.8°–84.3°, below-pivot pixels as a floor decal, no fog/TAA
+   motion vectors/shadow caster, target 4.5, no XR, not pixel-perfect); BOOTSTRAP.md scene contents; PERFORMANCE_BASELINE
+   pointer.
+
+Process note: an intermediate commit `95eb8d7` did not compile (a test string literal broken by the editing tool; fixed
+in `d3caf83`); its and `d3caf83`'s runs are superseded and not kept. The NOT RUN list of #38 below is unchanged.
+
 ## Stage 03.1 + 03.2 / #38 atlas contract and GPU sprite renderer (2026-10-26, branch `feature/stage03-atlas-renderer`)
 
 **Agent evidence, IN REVIEW ([PR #39](https://github.com/HolyPenguin21/mlf-legends/pull/39)), not merged.** Tested code: `2d1f41f` (clean checkout, ASCII worktree, warm Library); raw XML,

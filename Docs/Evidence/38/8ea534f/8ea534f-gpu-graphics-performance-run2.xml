@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="8" result="Passed" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-26 14:35:37Z" end-time="2026-10-26 14:35:42Z" duration="4,4450935">
+  <test-suite type="TestSuite" id="1058" name="mlf-legends" fullname="mlf-legends" runstate="Runnable" testcasecount="38" result="Passed" start-time="2026-10-26 14:35:37Z" end-time="2026-10-26 14:35:42Z" duration="4.445094" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1051" name="MLFLegends.Tests.PlayMode.dll" fullname="D:/Unity/Project/mlf-s7/Library/ScriptAssemblies/MLFLegends.Tests.PlayMode.dll" runstate="Runnable" testcasecount="38" result="Passed" start-time="2026-10-26 14:35:37Z" end-time="2026-10-26 14:35:42Z" duration="4.434611" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="16488" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1052" name="MLFLegends" fullname="MLFLegends" runstate="Runnable" testcasecount="38" result="Passed" start-time="2026-10-26 14:35:37Z" end-time="2026-10-26 14:35:42Z" duration="4.433515" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1053" name="Tests" fullname="MLFLegends.Tests" runstate="Runnable" testcasecount="38" result="Passed" start-time="2026-10-26 14:35:37Z" end-time="2026-10-26 14:35:42Z" duration="4.432774" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1054" name="PlayMode" fullname="MLFLegends.Tests.PlayMode" runstate="Runnable" testcasecount="38" result="Passed" start-time="2026-10-26 14:35:37Z" end-time="2026-10-26 14:35:42Z" duration="4.431919" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1025" name="CombatSpriteGraphicsTests" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-10-26 14:35:37Z" end-time="2026-10-26 14:35:40Z" duration="3.119939" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="Graphics" />
+              </properties>
+              <test-case id="1028" name="AFighterPassingThroughAnotherInDepthSwapsFrontExactlyAtEqualDepth" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.AFighterPassingThroughAnotherInDepthSwapsFrontExactlyAtEqualDepth" methodname="AFighterPassingThroughAnotherInDepthSwapsFrontExactlyAtEqualDepth" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" seed="1101196388" result="Passed" start-time="2026-10-26 14:35:37Z" end-time="2026-10-26 14:35:39Z" duration="1.406100" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1029" name="JumpPanAndZoomKeepTheDepthOrder" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.JumpPanAndZoomKeepTheDepthOrder" methodname="JumpPanAndZoomKeepTheDepthOrder" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" seed="1218215932" result="Passed" start-time="2026-10-26 14:35:39Z" end-time="2026-10-26 14:35:39Z" duration="0.430774" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1027" name="NearerFightersCoverFartherOnesAcrossPagesAndTiesFollowTheId" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.NearerFightersCoverFartherOnesAcrossPagesAndTiesFollowTheId" methodname="NearerFightersCoverFartherOnesAcrossPagesAndTiesFollowTheId" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" seed="286967106" result="Passed" start-time="2026-10-26 14:35:39Z" end-time="2026-10-26 14:35:40Z" duration="0.872927" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1030" name="OpaqueGeometryOccludesInFrontAndNotBehindAndFeetStayOnTheFloor" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.OpaqueGeometryOccludesInFrontAndNotBehindAndFeetStayOnTheFloor" methodname="OpaqueGeometryOccludesInFrontAndNotBehindAndFeetStayOnTheFloor" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" seed="1612272147" result="Passed" start-time="2026-10-26 14:35:40Z" end-time="2026-10-26 14:35:40Z" duration="0.038657" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1026" name="TrimFlipColoursHolesAndFramesLandOnTheExpectedPixels" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.TrimFlipColoursHolesAndFramesLandOnTheExpectedPixels" methodname="TrimFlipColoursHolesAndFramesLandOnTheExpectedPixels" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" seed="871556758" result="Passed" start-time="2026-10-26 14:35:40Z" end-time="2026-10-26 14:35:40Z" duration="0.354099" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1031" name="CombatSpritePerformanceTests" fullname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests" classname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-26 14:35:40Z" end-time="2026-10-26 14:35:42Z" duration="1.309180" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="Performance" />
+              </properties>
+              <test-suite type="ParameterizedMethod" id="1035" name="RendererCostAndAllocationsFor2_100_400" fullname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests.RendererCostAndAllocationsFor2_100_400" classname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-26 14:35:40Z" end-time="2026-10-26 14:35:42Z" duration="1.308037" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                </properties>
+                <test-case id="1032" name="RendererCostAndAllocationsFor2_100_400(0)" fullname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests.RendererCostAndAllocationsFor2_100_400(0)" methodname="RendererCostAndAllocationsFor2_100_400" classname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests" runstate="Runnable" seed="616820769" result="Passed" start-time="2026-10-26 14:35:40Z" end-time="2026-10-26 14:35:41Z" duration="0.443924" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1033" name="RendererCostAndAllocationsFor2_100_400(49)" fullname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests.RendererCostAndAllocationsFor2_100_400(49)" methodname="RendererCostAndAllocationsFor2_100_400" classname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests" runstate="Runnable" seed="172202012" result="Passed" start-time="2026-10-26 14:35:41Z" end-time="2026-10-26 14:35:41Z" duration="0.423637" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1034" name="RendererCostAndAllocationsFor2_100_400(199)" fullname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests.RendererCostAndAllocationsFor2_100_400(199)" methodname="RendererCostAndAllocationsFor2_100_400" classname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests" runstate="Runnable" seed="1695517226" result="Passed" start-time="2026-10-26 14:35:41Z" end-time="2026-10-26 14:35:42Z" duration="0.438920" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[Saving results to: C:/Users/Стас/AppData/LocalLow/DefaultCompany/mlf-legends\TestResults.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

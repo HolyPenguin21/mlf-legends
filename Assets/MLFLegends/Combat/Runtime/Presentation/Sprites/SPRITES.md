@@ -72,6 +72,7 @@ URP's `sampler_PointClamp` at mip 0, independent of the page's import filter/wra
 - One `RenderMeshPrimitives` call per atlas page that has instances: the instance buffer is grouped by page and
   `_InstanceOffset` selects the page's range (the API has no start instance). Calls depend on pages, not fighters.
   Measured: 6 → 8 draw calls per camera render with the renderer at 2, 100 and 400 fighters (one page).
+  `RenderStats.ExtractMicroseconds`/`SubmitMicroseconds` give the CPU split of the last refresh.
 - Bounds per page: support points' box + the atlas' real extents (widest frame both ways, highest top, deepest part
   below the pivot, push range). No culling of the simulation, ever.
 - Memory of an atlas: Σ page `W × H × 4` bytes (no mipmaps/compression); fixture 126 976 B, frame table 96 B. PNG size

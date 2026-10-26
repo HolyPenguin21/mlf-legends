@@ -14,6 +14,7 @@ in licensing channel names; no serial/licence IDs or e-mail.
 | `2d1f41f/*-gpu-graphics-performance-run{1,2}.*` | `2d1f41f` | `Unity.exe -batchmode -projectPath <wt> -runTests -testPlatform PlayMode -testCategory "Graphics;Performance"` (graphics device, no `-nographics`) | **PASS 7/7, 7/7** on Direct3D 12 |
 | `2d1f41f/gpu-run{1,2}/graphics/*.png` | `2d1f41f` | written by the Graphics tests (RenderTexture → `Texture2D.ReadPixels`) | readbacks that were compared pixel by pixel |
 | `2d1f41f/gpu-run{1,2}/stage03-sprites-n{2,100,400}.tsv` | `2d1f41f` | written by the Performance test | see QA.md (#38) |
+| `8ea534f/*` (bottom-up recheck, branch `fix/38-recheck`) | `8ea534f` | same three series | **EditMode 329/329 ×2; PlayMode 30/30 ×2 (8 Ignored = NOT RUN without device); GPU Graphics+Performance 8/8 ×2**; TSVs add `extract_median_us`/`submit_median_us` |
 | `2d1f41f-negative-control/` | `2d1f41f` + `mutations.diff` (temporary, never committed) | Graphics category (GPU) and EditMode `SpriteCardMathTests|CombatSpriteExtractionTests` against three simultaneous mutations: UV-only flip, no depth tie-break, camera-plane card | **GPU 0/4, EditMode 13/21 (8 FAIL)** — the tests detect each defect (first failing assertion per test shown in the XML) |
 
 Column meanings of the TSVs: `refresh_*_us` = `CombatSpriteRenderer.Refresh` (extraction + submission) CPU time;
