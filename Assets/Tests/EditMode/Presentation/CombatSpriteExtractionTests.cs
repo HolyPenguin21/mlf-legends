@@ -128,6 +128,10 @@ namespace MLFLegends.Tests.EditMode
         {
             m_Replay.Request(BattleRequest.Start(Setup(30)));
             m_Replay.Step();
+            using (var query = m_Replay.Manager.CreateEntityQuery(typeof(CombatPosition), typeof(InCombat)))
+            using (var entities = query.ToEntityArray(Allocator.Temp))
+                foreach (var entity in entities)
+                    m_Replay.Manager.SetComponentData(entity, new CombatPosition { Value = float3.zero });
             Run();
             var instances = ById();
             // Rendered depth = key − push: strictly back-to-front by (key, id), lowest ID in front on ties.
@@ -136,12 +140,12 @@ namespace MLFLegends.Tests.EditMode
             {
                 var back = m_Basis.DepthKey(ordered[i - 1].Value.Position) - ordered[i - 1].Value.DepthOffset;
                 var front = m_Basis.DepthKey(ordered[i].Value.Position) - ordered[i].Value.DepthOffset;
-                Assert.That(back - front, Is.GreaterThanOrEqualTo(Separation - 1e-5f), $"{ordered[i - 1].Key} behind {ordered[i].Key}");
+                Assert.That(back - front, Is.GreaterThan(0f), $"{ordered[i - 1].Key} behind {ordered[i].Key}");
             }
 
-            Assert.That(m_Extraction.MaxDepthOffset, Is.LessThanOrEqualTo(instances.Count * Separation));
+            Assert.That(m_Extraction.MaxDepthOffset, Is.LessThanOrEqualTo(CombatSpriteExtraction.DepthOffsetBudget));
             var leaders = m_Replay.Records.Last();
-            Assert.That(m_Basis.DepthKey(leaders.Combatant(leaders.HumanId).Position), Is.EqualTo(m_Basis.DepthKey(leaders.Combatant(leaders.AiId).Position)),
+            Assert.That(m_Basis.DepthKey(instances[leaders.HumanId].Position), Is.EqualTo(m_Basis.DepthKey(instances[leaders.AiId].Position)),
                 "Both leaders stand at Z = 0: an exact tie…");
             Assert.That(instances[leaders.HumanId].DepthOffset, Is.GreaterThan(instances[leaders.AiId].DepthOffset), "…resolved by the lower ID (human) in front.");
 
@@ -153,6 +157,26 @@ namespace MLFLegends.Tests.EditMode
             Run();
             var after = ById().OrderByDescending(p => m_Basis.DepthKey(p.Value.Position) - p.Value.DepthOffset).Select(p => p.Key).ToArray();
             Assert.That(after, Is.EqualTo(before.Where(id => id != removed).ToArray()));
+        }
+
+        [Test]
+        public void SelectedTrimFacingAndConfiguredScaleDefineTheActualOverlap()
+        {
+            m_Replay.Request(BattleRequest.Start(new BattleSetup
+            {
+                Human = new CombatantSetup { Team = 1, Position = float3.zero, Facing = FacingDirection.Right },
+                Ai = new CombatantSetup { Team = 2, Position = new float3(1f, 0f, 0f), Facing = FacingDirection.Left },
+            }));
+            m_Replay.Step();
+            var human = m_Replay.Session.HumanCombatant;
+            var ai = m_Replay.Session.AiCombatant;
+            Run();
+            Assert.That(ById()[human.Value].DepthOffset, Is.EqualTo(0f), "Default art scale: trimmed cards are disjoint.");
+            m_Extraction.Run(m_Replay.World, m_Atlas, m_Basis, Separation, 0, pixelWorldSize: 0.125f);
+            Assert.That(ById()[human.Value].DepthOffset, Is.GreaterThan(0f), "Larger configured scale: same cards overlap.");
+            m_Extraction.Select(ai, 2); // tech_c is wholly left of its authored pivot; facing left puts it to the right
+            m_Extraction.Run(m_Replay.World, m_Atlas, m_Basis, Separation, 0, pixelWorldSize: 0.125f);
+            Assert.That(ById()[human.Value].DepthOffset, Is.EqualTo(0f), "Selected page-1 trim is mirrored away from the local card.");
         }
 
         [Test]

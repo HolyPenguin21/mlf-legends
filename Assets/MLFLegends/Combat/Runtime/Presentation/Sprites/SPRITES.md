@@ -52,17 +52,29 @@ URP's `sampler_PointClamp` at mip 0, independent of the page's import filter/wra
 
 ## Depth policy
 
-**Manager correction #41 OPEN (2026-10-26):** the current roster-wide cumulative push below can pull a fighter through nearby opaque geometry when unrelated fighters share its depth, even far apart in X/outside the camera. This is a known defect pending correction, not accepted 3D occlusion. The following formulas describe the shipped code under review.
+Correction #41 replaces the roster-wide accumulating push. Unity/GPU validation of this correction is **NOT RUN**
+in the Linux editing environment; acceptance still requires the new graphics and allocation controls.
 
-- Body: alpha clip (cutoff 0.5) with depth write/test in every pass; transparent pixels write nothing. Translucent VFX
-  will be a separate future material/pass.
-- Cards are planes perpendicular to `DepthAxis`: one view depth per fighter (`dot(position, DepthAxis) / cos pitch`),
-  independent of X and jump height.
-- **Tie-break (render only):** fighters are ordered back to front by (depth, CombatantId descending); each card is
-  pushed towards the camera until it is at least `DepthSeparation` (default 0.002 units) in front of the previous one.
-  Equal depth → lowest `CombatantId` in front; independent of chunk order, packing or pages; pushes are only applied
-  where cards are closer than the separation. Bound: `count × separation` (0.8 units for 400 equal-depth fighters (their X positions need not coincide),
-  typically ≤ 0.04 for formation rows).
+- Body: alpha clip (cutoff 0.5), depth write/test in all existing passes; transparent pixels write nothing.
+- Depth key remains `dot(position, DepthAxis) / cos pitch`, independent of X and jump height.
+- Extract the actual selected frame's projected rectangle (trim, facing and configured pixel-world scale included).
+  Connect overlapping rectangles only when their keys differ by at most `B = 0.0625` world units. Disconnected
+  components do not affect each other, including distant equal-Z/offscreen fighters. Rectangle overlap is conservative
+  (transparent holes are not inspected); transitive overlap chains belong to the same component.
+- Within each component, order by (depth descending, CombatantId descending), across all pages. For `m` cards use
+  `gap = min(DepthSeparation, B / max(1, m-1))`, then `rendered = min(key, previous - gap)`. Lowest ID wins equal depth.
+  Double intermediate arithmetic avoids an accumulated float rounding error; uploaded offsets are clamped to `[0,B]`.
+  The push of card `i` is at most `(i-1)*gap`, so the total **never exceeds B**, for any roster size. Separated keys
+  need no push. Adding/removing an overlapping neighbour can redistribute this bounded range but never changes the
+  relative (depth, ID) order. No simulation state or visibility controls this policy.
+- Budget rationale: `1/16` world unit is 1/32 of the calibrated two-unit body height. For 400 coincident cards it allows
+  a gap of `0.0625/399 = 0.00015664`, larger than the conservative float depth step `1000 * 2^-23 = 0.00011921` over
+  the test camera's 1000-unit depth range (also larger than a D24 step). Default bias + maximum tie push is `0.0825`
+  along the ray, or about `0.0632` in Z at pitch 40°, below the regression wall clearance 0.21. This is a bounded
+  occlusion tolerance, not exact coplanar ordering against arbitrarily close 3D surfaces. Arbitrary larger clip ranges,
+  very large coordinates or more than 400 coincident layers require separate device validation; no such claim is made.
+- One scratch comparison pass, worst-case `m*(m-1)/2` pairs (79,800 at 400), early-out by sorted key gap. Reused native
+  footprints and native Temp group scratch; no new persistent spatial system. Its CPU cost must be remeasured.
 - **Bias:** every card additionally moves `DepthBias` (default 0.02 units) towards the camera along the view direction
   (never changes its screen image), so the ground part wins against a coplanar floor.
 - `CombatPosition` is never changed. Visibility comes from the GPU depth test, not from CPU or buffer order.

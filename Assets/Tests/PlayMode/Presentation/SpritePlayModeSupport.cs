@@ -129,10 +129,13 @@ namespace MLFLegends.Tests.PlayMode
             renderer.Refresh();
             camera.Render();
             var previous = RenderTexture.active;
-            RenderTexture.active = camera.targetTexture;
-            readback.ReadPixels(new Rect(0, 0, readback.width, readback.height), 0, 0, false);
-            readback.Apply(false);
-            RenderTexture.active = previous;
+            try
+            {
+                RenderTexture.active = camera.targetTexture;
+                readback.ReadPixels(new Rect(0, 0, readback.width, readback.height), 0, 0, false);
+                readback.Apply(false);
+            }
+            finally { RenderTexture.active = previous; }
             return readback.GetPixels32();
         }
 

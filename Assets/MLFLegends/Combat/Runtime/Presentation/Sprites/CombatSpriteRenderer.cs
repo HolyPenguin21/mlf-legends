@@ -108,7 +108,7 @@ namespace MLFLegends.Combat
         [Header("Depth (render only)")]
         [Tooltip("Constant push of every card towards the camera, world units; keeps feet above a coplanar floor.")]
         [SerializeField, Range(0f, 0.25f)] float m_DepthBias = 0.02f;
-        [Tooltip("Minimum view-depth gap enforced between cards, world units; resolves equal depth by CombatantId.")]
+        [Tooltip("Requested view-depth gap within overlapping cards; compressed to a fixed 1/16-world-unit total budget.")]
         [SerializeField, Range(0.0001f, 0.05f)] float m_DepthSeparation = 0.002f;
 
         [Header("Debug")]
@@ -361,7 +361,7 @@ namespace MLFLegends.Combat
             var start = Stopwatch.GetTimestamp();
             // A superseded renderer neither reads ECS nor draws (its World binding and selections are kept).
             if (IsActiveOwner)
-                m_Extraction.Run(camera != null ? ResolveWorld() : null, m_Atlas, m_Basis, m_DepthSeparation, m_DefaultFrame);
+                m_Extraction.Run(camera != null ? ResolveWorld() : null, m_Atlas, m_Basis, m_DepthSeparation, m_DefaultFrame, PixelWorldSize);
             else
                 m_Extraction.Clear();
             m_Stats.ExtractMicroseconds = Microseconds(start);

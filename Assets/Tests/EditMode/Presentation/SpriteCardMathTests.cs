@@ -154,13 +154,43 @@ namespace MLFLegends.Tests.EditMode
         }
 
         [Test]
-        public void TheTieBreakPushIsBoundedByCountTimesSeparation()
+        public void FourHundredCoincidentCardsKeepStrictOrderInsideAFixedBudget()
         {
             var cases = Enumerable.Range(1, 400).Select(i => (0f, (uint)i)).ToArray();
             var offsets = Offsets(cases, 0.002f, out var max);
-            Assert.That(max, Is.EqualTo(399 * 0.002f).Within(1e-4f), "Worst case: all 400 at one depth.");
+            Assert.That(max, Is.EqualTo(CombatSpriteExtraction.DepthOffsetBudget).Within(1e-6f));
+            for (uint id = 1; id < 400; id++)
+                Assert.That(offsets[id] - offsets[id + 1], Is.GreaterThan(0.00015f), "All 400 ties remain distinct.");
             Assert.That(offsets[1], Is.EqualTo(max), "Lowest ID in front.");
             Assert.That(offsets[400], Is.EqualTo(0f));
+        }
+
+        [TestCase(2)]
+        [TestCase(100)]
+        [TestCase(400)]
+        public void DisjointFootprintsCannotPushTheLocalCard(int count)
+        {
+            using var keys = new NativeArray<float>(count, Allocator.Temp);
+            using var ids = new NativeArray<uint>(Enumerable.Range(1, count).Select(i => (uint)i).ToArray(), Allocator.Temp);
+            using var offsets = new NativeArray<float>(count, Allocator.Temp);
+            var rects = new NativeArray<float4>(count, Allocator.Temp);
+            try
+            {
+                for (var i = 0; i < count; i++) rects[i] = new float4(i * 10f, 0f, i * 10f + 1f, 2f);
+                CombatSpriteExtraction.ComputeDepthOffsets(keys, ids, 0.002f, offsets, rects);
+                Assert.That(offsets.ToArray(), Is.All.EqualTo(0f), "Equal depth alone never connects distant cards.");
+            }
+            finally { rects.Dispose(); }
+        }
+
+        [Test]
+        public void DenseDepthChainStaysBoundedAndFollowsDepthBeforeId()
+        {
+            var cases = Enumerable.Range(1, 400).Select(i => (i * 0.00001f, (uint)i)).ToArray();
+            var offsets = Offsets(cases, 0.002f, out var max);
+            Assert.That(max, Is.LessThanOrEqualTo(CombatSpriteExtraction.DepthOffsetBudget));
+            for (uint id = 1; id < 400; id++)
+                Assert.That(cases[id - 1].Item1 - offsets[id], Is.LessThan(cases[id].Item1 - offsets[id + 1]));
         }
 
         static Dictionary<uint, float> Offsets((float key, uint id)[] cases, float separation) => Offsets(cases, separation, out _);

@@ -37,6 +37,11 @@ namespace MLFLegends.Combat
     /// </remarks>
     public sealed class CombatSpriteExtraction : IDisposable
     {
+        // 1/16 world unit along the view ray: below the fixed 0.21-world-unit wall regression clearance.
+        // At 400 coincident cards the gap is 0.0625/399 = 0.0001566, above both D24's and float depth's
+        // worst step over the test camera's 1000-unit range (0.0001193). Never grows with roster size.
+        public const float DepthOffsetBudget = 0.0625f;
+
         public static readonly int InstanceStride = Marshal.SizeOf<SpriteInstanceGpu>();
 
         static readonly ProfilerMarker s_Marker = new ProfilerMarker("CombatSpriteExtraction.Run");
@@ -51,6 +56,7 @@ namespace MLFLegends.Combat
         NativeList<float> m_Keys;
         NativeList<uint> m_SortIds;
         NativeList<float> m_Offsets;
+        NativeList<float4> m_Footprints;
         NativeList<SpriteInstanceGpu> m_Instances;
         NativeList<uint> m_InstanceIds;
         int[] m_PageCounts = Array.Empty<int>();
@@ -83,6 +89,7 @@ namespace MLFLegends.Combat
             m_Keys = new NativeList<float>(initialCapacity, Allocator.Persistent);
             m_SortIds = new NativeList<uint>(initialCapacity, Allocator.Persistent);
             m_Offsets = new NativeList<float>(initialCapacity, Allocator.Persistent);
+            m_Footprints = new NativeList<float4>(initialCapacity, Allocator.Persistent);
             m_Instances = new NativeList<SpriteInstanceGpu>(initialCapacity, Allocator.Persistent);
             m_InstanceIds = new NativeList<uint>(initialCapacity, Allocator.Persistent);
         }
@@ -138,7 +145,7 @@ namespace MLFLegends.Combat
         /// Rebuilds the instances from <paramref name="world"/> (null or disposed → none). <paramref name="defaultFrame"/> is
         /// drawn without a selection; selections outside the atlas fall back to it.
         /// </summary>
-        public void Run(World world, SpriteAtlas atlas, in SpriteCardBasis basis, float depthSeparation, uint defaultFrame)
+        public void Run(World world, SpriteAtlas atlas, in SpriteCardBasis basis, float depthSeparation, uint defaultFrame, float pixelWorldSize = 2f / 96f)
         {
             if (m_Disposed)
                 throw new ObjectDisposedException(nameof(CombatSpriteExtraction));
@@ -185,8 +192,6 @@ namespace MLFLegends.Combat
                 m_SortIds[i] = ids[i].Value;
             }
 
-            MaxDepthOffset = ComputeDepthOffsets(m_Keys.AsArray(), m_SortIds.AsArray(), depthSeparation, m_Offsets.AsArray(), m_Sort);
-
             var frameCount = (uint)atlas.FrameCount;
             var fallback = defaultFrame < frameCount ? defaultFrame : 0u;
             var framePages = atlas.FramePages;
@@ -194,12 +199,24 @@ namespace MLFLegends.Combat
             m_InstanceIds.ResizeUninitialized(count);
             // Not `using var`: element writes on a using-declared struct do not compile (CS1654).
             var frames = new NativeArray<uint>(count, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            m_Footprints.ResizeUninitialized(count);
+            var screenUp = math.normalize(math.cross(basis.ViewDirection, basis.Right));
             for (var i = 0; i < count; i++)
             {
                 var frame = m_Selections.TryGetValue(ids[i].Value, out var selected) && selected < frameCount ? selected : fallback;
                 frames[i] = frame;
                 m_PageCounts[framePages[(int)frame]]++;
+                var rect = atlas.Frames[(int)frame].CardRect;
+                var facing = facings[i].Value == FacingDirection.Left ? -1f : 1f;
+                var a = SpriteCardMath.CardToWorld(basis, positions[i].Value, new float2(rect.x * facing, rect.y), pixelWorldSize);
+                var b = SpriteCardMath.CardToWorld(basis, positions[i].Value, new float2(rect.z * facing, rect.w), pixelWorldSize);
+                var pa = new float2(math.dot(a, basis.Right), math.dot(a, screenUp));
+                var pb = new float2(math.dot(b, basis.Right), math.dot(b, screenUp));
+                m_Footprints[i] = new float4(math.min(pa, pb), math.max(pa, pb));
             }
+
+            MaxDepthOffset = ComputeDepthOffsets(m_Keys.AsArray(), m_SortIds.AsArray(), depthSeparation,
+                m_Offsets.AsArray(), m_Sort, m_Footprints.AsArray());
 
             var start = 0;
             for (var p = 0; p < m_PageCount; p++)
@@ -236,39 +253,88 @@ namespace MLFLegends.Combat
         }
 
         /// <summary>
-        /// Depth tie-break for cards with view-depth <paramref name="keys"/> (larger = farther): back to front by (key, ID),
-        /// every card is pushed at least <paramref name="separation"/> in front of the previous one; cards already that far
-        /// apart keep offset 0. Equal depths are therefore ordered by ID (lowest in front) whatever the input order.
-        /// Returns the largest push (bounded by count × separation).
+        /// Stable (depth, ID) ordering within connected overlapping card footprints. No footprint means all cards overlap.
+        /// Separation is a requested gap, compressed per component so total push never exceeds DepthOffsetBudget.
+        /// Disconnected screen-overlap components cannot influence one another; edges require a depth gap within the budget.
         /// </summary>
-        public static float ComputeDepthOffsets(NativeArray<float> keys, NativeArray<uint> ids, float separation, NativeArray<float> offsets)
+        public static float ComputeDepthOffsets(NativeArray<float> keys, NativeArray<uint> ids, float separation,
+            NativeArray<float> offsets, NativeArray<float4> footprints = default)
         {
             var sort = new NativeList<SortItem>(keys.Length, Allocator.Temp);
-            var max = ComputeDepthOffsets(keys, ids, separation, offsets, sort);
-            sort.Dispose();
-            return max;
+            try { return ComputeDepthOffsets(keys, ids, separation, offsets, sort, footprints); }
+            finally { sort.Dispose(); }
         }
 
-        static float ComputeDepthOffsets(NativeArray<float> keys, NativeArray<uint> ids, float separation, NativeArray<float> offsets, NativeList<SortItem> sort)
+        static int Root(NativeArray<int> parents, int index)
+        {
+            while (parents[index] != index)
+            {
+                parents[index] = parents[parents[index]];
+                index = parents[index];
+            }
+            return index;
+        }
+
+        static float ComputeDepthOffsets(NativeArray<float> keys, NativeArray<uint> ids, float separation,
+            NativeArray<float> offsets, NativeList<SortItem> sort, NativeArray<float4> footprints)
         {
             sort.Clear();
             for (var i = 0; i < keys.Length; i++)
                 sort.Add(new SortItem { Key = keys[i], Id = ids[i], Index = i });
             sort.Sort(new BackToFront());
-            var previous = float.PositiveInfinity;
-            var max = 0f;
-            for (var s = 0; s < sort.Length; s++)
+            // Native scratch only; this is the existing depth policy, not simulation/spatial state.
+            var parents = new NativeArray<int>(keys.Length, Allocator.Temp);
+            var sizes = new NativeArray<int>(keys.Length, Allocator.Temp);
+            var previous = new NativeArray<double>(keys.Length, Allocator.Temp);
+            try
             {
-                var item = sort[s];
-                var rendered = math.min(item.Key, previous - separation);
-                previous = rendered;
-                // Keys are view depths, so the gap is the push along the view direction.
-                var offset = item.Key - rendered;
-                offsets[item.Index] = offset;
-                max = math.max(max, offset);
+                for (var i = 0; i < keys.Length; i++)
+                {
+                    parents[i] = i;
+                    previous[i] = double.PositiveInfinity;
+                }
+                for (var i = 0; i < sort.Length; i++)
+                for (var j = i + 1; j < sort.Length; j++)
+                {
+                    if ((double)sort[i].Key - sort[j].Key > DepthOffsetBudget)
+                        break; // Such cards cannot overtake one another with a bounded push.
+                    var a = sort[i].Index;
+                    var b = sort[j].Index;
+                    if (footprints.IsCreated)
+                    {
+                        var ra = footprints[a];
+                        var rb = footprints[b];
+                        if (ra.x >= rb.z || rb.x >= ra.z || ra.y >= rb.w || rb.y >= ra.w)
+                            continue;
+                    }
+                    var ar = Root(parents, a);
+                    var br = Root(parents, b);
+                    if (ar != br)
+                        parents[br] = ar;
+                }
+                for (var i = 0; i < keys.Length; i++)
+                    sizes[Root(parents, i)]++;
+                var max = 0f;
+                for (var i = 0; i < sort.Length; i++)
+                {
+                    var item = sort[i];
+                    var group = Root(parents, item.Index);
+                    var gap = math.min(math.max(0f, separation), DepthOffsetBudget / math.max(1, sizes[group] - 1));
+                    var rendered = System.Math.Min(item.Key, previous[group] - gap);
+                    previous[group] = rendered;
+                    // Double recurrence avoids a rounding error per link; only the final bounded offset is a float.
+                    var offset = math.clamp((float)(item.Key - rendered), 0f, DepthOffsetBudget);
+                    offsets[item.Index] = offset;
+                    max = math.max(max, offset);
+                }
+                return max;
             }
-
-            return max;
+            finally
+            {
+                previous.Dispose();
+                sizes.Dispose();
+                parents.Dispose();
+            }
         }
 
         void Bind(World world)
@@ -320,6 +386,7 @@ namespace MLFLegends.Combat
             m_Keys.Dispose();
             m_SortIds.Dispose();
             m_Offsets.Dispose();
+            m_Footprints.Dispose();
             m_Instances.Dispose();
             m_InstanceIds.Dispose();
         }

@@ -1,0 +1,74 @@
+--- a/Assets/MLFLegends/Combat/Runtime/Presentation/Sprites/CombatSpriteExtraction.cs
++++ b/Assets/MLFLegends/Combat/Runtime/Presentation/Sprites/CombatSpriteExtraction.cs
+@@ -282,59 +282,18 @@
+             for (var i = 0; i < keys.Length; i++)
+                 sort.Add(new SortItem { Key = keys[i], Id = ids[i], Index = i });
+             sort.Sort(new BackToFront());
+-            // Native scratch only; this is the existing depth policy, not simulation/spatial state.
+-            var parents = new NativeArray<int>(keys.Length, Allocator.Temp);
+-            var sizes = new NativeArray<int>(keys.Length, Allocator.Temp);
+-            var previous = new NativeArray<double>(keys.Length, Allocator.Temp);
+-            try
+-            {
+-                for (var i = 0; i < keys.Length; i++)
+-                {
+-                    parents[i] = i;
+-                    previous[i] = double.PositiveInfinity;
+-                }
+-                for (var i = 0; i < sort.Length; i++)
+-                for (var j = i + 1; j < sort.Length; j++)
+-                {
+-                    if ((double)sort[i].Key - sort[j].Key > DepthOffsetBudget)
+-                        break; // Such cards cannot overtake one another with a bounded push.
+-                    var a = sort[i].Index;
+-                    var b = sort[j].Index;
+-                    if (footprints.IsCreated)
+-                    {
+-                        var ra = footprints[a];
+-                        var rb = footprints[b];
+-                        if (ra.x >= rb.z || rb.x >= ra.z || ra.y >= rb.w || rb.y >= ra.w)
+-                            continue;
+-                    }
+-                    var ar = Root(parents, a);
+-                    var br = Root(parents, b);
+-                    if (ar != br)
+-                        parents[br] = ar;
+-                }
+-                for (var i = 0; i < keys.Length; i++)
+-                    sizes[Root(parents, i)]++;
+-                var max = 0f;
+-                for (var i = 0; i < sort.Length; i++)
+-                {
+-                    var item = sort[i];
+-                    var group = Root(parents, item.Index);
+-                    var gap = math.min(math.max(0f, separation), DepthOffsetBudget / math.max(1, sizes[group] - 1));
+-                    var rendered = System.Math.Min(item.Key, previous[group] - gap);
+-                    previous[group] = rendered;
+-                    // Double recurrence avoids a rounding error per link; only the final bounded offset is a float.
+-                    var offset = math.clamp((float)(item.Key - rendered), 0f, DepthOffsetBudget);
+-                    offsets[item.Index] = offset;
+-                    max = math.max(max, offset);
+-                }
+-                return max;
+-            }
+-            finally
+-            {
+-                previous.Dispose();
+-                sizes.Dispose();
+-                parents.Dispose();
+-            }
++            var previous = float.PositiveInfinity;
++            var max = 0f;
++            for (var s = 0; s < sort.Length; s++)
++            {
++                var item = sort[s];
++                var rendered = math.min(item.Key, previous - separation);
++                previous = rendered;
++                var offset = item.Key - rendered;
++                offsets[item.Index] = offset;
++                max = math.max(max, offset);
++            }
++            return max;
+         }
+ 
+         void Bind(World world)
