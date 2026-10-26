@@ -15,7 +15,7 @@
 |---|---|---|---|
 | 00 | GitHub/Unity/URP bootstrap, dependencies, folders, test harness, CI feasibility | Source tracked; editor/packages committed; tests owner-reported PASS; CI and independent evidence deferred | ACCEPTED (OWNER) |
 | 01 | ECS simulation, fixed-step scheduler, entity data, command buffer, replay tests and 2/100/400 ECS baseline | Six main tasks delivered, Bootstrap debt #19 implemented; independent code audit #23 static PASS, owner accepted Stage 02 transition with missing Unity proof tracked in #30 and Windows Unicode/Burst #17 separate. No movement/AI/collisions/renderer yet. | ACCEPTED FOR NEXT STAGE (OWNER) — UNITY QA DEFERRED |
-| 02 | Movement and camera | Deterministic X/Z movement + jump Y, facing/action-state, tick-aligned input, fixed orthographic camera follow/zoom/pan, with one ECS authority | IN PROGRESS — #31 IMPLEMENTED / IN REVIEW, UNITY NOT RUN |
+| 02 | Movement and camera | Deterministic X/Z movement + jump Y, facing/action-state, tick-aligned input, fixed orthographic camera follow/zoom/pan, with one ECS authority | IN PROGRESS — #31 MERGED / MANAGER STATIC REVIEW PASS, UNITY NOT RUN |
 | 03 | GPU sprite rendering | Atlas animation, direction/frame selection, stable depth sorting, optional equipment layers, instancing/indirect render assessment | NOT STARTED |
 | 04 | Collisions | Custom actor/world collision, spatial index, masses, allies yield, enemies block, knockback | NOT STARTED |
 | 05 | Attack resolution | Windup/active/recovery; fast/heavy/jump attacks; shapes, multi-hit rules, damage/impact/stagger | NOT STARTED |
@@ -34,13 +34,15 @@
 
 Stage 02 is split to protect single-authority boundaries, not to expand architecture:
 
-1. **02.1 — [#31 ECS movement X/Z + jump Y](https://github.com/HolyPenguin21/mlf-legends/issues/31): IMPLEMENTED ON PR BRANCH / IN REVIEW; Unity NOT RUN.** One fixed-tick motion integration owner reads canonical `AppliedCombatCommand`; sole writer of `CombatPosition` and minimal vertical motion state; native/Burst-compatible, 2/100/400, deterministic replay; no live input, camera, collision, renderer, proxy fighter objects or visual scene.
+1. **02.1 — [#31 ECS movement X/Z + jump Y](https://github.com/HolyPenguin21/mlf-legends/issues/31): PR #32 MERGED / MANAGER STATIC REVIEW PASS; Unity NOT RUN.** One fixed-tick motion integration owner reads canonical `AppliedCombatCommand`; sole writer of `CombatPosition` and minimal vertical motion state; native/Burst-compatible, 2/100/400, deterministic replay; no live input, camera, collision, renderer, proxy fighter objects or visual scene.
 2. **02.2 — Facing/action-state ownership:** explicit single writer of `CombatFacing` and minimal state boundaries; no second position writer, no attacks/guard/dash architecture ahead of their stages.
 3. **02.3 — Real input adapter / [#22](https://github.com/HolyPenguin21/mlf-legends/issues/22):** Unity Input System to the existing queue only, with `Held/Pressed`, 30/60/120+ fps, catch-up and short-tap handling. No direct writes to position.
 4. **02.4 — Orthographic fixed-angle camera:** follow the human-controlled combatant by `BattleSession.HumanCombatant` + canonical `CombatPosition`; pan/zoom without altering angle, read-only presentation. No stage 02 temporary arena/proxy gameplay scene. Full display integration after Stage 03 specialized GPU sprite renderer.
 5. **Stage 02 acceptance:** source-level/method evidence and replay/Unity tests where available, tagged `NOT RUN` otherwise. Default 1v1 and 200v200 share one implementation; benchmark changes measured, not guessed. Each runtime PR reviewed bottom-up before merge; no autonomous merge.
 
 **Context transfer:** work preparation/dispatch begins in this conversation immediately. The previously requested new-session handoff remains available for continuing the Stage 02 implementation without carrying all Stage 01 chat messages. The new session is not a prerequisite for opening tasks or progressing today.
+
+**Stage 02.1 manager review (2026-10-26):** [PR #32](https://github.com/HolyPenguin21/mlf-legends/pull/32) is merged (commit `e5c58afcc40188ece29f4d296ae18d486be547ce`), #31 closed. Inspected runtime, lifecycle, 39 authored EditMode cases, default-world PlayMode, replay and benchmark. Single movement writer, GroundHeight/VerticalVelocity/Grounded motion, input source parity and cleanup checked; **STATIC PASS, NOT UNITY-VERIFIED**. Stage 02 latency for 2/100/400 NOT RUN. **Future Stage 02.2 integration condition:** ReplayTests, PlayMode order and benchmark currently assert the *entire* State group contains only the movement system; when introducing a facing/action-state system, extend tests to assert both systems with real ordering and keep exactly one movement writer, rather than pinning `states.Length==1`. Do not call it a Stage 02.1 runtime defect. Profile future idle chunk writes before changing the motion owner.
 
 ## First visible gameplay scene — owner decision (2026-10-25)
 
