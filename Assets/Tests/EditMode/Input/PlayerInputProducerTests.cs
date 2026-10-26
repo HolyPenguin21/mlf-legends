@@ -161,7 +161,7 @@ namespace MLFLegends.Tests.EditMode
             if (fps > 0)
                 Assert.That(pacing.Sum(), Is.EqualTo(180));
             else
-                Assert.That(pacing, Does.Contain(0).And.Contain(10), "Variable pacing has 0-tick and 10-tick frames.");
+                Assert.That(pacing, Has.Member(0).And.Member(10), "Variable pacing has 0-tick and 10-tick frames.");
 
             var dDown = false;
             var kDown = false;
@@ -535,7 +535,7 @@ namespace MLFLegends.Tests.EditMode
                 Assert.That(m_Producer.Detach(second), Is.True);
                 Frame(2, () => Tap(m_Keyboard.kKey));
                 Assert.That(Last.Results, Is.Empty);
-                Assert.That(HumanCommand(Last).WasSubmitted, Is.False);
+                Assert.That(Human(Last).Applied.WasSubmitted, Is.False);
 
                 m_Producer.Attach(second);
                 second.Dispose();
@@ -561,7 +561,7 @@ namespace MLFLegends.Tests.EditMode
                 Down(m_Keyboard.dKey);
                 Tap(m_Keyboard.kKey);
             });
-            Assert.That(BattleTicks().All(r => r.Results.Length == 0 && !HumanCommand(r).WasSubmitted), Is.True, "Replay World: no producer.");
+            Assert.That(BattleTicks().All(r => r.Results.Length == 0 && !Human(r).Applied.WasSubmitted), Is.True, "Replay World: no producer.");
             m_Replay.Dispose();
 
             StartRig(attach: false);
