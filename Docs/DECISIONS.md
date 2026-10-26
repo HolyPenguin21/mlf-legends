@@ -1,5 +1,12 @@
 # MLF Legends — Decision log
 
+## Compile blocker remediation decision (2026-10-26)
+
+- Owner's project was compiled in Unity 6000.5.4f1 by the Stage 02.2 implementer. Current main failed with CS0579 from two `UpdateInGroup` attributes on `BattleLifecycleSystem` introduced by PR #28; the manager verified the duplicated annotations in source. This is a real, presently blocking build issue, not historical `NOT RUN`.
+- **Manager accepted option A:** preserve one `BattleLifecycleSystem` declared only in FixedStep, with its existing sole request-drain/session/ID/queue/spawner ownership and `CombatClockSystem.UpdateAfter(BattleLifecycleSystem)`. Create a minimal Initialization-only forwarding proxy to update the SAME lifecycle handle when fixed ticks are paused; no separate request processing, no duplicate actor owner or custom bootstrap. Verify real Entities 6.5 update API and all Default/Replay/manual test Worlds in Unity.
+- Also fix six pre-existing `BattleLifecycleTests.EndRequestedInsideAFixedStep...` NUnit TestCase int-vs-ushort binding failures in that same narrow PR. New blocker [#35](https://github.com/HolyPenguin21/mlf-legends/issues/35), acceptance logs in #30. Experimental agent patch with 186/193 EditMode and 10/10 PlayMode is not proof of main passing. Before accepting Stage 02.3 runtime/input integration, restore a clean Unity build.
+- This is a technical compatibility exception to the general ability to defer unavailable Unity tests: a known reproducible compile error is NOT a mere unexecuted check. #17 Unicode Windows path Burst stays separate.
+
 ## Approved / fixed
 - Repository: `HolyPenguin21/mlf-legends`, branch `main`.
 - Owner's editor: **Unity 6000.5.4f1**. Use **Universal 3D (URP)** for 3D environment, not 2D template.
