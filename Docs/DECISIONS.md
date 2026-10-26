@@ -31,6 +31,14 @@
 - Stage 02 starts with [#31](https://github.com/HolyPenguin21/mlf-legends/issues/31) deterministic fixed-tick ECS X/Z movement + Y jump reading existing `AppliedCombatCommand`. This task must not introduce visual proxies, a second simulation architecture, a new command queue or input adapter, camera or collisions. Facing/action-state owner, [#22](https://github.com/HolyPenguin21/mlf-legends/issues/22) real frame-to-tick input and read-only fixed-angle orthographic camera follow/zoom/pan follow in distinct reviewed Stage 02 scopes.
 - Earlier owner preference for a standalone Stage 02 conversation **is not a technical start gate**. Manager prepares a complete handoff for the new session, while the first Stage 02 GitHub Issue may be issued and implemented immediately. Stage 03 remains the **first visible user-facing gameplay scene** once GPU sprite rendering works; no Stage 02 capsule/proxy demo.
 
+## Stage 02.2 facing-on-movement rule (owner decision, 2026-10-26)
+
+- **Owner approved: fighters automatically face their direction of movement.** `CombatFacing` is currently **horizontal world X only**. On the authoritative fixed simulation tick, an accepted `AppliedCombatCommand.MoveX = +1` faces `Right` and `MoveX = -1` faces `Left` (including diagonal and airborne movement).
+- `MoveX = 0` preserves existing facing: idle, vertical-on-screen/Z-only navigation, jump in place, implicit None and no accepted command do not turn the actor. Future Stage 03 sprites mirror this authoritative facing; no 360° orientation or enemy-autofacing/backpedal mode.
+- Same rule for human and AI. Current guard/attack held/pressed fields do not lock the facing while their action-state mechanics are not implemented; future guarding/attack states may add explicit action-lock rules at their responsible layer, with approval and tests.
+- Keep `BattleLifecycleSystem.Spawn` as initial facing writer, add exactly **one** fixed-tick facing owner in `CombatStateUpdateSystemGroup` after command collection; explicitly order it before existing `CombatMovementSystem`. Neither input producer nor command processor nor renderer nor movement system itself becomes another facing writer. Original component remains signed `FacingDirection.Left=-1, Right=+1`.
+- Implementation issue: [#33](https://github.com/HolyPenguin21/mlf-legends/issues/33). It also repairs pre-existing tests that incorrectly freeze facing for every movement direction or assume exactly one State-system; no other gameplay systems, action state expansion or visible scene in this PR.
+
 ## Stage 02.1 motion implementation choices (#31, 2026-10-26)
 
 - One `CombatMovementSystem` in State owns runtime position and compact vertical kinetics; existing
