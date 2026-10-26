@@ -386,6 +386,7 @@ namespace MLFLegends.Tests.EditMode
         public void GamepadButtonsMapToTheSameIntentions()
         {
             StartRig();
+            Frame(1); // the battle's first tick drops presses made before it started
             Frame(1, () =>
             {
                 Pad(GamepadButton.South, true);
