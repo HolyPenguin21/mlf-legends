@@ -40,6 +40,30 @@ Base main: `7ae5459d5b6a5ff9b37bc3750d452c8ce0ea7d41`. Separate PR branch; no au
 - General post-PR #28/#29 Unity debt remains #30; Windows Unicode/Burst remains separately open #17.
   Strict floating point and replay coverage are same-platform contracts, not cross-platform lockstep proof.
 
+## Stage 02.1 bottom-up re-review (#31 / PR #32, 2026-10-26)
+
+Reviewed from component layout/write sites through Spawn/destruction (including disabled actors),
+command validation/deferred input, Collection/State/Publication and both lifecycle boundaries, default
+world/replay registration, snapshots and performance harness. No runtime ownership, scheduling or
+cleanup defect was found in this source review; it is not execution evidence. Runtime code is unchanged
+by this follow-up. Existing #30 Unity/sorter/manual debt and #17 Windows/Burst remain open.
+
+Three verification gaps were corrected:
+- The 2/100/400 roster test now compares the **complete per-tick raw replay** between single-step frames
+  and one 10-step catch-up frame, for every actor and both command sources, instead of checking only
+  final roster motion.
+- Added 12 cases for airborne End/Restart requested from Collection, State or Publication at N=2/400.
+  The requesting tick must finish with its old actors; cleanup occurs before the next catch-up tick;
+  disabled airborne actors/allies disappear, pending old input is cleared, and fresh actors start
+  grounded with zero velocity and new IDs at relative tick 1.
+- Performance checks now require every declared actor component (including CombatMotion), rather
+  than only rejecting unexpected components. Both timing and memory harnesses assert the single
+  motion owner's registration in State outside measured regions.
+
+Prepared movement EditMode cases: **39 total**; existing default-world PlayMode coverage retained.
+Execution remains **NOT RUN** for Unity/C# source generation, Burst, all runtime tests and profiling.
+Only source/asset consistency checks and `git diff --check` were executed successfully.
+
 ## Stage 00 findings and checklist
 - [x] `HolyPenguin21/mlf-legends` exists; GitHub App repository access repaired and write validated.
 - [x] `Assets/`, `Packages/` and `ProjectSettings/` exist in `main`.

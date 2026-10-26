@@ -76,6 +76,7 @@ namespace MLFLegends.Tests.EditMode
                 Assert.That(session.State, Is.EqualTo(BattleState.Active));
                 using var ids = m_Bench.Teams.ToComponentDataArray<CombatantId>(Allocator.Temp);
                 using var teams = m_Bench.Teams.ToComponentDataArray<CombatTeam>(Allocator.Temp);
+                using var entities = m_Bench.Teams.ToEntityArray(Allocator.Temp);
                 Assert.That(ids.Length, Is.EqualTo(m_Combatants));
                 var first = session.HumanCombatant.Value;
                 var onHumanTeam = 0;
@@ -84,6 +85,10 @@ namespace MLFLegends.Tests.EditMode
                     var id = ids[i].Value;
                     Assert.That(id >= first && id < first + m_Combatants, Is.True, $"ID {id} outside the reserved range.");
                     Assert.That(m_Issued.Add(id), Is.True, $"ID {id} reused.");
+                    Assert.That(m_Bench.Manager.HasComponent<CombatMotion>(entities[i]), Is.True, $"ID {id} has no motion state.");
+                    var motion = m_Bench.Manager.GetComponentData<CombatMotion>(entities[i]);
+                    Assert.That((motion.Grounded, motion.VerticalVelocity, motion.GroundHeight),
+                        Is.EqualTo((true, 0f, m_Bench.Manager.GetComponentData<CombatPosition>(entities[i]).Value.y)));
                     if (teams[i].Value == 1)
                         onHumanTeam++;
                 }
@@ -147,7 +152,13 @@ namespace MLFLegends.Tests.EditMode
             using var types = archetype.GetComponentTypes(Allocator.Temp);
             var allowed = new HashSet<TypeIndex> { ComponentType.ReadWrite<Simulate>().TypeIndex };
             foreach (var type in s_CombatantComponents)
+            {
                 allowed.Add(type.TypeIndex);
+                var found = false;
+                foreach (var actual in types)
+                    found |= actual.TypeIndex == type.TypeIndex;
+                Assert.That(found, Is.True, $"Required combatant component missing: {type}.");
+            }
             var unexpected = new List<string>();
             foreach (var type in types)
             {
@@ -157,6 +168,16 @@ namespace MLFLegends.Tests.EditMode
 
             Assert.That(unexpected, Is.Empty, "Combatant components besides the lifecycle archetype (+ Entities' Simulate).");
             Assert.That(SceneObjectCounts(), Is.EqualTo(sceneObjectsBefore), "No GameObject, Rigidbody, Animator or NavMeshAgent was created.");
+        }
+
+        // Untimed: a future harness edit must not silently measure Stage 02 without its motion owner.
+        static void AssertMovementOwner(CombatBenchmarkWorld bench)
+        {
+            var movement = bench.World.GetExistingSystem<CombatMovementSystem>();
+            Assert.That(movement, Is.Not.EqualTo(SystemHandle.Null));
+            using var systems = bench.World.GetExistingSystemManaged<CombatStateUpdateSystemGroup>().GetAllSystems(Allocator.Temp);
+            Assert.That(systems.Length, Is.EqualTo(1), "Stage 02.1 State contains the single movement owner.");
+            Assert.That(systems[0], Is.EqualTo(movement));
         }
 
         static int[] SceneObjectCounts() => new[]
@@ -383,6 +404,7 @@ namespace MLFLegends.Tests.EditMode
             var setup = Roster(combatants);
             var report = new BenchmarkReport();
             m_Bench = new CombatBenchmarkWorld($"MLF Legends baseline {combatants}");
+            AssertMovementOwner(m_Bench);
             var checks = new Checks(m_Bench, combatants);
 
             for (var rep = 0; rep <= Repetitions; rep++)
@@ -420,6 +442,7 @@ namespace MLFLegends.Tests.EditMode
             var setup = Roster(combatants);
             var report = new BenchmarkReport();
             m_Bench = new CombatBenchmarkWorld($"MLF Legends frame memory {combatants}");
+            AssertMovementOwner(m_Bench);
             var checks = new Checks(m_Bench, combatants);
             var series = new[]
             {

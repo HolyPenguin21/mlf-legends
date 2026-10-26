@@ -63,11 +63,13 @@ namespace MLFLegends.Tests.EditMode
         public void EveryRosterActorUsesTheSamePlayerAndAiMotionPath(int count)
         {
             using var w = new ReplayWorld("movement roster");
+            using var single = new ReplayWorld("movement roster single-tick reference");
             var setup = BattleSetup.Default;
             setup.HumanAllies = setup.AiAllies = (ushort)(count / 2 - 1);
             setup.Human.Position.y = -3f;
             setup.Ai.Position.y = 7f;
             Initialize(w, setup);
+            Initialize(single, setup);
             using var query = w.Manager.CreateEntityQuery(typeof(CombatantId), typeof(CombatMotion));
             using var entities = query.ToEntityArray(Allocator.Temp);
             Assert.That(entities.Length, Is.EqualTo(count));
@@ -79,16 +81,23 @@ namespace MLFLegends.Tests.EditMode
                 var motion = w.Manager.GetComponentData<CombatMotion>(entity);
                 Assert.That((motion.GroundHeight, motion.VerticalVelocity, motion.Grounded), Is.EqualTo((starts[id.Value].y, 0f, true)));
                 for (uint tick = 1; tick <= 10; tick++)
-                    w.SubmitBetweenFrames(new CombatCommand
+                {
+                    var command = new CombatCommand
                     {
                         Combatant = id, Tick = tick, MoveX = 1,
                         Pressed = tick == 1 ? CommandButtons.Jump : CommandButtons.None,
                         Held = CommandButtons.Jump,
                         // Each team includes both sources; identity/team must not select a different path.
                         Source = id.Value % 2 == 0 ? CommandSource.Player : CommandSource.AI,
-                    });
+                    };
+                    w.SubmitBetweenFrames(command);
+                    single.SubmitBetweenFrames(command); // fresh Worlds allocate the same IDs
+                }
             }
             w.Frame(10);
+            single.Step(10);
+            Assert.That(w.RawLog, Is.EqualTo(single.RawLog),
+                "Every actor's position, kinetics and processor results match on every tick, not just the final state.");
             var reference = Human(w);
             foreach (var c in w.Records.Last().Combatants)
             {
@@ -283,6 +292,80 @@ namespace MLFLegends.Tests.EditMode
             w.World.GetExistingSystemManaged<InitializationSystemGroup>().Update();
             Assert.That(w.CountWith<CombatMotion>(), Is.Zero);
             Assert.That(w.CountWith<CombatPosition>(), Is.Zero);
+        }
+
+        [TestCase(typeof(CombatCommandCollectionSystemGroup), BattleRequestKind.Restart, 2)]
+        [TestCase(typeof(CombatCommandCollectionSystemGroup), BattleRequestKind.Restart, 400)]
+        [TestCase(typeof(CombatStateUpdateSystemGroup), BattleRequestKind.Restart, 2)]
+        [TestCase(typeof(CombatStateUpdateSystemGroup), BattleRequestKind.Restart, 400)]
+        [TestCase(typeof(CombatPublicationSystemGroup), BattleRequestKind.Restart, 2)]
+        [TestCase(typeof(CombatPublicationSystemGroup), BattleRequestKind.Restart, 400)]
+        [TestCase(typeof(CombatCommandCollectionSystemGroup), BattleRequestKind.End, 2)]
+        [TestCase(typeof(CombatCommandCollectionSystemGroup), BattleRequestKind.End, 400)]
+        [TestCase(typeof(CombatStateUpdateSystemGroup), BattleRequestKind.End, 2)]
+        [TestCase(typeof(CombatStateUpdateSystemGroup), BattleRequestKind.End, 400)]
+        [TestCase(typeof(CombatPublicationSystemGroup), BattleRequestKind.End, 2)]
+        [TestCase(typeof(CombatPublicationSystemGroup), BattleRequestKind.End, 400)]
+        public void AirborneEndAndRestartInsideCatchUpCleanBeforeTheNextTick(System.Type phase, BattleRequestKind kind, int count)
+        {
+            using var w = new ReplayWorld("airborne catch-up lifecycle");
+            var setup = BattleSetup.Default;
+            setup.HumanAllies = setup.AiAllies = (ushort)(count / 2 - 1);
+            Initialize(w, setup);
+            var previous = w.Session;
+            using var query = w.Manager.CreateEntityQuery(typeof(CombatantId));
+            using var oldEntities = query.ToEntityArray(Allocator.Temp);
+            var oldMax = w.LiveIds.Max();
+            w.Script = new ReplayScript()
+                .Player(1, 1, ReplayRole.Human, moveX: 1, pressed: CommandButtons.Jump)
+                .Ai(1, 1, ReplayRole.Ai, moveX: -1, pressed: CommandButtons.Jump)
+                .Player(1, 5, ReplayRole.Human, moveX: 1, pressed: CommandButtons.Jump);
+            w.Step(2);
+            Assert.That(Human(w).Motion.Grounded, Is.False);
+            Assert.That(w.PendingCount, Is.EqualTo(1));
+            w.Manager.SetComponentEnabled<InCombat>(Actor(w, previous.AiCombatant), false);
+            w.SubmitBetweenFrames(new CombatCommand { Combatant = previous.HumanCombatant, Tick = w.Tick + 2,
+                MoveX = 1, Pressed = CommandButtons.Jump, Source = CommandSource.Player });
+            // New battle gets no scripted commands: a jump there can only be leaked old motion/input.
+            w.Script = new ReplayScript();
+            setup.Human.Position.y = -5f;
+            setup.Ai.Position.y = 7f;
+            w.RequestInStep(phase, 1, 3, kind == BattleRequestKind.Restart
+                ? BattleRequest.Restart(setup) : BattleRequest.End());
+
+            w.Frame(3); // old tick 3 completes; cleanup precedes ticks 4 and 5 in this same frame
+
+            Assert.That(w.Tick, Is.EqualTo(5));
+            Assert.That(w.Records.Count, Is.EqualTo(5));
+            Assert.That(w.Records[2].BattleNumber, Is.EqualTo(previous.BattleNumber));
+            Assert.That(w.Records[2].Combatant(previous.HumanCombatant.Value).Motion.Grounded, Is.False);
+            foreach (var entity in oldEntities)
+                Assert.That(w.Manager.Exists(entity), Is.False, "Cleanup includes the disabled airborne actor and every ally.");
+            Assert.That((w.PendingCount, w.SubmissionCount, w.ResultCount), Is.EqualTo((0, 0, 0)));
+            if (kind == BattleRequestKind.End)
+            {
+                Assert.That(w.Session.IsActive, Is.False);
+                Assert.That(w.CountWith<CombatMotion>(), Is.Zero);
+                Assert.That(w.Records.Skip(3).All(r => !r.Active && r.Combatants.Length == 0), Is.True);
+            }
+            else
+            {
+                Assert.That(w.Session.BattleNumber, Is.EqualTo(previous.BattleNumber + 1));
+                Assert.That(w.Session.BattleStartTick, Is.EqualTo(3));
+                Assert.That(w.LiveIds.Min(), Is.GreaterThan(oldMax));
+                Assert.That(w.CountWith<CombatMotion>(), Is.EqualTo(count));
+                var restarted = w.BattleRecords(2);
+                Assert.That(restarted.Select(r => r.RelativeTick), Is.EqualTo(new[] { 1u, 2u }));
+                Near(restarted[0].Combatant(w.Session.HumanCombatant.Value).Position, setup.Human.Position);
+                Near(restarted[0].Combatant(w.Session.AiCombatant.Value).Position, setup.Ai.Position);
+                Assert.That(restarted[1].Combatants.Select(c => c.Position), Is.EqualTo(restarted[0].Combatants.Select(c => c.Position)));
+                foreach (var actor in restarted.SelectMany(r => r.Combatants))
+                {
+                    Assert.That((actor.Motion.Grounded, actor.Motion.VerticalVelocity, actor.Motion.GroundHeight),
+                        Is.EqualTo((true, 0f, actor.Position.y)));
+                    Assert.That(actor.Applied.WasSubmitted, Is.False);
+                }
+            }
         }
 
         [Test]

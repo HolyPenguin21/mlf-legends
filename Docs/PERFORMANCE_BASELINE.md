@@ -10,7 +10,8 @@ character rendering; nothing here predicts the cost of a real 200 vs 200 battle 
 All measured figures below are **historical Stage 01**, before the motion system (and before PR #28/#29).
 Stage 02.1 movement costs at **2 / 100 / 400: NOT RUN**; no new CPU, allocation or Burst execution claim.
 The existing harness now includes the same `CombatMovementSystem` as the default world/replay, and asserts
-`CombatMotion` is part of the common unmanaged actor archetype. Current cmd loads exercise horizontal
+`CombatMotion` and every other required component are present in the common unmanaged actor archetype.
+Both timing and memory harnesses verify the State motion owner outside measured regions. Current cmd loads exercise horizontal
 movement; they do not benchmark jumping. New report headers include runtime scope and motion component
 size; outputs use `stage02-31-...` so runs cannot overwrite or be mistaken for Stage 01 results.
 
