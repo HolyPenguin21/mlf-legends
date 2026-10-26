@@ -178,5 +178,5 @@ Not automated (no Editor automation for this). Record the result in `Docs/QA.md`
 7. Restore the Enter Play Mode setting and timeScale.
 
 ## Not implemented here
-Input and AI producers, movement integration, attacks, collisions, rendering (movement itself lives in Simulation/CombatMovementSystem, #31). Large rosters (#7) are the `Start` above with
+Input and AI producers, movement integration, attacks, collisions, rendering (movement and facing live in Simulation/CombatMovementSystem #31 and CombatFacingSystem #33; Spawn only sets the initial facing). Large rosters (#7) are the `Start` above with
 allies, reusing `Spawn` and the same allocator; the benchmark in `Assets/Tests/EditMode/Performance/` uses only that.

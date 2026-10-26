@@ -14,9 +14,9 @@ namespace MLFLegends.Combat
     /// against this value; sprites only display it.
     /// </summary>
     /// <remarks>
-    /// Initialised by the spawner (0 is not a valid direction); afterwards written only by the
-    /// single action-state owner (Stage 02+) on the fixed simulation tick. The command processor
-    /// does not write it.
+    /// Initialised by the spawner (0 is not a valid direction); afterwards written only by
+    /// CombatFacingSystem (Stage 02.2) on the fixed simulation tick, from the sign of the accepted MoveX.
+    /// The command processor, movement and presentation do not write it.
     /// </remarks>
     public struct CombatFacing : IComponentData
     {

@@ -5,7 +5,8 @@ namespace MLFLegends.Combat
 {
     /// <summary>The sole fixed-tick integration owner of CombatPosition and CombatMotion.</summary>
     /// <remarks>
-    /// Collection has already published an accepted command or implicit None for every enabled actor.
+    /// Collection has already published an accepted command or implicit None for every enabled actor;
+    /// CombatFacingSystem has already turned the actor for this tick. Movement never writes CombatFacing.
     /// One linear, synchronous Burst pass; no allocations, structural changes, entity caches or second clock.
     /// Stage 04 collision corrections must extend this owner rather than introduce another position writer.
     /// </remarks>

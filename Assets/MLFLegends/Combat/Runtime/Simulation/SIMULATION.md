@@ -2,7 +2,8 @@
 
 One fixed simulation tick drives every combat system, for a duel and for 200 vs 200 alike. The tick
 is independent of the render frame rate. Clock and phase groups own tick scheduling and do not
-write Core state; Stage 02.1 CombatMovementSystem in this folder owns position/motion integration.
+write Core state; in this folder Stage 02.2 CombatFacingSystem owns facing and Stage 02.1
+CombatMovementSystem owns position/motion integration.
 
 ## Pieces
 
@@ -43,7 +44,7 @@ SimulationSystemGroup
    ├─ BattleLifecycleSystem                               (#5/#14/#19) battle requests; Tick = last completed tick
    ├─ CombatClockSystem                                   (after Lifecycle) Tick += 1
    ├─ CombatCommandCollectionSystemGroup                  producers in fixed order, then #4 processor (OrderLast)
-   ├─ CombatStateUpdateSystemGroup                        CombatMovementSystem (#31), then future state owners
+   ├─ CombatStateUpdateSystemGroup                        CombatFacingSystem (#33) → CombatMovementSystem (#31), then future state owners
    ├─ CombatPublicationSystemGroup                        read-only snapshots/events (later)
    └─ EndFixedStepSimulationEntityCommandBufferSystem     (Unity, OrderLast)
 ```
@@ -137,3 +138,23 @@ structural changes or ID/entity lookup in movement. Actual timings and Burst com
 Strict float mode avoids fast-math reassociation; replay assertions target the same Unity/Burst/platform,
 **not a promise of bit-identical floating-point across CPUs or platforms**. Stage 04 must replace the
 spawn-height support and add collision corrections inside this owner, not write a second position.
+
+## Stage 02.2 facing (#33)
+
+`CombatFacingSystem` is the sole runtime writer of `CombatFacing` after `BattleLifecycleSystem.Spawn` set it
+from `BattleSetup`. It belongs only to `CombatStateUpdateSystemGroup` with `[UpdateBefore(CombatMovementSystem)]`,
+so movement and every later State owner (attacks, guard) see the facing of the same tick. Like movement, it needs
+no cross-group sort target: Collection, with the processor last, has already completed. It is listed in
+`ReplayWorld.RuntimeSystems` next to movement, so default world, replay and benchmark run the same pair.
+
+Each enabled `InCombat` reads only its published `AppliedCombatCommand`: `MoveX > 0` faces `Right`, `MoveX < 0`
+faces `Left`, `MoveX == 0` keeps the previous facing (idle, Z-only, jump in place, explicit or implicit None).
+Diagonals turn by the sign of X; airborne actors turn as well. The turn is instant, on the same fixed tick, with
+the same rule for player and AI. Rejected, stale, duplicate, conflicting, unknown and not-yet-due commands never
+reach `AppliedCombatCommand`, so they cannot turn anybody. A disabled `InCombat` keeps its facing.
+
+There are no turn locks yet: Attack/Guard in the command do not block turning. A future attack/guard stage that
+needs a turn restriction must define it explicitly and apply it in this owner, not add a second facing writer.
+There is no "face the enemy" rule. End/Despawn/Restart destroy facing with its entity; a restarted battle spawns
+fresh facing from its own setup. One synchronous Burst pass, O(N), no allocations or structural changes;
+requires `SimulationClockRunning` like its phase. Burst compilation and Unity runtime are tracked in #30/#17.
