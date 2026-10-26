@@ -70,6 +70,33 @@ dispatches) costs ≈ +2 µs/tick at N = 2 and ≈ +5 µs/tick at N = 400 (idle 
 N = 400 (`CombatMotion` initialisation). The full pending store still dominates (≈ 728 µs at N = 400, #25). Without
 Burst the managed movement/facing loops add ≈ 40 µs/tick at N = 400. No optimisation is proposed from these numbers.
 
+## Stage 02.3 player input producer (#22, 2026-10-26, measured)
+
+Commit `d879d4c`, same machine, Editor, packages and batchmode settings as the #35 measurement above.
+`PlayerInputBenchmarkTests` (EditMode, Category Performance): the benchmark World (`ReplayWorld.RuntimeSystems`, benchmark
+producer at None) plus the real `PlayerInputCommandSystem`; InputTestFixture virtual keyboard holding D, re-reported
+untimed before each frame (the Input System update is PreUpdate work in the game, not part of the tick). 1000 ticks per
+series, warm-up + 3 repetitions, every frame followed by an editor frame. "Detached" = producer present without capture
+(inert); "held" = one Player command per tick (producer + submission + the processor accepting it). Mean us per tick,
+repetitions 1 / 2 / 3, from `player-input-<burst>.tsv`:
+
+| Series | N = 2 | N = 400 |
+|---|---|---|
+| Burst on, detached, 1 tick/frame | 15.6 / 15.6 / 15.7 | 22.5 / 22.6 / 22.6 |
+| Burst on, held, 1 tick/frame | 22.8 / 23.0 / 22.6 | 29.8 / 30.0 / 30.6 |
+| Burst on, detached, 10 ticks/frame | 11.0 / 9.5 / 9.3 | 16.3 / 16.3 / 16.3 |
+| Burst on, held, 10 ticks/frame | 13.5 / 13.7 / 13.4 | 20.6 / 20.7 / 20.7 |
+| Burst off, detached, 1 tick/frame | 23.4 / 23.4 / 23.5 | 85.5 / 84.7 / 85.5 |
+| Burst off, held, 1 tick/frame | 29.8 / 30.0 / 30.2 | 92.2 / 92.4 / 91.9 |
+
+A second Burst-on run agrees within about 1 us (N = 400 held k1: 29.9 / 29.6 / 29.6). GC.Alloc samples: **0** in every
+series. Process native-memory deltas are +/-64 KiB steps in detached and held series alike (no trend; not an ownership
+trace). Reading: driving the human costs about +7 us per tick at 1 tick/frame and +4 us per tick at 10 ticks/frame, at
+N = 2 and N = 400 alike (managed SystemBase dispatch, one linear ID scan, one accepted command). The existing benchmark
+(`stage02-33-*`, same runs) matches the #35 measurement: idle k1 N = 400 21.5-24.0 us (Burst on), cmd k1 runtime N = 400
+51.0-53.5 us, Burst off idle k1 N = 400 83.7-84.2 us. The camera and the Initialization/full Unity frame are not in this
+harness (NOT MEASURED).
+
 ## How to run
 
 The tests are in `Assets/Tests/EditMode/Performance/` (category `Performance`) and also run as part of the normal
@@ -243,7 +270,7 @@ does not reproduce it (also not over 100 lead32 ticks without a frame end), and 
   presentation sync. The figures bound the overhead of the Stage 01 foundation, not a battle.
 - **Main thread only:** nothing in Stage 01 schedules jobs; worker-thread scaling is untested.
 - **Producer:** a managed test system; its self-time is reported separately and subtracted for "runtime". Real
-  input/AI producers (Stage 02+, Issue #22) will have their own cost.
+  input/AI producers have their own cost; the #22 player producer is measured above.
 - **GC bytes** are not measured (counter unavailable); only the count of GC.Alloc samples.
 - Spawn includes `EntityManager.SetName` for the two leaders (Editor only).
 
