@@ -6,7 +6,7 @@
 
 ## #35 + #30 Unity verification on the corrective branch (2026-10-26)
 
-**Status: Unity-verified on branch `fix/35-lifecycle-proxy` (PR pending manager review), no local patches.**
+**Status: Unity-verified on branch `fix/35-lifecycle-proxy` ([PR #36](https://github.com/HolyPenguin21/mlf-legends/pull/36), merged to main on the owner's instruction), no local patches.**
 Platform: Windows 11 Pro 10.0.26100, AMD Ryzen 5 3600, 32 GB; Unity **6000.5.4f1**, Entities 6.5.0, Collections 6.5.0,
 Burst 1.8.29, URP 17.5.0; `Tools/Run-UnityTests.ps1` (batchmode `-nographics`) on separate git worktrees.
 
