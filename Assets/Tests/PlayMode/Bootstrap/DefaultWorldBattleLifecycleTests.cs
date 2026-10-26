@@ -98,14 +98,14 @@ namespace MLFLegends.Tests.PlayMode
             using (var members = DefaultWorld.GetExistingSystemManaged<CombatStateUpdateSystemGroup>().GetAllSystems(Allocator.Temp))
             {
                 // Counted by system type so a second instance of either owner fails; other future owners are allowed.
-                var types = members.ToArray().Select(DefaultWorld.Unmanaged.GetSystemTypeIndex).ToArray();
+                var types = members.AsArray().ToArray().Select(DefaultWorld.Unmanaged.GetSystemTypeIndex).ToArray();
                 var facing = TypeManager.GetSystemTypeIndex<CombatFacingSystem>();
                 var movement = TypeManager.GetSystemTypeIndex<CombatMovementSystem>();
                 Assert.That(types.Count(t => t == facing), Is.EqualTo(1), "Exactly one auto-created facing owner in State.");
                 Assert.That(types.Count(t => t == movement), Is.EqualTo(1), "Exactly one auto-created motion owner in State.");
                 Assert.That(System.Array.IndexOf(types, facing), Is.LessThan(System.Array.IndexOf(types, movement)),
                     "Default world orders facing before movement, as isolated replay and benchmarks do.");
-                Assert.That(members.ToArray(), Is.EqualTo(new[]
+                Assert.That(members.AsArray().ToArray(), Is.EqualTo(new[]
                 {
                     DefaultWorld.GetExistingSystem<CombatFacingSystem>(), DefaultWorld.GetExistingSystem<CombatMovementSystem>(),
                 }), "Stage 02.2 State holds exactly the facing then movement owners.");
@@ -114,7 +114,7 @@ namespace MLFLegends.Tests.PlayMode
                          (ComponentSystemGroup)DefaultWorld.GetExistingSystemManaged<CombatPublicationSystemGroup>() })
             {
                 using var members = phase.GetAllSystems(Allocator.Temp);
-                Assert.That(members.ToArray(), Has.None.EqualTo(DefaultWorld.GetExistingSystem<CombatFacingSystem>())
+                Assert.That(members.AsArray().ToArray(), Has.None.EqualTo(DefaultWorld.GetExistingSystem<CombatFacingSystem>())
                     .And.None.EqualTo(DefaultWorld.GetExistingSystem<CombatMovementSystem>()), $"No State owner in {phase.GetType().Name}.");
             }
             Assert.That(Session.State, Is.EqualTo(BattleState.Idle), "Nothing starts a battle without a request.");

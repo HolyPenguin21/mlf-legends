@@ -175,7 +175,11 @@ namespace MLFLegends.Tests.EditMode
             for (var i = 0; i < 9; i++)
                 Assert.That(w.Records[i].Combatants.Select(c => c.Facing), Is.All.EqualTo(i < 6 ? L : R),
                     $"All {count} actors on tick {i + 1}.");
-            Assert.That(w.Records.SelectMany(r => r.Results).All(r => r.Outcome == CommandOutcome.Accepted), Is.True);
+            // Submitted before tick 1: ticks 2..9 are deferred on tick 1, then each is accepted on its own tick.
+            var outcomes = w.Records.SelectMany(r => r.Results).Select(r => r.Outcome).ToArray();
+            Assert.That(outcomes.Count(o => o == CommandOutcome.Accepted), Is.EqualTo(count * 9));
+            Assert.That(outcomes.Count(o => o == CommandOutcome.Deferred), Is.EqualTo(count * 8));
+            Assert.That(outcomes.Length, Is.EqualTo(count * 17), "No rejected command.");
         }
 
         [Test]

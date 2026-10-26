@@ -169,7 +169,7 @@ namespace MLFLegends.Tests.EditMode
             SystemTypeIndex[] Members<T>() where T : ComponentSystemGroup
             {
                 using var systems = world.GetExistingSystemManaged<T>().GetAllSystems(Allocator.Temp);
-                return systems.ToArray().Select(world.Unmanaged.GetSystemTypeIndex).ToArray();
+                return systems.AsArray().ToArray().Select(world.Unmanaged.GetSystemTypeIndex).ToArray();
             }
 
             var state = Members<CombatStateUpdateSystemGroup>();
