@@ -1,5 +1,13 @@
 # MLF Legends — Decision log
 
+## Stage 03 starts in parallel with character art — owner decision (2026-10-26)
+
+- Owner approved the next ordered task: combine 03.1 atlas contract/loading and 03.2 first GPU instanced renderer/depth in [#38](https://github.com/HolyPenguin21/mlf-legends/issues/38), one branch/PR. Final female-mage art is produced independently; use a generated technical atlas for code validation.
+- Reuse the existing ECS authority and CombatSmoke/camera. One shared render path for 2/100/400; render reads position/facing, owns only presentation/cache/GPU resources. No per-fighter GameObjects, gameplay writers or duplicate queues.
+- Match the art manifest v1: source_size/pivot/trim, stable frame/clip ids, multiple pages and reflected anchors. #38 specifies the exact markers representation before production export; dimensions are data. The definitive machine-readable example/schema is the implementing agent's first deliverable.
+- Explicit frame selection and graphics depth tests are in this task; automatic idle/walk/jump selection, animation transitions and final character integration follow in 03.3. Art clip availability does not authorize implementing attacks/dash/magic early.
+- Scope is authorized, implementation is not yet delivered or verified. The artist and code agent must validate a first real frame/JSON when available. Existing QA debt stays qualified.
+
 ## Combined Stage 02.3 + 02.4 delivery — owner decision (2026-10-26)
 
 - Owner requested combining real input (02.3) and fixed-angle orthographic camera (02.4). Expand existing [Issue #22](https://github.com/HolyPenguin21/mlf-legends/issues/22); one branch, one PR, joint acceptance. Substage numbers remain traceability labels. This supersedes any earlier requirement to deliver the camera in a separate PR.

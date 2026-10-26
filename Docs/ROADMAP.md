@@ -2,6 +2,15 @@
 
 **Current manager review (2026-10-26):** merged PR #37 / main `72bb712` reviewed after corrections; tested `4d9e431` has identical runtime/tests/scenes. Three confirmed defects fixed and focus reset/resync regression coverage inspected. Raw evidence confirms EditMode 244/244 twice, PlayMode 21/21 twice, Burst-off Performance 7/7; all 8 negative-control regressions fail as intended. Manager did not re-run Unity. Stage 02 input/camera implementation accepted by manager with documented focus and performance qualifications; Stage 03 GPU sprite rendering is the next planned functional stage. Owner GUI, actual OS focus/hardware and full-frame measurements remain unverified. #30/#17/#25 stay OPEN. See QA.md.
 
+## Stage 03 dispatch — owner-approved sequence (2026-10-26)
+
+**[#38 Atlas contract + GPU sprite renderer](https://github.com/HolyPenguin21/mlf-legends/issues/38): READY FOR IMPLEMENTATION**, one branch/PR `feature/stage03-atlas-renderer`. Start from fresh main. The graphic agent creates the female mage in parallel; the code agent uses a small generated technical atlas, so final art is not a prerequisite.
+
+1. **03.1 + 03.2 together:** document/validate schema v1 (rect/trim/pivot, pages, clip metadata, anchors), load shared immutable tables, one instanced URP renderer reading ECS position/facing, explicit per-instance frame selection and stable 2.5D depth including multiple pages/opaque 3D. Check 2/100/400, cache/resource ownership and lifecycle. No per-fighter GameObjects, second simulation or renderer path.
+2. **03.3 follows review:** bind idle/walk/jump to existing authoritative state, integrate the final mage and calibrate visible scene/animations; profile graphics on actual hardware. Other attack/dash/cast clips remain content preview until their gameplay stages.
+3. Artist/code handshake uses the same manifest before mass export; technical starting canvas 192×192, nominal body height 96, pivot (96,160), right-facing authored art + flip. Dimensions remain data, not shader constants. The exact markers form is fixed in #38 as name → local-index array.
+4. Existing #30/#17/#25 qualifications remain. No merge by the implementing agent; raw graphics checks and headless test results are reported separately. No Stage 03 runtime result is claimed by this dispatch.
+
 ## Governing rules
 - Focus **only on combat** until the owner explicitly reopens campaign design.
 - One authoritative ECS combat architecture from 1v1 through 200v200, without a separate duel/mass code path.
@@ -18,7 +27,7 @@
 | 00 | GitHub/Unity/URP bootstrap, dependencies, folders, test harness, CI feasibility | Source tracked; editor/packages committed; tests owner-reported PASS; CI and independent evidence deferred | ACCEPTED (OWNER) |
 | 01 | ECS simulation, fixed-step scheduler, entity data, command buffer, replay tests and 2/100/400 ECS baseline | Six main tasks delivered, Bootstrap debt #19 implemented; independent code audit #23 static PASS, owner accepted Stage 02 transition with missing Unity proof tracked in #30 and Windows Unicode/Burst #17 separate. No movement/AI/collisions/renderer yet. | ACCEPTED FOR NEXT STAGE (OWNER) — UNITY QA DEFERRED |
 | 02 | Movement and camera | Deterministic X/Z movement + jump Y, facing/action-state, tick-aligned input, fixed orthographic camera follow/zoom/pan, with one ECS authority | IMPLEMENTATION COMPLETE / MANAGER REVIEW PASS — #31/#33/#35 reviewed; #22 merged via PR #37, fixes and raw 244/244 ×2 + 21/21 ×2 + Performance 7/7 independently inspected; manual/hardware/full-frame QA remains qualified in QA.md |
-| 03 | GPU sprite rendering | Atlas animation, direction/frame selection, stable depth sorting, optional equipment layers, instancing/indirect render assessment | NOT STARTED |
+| 03 | GPU sprite rendering | Atlas animation, direction/frame selection, stable depth sorting, optional equipment layers, instancing/indirect render assessment | READY — #38 combines 03.1 atlas contract/loading + 03.2 instanced renderer/depth; artist works in parallel; state-driven animation/final art integration follow in 03.3 |
 | 04 | Collisions | Custom actor/world collision, spatial index, masses, allies yield, enemies block, knockback | NOT STARTED |
 | 05 | Attack resolution | Windup/active/recovery; fast/heavy/jump attacks; shapes, multi-hit rules, damage/impact/stagger | NOT STARTED |
 | 06 | Defense | Facing guard, stability, timely defense/counter opportunity, guard break, dash L+direction | NOT STARTED |
