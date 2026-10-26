@@ -74,7 +74,7 @@ Only source/asset consistency checks and `git diff --check` were executed succes
 
 ## Stage 02.2 implementation evidence (#33, 2026-10-26)
 
-Base main: `46af296`. Branch `feature/stage02-33`, one PR, no autonomous merge.
+Base main: `46af296`. Branch `feature/stage02-33`, [PR #34](https://github.com/HolyPenguin21/mlf-legends/pull/34), merged to main on the project owner's explicit instruction after a bottom-up re-check. Status **MERGED / UNITY-UNVERIFIED** (compile blocker below).
 
 - **Runtime:** `CombatFacingSystem` in `CombatStateUpdateSystemGroup`, `[UpdateBefore(CombatMovementSystem)]`;
   sole post-Spawn writer of `CombatFacing` (searched: Spawn + this system only). Reads only

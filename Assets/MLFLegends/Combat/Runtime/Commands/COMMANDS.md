@@ -13,7 +13,7 @@ movement, attack or AI logic.
 | `CombatCommandSubmission` (buffer) | Producer inbox. Producers only append. | producers (player input adapter, AI) |
 | `PendingCombatCommand` (buffer, internal) | Valid future commands, submission order, ≤ `MaxPendingCommands`. | processor |
 | `CombatCommandResult` (buffer) | Outcome of every command processed on `LastProcessedTick`, sorted by (`Combatant`, `Tick`, submission order). | processor |
-| `AppliedCombatCommand` (per combatant) | The command each in-combat combatant executes on the current tick (accepted or implicit None). Input of the Stage 02+ state owners. | processor |
+| `AppliedCombatCommand` (per combatant) | The command each in-combat combatant executes on the current tick (accepted or implicit None). Input of the Stage 02+ state owners (`CombatFacingSystem`, `CombatMovementSystem`). | processor |
 | `CombatCommandProcessorSystem` | The single consumer and applier. `OrderLast` in `CombatCommandCollectionSystemGroup`. | — |
 
 `CombatCommandProcessorSystem` creates the queue entity in `OnCreate` (a second instance throws, so a

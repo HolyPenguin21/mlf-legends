@@ -32,8 +32,8 @@ namespace MLFLegends.Combat
     }
 
     /// <summary>
-    /// Phase 2 of a tick: the single owners of authoritative combat state (action state, movement,
-    /// later collisions, hits, defeat) apply the accepted commands of the current tick.
+    /// Phase 2 of a tick: the single owners of authoritative combat state (facing, then movement; later
+    /// action state, collisions, hits, defeat) apply the accepted commands of the current tick.
     /// </summary>
     [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
     [UpdateAfter(typeof(CombatCommandCollectionSystemGroup))]
