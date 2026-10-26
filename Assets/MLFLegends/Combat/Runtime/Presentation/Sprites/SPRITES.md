@@ -52,6 +52,8 @@ URP's `sampler_PointClamp` at mip 0, independent of the page's import filter/wra
 
 ## Depth policy
 
+**Manager correction #41 OPEN (2026-10-26):** the current roster-wide cumulative push below can pull a fighter through nearby opaque geometry when unrelated fighters share its depth, even far apart in X/outside the camera. This is a known defect pending correction, not accepted 3D occlusion. The following formulas describe the shipped code under review.
+
 - Body: alpha clip (cutoff 0.5) with depth write/test in every pass; transparent pixels write nothing. Translucent VFX
   will be a separate future material/pass.
 - Cards are planes perpendicular to `DepthAxis`: one view depth per fighter (`dot(position, DepthAxis) / cos pitch`),
@@ -59,7 +61,7 @@ URP's `sampler_PointClamp` at mip 0, independent of the page's import filter/wra
 - **Tie-break (render only):** fighters are ordered back to front by (depth, CombatantId descending); each card is
   pushed towards the camera until it is at least `DepthSeparation` (default 0.002 units) in front of the previous one.
   Equal depth → lowest `CombatantId` in front; independent of chunk order, packing or pages; pushes are only applied
-  where cards are closer than the separation. Bound: `count × separation` (0.8 units for 400 coincident fighters,
+  where cards are closer than the separation. Bound: `count × separation` (0.8 units for 400 equal-depth fighters (their X positions need not coincide),
   typically ≤ 0.04 for formation rows).
 - **Bias:** every card additionally moves `DepthBias` (default 0.02 units) towards the camera along the view direction
   (never changes its screen image), so the ground part wins against a coplanar floor.

@@ -7,6 +7,8 @@ character rendering; nothing here predicts the cost of a real 200 vs 200 battle 
 
 ## Stage 03 sprite renderer measurements (#38, 2026-10-26)
 
+**Manager qualification / correction [#41](https://github.com/HolyPenguin21/mlf-legends/issues/41):** the supplied sprite TSV zero byte deltas do not independently establish GC.Alloc=0: the byte counter has no live-allocation positive control in that PlayMode process. Validate it or record NOT MEASURED and use a checked GC.Alloc sample recorder. Also, the old split extraction/submission Stats are read after a yield and may belong to automatic LateUpdate rather than the timed Refresh; capture them before yielding. Total Refresh timing and recorded draw-call/buffer columns remain separately readable. This qualification applies to the sprite benchmark, not to older ECS sample-recorder results. Raw files stay unchanged; request a new series.
+
 The GPU sprite renderer is not part of this ECS harness (replay/benchmark Worlds have no renderer and no GPU resource).
 Its own 2/100/400 measurements — extraction and submission CPU time, GC.Alloc, buffer re-creation, draw calls with and
 without the renderer, page/frame/instance memory — are produced by the PlayMode `[Category("Performance")]` test

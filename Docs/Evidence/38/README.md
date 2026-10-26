@@ -1,5 +1,7 @@
 # Issue #38 — raw Unity test evidence (Stage 03.1 + 03.2)
 
+**Manager review qualification (2026-10-26), [#41](https://github.com/HolyPenguin21/mlf-legends/issues/41):** all six final XML/logs and six TSVs read; counts agree. The zero byte deltas are unvalidated allocation evidence until the PlayMode counter passes a live-allocation control. Old extract/submit stats can come from a different Refresh because they were sampled after yield. Raw files remain exactly as recorded; new evidence is required after the correction. Source review also established cumulative depth-push occlusion failure with many equal-Z actors outside the local screen region; passing the existing duel GPU tests does not cover it. See QA.md.
+
 Raw files exactly as Unity and the tests wrote them (NUnit XML, Editor.log, TSV, PNG readbacks). Recorded by the
 implementing agent; the manager has not re-run Unity. Machine: Windows 11 Pro 10.0.26100, AMD Ryzen 5 3600, 32 GB,
 NVIDIA GeForce RTX 2060 SUPER (Direct3D 12, feature level 12.2). Unity 6000.5.4f1, Entities/Collections/Serialization
