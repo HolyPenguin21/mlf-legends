@@ -27,6 +27,8 @@ namespace MLFLegends.Tests.EditMode
             m_World = new World("MLF Legends command test");
             m_FixedStep = m_World.CreateSystemManaged<FixedStepSimulationSystemGroup>();
             m_FixedStep.AddSystemToUpdateList(m_World.CreateSystemManaged<BeginFixedStepSimulationEntityCommandBufferSystem>());
+            // The clock's [UpdateAfter] target, as in the default world; no BattleRequest is ever submitted here.
+            m_FixedStep.AddSystemToUpdateList(m_World.CreateSystem<BattleLifecycleSystem>());
             m_FixedStep.AddSystemToUpdateList(m_World.CreateSystem<CombatClockSystem>());
 
             var collection = m_World.CreateSystemManaged<CombatCommandCollectionSystemGroup>();

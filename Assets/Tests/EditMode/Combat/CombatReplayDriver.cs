@@ -140,14 +140,17 @@ namespace MLFLegends.Tests.EditMode
     {
         /// <summary>
         /// The runtime systems of one battle World, as the default world has them. No hand-made order: the root-level
-        /// initialisation sorts them by their attributes.
+        /// initialisation sorts them by their attributes. BeginSimulation ECB is listed because Unity's
+        /// FixedStepSimulationSystemGroup declares [UpdateAfter] on it; without it the sorter ignores that attribute.
         /// </summary>
         public static readonly Type[] RuntimeSystems =
         {
+            typeof(BeginSimulationEntityCommandBufferSystem),
             typeof(FixedStepSimulationSystemGroup),
             typeof(BeginFixedStepSimulationEntityCommandBufferSystem),
             typeof(EndFixedStepSimulationEntityCommandBufferSystem),
             typeof(BattleLifecycleSystem),
+            typeof(BattleLifecycleInitializationProxy),
             typeof(CombatClockSystem),
             typeof(CombatCommandCollectionSystemGroup),
             typeof(CombatCommandProcessorSystem),
@@ -204,7 +207,9 @@ namespace MLFLegends.Tests.EditMode
             DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups(World, RuntimeSystems);
             FixedStep = World.GetExistingSystemManaged<FixedStepSimulationSystemGroup>();
 
-            AddToPhase<PlayerCommandProducer>(typeof(CombatCommandCollectionSystemGroup)).Driver = this;
+            // Both producers join before one sort: sorting with only the player present would ignore its
+            // [UpdateBefore(AiCommandProducer)] as invalid (logged by Entities) instead of ordering the pair.
+            AddToPhase<PlayerCommandProducer>(typeof(CombatCommandCollectionSystemGroup), sort: false).Driver = this;
             AddToPhase<AiCommandProducer>(typeof(CombatCommandCollectionSystemGroup)).Driver = this;
             AddToPhase<ReplayRecorder>(typeof(CombatPublicationSystemGroup)).Driver = this;
         }
@@ -366,12 +371,13 @@ namespace MLFLegends.Tests.EditMode
             }
         }
 
-        T AddToPhase<T>(Type phase) where T : SystemBase, new()
+        T AddToPhase<T>(Type phase, bool sort = true) where T : SystemBase, new()
         {
             var system = World.CreateSystemManaged<T>();
             var group = (ComponentSystemGroup)World.GetExistingSystemManaged(phase);
             group.AddSystemToUpdateList(system);
-            group.SortSystems();
+            if (sort)
+                group.SortSystems();
             return system;
         }
 

@@ -1,5 +1,6 @@
 using MLFLegends.Combat;
 using NUnit.Framework;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -17,6 +18,70 @@ namespace MLFLegends.Tests.EditMode
                 using var session = Manager.CreateEntityQuery(typeof(BattleSession));
                 return Manager.GetBuffer<BattleRequest>(session.GetSingletonEntity()).Length;
             }
+        }
+
+        static int CountOf<T>(World world, NativeArray<SystemHandle> systems) where T : unmanaged, ISystem
+        {
+            var type = TypeManager.GetSystemTypeIndex<T>();
+            var count = 0;
+            foreach (var system in systems)
+                count += world.Unmanaged.GetSystemTypeIndex(system) == type ? 1 : 0;
+            return count;
+        }
+
+        [Test]
+        public void InitializationProxyUpdatesTheOneFixedStepLifecycleOnAPausedFrame()
+        {
+            using (var all = m_World.Unmanaged.GetAllSystems(Allocator.Temp))
+                Assert.That(CountOf<BattleLifecycleSystem>(m_World, all), Is.EqualTo(1), "Exactly one lifecycle instance in the World.");
+
+            using (var initialization = m_World.GetExistingSystemManaged<InitializationSystemGroup>().GetAllSystems(Allocator.Temp))
+            {
+                Assert.That(CountOf<BattleLifecycleInitializationProxy>(m_World, initialization.AsArray()), Is.EqualTo(1));
+                Assert.That(initialization.IndexOf(m_Lifecycle), Is.EqualTo(-1), "Initialization holds the proxy, not the lifecycle.");
+            }
+
+            using (var fixedStep = m_FixedStep.GetAllSystems(Allocator.Temp))
+            {
+                Assert.That(fixedStep.IndexOf(m_Lifecycle), Is.GreaterThanOrEqualTo(0));
+                Assert.That(CountOf<BattleLifecycleInitializationProxy>(m_World, fixedStep.AsArray()), Is.Zero);
+            }
+
+            Step(2);
+            var tick = Tick;
+            BattleRequest.Submit(Manager, BattleRequest.Start(BattleSetup.Default, owner: 4));
+            var before = m_World.Unmanaged.ResolveSystemStateRef(m_Lifecycle).LastSystemVersion;
+            InitializeFrame();
+            Assert.That(m_World.Unmanaged.ResolveSystemStateRef(m_Lifecycle).LastSystemVersion, Is.Not.EqualTo(before),
+                "The proxy ran the existing lifecycle instance.");
+            Assert.That(RequestCount, Is.Zero, "The one request buffer was drained once.");
+            Assert.That((Session.IsActive, Session.Owner, Session.BattleStartTick), Is.EqualTo((true, 4u, tick)));
+            Assert.That(Tick, Is.EqualTo(tick), "A paused frame applies requests without a fixed tick.");
+            Assert.That(Queue.LastProcessedTick, Is.EqualTo(tick), "No command phase ran.");
+
+            BattleRequest.Submit(Manager, BattleRequest.End(owner: 4));
+            InitializeFrame();
+            Assert.That((Session.IsActive, Session.LastOutcome, Tick), Is.EqualTo((false, BattleRequestOutcome.Ended, tick)));
+            Assert.That(LiveIds, Is.Empty);
+        }
+
+        [Test]
+        public void InitializationProxyIsInertWithoutOrAfterTheLifecycle()
+        {
+            using (var bare = new World("MLF Legends proxy without lifecycle"))
+            {
+                var initialization = bare.CreateSystemManaged<InitializationSystemGroup>();
+                initialization.AddSystemToUpdateList(bare.CreateSystem<BattleLifecycleInitializationProxy>());
+                initialization.SortSystems();
+                Assert.That(() => initialization.Update(), Throws.Nothing);
+                Assert.That(bare.EntityManager.CreateEntityQuery(typeof(BattleSession)).CalculateEntityCount(), Is.Zero,
+                    "The proxy creates no session of its own.");
+            }
+
+            Request(BattleRequest.Start(BattleSetup.Default));
+            m_World.DestroySystem(m_Lifecycle);
+            Assert.That(Manager.CreateEntityQuery(typeof(BattleSession)).CalculateEntityCount(), Is.Zero);
+            Assert.That(() => InitializeFrame(), Throws.Nothing, "A destroyed lifecycle is not updated by the proxy.");
         }
 
         [TestCase((ushort)0)]
