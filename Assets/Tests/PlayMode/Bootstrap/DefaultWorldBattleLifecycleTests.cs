@@ -96,8 +96,27 @@ namespace MLFLegends.Tests.PlayMode
             using (var sessions = Manager.CreateEntityQuery(typeof(BattleSession)))
                 Assert.That(sessions.CalculateEntityCount(), Is.EqualTo(1));
             using (var members = DefaultWorld.GetExistingSystemManaged<CombatStateUpdateSystemGroup>().GetAllSystems(Allocator.Temp))
-                Assert.That(members.ToArray(), Is.EqualTo(new[] { DefaultWorld.GetExistingSystem<CombatMovementSystem>() }),
-                    "Default world auto-creates the same single motion owner as isolated replay and benchmarks.");
+            {
+                // Counted by system type so a second instance of either owner fails; other future owners are allowed.
+                var types = members.ToArray().Select(DefaultWorld.Unmanaged.GetSystemTypeIndex).ToArray();
+                var facing = TypeManager.GetSystemTypeIndex<CombatFacingSystem>();
+                var movement = TypeManager.GetSystemTypeIndex<CombatMovementSystem>();
+                Assert.That(types.Count(t => t == facing), Is.EqualTo(1), "Exactly one auto-created facing owner in State.");
+                Assert.That(types.Count(t => t == movement), Is.EqualTo(1), "Exactly one auto-created motion owner in State.");
+                Assert.That(System.Array.IndexOf(types, facing), Is.LessThan(System.Array.IndexOf(types, movement)),
+                    "Default world orders facing before movement, as isolated replay and benchmarks do.");
+                Assert.That(members.ToArray(), Is.EqualTo(new[]
+                {
+                    DefaultWorld.GetExistingSystem<CombatFacingSystem>(), DefaultWorld.GetExistingSystem<CombatMovementSystem>(),
+                }), "Stage 02.2 State holds exactly the facing then movement owners.");
+            }
+            foreach (var phase in new[] { DefaultWorld.GetExistingSystemManaged<CombatCommandCollectionSystemGroup>(),
+                         (ComponentSystemGroup)DefaultWorld.GetExistingSystemManaged<CombatPublicationSystemGroup>() })
+            {
+                using var members = phase.GetAllSystems(Allocator.Temp);
+                Assert.That(members.ToArray(), Has.None.EqualTo(DefaultWorld.GetExistingSystem<CombatFacingSystem>())
+                    .And.None.EqualTo(DefaultWorld.GetExistingSystem<CombatMovementSystem>()), $"No State owner in {phase.GetType().Name}.");
+            }
             Assert.That(Session.State, Is.EqualTo(BattleState.Idle), "Nothing starts a battle without a request.");
         }
 
@@ -130,12 +149,14 @@ namespace MLFLegends.Tests.PlayMode
                 using (var queue = Manager.CreateEntityQuery(typeof(CombatCommandQueue)))
                     Manager.GetBuffer<CombatCommandSubmission>(queue.GetSingletonEntity()).Add(new CombatCommandSubmission(new CombatCommand
                     {
-                        Combatant = Session.HumanCombatant, Tick = Tick + 1, MoveX = 1,
+                        Combatant = Session.HumanCombatant, Tick = Tick + 1, MoveX = -1,
                         Pressed = CommandButtons.Jump, Source = CommandSource.Player,
                     }));
+                Assert.That(Manager.GetComponentData<CombatFacing>(human).Value, Is.EqualTo(FacingDirection.Right), "Spawned from setup.");
                 Time.timeScale = 1;
                 yield return NextTick();
                 Assert.That(Manager.GetComponentData<CombatMotion>(human).Grounded, Is.False);
+                Assert.That(Manager.GetComponentData<CombatFacing>(human).Value, Is.EqualTo(FacingDirection.Left), "Accepted -X turns on its tick.");
                 Time.timeScale = 0;
                 yield return null; // settle time propagation, then capture the paused boundary
                 var position = Manager.GetComponentData<CombatPosition>(human);
@@ -146,6 +167,7 @@ namespace MLFLegends.Tests.PlayMode
                 Assert.That(Tick, Is.EqualTo(tick));
                 Assert.That(Manager.GetComponentData<CombatPosition>(human), Is.EqualTo(position));
                 Assert.That(Manager.GetComponentData<CombatMotion>(human), Is.EqualTo(motion));
+                Assert.That(Manager.GetComponentData<CombatFacing>(human).Value, Is.EqualTo(FacingDirection.Left));
                 BattleRequest.Submit(Manager, BattleRequest.Restart(BattleSetup.Default));
                 yield return Until(() => Session.BattleNumber == number + 2);
                 Assert.That(Manager.Exists(human), Is.False);
@@ -154,6 +176,12 @@ namespace MLFLegends.Tests.PlayMode
                 using (var motions = actors.ToComponentDataArray<CombatMotion>(Allocator.Temp))
                     foreach (var fresh in motions)
                         Assert.That((fresh.Grounded, fresh.VerticalVelocity), Is.EqualTo((true, 0f)));
+                using (var actors = Manager.CreateEntityQuery(typeof(CombatTeam), typeof(CombatFacing)))
+                using (var teams = actors.ToComponentDataArray<CombatTeam>(Allocator.Temp))
+                using (var facings = actors.ToComponentDataArray<CombatFacing>(Allocator.Temp))
+                    for (var i = 0; i < teams.Length; i++)
+                        Assert.That(facings[i].Value, Is.EqualTo(teams[i].Value == BattleSetup.Default.Human.Team
+                            ? BattleSetup.Default.Human.Facing : BattleSetup.Default.Ai.Facing), "Paused restart spawns setup facing, no turn leaks.");
                 BattleRequest.Submit(Manager, BattleRequest.End());
                 yield return Until(() => !Session.IsActive);
                 using (var actors = Manager.CreateEntityQuery(typeof(CombatMotion)))

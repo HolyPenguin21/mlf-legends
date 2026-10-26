@@ -16,7 +16,7 @@ using Object = UnityEngine.Object;
 
 namespace MLFLegends.Tests.EditMode
 {
-    // Stage 01 harness (#7), now measuring Stage 02.1 runtime (#31), with 2, 100 and 400 combatants that exist at the same time: battle start/end through
+    // Stage 01 harness (#7), now measuring Stage 02.2 runtime (#31 movement, #33 facing), with 2, 100 and 400 combatants that exist at the same time: battle start/end through
     // the real lifecycle, 1000 fixed ticks with and without commands at 1, 4 and 10 ticks per render frame, managed and
     // native memory. One warm-up pass, then Repetitions measured passes, all in one World per roster size. Every simulated
     // render frame is followed by a real editor frame (yield, untimed): main-thread Temp memory is only released at the end
@@ -170,14 +170,14 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(SceneObjectCounts(), Is.EqualTo(sceneObjectsBefore), "No GameObject, Rigidbody, Animator or NavMeshAgent was created.");
         }
 
-        // Untimed: a future harness edit must not silently measure Stage 02 without its motion owner.
-        static void AssertMovementOwner(CombatBenchmarkWorld bench)
+        // Untimed: a future harness edit must not silently measure Stage 02 without its facing and motion owners.
+        static void AssertStateOwners(CombatBenchmarkWorld bench)
         {
-            var movement = bench.World.GetExistingSystem<CombatMovementSystem>();
-            Assert.That(movement, Is.Not.EqualTo(SystemHandle.Null));
+            Assert.That(bench.World.GetExistingSystem<CombatFacingSystem>(), Is.Not.EqualTo(SystemHandle.Null));
+            Assert.That(bench.World.GetExistingSystem<CombatMovementSystem>(), Is.Not.EqualTo(SystemHandle.Null));
+            ReplayWorld.AssertStateOwners(bench.World);
             using var systems = bench.World.GetExistingSystemManaged<CombatStateUpdateSystemGroup>().GetAllSystems(Allocator.Temp);
-            Assert.That(systems.Length, Is.EqualTo(1), "Stage 02.1 State contains the single movement owner.");
-            Assert.That(systems[0], Is.EqualTo(movement));
+            Assert.That(systems.Length, Is.EqualTo(2), "Stage 02.2 State contains exactly the facing and movement owners.");
         }
 
         static int[] SceneObjectCounts() => new[]
@@ -404,7 +404,7 @@ namespace MLFLegends.Tests.EditMode
             var setup = Roster(combatants);
             var report = new BenchmarkReport();
             m_Bench = new CombatBenchmarkWorld($"MLF Legends baseline {combatants}");
-            AssertMovementOwner(m_Bench);
+            AssertStateOwners(m_Bench);
             var checks = new Checks(m_Bench, combatants);
 
             for (var rep = 0; rep <= Repetitions; rep++)
@@ -423,8 +423,8 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(m_Bench.Manager.CreateEntityQuery(typeof(BattleSession)).CalculateEntityCount(), Is.EqualTo(1));
             Assert.That(checks.Battles, Is.EqualTo((Repetitions + 1) * (2 * RequestCycles + 1 + 8)));
 
-            var path = report.Write($"stage02-31-{BenchmarkEnvironment.Label}-n{combatants}", environment);
-            Debug.Log($"[Stage 02.1 #31 baseline] {combatants} combatants: {report.Rows.Count} rows written to {path}");
+            var path = report.Write($"stage02-33-{BenchmarkEnvironment.Label}-n{combatants}", environment);
+            Debug.Log($"[Stage 02.2 #33 baseline] {combatants} combatants: {report.Rows.Count} rows written to {path}");
         }
 
         /// <summary>
@@ -442,7 +442,7 @@ namespace MLFLegends.Tests.EditMode
             var setup = Roster(combatants);
             var report = new BenchmarkReport();
             m_Bench = new CombatBenchmarkWorld($"MLF Legends frame memory {combatants}");
-            AssertMovementOwner(m_Bench);
+            AssertStateOwners(m_Bench);
             var checks = new Checks(m_Bench, combatants);
             var series = new[]
             {
@@ -509,8 +509,8 @@ namespace MLFLegends.Tests.EditMode
             m_Bench.ApplyRequests();
             checks.Ended();
 
-            var path = report.Write($"stage02-31-{BenchmarkEnvironment.Label}-memory-n{combatants}", environment);
-            Debug.Log($"[Stage 02.1 #31 baseline] frame memory, {combatants} combatants: written to {path}");
+            var path = report.Write($"stage02-33-{BenchmarkEnvironment.Label}-memory-n{combatants}", environment);
+            Debug.Log($"[Stage 02.2 #33 baseline] frame memory, {combatants} combatants: written to {path}");
         }
     }
 }

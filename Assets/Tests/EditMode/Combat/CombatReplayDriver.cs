@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using MLFLegends.Combat;
+using NUnit.Framework;
 using Unity.Collections;
 using Unity.Core;
 using Unity.Entities;
@@ -18,7 +19,8 @@ namespace MLFLegends.Tests.EditMode
     //     never by EntityQuery/chunk order), raw and normalized (roles H/A, relative ticks);
     //   - optional in-step requesters that submit a BattleRequest from a chosen phase of a chosen tick.
     // Replay input = BattleSetup + script (+ the between-frame requests a test makes). There is no seed: there is no
-    // RNG or attack system that could consume one. Stage 02.1 uses the real movement system and records its kinetic state.
+    // RNG or attack system that could consume one. Stage 02.1/02.2 use the real movement and facing systems and record
+// their kinetic and facing state.
 
     /// <summary>Logical role of a command target; the actual <see cref="CombatantId"/> differs per battle and World.</summary>
     public enum ReplayRole : byte
@@ -150,9 +152,34 @@ namespace MLFLegends.Tests.EditMode
             typeof(CombatCommandCollectionSystemGroup),
             typeof(CombatCommandProcessorSystem),
             typeof(CombatStateUpdateSystemGroup),
+            typeof(CombatFacingSystem),
             typeof(CombatMovementSystem),
             typeof(CombatPublicationSystemGroup),
         };
+
+        /// <summary>
+        /// Exactly one CombatFacingSystem and one CombatMovementSystem (counted by system type, not by the first
+        /// handle), both inside State, facing first, neither in Collection or Publication. Other State members
+        /// (test requesters, future owners) are allowed.
+        /// </summary>
+        public static void AssertStateOwners(World world)
+        {
+            var facing = TypeManager.GetSystemTypeIndex<CombatFacingSystem>();
+            var movement = TypeManager.GetSystemTypeIndex<CombatMovementSystem>();
+            SystemTypeIndex[] Members<T>() where T : ComponentSystemGroup
+            {
+                using var systems = world.GetExistingSystemManaged<T>().GetAllSystems(Allocator.Temp);
+                return systems.ToArray().Select(world.Unmanaged.GetSystemTypeIndex).ToArray();
+            }
+
+            var state = Members<CombatStateUpdateSystemGroup>();
+            Assert.That(state.Count(t => t == facing), Is.EqualTo(1), "Exactly one facing owner in State.");
+            Assert.That(state.Count(t => t == movement), Is.EqualTo(1), "Exactly one movement owner in State.");
+            Assert.That(Array.IndexOf(state, facing), Is.LessThan(Array.IndexOf(state, movement)),
+                "Facing turns before movement integrates the same tick.");
+            foreach (var other in Members<CombatCommandCollectionSystemGroup>().Concat(Members<CombatPublicationSystemGroup>()))
+                Assert.That(other != facing && other != movement, "Facing/movement owners run only in State.");
+        }
 
         /// <summary>A <see cref="CombatantId"/> that no test World ever issues.</summary>
         public const uint NeverIssuedId = uint.MaxValue;
