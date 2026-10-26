@@ -4,7 +4,9 @@
   "references": [
     "MLFLegends.Combat.Runtime",
     "Unity.Collections",
-    "Unity.Entities"
+    "Unity.Entities",
+    "Unity.InputSystem",
+    "Unity.InputSystem.TestFramework"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

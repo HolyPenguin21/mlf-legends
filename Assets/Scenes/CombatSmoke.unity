@@ -180,6 +180,7 @@ GameObject:
   - component: {fileID: 673466317}
   - component: {fileID: 673466316}
   - component: {fileID: 673466315}
+  - component: {fileID: 673466318}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -229,8 +230,8 @@ Camera:
   near clip plane: 0.3
   far clip plane: 1000
   field of view: 60
-  orthographic: 0
-  orthographic size: 5
+  orthographic: 1
+  orthographic size: 6
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -254,13 +255,38 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 673466314}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: -10}
+  m_LocalRotation: {x: 0.34202015, y: 0, z: 0, w: 0.9396926}
+  m_LocalPosition: {x: 0, y: 20.283628, z: -22.981333}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 40, y: 0, z: 0}
+--- !u!114 &673466318
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 673466314}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 49e1c44c7ada4a45b4f0fb1719f16d1c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MLFLegends.Combat.Runtime::MLFLegends.Combat.CombatCameraController
+  m_Actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  m_Pitch: 40
+  m_Yaw: 0
+  m_FollowOffset: {x: 0, y: 1, z: 0}
+  m_AltitudeFollow: 0
+  m_Distance: 30
+  m_OrthographicSize: 6
+  m_MinOrthographicSize: 2
+  m_MaxOrthographicSize: 20
+  m_ZoomRate: 1.5
+  m_ZoomStepFactor: 1.15
+  m_PanSpeed: 1
+  m_MaxPan: 20
 --- !u!1 &993941704
 GameObject:
   m_ObjectHideFlags: 0
@@ -358,6 +384,51 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
+--- !u!1 &1048233201
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1048233203}
+  - component: {fileID: 1048233202}
+  m_Layer: 0
+  m_Name: Player Input
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1048233202
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1048233201}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f24e838d353a45e18e1aea3d1cf23c87, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MLFLegends.Combat.Runtime::MLFLegends.Combat.PlayerInputAdapter
+  m_Actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+--- !u!4 &1048233203
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1048233201}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -365,3 +436,4 @@ SceneRoots:
   - {fileID: 673466317}
   - {fileID: 993941706}
   - {fileID: 233848544}
+  - {fileID: 1048233203}
