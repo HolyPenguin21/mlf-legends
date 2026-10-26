@@ -161,6 +161,12 @@ namespace MLFLegends.Combat
                     errors.Add($"pages[{index}] \"{binding.File}\": texture '{texture.name}' uses compressed {texture.graphicsFormat}; import with Compression None");
                     ok = false;
                 }
+                else if (!GraphicsFormatUtility.HasAlphaChannel(texture.graphicsFormat))
+                {
+                    // Without alpha every rect would be fully opaque: a rectangular occluder around the body.
+                    errors.Add($"pages[{index}] \"{binding.File}\": texture '{texture.name}' has no alpha channel ({texture.graphicsFormat}); pages must be RGBA");
+                    ok = false;
+                }
 
                 if (texture.mipmapCount > 1)
                     warnings?.Add($"pages[{index}] \"{binding.File}\": texture '{texture.name}' has {texture.mipmapCount} mipmaps; disable Generate Mipmaps (sampling uses mip 0, the rest wastes memory)");

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Stopwatch = System.Diagnostics.Stopwatch;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Profiling;
@@ -62,6 +63,12 @@ namespace MLFLegends.Combat
             public int InstanceBuffersCreated;
 
             public float MaxDepthOffset;
+
+            /// <summary>CPU time of the last ECS extraction (depth order, page grouping), microseconds.</summary>
+            public double ExtractMicroseconds;
+
+            /// <summary>CPU time of the last GPU submission (buffer upload, property blocks, draw calls), microseconds.</summary>
+            public double SubmitMicroseconds;
         }
 
         static readonly int s_MainTex = Shader.PropertyToID("_MainTex");
@@ -349,13 +356,25 @@ namespace MLFLegends.Combat
             var camera = TargetCamera;
             if (camera != null)
                 m_Basis = SpriteCardBasis.FromCamera(camera.transform.forward, camera.transform.up);
-            m_Extraction.Run(camera != null ? ResolveWorld() : null, m_Atlas, m_Basis, m_DepthSeparation, m_DefaultFrame);
+            m_Stats.Submissions = 0;
+            m_Stats.SubmitMicroseconds = 0;
+            var start = Stopwatch.GetTimestamp();
+            // A superseded renderer neither reads ECS nor draws (its World binding and selections are kept).
+            if (IsActiveOwner)
+                m_Extraction.Run(camera != null ? ResolveWorld() : null, m_Atlas, m_Basis, m_DepthSeparation, m_DefaultFrame);
+            else
+                m_Extraction.Clear();
+            m_Stats.ExtractMicroseconds = Microseconds(start);
             m_Stats.Instances = m_Extraction.Count;
             m_Stats.MaxDepthOffset = m_Extraction.MaxDepthOffset;
-            m_Stats.Submissions = 0;
-            if (m_Extraction.Count > 0 && IsActiveOwner)
-                Submit(camera);
+            if (m_Extraction.Count == 0)
+                return;
+            start = Stopwatch.GetTimestamp();
+            Submit(camera);
+            m_Stats.SubmitMicroseconds = Microseconds(start);
         }
+
+        static double Microseconds(long start) => (Stopwatch.GetTimestamp() - start) * 1e6 / Stopwatch.Frequency;
 
         World ResolveWorld()
         {

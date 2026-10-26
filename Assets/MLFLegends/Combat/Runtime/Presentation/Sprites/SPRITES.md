@@ -72,6 +72,7 @@ URP's `sampler_PointClamp` at mip 0, independent of the page's import filter/wra
 - One `RenderMeshPrimitives` call per atlas page that has instances: the instance buffer is grouped by page and
   `_InstanceOffset` selects the page's range (the API has no start instance). Calls depend on pages, not fighters.
   Measured: 6 → 8 draw calls per camera render with the renderer at 2, 100 and 400 fighters (one page).
+  `RenderStats.ExtractMicroseconds`/`SubmitMicroseconds` give the CPU split of the last refresh.
 - Bounds per page: support points' box + the atlas' real extents (widest frame both ways, highest top, deepest part
   below the pivot, push range). No culling of the simulation, ever.
 - Memory of an atlas: Σ page `W × H × 4` bytes (no mipmaps/compression); fixture 126 976 B, frame table 96 B. PNG size
@@ -87,7 +88,7 @@ URP's `sampler_PointClamp` at mip 0, independent of the page's import filter/wra
 - Explicit frame selections (`SetFrame`, `SetClipFrame`, `SetDefaultFrame`) are a preview/test seam: per CombatantId,
   dropped on a new battle, another World or atlas. No clock, no state binding, no animation FSM.
 - Two enabled renderers on the same World + Camera: the later enabled one draws, the earlier logs one warning and stays
-  idle while superseded (no double draw); other cameras/Worlds are separate owners. The static list of enabled renderers
+  idle while superseded (no ECS read, no draw; its World binding and selections are kept); other cameras/Worlds are separate owners. The static list of enabled renderers
   is presentation-only and reset on `SubsystemRegistration` (Domain Reload off).
 - Disable/destroy releases instance buffer, material, mesh, atlas (frame buffer, native tables), generated pages, queries
   and native lists. Replay/benchmark Worlds have no renderer and get no GPU resource or structural change.
@@ -109,6 +110,15 @@ owners, rejected catalog, CombatSmoke; `[Category("Graphics")]` RenderTexture re
 device); `[Category("Performance")]` 2/100/400 measurements → `TestResults/performance/stage03-sprites-n*.tsv`.
 
 ## Known limits (this stage)
+
+- Geometry is exact for camera pitch ≈ 5.8°…84.3° (|cos|, |sin| ≥ 0.1); towards a top-down view the upright card is
+  seen edge-on and shrinks. The calibrated camera is 40°.
+- Pixels below the pivot are depth-tested as a floor decal towards the camera: within a few tenths of a unit they may
+  overlap a neighbour's legs; an airborne fighter's below-pivot part floats horizontally at its height.
+- Body alpha is clipped at 0.5 (no soft edges); no fog, motion vectors (TAA) or shadow caster pass; `#pragma target 4.5`
+  (structured buffers in the vertex stage: no GLES 3.0/WebGL 1); XR single-pass instancing is not supported.
+- 96 px = 2 units at orthographic size 6 is not pixel-perfect (non-integer screen pixels per source pixel); pixel-perfect
+  calibration belongs to 03.3.
 
 - Main-thread managed extraction (~0.2 ms for 400 in the Editor); Burst/jobs only if later profiles need it.
 - No indirect/compute culling, Entities Graphics path, shadows, lighting, translucent VFX, equipment layers or terrain

@@ -11,7 +11,12 @@ GPU data; the battle keeps simulating and nothing is drawn.
 
 ## 1. Files
 
-- One UTF-8 JSON manifest per character plus its PNG pages (RGBA8 with alpha, each side ≤ 2048 px).
+- One UTF-8 JSON manifest per character (a byte order mark is tolerated; comments and trailing content are not JSON
+  and are rejected) plus its PNG pages (RGBA8 with alpha, each side ≤ 2048 px). A page imported without an alpha
+  channel is rejected: every rect would draw as an opaque box.
+- **Body alpha is binary:** the body is alpha-clipped at 50 %. Pixels with alpha < 128 are not drawn and do not occlude;
+  pixels ≥ 128 are drawn fully opaque. Do not rely on soft/anti-aliased edges or translucent hair/cloth in body frames;
+  translucent effects belong to a future VFX layer.
 - Pages may have different sizes. Not every clip needs its own page; a page may hold frames of several clips.
 - PNGs and large art sources are delivered outside Git. Suggested import folder:
   `Assets/MLFLegends/Art/Characters/MageFemale01/` (content only, no code).
@@ -85,7 +90,8 @@ Anchor record:
 { "position": [117, 119.5], "direction": [0.25, 1], "layer": "front", "visible": true }
 ```
 
-- `position`: finite `[x, y]` on the **untrimmed** source canvas (before trim), continuous coordinates.
+- `position`: finite `[x, y]` on the **untrimmed** source canvas (before trim), continuous coordinates. It may lie
+  outside the useful rect (e.g. a hidden hand) and is not range-checked.
 - `direction`: finite, non-zero `[dx, dy]` in canvas axes (Y down); not required to be normalised.
 - `layer`: `"front"` or `"back"` relative to the body, for future weapon/VFX layers.
 - `visible`: boolean. A hidden hand keeps its virtual position with `visible: false`.

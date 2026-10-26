@@ -36,6 +36,8 @@ namespace MLFLegends.Tests.PlayMode
         struct Sample
         {
             public double RefreshUs;
+            public double ExtractUs;
+            public double SubmitUs;
             public double RenderUs;
             public long GcBytes;
             public long DrawCalls;
@@ -97,6 +99,8 @@ namespace MLFLegends.Tests.PlayMode
                     samples[i] = new Sample
                     {
                         RefreshUs = watch.Elapsed.TotalMilliseconds * 1000.0,
+                        ExtractUs = withRenderer ? renderer.Stats.ExtractMicroseconds : 0,
+                        SubmitUs = withRenderer ? renderer.Stats.SubmitMicroseconds : 0,
                         RenderUs = render.Elapsed.TotalMilliseconds * 1000.0,
                         GcBytes = gcAfter - gcBefore,
                         DrawCalls = statsDrawCalls > 0 ? statsDrawCalls : drawCalls.Valid ? drawCalls.LastValue : -1,
@@ -157,6 +161,8 @@ namespace MLFLegends.Tests.PlayMode
                 SystemInfo.graphicsDeviceType.ToString(),
                 F(Median(samples.Select(s => s.RefreshUs))),
                 F(Percentile(samples.Select(s => s.RefreshUs), 0.95)),
+                F(Median(samples.Select(s => s.ExtractUs))),
+                F(Median(samples.Select(s => s.SubmitUs))),
                 F(Median(samples.Select(s => s.RenderUs))),
                 samples.Sum(s => s.GcBytes).ToString(CultureInfo.InvariantCulture),
                 Counter(s => s.DrawCalls),
@@ -174,7 +180,7 @@ namespace MLFLegends.Tests.PlayMode
         {
             var directory = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "TestResults", "performance"));
             Directory.CreateDirectory(directory);
-            var header = "fighters\tmode\tdevice\trefresh_median_us\trefresh_p95_us\tcamera_render_median_us\tgc_bytes_measured\t"
+            var header = "fighters\tmode\tdevice\trefresh_median_us\trefresh_p95_us\textract_median_us\tsubmit_median_us\tcamera_render_median_us\tgc_bytes_measured\t"
                 + "draw_calls_median\tbatches_median\tsetpass_median\tsubmissions\tinstance_buffers_created\tinstance_buffer_bytes\t"
                 + "atlas_page_bytes\tframe_table_bytes";
             File.WriteAllLines(Path.Combine(directory, $"stage03-sprites-n{count}.tsv"), new[] { header }.Concat(rows));

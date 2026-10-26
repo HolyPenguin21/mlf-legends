@@ -188,6 +188,26 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(errors, Has.Some.Contains("pages: must contain at least one page"));
         }
 
+        [Test]
+        public void AUtf8ByteOrderMarkIsAccepted()
+        {
+            ParseValid((char)0xFEFF + TechnicalAtlasFixture.ManifestJson);
+        }
+
+        [TestCase(" x")]
+        [TestCase(" {}")]
+        [TestCase(" }")]
+        public void ContentAfterTheRootObjectIsRejected(string tail)
+        {
+            ParseInvalid(TechnicalAtlasFixture.ManifestJson + tail);
+        }
+
+        [Test]
+        public void CommentsAreNotJson()
+        {
+            ParseInvalid(TechnicalAtlasFixture.ManifestJson.Replace("\"schema_version\": 1,", "// exporter note\n  \"schema_version\": 1,"));
+        }
+
         [TestCase("")]
         [TestCase("   ")]
         [TestCase("[1, 2]")]

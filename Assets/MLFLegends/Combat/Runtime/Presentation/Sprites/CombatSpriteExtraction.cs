@@ -122,6 +122,18 @@ namespace MLFLegends.Combat
 
         public void ClearSelections() => m_Selections.Clear();
 
+        /// <summary>Empties the last result (no instances, no pages) but keeps the World binding and selections.</summary>
+        public void Clear()
+        {
+            if (m_Disposed)
+                throw new ObjectDisposedException(nameof(CombatSpriteExtraction));
+            m_Instances.Clear();
+            m_InstanceIds.Clear();
+            MaxDepthOffset = 0f;
+            Array.Clear(m_PageCounts, 0, m_PageCounts.Length);
+            m_PageCount = 0;
+        }
+
         /// <summary>
         /// Rebuilds the instances from <paramref name="world"/> (null or disposed → none). <paramref name="defaultFrame"/> is
         /// drawn without a selection; selections outside the atlas fall back to it.

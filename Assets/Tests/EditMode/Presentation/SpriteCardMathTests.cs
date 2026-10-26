@@ -250,6 +250,15 @@ namespace MLFLegends.Tests.EditMode
                 if (extra != null)
                     Rejects(new[] { new SpriteAtlasPageBinding(p0, extra), new SpriteAtlasPageBinding(p1, pages[1]) }, "compressed");
                 Rejects(null, "no binding");
+                var opaque = new Texture2D(128, 128, TextureFormat.RGB24, false);
+                try
+                {
+                    Rejects(new[] { new SpriteAtlasPageBinding(p0, opaque), new SpriteAtlasPageBinding(p1, pages[1]) }, "has no alpha channel");
+                }
+                finally
+                {
+                    Object.DestroyImmediate(opaque);
+                }
 
                 var errors = new List<string>();
                 Assert.That(SpriteAtlas.Load("{}", TechnicalAtlasFixture.Bind(pages), errors, null), Is.Null, "A broken manifest rejects before binding.");

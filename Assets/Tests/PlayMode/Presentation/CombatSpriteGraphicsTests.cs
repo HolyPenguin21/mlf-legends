@@ -271,6 +271,25 @@ namespace MLFLegends.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator AFighterPassingThroughAnotherInDepthSwapsFrontExactlyAtEqualDepth()
+        {
+            // The AI steps from 16 target pixels behind the human to 16 in front (2 px per step), across pages; at equal depth
+            // the human (lower ID) stays in front, so the front changes once, between equal and nearer.
+            var human = new Fighter { Support = float3.zero, Facing = FacingDirection.Right, Frame = "tech_c" };
+            for (var step = 8; step >= -8; step -= 2)
+            {
+                var ai = new Fighter { Support = new float3(-0.25f, 0f, ShiftZ(step * 2, 2f)), Facing = FacingDirection.Right, Frame = "tech_a" };
+                yield return RestartBattle(Duel(human.Support, human.Facing, ai.Support, ai.Facing));
+                m_Renderer.SetFrame(Human, "tech_c");
+                var pixels = Render();
+                if (step >= 0)
+                    AssertImage(pixels, $"16-crossing-ai-behind-{step}", human, ai);
+                else
+                    AssertImage(pixels, $"16-crossing-ai-front-{-step}", ai, human);
+            }
+        }
+
+        [UnityTest]
         public IEnumerator JumpPanAndZoomKeepTheDepthOrder()
         {
             // The AI is airborne (Y from the ECS position only) and nearer; the human stands farther away.
