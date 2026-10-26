@@ -49,10 +49,17 @@ not a combat system, has no per-fighter objects and never decides what is simula
 None of these overlap the combat bindings (WASD, J, K, L, Space, Enter, left mouse). The controller owns a clone of the
 Camera map while enabled and disposes it on disable; the shared asset is never enabled or disabled.
 
+## Sprite renderer after the camera (Stage 03, #38)
+
+`CombatSpriteRenderer` sits on the same Main Camera with `[DefaultExecutionOrder(100)]`, so in the same `LateUpdate` it
+runs after this controller (order 0) and builds its sprite cards from the camera rotation placed this frame. The camera
+never reads sprite state; the renderer never moves the camera. See `Sprites/SPRITES.md`.
+
 ## Calibration
 
-All numbers above are Inspector values for calibration, not approved art direction. Stage 03 (GPU sprite renderer,
-first visible scene) is where angle, size and offsets get tuned against real sprites; there are no placeholder fighters.
+All numbers above are Inspector values for calibration, not approved art direction. Stage 03.3 (final character,
+first visible scene) is where angle, size and offsets get tuned against real sprites; until then CombatSmoke shows the
+generated technical atlas (not a character).
 
 ## Tests
 

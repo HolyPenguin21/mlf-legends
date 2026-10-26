@@ -20,6 +20,7 @@ Do not commit generated `Library/`, `Temp/`, `Logs/` or `UserSettings/`. **Do** 
 - [Combat architecture](Docs/ARCHITECTURE.md)
 - [Combat specification](Docs/COMBAT_SPEC.md)
 - [Accepted decisions](Docs/DECISIONS.md)
+- [Sprite atlas contract v1 (art ↔ code)](Docs/SPRITE_ATLAS_CONTRACT.md)
 - [QA / execution evidence](Docs/QA.md)
 - [Stage 01 ECS performance baseline](Docs/PERFORMANCE_BASELINE.md)
 - [Agent workflow and Stage 01 handoff](Docs/AGENT_WORKFLOW.md)

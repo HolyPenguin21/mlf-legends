@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "character_id": "mage_female_01",
+  "source_size": [192, 192],
+  "nominal_height_px": 96,
+  "pivot": [96, 160],
+  "authored_facing": "right",
+  "pages": [
+    { "file": "mage_female_01_page0.png", "width": 256, "height": 128 }
+  ],
+  "frames": {
+    "idle_relaxed_00": {
+      "page": 0,
+      "rect": [2, 2, 60, 112],
+      "trim_offset": [64, 50],
+      "anchors": {
+        "hand_left": { "position": [74.5, 118], "direction": [-0.2, 1], "layer": "back", "visible": true },
+        "hand_right": { "position": [117, 119.5], "direction": [0.25, 1], "layer": "front", "visible": true },
+        "cast_origin": null
+      }
+    },
+    "idle_relaxed_01": {
+      "page": 0,
+      "rect": [68, 2, 60, 112],
+      "trim_offset": [64, 51],
+      "anchors": {
+        "hand_left": { "position": [74.5, 119], "direction": [-0.2, 1], "layer": "back", "visible": true },
+        "hand_right": { "position": [117, 120.5], "direction": [0.25, 1], "layer": "front", "visible": true },
+        "cast_origin": null
+      }
+    },
+    "cast_release_00": {
+      "page": 0,
+      "rect": [134, 2, 84, 110],
+      "trim_offset": [60, 52],
+      "anchors": {
+        "hand_left": { "position": [82, 104], "direction": [0, 1], "layer": "back", "visible": false },
+        "hand_right": { "position": [141, 96], "direction": [1, -0.1], "layer": "front", "visible": true },
+        "cast_origin": { "position": [146, 95], "direction": [1, 0], "layer": "front", "visible": true }
+      }
+    }
+  },
+  "clips": {
+    "idle_relaxed": {
+      "frames": [
+        { "id": "idle_relaxed_00", "duration_ms": 125 },
+        { "id": "idle_relaxed_01", "duration_ms": 125 }
+      ],
+      "loop": true,
+      "hold_last": false,
+      "markers": {}
+    },
+    "cast_release": {
+      "frames": [
+        { "id": "idle_relaxed_01", "duration_ms": 62.5 },
+        { "id": "cast_release_00", "duration_ms": 187.5 }
+      ],
+      "loop": false,
+      "hold_last": true,
+      "markers": { "entry": [0], "release_pose": [1] }
+    }
+  },
+  "compatible_transitions": [
+    { "from_clip": "idle_relaxed", "exit_frame": 1, "to_clip": "cast_release", "entry_frame": 0 }
+  ]
+}

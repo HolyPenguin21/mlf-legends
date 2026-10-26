@@ -8,6 +8,31 @@
 - Explicit frame selection and graphics depth tests are in this task; automatic idle/walk/jump selection, animation transitions and final character integration follow in 03.3. Art clip availability does not authorize implementing attacks/dash/magic early.
 - Scope is authorized, implementation is not yet delivered or verified. The artist and code agent must validate a first real frame/JSON when available. Existing QA debt stays qualified.
 
+## Stage 03.1 + 03.2 implementation choices (#38, agent PR, 2026-10-26)
+
+- **Contract:** manifest v1 exactly as dispatched (`Docs/SPRITE_ATLAS_CONTRACT.md` + validated example). Clarified for the
+  artist: frames reference pages by zero-based index; markers are `name → array of local indices`; unknown keys are
+  rejected (optional top-level `meta` is ignored); each rect needs 2 px extrusion inside its page, grown rects must not
+  overlap; only `authored_facing: "right"`.
+- **JSON:** the installed `com.unity.serialization` 6.5.0 `SerializedObjectReader` (runtime asmdef reference added; no
+  Newtonsoft, no package change). Its object view enumerates every member, so duplicate keys are detected; numbers are
+  checked against the strict JSON grammar by the validator.
+- **API:** `Graphics.RenderMeshPrimitives` with a custom URP shader and structured buffers (instance 24 B, frame 32 B),
+  one call per atlas page (the installed overload has no start instance → `_InstanceOffset` per page block). Rejected
+  for now: `RenderMeshInstanced` (matrix/property-array instancing, batch limits), indirect/compute culling and an
+  Entities Graphics path (second renderer) — no measured need. Pages may differ in size, so no Texture2DArray.
+- **Geometry:** vertical card above the pivot (world up / cos pitch) and ground card below it (/ sin pitch): exact
+  screen image of the art, upright-body depth, feet on the floor. Start calibration 96 px = 2 world units (one
+  configurable scale). Flip mirrors geometry around the pivot (trim offset and image together), never only UVs.
+- **Depth:** alpha clip + ZWrite/ZTest in forward, DepthOnly and DepthNormalsOnly passes (PC renderer's SSAO uses
+  DepthNormals; no URP feature changed). Equal depth: render-only push of ≥ 0.002 units per card ordered by
+  (depth, CombatantId), lowest ID in front; constant bias 0.02 units towards the camera. `CombatPosition` untouched.
+- **Order/ownership:** scene `CombatSpriteRenderer` in `LateUpdate` with `[DefaultExecutionOrder(100)]` after the camera;
+  no ECS system/writer/tick. Later-enabled renderer owns a World + Camera; the other stays idle with one warning.
+  Technical fixture generated in code for CombatSmoke (no PNG committed); art plugs in through a `SpriteAtlasCatalog`.
+- **Frame selection:** explicit preview seam only (`SetFrame`/`SetClipFrame`/default frame); no animation clock or state
+  binding (Stage 03.3). Import settings are documented and validated, not enforced by a project-wide postprocessor.
+
 ## Combined Stage 02.3 + 02.4 delivery — owner decision (2026-10-26)
 
 - Owner requested combining real input (02.3) and fixed-angle orthographic camera (02.4). Expand existing [Issue #22](https://github.com/HolyPenguin21/mlf-legends/issues/22); one branch, one PR, joint acceptance. Substage numbers remain traceability labels. This supersedes any earlier requirement to deliver the camera in a separate PR.

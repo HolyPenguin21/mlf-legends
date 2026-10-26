@@ -6,7 +6,8 @@
     "Unity.Collections",
     "Unity.Entities",
     "Unity.Mathematics",
-    "Unity.InputSystem"
+    "Unity.InputSystem",
+    "Unity.Serialization"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],
