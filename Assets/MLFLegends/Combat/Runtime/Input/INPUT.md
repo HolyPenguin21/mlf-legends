@@ -101,7 +101,7 @@ re-reported, loses its first press after regain (the next release unblocks it).
 
 ## Manual check (owner GUI, record in Docs/QA.md; NOT RUN until performed)
 
-There are no fighter visuals before Stage 03: observe *Window > Entities > Hierarchy* (`Combatant Human` →
+Since #38 CombatSmoke draws the fighters with the generated technical atlas (not a character); for exact state observe *Window > Entities > Hierarchy* (`Combatant Human` →
 `CombatPosition`, `CombatMotion`, `CombatFacing`, `AppliedCombatCommand`) and the Main Camera Transform/Inspector.
 1. Open `Assets/Scenes/CombatSmoke.unity`, enter Play Mode, click the Game view. Hold D/A/W/S: the human's X/Z change,
    `AppliedCombatCommand.Source = Player`; release: it stops. Tap K: one jump; hold K: one jump only. J/L: `Held`/`Pressed`

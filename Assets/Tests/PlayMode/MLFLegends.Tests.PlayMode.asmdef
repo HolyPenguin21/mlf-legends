@@ -5,6 +5,7 @@
     "MLFLegends.Combat.Runtime",
     "Unity.Collections",
     "Unity.Entities",
+    "Unity.Mathematics",
     "Unity.InputSystem",
     "Unity.InputSystem.TestFramework"
   ],

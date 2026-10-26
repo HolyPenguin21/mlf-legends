@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="21" result="Failed(Child)" total="21" passed="13" failed="8" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-26 14:06:28Z" end-time="2026-10-26 14:06:30Z" duration="1,4143972">
+  <test-suite type="TestSuite" id="1000" name="mlf-legends" fullname="mlf-legends" runstate="Runnable" testcasecount="323" result="Failed" site="Child" start-time="2026-10-26 14:06:28Z" end-time="2026-10-26 14:06:30Z" duration="1.414397" total="21" passed="13" failed="8" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1374" name="MLFLegends.Tests.EditMode.dll" fullname="D:/Unity/Project/mlf-s7/Library/ScriptAssemblies/MLFLegends.Tests.EditMode.dll" runstate="Runnable" testcasecount="323" result="Failed" site="Child" start-time="2026-10-26 14:06:28Z" end-time="2026-10-26 14:06:30Z" duration="1.401222" total="21" passed="13" failed="8" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="22024" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1375" name="MLFLegends" fullname="MLFLegends" runstate="Runnable" testcasecount="323" result="Failed" site="Child" start-time="2026-10-26 14:06:28Z" end-time="2026-10-26 14:06:30Z" duration="1.395627" total="21" passed="13" failed="8" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1376" name="Tests" fullname="MLFLegends.Tests" runstate="Runnable" testcasecount="323" result="Failed" site="Child" start-time="2026-10-26 14:06:28Z" end-time="2026-10-26 14:06:30Z" duration="1.390532" total="21" passed="13" failed="8" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestSuite" id="1377" name="EditMode" fullname="MLFLegends.Tests.EditMode" runstate="Runnable" testcasecount="323" result="Failed" site="Child" start-time="2026-10-26 14:06:28Z" end-time="2026-10-26 14:06:30Z" duration="1.385112" total="21" passed="13" failed="8" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-suite type="TestFixture" id="1269" name="CombatSpriteExtractionTests" fullname="MLFLegends.Tests.EditMode.CombatSpriteExtractionTests" classname="MLFLegends.Tests.EditMode.CombatSpriteExtractionTests" runstate="Runnable" testcasecount="8" result="Failed" site="Child" start-time="2026-10-26 14:06:28Z" end-time="2026-10-26 14:06:30Z" duration="1.347508" total="8" passed="7" failed="1" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1275" name="DepthOrderFollowsDepthThenCombatantIdIndependentOfEntityOrder" fullname="MLFLegends.Tests.EditMode.CombatSpriteExtractionTests.DepthOrderFollowsDepthThenCombatantIdIndependentOfEntityOrder" methodname="DepthOrderFollowsDepthThenCombatantIdIndependentOfEntityOrder" classname="MLFLegends.Tests.EditMode.CombatSpriteExtractionTests" runstate="Runnable" seed="2138116766" result="Failed" start-time="2026-10-26 14:06:28Z" end-time="2026-10-26 14:06:29Z" duration="0.395671" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  51 behind 41
+  Expected: greater than or equal to 0.00199000002f
+  But was:  0.0f
+]]></message>
+                  <stack-trace><![CDATA[at MLFLegends.Tests.EditMode.CombatSpriteExtractionTests.DepthOrderFollowsDepthThenCombatantIdIndependentOfEntityOrder () [0x000ee] in D:\Unity\Project\mlf-s7\Assets\Tests\EditMode\Presentation\CombatSpriteExtractionTests.cs:139
+]]></stack-trace>
+                </failure>
+              </test-case>
+              <test-case id="1276" name="EndRestartDefeatAndDespawnLeaveNoStaleInstances" fullname="MLFLegends.Tests.EditMode.CombatSpriteExtractionTests.EndRestartDefeatAndDespawnLeaveNoStaleInstances" methodname="EndRestartDefeatAndDespawnLeaveNoStaleInstances" classname="MLFLegends.Tests.EditMode.CombatSpriteExtractionTests" runstate="Runnable" seed="1371141882" result="Passed" start-time="2026-10-26 14:06:29Z" end-time="2026-10-26 14:06:29Z" duration="0.018075" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1273" name="EveryInCombatFighterIsOneInstanceWithItsEcsPositionAndFacing" fullname="MLFLegends.Tests.EditMode.CombatSpriteExtractionTests.EveryInCombatFighterIsOneInstanceWithItsEcsPositionAndFacing" classname="MLFLegends.Tests.EditMode.CombatSpriteExtractionTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-26 14:06:29Z" end-time="2026-10-26 14:06:29Z" duration="0.146254" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1270" name="EveryInCombatFighterIsOneInstanceWithItsEcsPositionAndFacing(1)" fullname="MLFLegends.Tests.EditMode.CombatSpriteExtractionTests.EveryInCombatFighterIsOneInstanceWithItsEcsPositionAndFacing(1)" methodname="EveryInCombatFighterIsOneInstanceWithItsEcsPositionAndFacing" classname="MLFLegends.Tests.EditMode.CombatSpriteExtractionTests" runstate="Runnable" seed="1301781626" result="Passed" start-time="2026-10-26 14:06:29Z" end-time="2026-10-26 14:06:29Z" duration="0.011913" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1271" name="EveryInCombatFighterIsOneInstanceWithItsEcsPositionAndFacing(50)" fullname="MLFLegends.Tests.EditMode.CombatSpriteExtractionTests.EveryInCombatFighterIsOneInstanceWithItsEcsPositionAndFacing(50)" methodname="EveryInCombatFighterIsOneInstanceWithItsEcsPositionAndFacing" classname="MLFLegends.Tests.EditMode.CombatSpriteExtractionTests" runstate="Runnable" seed="1919829196" result="Passed" start-time="2026-10-26 14:06:29Z" end-time="2026-10-26 14:06:29Z" duration="0.028979" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1272" name="EveryInCombatFighterIsOneInstanceWithItsEcsPositionAndFacing(200)" fullname="MLFLegends.Tests.EditMode.CombatSpriteExtractionTests.EveryInCombatFighterIsOneInstanceWithItsEcsPositionAndFacing(200)" methodname="EveryInCombatFighterIsOneInstanceWithItsEcsPositionAndFacing" classname="MLFLegends.Tests.EditMode.CombatSpriteExtractionTests" runstate="Runnable" seed="388708249" result="Passed" start-time="2026-10-26 14:06:29Z" end-time="2026-10-26 14:06:29Z" duration="0.102674" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-case id="1278" name="ExtractionIsReadOnlyAndLeavesTheSimulationIdentical" fullname="MLFLegends.Tests.EditMode.CombatSpriteExtractionTests.ExtractionIsReadOnlyAndLeavesTheSimulationIdentical" methodname="ExtractionIsReadOnlyAndLeavesTheSimulationIdentical" classname="MLFLegends.Tests.EditMode.CombatSpriteExtractionTests" runstate="Runnable" seed="1739215707" result="Passed" start-time="2026-10-26 14:06:29Z" end-time="2026-10-26 14:06:30Z" duration="0.756155" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1274" name="FramesArePerInstanceAndGroupedByPage" fullname="MLFLegends.Tests.EditMode.CombatSpriteExtractionTests.FramesArePerInstanceAndGroupedByPage" methodname="FramesArePerInstanceAndGroupedByPage" classname="MLFLegends.Tests.EditMode.CombatSpriteExtractionTests" runstate="Runnable" seed="1966258844" result="Passed" start-time="2026-10-26 14:06:30Z" end-time="2026-10-26 14:06:30Z" duration="0.008271" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1277" name="MissingOrReplacedWorldsAreSafeAndIsolated" fullname="MLFLegends.Tests.EditMode.CombatSpriteExtractionTests.MissingOrReplacedWorldsAreSafeAndIsolated" methodname="MissingOrReplacedWorldsAreSafeAndIsolated" classname="MLFLegends.Tests.EditMode.CombatSpriteExtractionTests" runstate="Runnable" seed="312415925" result="Passed" start-time="2026-10-26 14:06:30Z" end-time="2026-10-26 14:06:30Z" duration="0.007474" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1340" name="SpriteCardMathTests" fullname="MLFLegends.Tests.EditMode.SpriteCardMathTests" classname="MLFLegends.Tests.EditMode.SpriteCardMathTests" runstate="Runnable" testcasecount="13" result="Failed" site="Child" start-time="2026-10-26 14:06:30Z" end-time="2026-10-26 14:06:30Z" duration="0.031409" total="13" passed="6" failed="7" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1344" name="AnchorsUseTheBodyTransformAndMirrorTheirDirection" fullname="MLFLegends.Tests.EditMode.SpriteCardMathTests.AnchorsUseTheBodyTransformAndMirrorTheirDirection" methodname="AnchorsUseTheBodyTransformAndMirrorTheirDirection" classname="MLFLegends.Tests.EditMode.SpriteCardMathTests" runstate="Runnable" seed="351862047" result="Failed" start-time="2026-10-26 14:06:30Z" end-time="2026-10-26 14:06:30Z" duration="0.002549" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  Above the pivot: on the vertical card. float3(1,25f, 0,6702889f, 2,562439f) vs float3(1,25f, 1,142231f, 2f)
+  Expected: less than 9.99999975E-05f
+  But was:  0.73421216f
+]]></message>
+                  <stack-trace><![CDATA[at MLFLegends.Tests.EditMode.SpriteCardMathTests.Near (Unity.Mathematics.float3 actual, Unity.Mathematics.float3 expected, System.String message) [0x00000] in D:\Unity\Project\mlf-s7\Assets\Tests\EditMode\Presentation\SpriteCardMathTests.cs:20
+at MLFLegends.Tests.EditMode.SpriteCardMathTests.AnchorsUseTheBodyTransformAndMirrorTheirDirection () [0x00124] in D:\Unity\Project\mlf-s7\Assets\Tests\EditMode\Presentation\SpriteCardMathTests.cs:79
+]]></stack-trace>
+                </failure>
+              </test-case>
+              <test-case id="1350" name="DepthKeyIsSharedByTheWholeCardAndIgnoresHeight" fullname="MLFLegends.Tests.EditMode.SpriteCardMathTests.DepthKeyIsSharedByTheWholeCardAndIgnoresHeight" methodname="DepthKeyIsSharedByTheWholeCardAndIgnoresHeight" classname="MLFLegends.Tests.EditMode.SpriteCardMathTests" runstate="Runnable" seed="975968630" result="Passed" start-time="2026-10-26 14:06:30Z" end-time="2026-10-26 14:06:30Z" duration="0.000489" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1351" name="EqualDepthIsOrderedByCombatantIdWhateverTheInputOrder" fullname="MLFLegends.Tests.EditMode.SpriteCardMathTests.EqualDepthIsOrderedByCombatantIdWhateverTheInputOrder" methodname="EqualDepthIsOrderedByCombatantIdWhateverTheInputOrder" classname="MLFLegends.Tests.EditMode.SpriteCardMathTests" runstate="Runnable" seed="2083293817" result="Failed" start-time="2026-10-26 14:06:30Z" end-time="2026-10-26 14:06:30Z" duration="0.006849" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  Expected: 0.00150000001f +/- 9.99999975E-06f
+  But was:  0.0f
+]]></message>
+                  <stack-trace><![CDATA[at MLFLegends.Tests.EditMode.SpriteCardMathTests.EqualDepthIsOrderedByCombatantIdWhateverTheInputOrder () [0x000e1] in D:\Unity\Project\mlf-s7\Assets\Tests\EditMode\Presentation\SpriteCardMathTests.cs:142
+]]></stack-trace>
+                </failure>
+              </test-case>
+              <test-case id="1343" name="FlipMirrorsAroundThePivotAndTwiceIsIdentity" fullname="MLFLegends.Tests.EditMode.SpriteCardMathTests.FlipMirrorsAroundThePivotAndTwiceIsIdentity" methodname="FlipMirrorsAroundThePivotAndTwiceIsIdentity" classname="MLFLegends.Tests.EditMode.SpriteCardMathTests" runstate="Runnable" seed="1115082603" result="Passed" start-time="2026-10-26 14:06:30Z" end-time="2026-10-26 14:06:30Z" duration="0.000599" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1354" name="PageBindingErrorsRejectTheWholeAtlas" fullname="MLFLegends.Tests.EditMode.SpriteCardMathTests.PageBindingErrorsRejectTheWholeAtlas" methodname="PageBindingErrorsRejectTheWholeAtlas" classname="MLFLegends.Tests.EditMode.SpriteCardMathTests" runstate="Runnable" seed="202895726" result="Passed" start-time="2026-10-26 14:06:30Z" end-time="2026-10-26 14:06:30Z" duration="0.007343" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1349" name="TheCardProjectsEachSourcePixelToAScreenSquare" fullname="MLFLegends.Tests.EditMode.SpriteCardMathTests.TheCardProjectsEachSourcePixelToAScreenSquare" classname="MLFLegends.Tests.EditMode.SpriteCardMathTests" runstate="Runnable" testcasecount="4" result="Failed" site="Child" start-time="2026-10-26 14:06:30Z" end-time="2026-10-26 14:06:30Z" duration="0.003031" total="4" passed="0" failed="4" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <failure>
+                  <message><![CDATA[One or more child tests had errors]]></message>
+                </failure>
+                <test-case id="1345" name="TheCardProjectsEachSourcePixelToAScreenSquare(40.0f,0.0f)" fullname="MLFLegends.Tests.EditMode.SpriteCardMathTests.TheCardProjectsEachSourcePixelToAScreenSquare(40.0f,0.0f)" methodname="TheCardProjectsEachSourcePixelToAScreenSquare" classname="MLFLegends.Tests.EditMode.SpriteCardMathTests" runstate="Runnable" seed="946381165" result="Failed" start-time="2026-10-26 14:06:30Z" end-time="2026-10-26 14:06:30Z" duration="0.001720" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <failure>
+                    <message><![CDATA[  Upright above the support.
+  Expected: less than 9.99999975E-05f
+  But was:  1.07131267f
+]]></message>
+                    <stack-trace><![CDATA[at MLFLegends.Tests.EditMode.SpriteCardMathTests.TheCardProjectsEachSourcePixelToAScreenSquare (System.Single pitch, System.Single yaw) [0x001a3] in D:\Unity\Project\mlf-s7\Assets\Tests\EditMode\Presentation\SpriteCardMathTests.cs:112
+]]></stack-trace>
+                  </failure>
+                </test-case>
+                <test-case id="1346" name="TheCardProjectsEachSourcePixelToAScreenSquare(40.0f,90.0f)" fullname="MLFLegends.Tests.EditMode.SpriteCardMathTests.TheCardProjectsEachSourcePixelToAScreenSquare(40.0f,90.0f)" methodname="TheCardProjectsEachSourcePixelToAScreenSquare" classname="MLFLegends.Tests.EditMode.SpriteCardMathTests" runstate="Runnable" seed="759895854" result="Failed" start-time="2026-10-26 14:06:30Z" end-time="2026-10-26 14:06:30Z" duration="0.000184" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <failure>
+                    <message><![CDATA[  Upright above the support.
+  Expected: less than 9.99999975E-05f
+  But was:  1.07131302f
+]]></message>
+                    <stack-trace><![CDATA[at MLFLegends.Tests.EditMode.SpriteCardMathTests.TheCardProjectsEachSourcePixelToAScreenSquare (System.Single pitch, System.Single yaw) [0x001a3] in D:\Unity\Project\mlf-s7\Assets\Tests\EditMode\Presentation\SpriteCardMathTests.cs:112
+]]></stack-trace>
+                  </failure>
+                </test-case>
+                <test-case id="1347" name="TheCardProjectsEachSourcePixelToAScreenSquare(25.0f,-30.0f)" fullname="MLFLegends.Tests.EditMode.SpriteCardMathTests.TheCardProjectsEachSourcePixelToAScreenSquare(25.0f,-30.0f)" methodname="TheCardProjectsEachSourcePixelToAScreenSquare" classname="MLFLegends.Tests.EditMode.SpriteCardMathTests" runstate="Runnable" seed="702605798" result="Failed" start-time="2026-10-26 14:06:30Z" end-time="2026-10-26 14:06:30Z" duration="0.000157" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <failure>
+                    <message><![CDATA[  Upright above the support.
+  Expected: less than 9.99999975E-05f
+  But was:  0.704363763f
+]]></message>
+                    <stack-trace><![CDATA[at MLFLegends.Tests.EditMode.SpriteCardMathTests.TheCardProjectsEachSourcePixelToAScreenSquare (System.Single pitch, System.Single yaw) [0x001a3] in D:\Unity\Project\mlf-s7\Assets\Tests\EditMode\Presentation\SpriteCardMathTests.cs:112
+]]></stack-trace>
+                  </failure>
+                </test-case>
+                <test-case id="1348" name="TheCardProjectsEachSourcePixelToAScreenSquare(70.0f,180.0f)" fullname="MLFLegends.Tests.EditMode.SpriteCardMathTests.TheCardProjectsEachSourcePixelToAScreenSquare(70.0f,180.0f)" methodname="TheCardProjectsEachSourcePixelToAScreenSquare" classname="MLFLegends.Tests.EditMode.SpriteCardMathTests" runstate="Runnable" seed="2091370864" result="Failed" start-time="2026-10-26 14:06:30Z" end-time="2026-10-26 14:06:30Z" duration="0.000156" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <failure>
+                    <message><![CDATA[  Upright above the support.
+  Expected: less than 9.99999975E-05f
+  But was:  1.56615448f
+]]></message>
+                    <stack-trace><![CDATA[at MLFLegends.Tests.EditMode.SpriteCardMathTests.TheCardProjectsEachSourcePixelToAScreenSquare (System.Single pitch, System.Single yaw) [0x001a3] in D:\Unity\Project\mlf-s7\Assets\Tests\EditMode\Presentation\SpriteCardMathTests.cs:112
+]]></stack-trace>
+                  </failure>
+                </test-case>
+              </test-suite>
+              <test-case id="1353" name="TheFixtureLoadsWithSharedTablesAndMeasuredMemory" fullname="MLFLegends.Tests.EditMode.SpriteCardMathTests.TheFixtureLoadsWithSharedTablesAndMeasuredMemory" methodname="TheFixtureLoadsWithSharedTablesAndMeasuredMemory" classname="MLFLegends.Tests.EditMode.SpriteCardMathTests" runstate="Runnable" seed="892329279" result="Passed" start-time="2026-10-26 14:06:30Z" end-time="2026-10-26 14:06:30Z" duration="0.004703" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1352" name="TheTieBreakPushIsBoundedByCountTimesSeparation" fullname="MLFLegends.Tests.EditMode.SpriteCardMathTests.TheTieBreakPushIsBoundedByCountTimesSeparation" methodname="TheTieBreakPushIsBoundedByCountTimesSeparation" classname="MLFLegends.Tests.EditMode.SpriteCardMathTests" runstate="Runnable" seed="2137451083" result="Failed" start-time="2026-10-26 14:06:30Z" end-time="2026-10-26 14:06:30Z" duration="0.002237" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  Worst case: all 400 at one depth.
+  Expected: 0.798000038f +/- 9.99999975E-05f
+  But was:  0.0f
+]]></message>
+                  <stack-trace><![CDATA[at MLFLegends.Tests.EditMode.SpriteCardMathTests.TheTieBreakPushIsBoundedByCountTimesSeparation () [0x00040] in D:\Unity\Project\mlf-s7\Assets\Tests\EditMode\Presentation\SpriteCardMathTests.cs:161
+]]></stack-trace>
+                </failure>
+              </test-case>
+              <test-case id="1341" name="TrimmedFramesKeepTheirPlaceRelativeToThePivot" fullname="MLFLegends.Tests.EditMode.SpriteCardMathTests.TrimmedFramesKeepTheirPlaceRelativeToThePivot" methodname="TrimmedFramesKeepTheirPlaceRelativeToThePivot" classname="MLFLegends.Tests.EditMode.SpriteCardMathTests" runstate="Runnable" seed="281259761" result="Passed" start-time="2026-10-26 14:06:30Z" end-time="2026-10-26 14:06:30Z" duration="0.000615" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1342" name="UvFlipsTheTopLeftOriginExactlyOnce" fullname="MLFLegends.Tests.EditMode.SpriteCardMathTests.UvFlipsTheTopLeftOriginExactlyOnce" methodname="UvFlipsTheTopLeftOriginExactlyOnce" classname="MLFLegends.Tests.EditMode.SpriteCardMathTests" runstate="Runnable" seed="1533977905" result="Passed" start-time="2026-10-26 14:06:30Z" end-time="2026-10-26 14:06:30Z" duration="0.000416" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: C:/Users/Стас/AppData/LocalLow/DefaultCompany/mlf-legends\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

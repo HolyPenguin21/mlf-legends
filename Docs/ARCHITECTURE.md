@@ -8,7 +8,7 @@
 - Initial template packages include Input System 1.19.0, Burst 1.8.29 transitively, Collections 6.5.0 transitively. **Entities 6.5.0 and Entities Graphics 6.5.0 are installed in manifest and package lock**.
 - Use the ECS APIs bundled with Unity 6000.5.4f1 and Entities 6.5.0; Stage 00 test pass was reported by the project owner, with logs unavailable for independent review.
 
-**Current delivery boundary:** Stage 01 has one authoritative World-scoped `SimulationClock` and fixed-step phases; one command queue/processor publishing `AppliedCombatCommand`; one `BattleLifecycleSystem` that owns start/end/restart/IDs and runs in pre-clock FixedStep and, through the thin `BattleLifecycleInitializationProxy` (#35), in Initialization; and `BattleSetup` for 1v1 through 200v200. Stage 02.1 Issue #31 implements `CombatMovementSystem`, exactly one authoritative position/motion writer in the existing `CombatStateUpdateSystemGroup`; Stage 02.2 Issue #33 adds `CombatFacingSystem`, the single `CombatFacing` writer ordered before it. Stage 02.3 + 02.4 Issue #22 adds the real Unity Input System producer (one `PlayerInputCommandSystem` in Collection, before the processor) and one read-only orthographic `CombatCameraController` on the technical scene's existing camera (section below). Collision/renderer remain distinct stages/scopes. No visible scene until the Stage 03 GPU sprite renderer.
+**Current delivery boundary:** Stage 01 has one authoritative World-scoped `SimulationClock` and fixed-step phases; one command queue/processor publishing `AppliedCombatCommand`; one `BattleLifecycleSystem` that owns start/end/restart/IDs and runs in pre-clock FixedStep and, through the thin `BattleLifecycleInitializationProxy` (#35), in Initialization; and `BattleSetup` for 1v1 through 200v200. Stage 02.1 Issue #31 implements `CombatMovementSystem`, exactly one authoritative position/motion writer in the existing `CombatStateUpdateSystemGroup`; Stage 02.2 Issue #33 adds `CombatFacingSystem`, the single `CombatFacing` writer ordered before it. Stage 02.3 + 02.4 Issue #22 adds the real Unity Input System producer (one `PlayerInputCommandSystem` in Collection, before the processor) and one read-only orthographic `CombatCameraController` on the technical scene's existing camera (section below). Stage 03.1 + 03.2 Issue #38 adds the atlas contract and one read-only scene-level GPU sprite renderer (section below). Collisions remain a distinct stage.
 
 ## Architectural goals
 One authoritative sim handles player, duel AI and hundreds of combatants; presentation, UI, VFX and animation never apply damage or dictate hit frames. Use Unity ECS/DOTS + Burst for performance-critical processing, with a fixed simulation step. Rendering frame rate is independent. The combat core must remain applicable to 200 vs 200 even during initial 1v1 tuning.
@@ -61,11 +61,23 @@ zoom (`Presentation/CAMERA.md`). It never filters simulation by visibility; inpu
 The chain is: actions/subscriptions → capture → producer → queue → processor → `AppliedCombatCommand` → Facing →
 Movement → `CombatPosition` → camera. Player and AI commands share every step after the producer.
 
+## Stage 03.1 + 03.2 atlas contract and GPU sprite renderer (#38)
+
+Art enters through manifest v1 (`Docs/SPRITE_ATLAS_CONTRACT.md`): `SpriteAtlasManifest` validates it all-or-nothing,
+`SpriteAtlas` binds pages explicitly and owns the shared CPU/GPU frame tables. One `CombatSpriteRenderer` per scene World +
+Camera (later enabled wins, no double draw) reads `CombatantId`/`CombatPosition`/`CombatFacing` of enabled `InCombat`
+fighters of the active `BattleSession` in `LateUpdate` (order 100, after the simulation and the camera) and draws them with
+one shared card mesh, one URP shader and `Graphics.RenderMeshPrimitives` once per atlas page. It writes no ECS data, adds no
+system, tick or entity; replay/benchmark Worlds have none. Depth: alpha-clipped depth-writing cards (vertical above the
+pivot, on the ground below it), equal depth resolved by a render-only push ordered by `CombatantId`. The chain extends:
+… → Movement → `CombatPosition`/`CombatFacing` → camera → sprite renderer. Details: `Presentation/Sprites/SPRITES.md`.
+Explicit frame selection only; state-driven animation and the final character are Stage 03.3.
+
 ## Physical rules
 Every living combatant has a lightweight body collider. Allies block and gently yield; player can push allied crowd with modest resistance. Enemies and walls remain solid. No ghost dash. Hits can cause stagger, launches, push-through waves and collisions with other bodies; custom ECS simplified physical resolution, not 400 dynamic Rigidbodies. Direct basic attacks don't damage friends; secondary magical/environment effects can.
 
 ## Rendering research
-Prefer a specialized GPU-atlas/instanced renderer, not per-combatant Unity Animator or SpriteRenderer. Benchmark direct/indirect drawing approach, Entities Graphics interoperability, frame selection, transparency sort, equipment overlays, shadows and terrain occlusion before committing to an implementation.
+Prefer a specialized GPU-atlas/instanced renderer, not per-combatant Unity Animator or SpriteRenderer. Benchmark direct/indirect drawing approach, Entities Graphics interoperability, frame selection, transparency sort, equipment overlays, shadows and terrain occlusion before committing to an implementation. **Stage 03.2 choice (#38):** direct instanced `RenderMeshPrimitives` with structured buffers (measured constant draw calls for 2/100/400); indirect/compute culling and an Entities Graphics path are not implemented without a measured need; translucency, equipment overlays, shadows and terrain remain open.
 
 ## Navigation (Stage 11)
 No Unity NavMeshAgent/NavMesh as authoritative navigator. Own heightfield-based X/Z walkability; group flow fields, local bounded A*, local avoidance and jump-vs-route decisions. Dirty-region rebuild as terrain changes. Terrain mostly gentle slopes/ramps with limited cliffs; collisions and nav must agree on traversability.

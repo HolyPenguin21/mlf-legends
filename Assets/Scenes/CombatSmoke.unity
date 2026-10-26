@@ -181,6 +181,7 @@ GameObject:
   - component: {fileID: 673466316}
   - component: {fileID: 673466315}
   - component: {fileID: 673466318}
+  - component: {fileID: 673466319}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -287,6 +288,28 @@ MonoBehaviour:
   m_ZoomStepFactor: 1.15
   m_PanSpeed: 1
   m_MaxPan: 20
+--- !u!114 &673466319
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 673466314}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2bc2ece78d4040da8cc2c0565e4b6c88, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MLFLegends.Combat.Runtime::MLFLegends.Combat.CombatSpriteRenderer
+  m_Source: 1
+  m_Catalog: {fileID: 0}
+  m_DefaultFrameId: 
+  m_Shader: {fileID: 4800000, guid: 6332f336209c40cfb38c4ab73550cce6, type: 3}
+  m_Camera: {fileID: 673466316}
+  m_NominalWorldHeight: 2
+  m_AlphaCutoff: 0.5
+  m_DepthBias: 0.02
+  m_DepthSeparation: 0.002
+  m_DrawAnchorGizmos: 1
 --- !u!1 &993941704
 GameObject:
   m_ObjectHideFlags: 0
