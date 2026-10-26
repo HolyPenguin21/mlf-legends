@@ -2,8 +2,8 @@ using Unity.Entities;
 
 namespace MLFLegends.Combat
 {
-    // Ordering anchors for the phases of one fixed simulation tick. They contain no logic and no
-    // systems yet; future owners join them with [UpdateInGroup]. Order inside FixedStepSimulationSystemGroup:
+    // Ordering anchors for the phases of one fixed simulation tick. They contain no
+    // simulation logic themselves; owners join them with [UpdateInGroup]. Order inside FixedStepSimulationSystemGroup:
     // BattleLifecycleSystem (battle requests, before the tick advances) → CombatClockSystem → command collection
     // → state update → publication. See SIMULATION.md.
 

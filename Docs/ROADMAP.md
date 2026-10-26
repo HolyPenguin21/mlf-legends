@@ -15,7 +15,7 @@
 |---|---|---|---|
 | 00 | GitHub/Unity/URP bootstrap, dependencies, folders, test harness, CI feasibility | Source tracked; editor/packages committed; tests owner-reported PASS; CI and independent evidence deferred | ACCEPTED (OWNER) |
 | 01 | ECS simulation, fixed-step scheduler, entity data, command buffer, replay tests and 2/100/400 ECS baseline | Six main tasks delivered, Bootstrap debt #19 implemented; independent code audit #23 static PASS, owner accepted Stage 02 transition with missing Unity proof tracked in #30 and Windows Unicode/Burst #17 separate. No movement/AI/collisions/renderer yet. | ACCEPTED FOR NEXT STAGE (OWNER) — UNITY QA DEFERRED |
-| 02 | Movement and camera | Deterministic X/Z movement + jump Y, facing/action-state, tick-aligned input, fixed orthographic camera follow/zoom/pan, with one ECS authority | IN PROGRESS — #31 READY |
+| 02 | Movement and camera | Deterministic X/Z movement + jump Y, facing/action-state, tick-aligned input, fixed orthographic camera follow/zoom/pan, with one ECS authority | IN PROGRESS — #31 IMPLEMENTED / IN REVIEW, UNITY NOT RUN |
 | 03 | GPU sprite rendering | Atlas animation, direction/frame selection, stable depth sorting, optional equipment layers, instancing/indirect render assessment | NOT STARTED |
 | 04 | Collisions | Custom actor/world collision, spatial index, masses, allies yield, enemies block, knockback | NOT STARTED |
 | 05 | Attack resolution | Windup/active/recovery; fast/heavy/jump attacks; shapes, multi-hit rules, damage/impact/stagger | NOT STARTED |
@@ -34,7 +34,7 @@
 
 Stage 02 is split to protect single-authority boundaries, not to expand architecture:
 
-1. **02.1 — [#31 ECS movement X/Z + jump Y](https://github.com/HolyPenguin21/mlf-legends/issues/31): READY / FIRST AGENT TASK.** One fixed-tick motion integration owner reads canonical `AppliedCombatCommand`; sole writer of `CombatPosition` and minimal vertical motion state; native/Burst-compatible, 2/100/400, deterministic replay; no live input, camera, collision, renderer, proxy fighter objects or visual scene.
+1. **02.1 — [#31 ECS movement X/Z + jump Y](https://github.com/HolyPenguin21/mlf-legends/issues/31): IMPLEMENTED ON PR BRANCH / IN REVIEW; Unity NOT RUN.** One fixed-tick motion integration owner reads canonical `AppliedCombatCommand`; sole writer of `CombatPosition` and minimal vertical motion state; native/Burst-compatible, 2/100/400, deterministic replay; no live input, camera, collision, renderer, proxy fighter objects or visual scene.
 2. **02.2 — Facing/action-state ownership:** explicit single writer of `CombatFacing` and minimal state boundaries; no second position writer, no attacks/guard/dash architecture ahead of their stages.
 3. **02.3 — Real input adapter / [#22](https://github.com/HolyPenguin21/mlf-legends/issues/22):** Unity Input System to the existing queue only, with `Held/Pressed`, 30/60/120+ fps, catch-up and short-tap handling. No direct writes to position.
 4. **02.4 — Orthographic fixed-angle camera:** follow the human-controlled combatant by `BattleSession.HumanCombatant` + canonical `CombatPosition`; pan/zoom without altering angle, read-only presentation. No stage 02 temporary arena/proxy gameplay scene. Full display integration after Stage 03 specialized GPU sprite renderer.

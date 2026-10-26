@@ -95,6 +95,9 @@ namespace MLFLegends.Tests.PlayMode
             }
             using (var sessions = Manager.CreateEntityQuery(typeof(BattleSession)))
                 Assert.That(sessions.CalculateEntityCount(), Is.EqualTo(1));
+            using (var members = DefaultWorld.GetExistingSystemManaged<CombatStateUpdateSystemGroup>().GetAllSystems(Allocator.Temp))
+                Assert.That(members.ToArray(), Is.EqualTo(new[] { DefaultWorld.GetExistingSystem<CombatMovementSystem>() }),
+                    "Default world auto-creates the same single motion owner as isolated replay and benchmarks.");
             Assert.That(Session.State, Is.EqualTo(BattleState.Idle), "Nothing starts a battle without a request.");
         }
 
@@ -106,6 +109,62 @@ namespace MLFLegends.Tests.PlayMode
                 Assert.That(Time.realtimeSinceStartup, Is.LessThan(deadline), "Lifecycle did not reach the expected state.");
                 yield return null;
             }
+        }
+
+        [UnityTest]
+        public IEnumerator DefaultWorldJumpFreezesDuringTimeScaleZeroAndPausedRestartClearsMotion()
+        {
+            yield return NextTick();
+            var scale = Time.timeScale;
+            try
+            {
+                Time.timeScale = 0;
+                yield return null;
+                var number = Session.BattleNumber;
+                BattleRequest.Submit(Manager, BattleRequest.Start(BattleSetup.Default));
+                yield return Until(() => Session.BattleNumber == number + 1);
+                Entity human;
+                using (var actors = Manager.CreateEntityQuery(typeof(CombatantId)))
+                using (var entities = actors.ToEntityArray(Allocator.Temp))
+                    human = entities.ToArray().Single(e => Manager.GetComponentData<CombatantId>(e).Equals(Session.HumanCombatant));
+                using (var queue = Manager.CreateEntityQuery(typeof(CombatCommandQueue)))
+                    Manager.GetBuffer<CombatCommandSubmission>(queue.GetSingletonEntity()).Add(new CombatCommandSubmission(new CombatCommand
+                    {
+                        Combatant = Session.HumanCombatant, Tick = Tick + 1, MoveX = 1,
+                        Pressed = CommandButtons.Jump, Source = CommandSource.Player,
+                    }));
+                Time.timeScale = 1;
+                yield return NextTick();
+                Assert.That(Manager.GetComponentData<CombatMotion>(human).Grounded, Is.False);
+                Time.timeScale = 0;
+                yield return null; // settle time propagation, then capture the paused boundary
+                var position = Manager.GetComponentData<CombatPosition>(human);
+                var motion = Manager.GetComponentData<CombatMotion>(human);
+                var tick = Tick;
+                for (var i = 0; i < 5; i++)
+                    yield return null;
+                Assert.That(Tick, Is.EqualTo(tick));
+                Assert.That(Manager.GetComponentData<CombatPosition>(human), Is.EqualTo(position));
+                Assert.That(Manager.GetComponentData<CombatMotion>(human), Is.EqualTo(motion));
+                BattleRequest.Submit(Manager, BattleRequest.Restart(BattleSetup.Default));
+                yield return Until(() => Session.BattleNumber == number + 2);
+                Assert.That(Manager.Exists(human), Is.False);
+                Assert.That(Tick, Is.EqualTo(tick));
+                using (var actors = Manager.CreateEntityQuery(typeof(CombatMotion)))
+                using (var motions = actors.ToComponentDataArray<CombatMotion>(Allocator.Temp))
+                    foreach (var fresh in motions)
+                        Assert.That((fresh.Grounded, fresh.VerticalVelocity), Is.EqualTo((true, 0f)));
+                BattleRequest.Submit(Manager, BattleRequest.End());
+                yield return Until(() => !Session.IsActive);
+                using (var actors = Manager.CreateEntityQuery(typeof(CombatMotion)))
+                    Assert.That(actors.CalculateEntityCount(), Is.Zero);
+            }
+            finally
+            {
+                Time.timeScale = scale;
+                BattleRequest.Submit(Manager, BattleRequest.End());
+            }
+            yield return Until(() => !Session.IsActive);
         }
 
         [UnityTest]

@@ -42,7 +42,8 @@ behaviour. All combat simulation code lives in the single assembly `MLFLegends.C
 |---|---|---|---|
 | `CombatantId` | Spawner (#5) | nobody | all |
 | `CombatTeam` | Spawner (#5) | nobody | all |
-| `CombatPosition` | Spawner (#5) | single movement integration owner (Stage 02; collisions of Stage 04 extend it, not a second writer) | all |
+| `CombatPosition` | Spawner (#5) | `CombatMovementSystem` (#31); Stage 04 extends this owner | all |
+| `CombatMotion` | same private Spawn (#5/#31) | `CombatMovementSystem` (#31), ground support / vertical velocity / grounded byte | movement, replay / diagnostics |
 | `CombatFacing` | Spawner (#5) | single action-state owner (Stage 02+); not #4 | all |
 | `InCombat` (enableable) | Spawner (#5), enabled | single defeat owner (Stage 08), disable only | all simulation queries |
 | `CombatCommand` values | producers: player input adapter or AI | — (values, not state) | command processor (#4) only |

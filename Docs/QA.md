@@ -14,6 +14,56 @@ Original [#17](https://github.com/HolyPenguin21/mlf-legends/issues/17) Unicode/C
 
 **Stage 02 first task:** [#31](https://github.com/HolyPenguin21/mlf-legends/issues/31) canonical fixed-tick ECS movement X/Z plus jump Y; when the first PR arrives manager reviews bottom-up and records Unity tests as RUN/PASS/FAIL/NOT RUN exactly as evidenced. Stage 02 may progress with `NOT RUN` only when no observed critical compiler/runtime defect blocks dependent work.
 
+## Stage 02.1 implementation evidence (#31, 2026-10-26)
+
+Base main: `7ae5459d5b6a5ff9b37bc3750d452c8ce0ea7d41`. Separate PR branch; no autonomous merge.
+
+- Source review: one State-phase motion writer, one existing lifecycle Spawn/cleanup, same runtime
+  system in default world, replay and benchmark; Collection -> State movement -> Publication unchanged.
+- Prepared EditMode regression cases: 8 directions/idle and distance, both sources and every actor at
+  2/100/400, k=2/3/10 catch-up replay, jump Pressed/Held/airborne presses, gravity/landing at nonzero Y,
+  rejected/duplicate/stale/unknown/deferred inputs, disabled InCombat, zero-tick paused frames,
+  restart during jump, old pending/submission clearing, motion removal on End/Despawn, fresh/repeated
+  World jump replay and running-clock guard. Replay records motion and position per completed tick.
+- Existing command-matrix expectations change only for actual accepted movement; identity, facing,
+  command outcomes, pending ordering, lifetime and timeline assertions remain. Performance archetype
+  check includes motion; output scope/names distinguish Stage 02 from the retained historical baseline.
+- Prepared PlayMode checks: automatic State-system registration and a real default-world synthetic jump,
+  freeze at `Time.timeScale=0`, paused Restart/End cleanup. No visual fighters or new scene.
+- **NOT RUN:** Unity import/C# source generation/compilation, Burst compilation, complete EditMode and
+  PlayMode execution, sorter warnings in Editor, Domain Reload manual checks, and renewed 2/100/400
+  timings/allocations. No Unity Editor, C# compiler or PowerShell runner is installed in this environment.
+- **Executed static checks: PASS** — `git diff --check`; pinned Unity/Entities/Burst/URP versions; all
+  asmdef JSON files; unique GUIDs and new asset .meta companions; runtime position/motion writer searches
+  (existing Spawn plus CombatMovementSystem), canonical dt/enabled-InCombat and shared harness registration.
+  These source checks do not establish C# compilation or runtime correctness.
+- General post-PR #28/#29 Unity debt remains #30; Windows Unicode/Burst remains separately open #17.
+  Strict floating point and replay coverage are same-platform contracts, not cross-platform lockstep proof.
+
+## Stage 02.1 bottom-up re-review (#31 / PR #32, 2026-10-26)
+
+Reviewed from component layout/write sites through Spawn/destruction (including disabled actors),
+command validation/deferred input, Collection/State/Publication and both lifecycle boundaries, default
+world/replay registration, snapshots and performance harness. No runtime ownership, scheduling or
+cleanup defect was found in this source review; it is not execution evidence. Runtime code is unchanged
+by this follow-up. Existing #30 Unity/sorter/manual debt and #17 Windows/Burst remain open.
+
+Three verification gaps were corrected:
+- The 2/100/400 roster test now compares the **complete per-tick raw replay** between single-step frames
+  and one 10-step catch-up frame, for every actor and both command sources, instead of checking only
+  final roster motion.
+- Added 12 cases for airborne End/Restart requested from Collection, State or Publication at N=2/400.
+  The requesting tick must finish with its old actors; cleanup occurs before the next catch-up tick;
+  disabled airborne actors/allies disappear, pending old input is cleared, and fresh actors start
+  grounded with zero velocity and new IDs at relative tick 1.
+- Performance checks now require every declared actor component (including CombatMotion), rather
+  than only rejecting unexpected components. Both timing and memory harnesses assert the single
+  motion owner's registration in State outside measured regions.
+
+Prepared movement EditMode cases: **39 total**; existing default-world PlayMode coverage retained.
+Execution remains **NOT RUN** for Unity/C# source generation, Burst, all runtime tests and profiling.
+Only source/asset consistency checks and `git diff --check` were executed successfully.
+
 ## Stage 00 findings and checklist
 - [x] `HolyPenguin21/mlf-legends` exists; GitHub App repository access repaired and write validated.
 - [x] `Assets/`, `Packages/` and `ProjectSettings/` exist in `main`.

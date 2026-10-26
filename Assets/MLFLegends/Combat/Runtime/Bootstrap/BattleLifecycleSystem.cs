@@ -43,7 +43,7 @@ namespace MLFLegends.Combat
 
             // Human and AI combatants are identical; AppliedCombatCommand is added by the command processor.
             m_CombatantArchetype = state.EntityManager.CreateArchetype(
-                typeof(CombatantId), typeof(CombatTeam), typeof(CombatPosition), typeof(CombatFacing), typeof(InCombat));
+                typeof(CombatantId), typeof(CombatTeam), typeof(CombatPosition), typeof(CombatFacing), typeof(InCombat), typeof(CombatMotion));
             m_Combatants = SystemAPI.QueryBuilder().WithAll<CombatantId>()
                 .WithOptions(EntityQueryOptions.IgnoreComponentEnabledState).Build();
             m_Clock = SystemAPI.QueryBuilder().WithAll<SimulationClock>().Build();
@@ -169,6 +169,7 @@ namespace MLFLegends.Combat
             entityManager.SetComponentData(entity, id);
             entityManager.SetComponentData(entity, new CombatTeam { Value = setup.Team });
             entityManager.SetComponentData(entity, new CombatPosition { Value = setup.Position });
+            entityManager.SetComponentData(entity, new CombatMotion { GroundHeight = setup.Position.y, Grounded = true });
             entityManager.SetComponentData(entity, new CombatFacing { Value = setup.Facing });
 
             if (!diagnosticName.IsEmpty)

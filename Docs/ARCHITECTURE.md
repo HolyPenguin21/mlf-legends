@@ -8,7 +8,7 @@
 - Initial template packages include Input System 1.19.0, Burst 1.8.29 transitively, Collections 6.5.0 transitively. **Entities 6.5.0 and Entities Graphics 6.5.0 are installed in manifest and package lock**.
 - Use the ECS APIs bundled with Unity 6000.5.4f1 and Entities 6.5.0; Stage 00 test pass was reported by the project owner, with logs unavailable for independent review.
 
-**Current delivery boundary:** Stage 01 has one authoritative World-scoped `SimulationClock` and fixed-step phases; one command queue/processor publishing `AppliedCombatCommand`; one `BattleLifecycleSystem` that owns start/end/restart/IDs and runs in Initialization plus pre-clock FixedStep; and `BattleSetup` for 1v1 through 200v200. Stage 02 Issue #31 adds exactly one authoritative position/motion writer in the existing `CombatStateUpdateSystemGroup`. Live input, facing action-state, camera and later collision/renderer remain distinct stages/scopes. No visible scene until the Stage 03 GPU sprite renderer.
+**Current delivery boundary:** Stage 01 has one authoritative World-scoped `SimulationClock` and fixed-step phases; one command queue/processor publishing `AppliedCombatCommand`; one `BattleLifecycleSystem` that owns start/end/restart/IDs and runs in Initialization plus pre-clock FixedStep; and `BattleSetup` for 1v1 through 200v200. Stage 02.1 Issue #31 implements `CombatMovementSystem`, exactly one authoritative position/motion writer in the existing `CombatStateUpdateSystemGroup`. Live input, facing action-state, camera and later collision/renderer remain distinct stages/scopes. No visible scene until the Stage 03 GPU sprite renderer.
 
 ## Architectural goals
 One authoritative sim handles player, duel AI and hundreds of combatants; presentation, UI, VFX and animation never apply damage or dictate hit frames. Use Unity ECS/DOTS + Burst for performance-critical processing, with a fixed simulation step. Rendering frame rate is independent. The combat core must remain applicable to 200 vs 200 even during initial 1v1 tuning.
@@ -27,6 +27,15 @@ No duplicate systems writing the same canonical stat at different points. Explic
 
 ## Space and display
 Characters are expressive 2D sprites roughly 4 heads tall in fully 3D destructible environments. Fixed orthographic camera orientation at all zoom levels. Planar X/Z axes with world Y height. Attack aiming primarily left/right with a finite Z depth and Y altitude overlap; no free 360-degree strike aiming in initial slice. Stable depth sorting required for overlapping fighters and geometry.
+
+## Stage 02.1 motion ownership (#31)
+
+Collection's existing processor publishes `AppliedCombatCommand`; State's `CombatMovementSystem` writes
+`CombatPosition` and `CombatMotion` once per fixed step; Publication only reads. Lifecycle's existing
+private Spawn initialises both, including the temporary landing support at spawn Y; lifecycle destroys
+both with the entity. This applies equally to 2/100/400 actors and both command sources. Facing has no
+new writer. Integration, provisional units/tunables and Stage 04 replacement boundary are documented in
+`Simulation/SIMULATION.md`. Unity compilation, regression execution and renewed profiling are NOT RUN.
 
 ## Physical rules
 Every living combatant has a lightweight body collider. Allies block and gently yield; player can push allied crowd with modest resistance. Enemies and walls remain solid. No ghost dash. Hits can cause stagger, launches, push-through waves and collisions with other bodies; custom ECS simplified physical resolution, not 400 dynamic Rigidbodies. Direct basic attacks don't damage friends; secondary magical/environment effects can.

@@ -14,9 +14,9 @@ namespace MLFLegends.Tests.EditMode
     //
     // What "reproducible" means here: the same BattleSetup, the same script of commands (by role and relative tick) and
     // the same between-frame requests give the same canonical record of every completed tick: combatant ID/team/
-    // position/facing/InCombat, AppliedCombatCommand, CombatCommandResult and pending commands. That is all the state
-    // Stage 01 has. No seed is involved: nothing consumes one yet, so these tests do not prove determinism of future
-    // movement, attacks or AI, only of the current tick/command/lifecycle pipeline on one machine and Unity version.
+    // position/facing/InCombat, AppliedCombatCommand, CombatCommandResult and pending commands. The record also includes
+    // Stage 02.1 motion state. No seed is involved: nothing consumes one yet. These tests cover the current
+    // tick/command/lifecycle/movement pipeline on one machine and Unity version, not cross-platform float determinism.
     public class CombatReplayTests
     {
         const uint IdleTicksBeforeFirstBattle = 3;
@@ -200,6 +200,9 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(producers[producers.Length - 1], Is.EqualTo(w.World.GetExistingSystem<CombatCommandProcessorSystem>()),
                 "The single processor runs after every producer of the tick.");
             Assert.That(w.FixedStep.Timestep, Is.EqualTo(SimulationTiming.TickDuration));
+            using var states = w.World.GetExistingSystemManaged<CombatStateUpdateSystemGroup>().GetAllSystems(Allocator.Temp);
+            Assert.That(states.ToArray(), Is.EqualTo(new[] { w.World.GetExistingSystem<CombatMovementSystem>() }),
+                "Exactly one movement owner, inside State rather than Collection or Publication.");
             Assert.That(w.CountWith<SimulationClock>(), Is.EqualTo(1));
             Assert.That(w.CountWith<CombatCommandQueue>(), Is.EqualTo(1));
             Assert.That(w.CountWith<BattleSession>(), Is.EqualTo(1));
@@ -319,6 +322,7 @@ namespace MLFLegends.Tests.EditMode
                 new[] { "H r9", "H r11" },
             };
 
+            var expectedHumanXSteps = new[] { 1, 1, 2, 2, 3, 3, 3, 3 };
             for (var i = 0; i < MatrixLength; i++)
             {
                 var record = b[i];
@@ -328,13 +332,18 @@ namespace MLFLegends.Tests.EditMode
                 Assert.That(Applied(record.Combatant(record.HumanId)), Is.EqualTo(expectedHuman[i]), $"Human command on relative tick {r}.");
 
                 var human = record.Combatant(record.HumanId);
-                Assert.That((human.Id, human.Team, human.Position, human.Facing, human.InCombat),
-                    Is.EqualTo((1u, (byte)1, new float3(-2f, 0f, 0f), FacingDirection.Right, true)), "No Stage 01 system writes combatant state.");
+                Assert.That((human.Id, human.Team, human.Facing, human.InCombat),
+                    Is.EqualTo((1u, (byte)1, FacingDirection.Right, true)));
+                Assert.That(human.Position.x, Is.EqualTo(-2f + expectedHumanXSteps[i] * CombatMovementTuning.MoveSpeed * SimulationTiming.TickDuration).Within(1e-5f));
+                Assert.That(human.Position.z, Is.EqualTo(r >= 4 ? CombatMovementTuning.MoveSpeed * SimulationTiming.TickDuration : 0f).Within(1e-5f));
+                Assert.That(human.Position.y, Is.Zero);
                 if (r <= DespawnAfter)
                 {
                     Assert.That(record.Combatants.Select(c => c.Id), Is.EqualTo(new[] { 1u, 2u }));
                     var ai = record.Combatant(record.AiId);
-                    Assert.That((ai.Team, ai.Position, ai.Facing, ai.InCombat), Is.EqualTo(((byte)2, new float3(2f, 0f, 0f), FacingDirection.Left, true)));
+                    Assert.That((ai.Team, ai.Facing, ai.InCombat), Is.EqualTo(((byte)2, FacingDirection.Left, true)));
+                    Assert.That(ai.Position.x, Is.EqualTo(2f - CombatMovementTuning.MoveSpeed * SimulationTiming.TickDuration).Within(1e-5f));
+                    Assert.That(ai.Position.yz, Is.EqualTo(new float2(0f)));
                     Assert.That(Applied(ai), Is.EqualTo(expectedAi[i]), $"AI command on relative tick {r}.");
                 }
                 else
@@ -497,7 +506,9 @@ namespace MLFLegends.Tests.EditMode
 
             Assert.That(b.RawLog, Is.EqualTo(a.RawLog), "Absolute ticks and IDs match too: both Worlds start from tick 0 and ID 1.");
             Assert.That(a.RawLog.Length, Is.EqualTo(IdleTicksBeforeFirstBattle + 2 * MatrixLength + 1));
-            Assert.That(a.BattleRecords(2)[0].Combatant(3).Position, Is.EqualTo(OtherSetup.Human.Position));
+            Assert.That(a.BattleRecords(2)[0].Combatant(3).Position.x,
+                Is.EqualTo(OtherSetup.Human.Position.x + CombatMovementTuning.MoveSpeed * SimulationTiming.TickDuration).Within(1e-5f));
+            Assert.That(a.BattleRecords(2)[0].Combatant(3).Position.yz, Is.EqualTo(OtherSetup.Human.Position.yz));
             AssertTimeline(a);
         }
 

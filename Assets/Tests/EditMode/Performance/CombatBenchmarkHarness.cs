@@ -18,9 +18,9 @@ using UnityEngine.Profiling;
 
 namespace MLFLegends.Tests.EditMode
 {
-    // Performance harness for the Stage 01 baseline (Issue #7). Test-only: it adds no runtime system and copies no runtime
+    // Stage 01 profiling harness (#7), extended to Stage 02.1 movement (#31). Test-only: it adds no runtime system and copies no runtime
     // rule. The World is built from the same runtime system list as the replay tests (ReplayWorld.RuntimeSystems), ordered
-    // by the systems' own attributes, so the clock, the battle lifecycle, the command processor and the fixed-step order
+    // by the systems' own attributes, so the clock, lifecycle, processor, movement and fixed-step order
     // are those of the default world. Combatants exist only through BattleRequest and the real BattleLifecycleSystem.
     // A timed region contains only runtime update calls and Stopwatch reads: no strings, LINQ, Debug.Log, replay
     // recording or allocations of the harness. Everything else (requests, SetTime, checks, reports) happens outside it.
@@ -426,6 +426,8 @@ namespace MLFLegends.Tests.EditMode
                 Pair("Stopwatch", $"{Stopwatch.Frequency} Hz, high resolution {Stopwatch.IsHighResolution}"),
                 Pair("GC byte counter works", GcByteCounterWorks().ToString()),
                 Pair("Simulation rate", $"{SimulationTiming.TickRateHz} Hz"),
+                Pair("Runtime scope", "Stage 02.1 (#31): clock + lifecycle + commands + CombatMovementSystem; not the historical Stage 01 baseline"),
+                Pair("CombatMotion bytes per actor", UnsafeUtility.SizeOf<CombatMotion>().ToString(CultureInfo.InvariantCulture)),
             };
         }
 
