@@ -31,6 +31,19 @@
 - Stage 02 starts with [#31](https://github.com/HolyPenguin21/mlf-legends/issues/31) deterministic fixed-tick ECS X/Z movement + Y jump reading existing `AppliedCombatCommand`. This task must not introduce visual proxies, a second simulation architecture, a new command queue or input adapter, camera or collisions. Facing/action-state owner, [#22](https://github.com/HolyPenguin21/mlf-legends/issues/22) real frame-to-tick input and read-only fixed-angle orthographic camera follow/zoom/pan follow in distinct reviewed Stage 02 scopes.
 - Earlier owner preference for a standalone Stage 02 conversation **is not a technical start gate**. Manager prepares a complete handoff for the new session, while the first Stage 02 GitHub Issue may be issued and implemented immediately. Stage 03 remains the **first visible user-facing gameplay scene** once GPU sprite rendering works; no Stage 02 capsule/proxy demo.
 
+## Stage 02.1 motion implementation choices (#31, 2026-10-26)
+
+- One `CombatMovementSystem` in State owns runtime position and compact vertical kinetics; existing
+  lifecycle Spawn initialises motion for every roster actor. No separate input path or orientation writer.
+- Temporary landing support is each actor's initial Y, preserving all legal finite BattleSetup heights.
+  Grounded Jump Pressed sets upward velocity; semi-implicit gravity runs through None; landing clamps
+  to support and zeros velocity. Held never initiates/repeats jumps; airborne presses are not buffered.
+- Shared provisional tuning is 4 world units/s movement, 8 world units/s jump impulse, 20 world units/s²
+  downward gravity. No acceleration/inertia; full horizontal control in air. These are implementation
+  starting values for calibration, not newly approved balance. See Simulation/SIMULATION.md.
+- Future Stage 04 terrain/body resolution extends this position owner and replaces spawn-height support.
+  No visual scene or proxy actors. No Unity execution/performance PASS claimed for this implementation.
+
 ## Visual-scene milestone (owner decision, 2026-10-25)
 
 - Follow the existing roadmap in order: Stage 01 ECS, Stage 02 movement/camera, Stage 03 GPU sprite renderer.

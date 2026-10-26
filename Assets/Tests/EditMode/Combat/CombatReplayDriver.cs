@@ -17,8 +17,8 @@ namespace MLFLegends.Tests.EditMode
     //   - a recorder in the publication phase that captures every completed tick canonically (sorted by CombatantId,
     //     never by EntityQuery/chunk order), raw and normalized (roles H/A, relative ticks);
     //   - optional in-step requesters that submit a BattleRequest from a chosen phase of a chosen tick.
-    // Replay input = BattleSetup + script (+ the between-frame requests a test makes). There is no seed: Stage 01 has no
-    // RNG, movement or attack system that could consume one, so the record covers only state that exists today.
+    // Replay input = BattleSetup + script (+ the between-frame requests a test makes). There is no seed: there is no
+    // RNG or attack system that could consume one. Stage 02.1 uses the real movement system and records its kinetic state.
 
     /// <summary>Logical role of a command target; the actual <see cref="CombatantId"/> differs per battle and World.</summary>
     public enum ReplayRole : byte
@@ -81,6 +81,7 @@ namespace MLFLegends.Tests.EditMode
         public string Label;
         public byte Team;
         public Unity.Mathematics.float3 Position;
+        public CombatMotion Motion;
         public FacingDirection Facing;
         public bool InCombat;
         public bool HasApplied;
@@ -149,6 +150,7 @@ namespace MLFLegends.Tests.EditMode
             typeof(CombatCommandCollectionSystemGroup),
             typeof(CombatCommandProcessorSystem),
             typeof(CombatStateUpdateSystemGroup),
+            typeof(CombatMovementSystem),
             typeof(CombatPublicationSystemGroup),
         };
 
@@ -378,6 +380,7 @@ namespace MLFLegends.Tests.EditMode
                         Label = Label(id),
                         Team = manager.GetComponentData<CombatTeam>(entity).Value,
                         Position = manager.GetComponentData<CombatPosition>(entity).Value,
+                        Motion = manager.GetComponentData<CombatMotion>(entity),
                         Facing = manager.GetComponentData<CombatFacing>(entity).Value,
                         InCombat = manager.IsComponentEnabled<InCombat>(entity),
                         HasApplied = hasApplied,
@@ -423,6 +426,7 @@ namespace MLFLegends.Tests.EditMode
                 var applied = !c.HasApplied ? "none"
                     : Command(c.Applied.Command) + (c.Applied.WasSubmitted ? "" : " implicit");
                 lines.Add($"{who(self)} team{c.Team} pos({Float(c.Position.x)},{Float(c.Position.y)},{Float(c.Position.z)}) "
+                    + $"motion(ground:{Float(c.Motion.GroundHeight)},vy:{Float(c.Motion.VerticalVelocity)},grounded:{c.Motion.Grounded}) "
                     + $"{c.Facing} {(c.InCombat ? "in-combat" : "out")} applied[{applied}]");
             }
 

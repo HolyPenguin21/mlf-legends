@@ -16,7 +16,7 @@ using Object = UnityEngine.Object;
 
 namespace MLFLegends.Tests.EditMode
 {
-    // Stage 01 ECS baseline (Issue #7) with 2, 100 and 400 combatants that exist at the same time: battle start/end through
+    // Stage 01 harness (#7), now measuring Stage 02.1 runtime (#31), with 2, 100 and 400 combatants that exist at the same time: battle start/end through
     // the real lifecycle, 1000 fixed ticks with and without commands at 1, 4 and 10 ticks per render frame, managed and
     // native memory. One warm-up pass, then Repetitions measured passes, all in one World per roster size. Every simulated
     // render frame is followed by a real editor frame (yield, untimed): main-thread Temp memory is only released at the end
@@ -133,7 +133,7 @@ namespace MLFLegends.Tests.EditMode
         static readonly ComponentType[] s_CombatantComponents =
         {
             typeof(CombatantId), typeof(CombatTeam), typeof(CombatPosition), typeof(CombatFacing), typeof(InCombat),
-            typeof(AppliedCombatCommand),
+            typeof(AppliedCombatCommand), typeof(CombatMotion),
         };
 
         /// <summary>A combatant is the lifecycle's unmanaged archetype only: no GameObject, MonoBehaviour or physics/animation object.</summary>
@@ -401,8 +401,8 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(m_Bench.Manager.CreateEntityQuery(typeof(BattleSession)).CalculateEntityCount(), Is.EqualTo(1));
             Assert.That(checks.Battles, Is.EqualTo((Repetitions + 1) * (2 * RequestCycles + 1 + 8)));
 
-            var path = report.Write($"stage01-7-{BenchmarkEnvironment.Label}-n{combatants}", environment);
-            Debug.Log($"[Issue #7 baseline] {combatants} combatants: {report.Rows.Count} rows written to {path}");
+            var path = report.Write($"stage02-31-{BenchmarkEnvironment.Label}-n{combatants}", environment);
+            Debug.Log($"[Stage 02.1 #31 baseline] {combatants} combatants: {report.Rows.Count} rows written to {path}");
         }
 
         /// <summary>
@@ -486,8 +486,8 @@ namespace MLFLegends.Tests.EditMode
             m_Bench.ApplyRequests();
             checks.Ended();
 
-            var path = report.Write($"stage01-7-{BenchmarkEnvironment.Label}-memory-n{combatants}", environment);
-            Debug.Log($"[Issue #7 baseline] frame memory, {combatants} combatants: written to {path}");
+            var path = report.Write($"stage02-31-{BenchmarkEnvironment.Label}-memory-n{combatants}", environment);
+            Debug.Log($"[Stage 02.1 #31 baseline] frame memory, {combatants} combatants: written to {path}");
         }
     }
 }

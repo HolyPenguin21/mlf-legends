@@ -5,6 +5,15 @@ processor and the battle lifecycle — with 2, 100 and 400 light combatants that
 **What this is not:** a combat performance figure. Stage 01 has no movement, collisions, attacks, AI, physics or
 character rendering; nothing here predicts the cost of a real 200 vs 200 battle or a frame rate.
 
+## Stage 02.1 measurement boundary (#31, 2026-10-26)
+
+All measured figures below are **historical Stage 01**, before the motion system (and before PR #28/#29).
+Stage 02.1 movement costs at **2 / 100 / 400: NOT RUN**; no new CPU, allocation or Burst execution claim.
+The existing harness now includes the same `CombatMovementSystem` as the default world/replay, and asserts
+`CombatMotion` is part of the common unmanaged actor archetype. Current cmd loads exercise horizontal
+movement; they do not benchmark jumping. New report headers include runtime scope and motion component
+size; outputs use `stage02-31-...` so runs cannot overwrite or be mistaken for Stage 01 results.
+
 ## How to run
 
 The tests are in `Assets/Tests/EditMode/Performance/` (category `Performance`) and also run as part of the normal
@@ -20,7 +29,7 @@ $u = 'C:\Path\To\6000.5.4f1\Editor\Unity.exe'
      -testCategory Performance -testResults <repo>\TestResults\perf-off.xml -logFile <repo>\TestResults\perf-off.log
 ```
 
-Each test writes `TestResults/performance/stage01-7-<burst-on|burst-off>[-memory]-n<N>.tsv` (ignored by Git): an
+Current tests write `TestResults/performance/stage02-31-<burst-on|burst-off>[-memory]-n<N>.tsv` (historical Stage 01 used `stage01-7-...`) (ignored by Git): an
 environment header (CPU, RAM, OS, Unity/Entities/Collections/Burst versions, Burst state proven by a probe job,
 safety checks, job debugger, managed code optimization) and one row per scenario and repetition with sample count,
 mean / median / p95 / min / max (µs, or bytes for memory rows), mean per tick, GC.Alloc count and native growth.
