@@ -17,7 +17,7 @@ namespace MLFLegends.Tests.EditMode
     // Stage 02.3 (#22) cost of the real player input producer, in the existing benchmark World (ReplayWorld.RuntimeSystems,
     // BenchmarkCommandProducer at None) plus the real PlayerInputCommandSystem: per render frame with 1 and 10 ticks, at
     // 2 and 400 combatants, the producer detached (inert, = the existing idle load) vs attached to a capture whose virtual
-    // keyboard holds D (one Player command per tick). One warm-up pass, then Repetitions measured passes; every frame is
+    // keyboard holds D (one Player command per tick; the hold is re-reported untimed before each frame). One warm-up pass, then Repetitions measured passes; every frame is
     // followed by a real editor frame (untimed). Results: TestResults/performance/player-input-<burst>.tsv; asserts
     // correctness only, never timings.
     [Category("Performance")]
@@ -86,6 +86,10 @@ namespace MLFLegends.Tests.EditMode
                             System.GC.Collect();
                             for (var frame = 0; frame < frames; frame++)
                             {
+                                // Untimed, like PreUpdate in the game: the fixture's virtual device does not keep its state
+                                // across EditMode editor frames, so the hold is re-reported before every measured frame.
+                                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.D));
+                                InputSystem.Update();
                                 m_Bench.PrepareFrame(ticksPerFrame);
                                 var gc = GcAllocationScope.Begin();
                                 var nativeBefore = Profiler.GetTotalAllocatedMemoryLong();
