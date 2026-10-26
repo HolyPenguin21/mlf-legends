@@ -72,6 +72,43 @@ Prepared movement EditMode cases: **39 total**; existing default-world PlayMode 
 Execution remains **NOT RUN** for Unity/C# source generation, Burst, all runtime tests and profiling.
 Only source/asset consistency checks and `git diff --check` were executed successfully.
 
+## Stage 02.2 implementation evidence (#33, 2026-10-26)
+
+Base main: `46af296`. Branch `feature/stage02-33`, [PR #34](https://github.com/HolyPenguin21/mlf-legends/pull/34), merged to main on the project owner's explicit instruction after a bottom-up re-check. Status **MERGED / UNITY-UNVERIFIED** (compile blocker below).
+
+- **Runtime:** `CombatFacingSystem` in `CombatStateUpdateSystemGroup`, `[UpdateBefore(CombatMovementSystem)]`;
+  sole post-Spawn writer of `CombatFacing` (searched: Spawn + this system only). Reads only
+  `AppliedCombatCommand` of enabled `InCombat`; sign of MoveX, 0 keeps facing. No new component/clock/queue.
+- **Tests:** new `CombatFacingTests` (spawn L/R kept, turn sequence incl. repeat/idle/Z-only/diagonals/jump/
+  airborne/Attack+Guard, player = AI, 1/2/3/10 catch-up raw replay, 2/100/400 rosters, rejected/stale/
+  deferred, disabled InCombat, paused frames + Restart/Despawn/End, restart inside catch-up, clock guard).
+  `CombatMovementTests` direction matrix expects facing by X sign + isolated writer-separation test.
+  `CombatReplayTests` matrix has explicit per-tick facing; mirror test asserts equal facing. State-order checks in
+  replay, default world and benchmark: exactly one facing and one movement owner (by system type), facing first,
+  neither in Collection/Publication.
+- **Unity run (2026-10-26, Unity 6000.5.4f1, separate ASCII worktree `D:/Unity/Project/mlf-s7`):**
+  - **Unpatched branch: FAIL to compile — pre-existing on main, not caused by #33.**
+    `BattleLifecycleSystem.cs(28,6): error CS0579: Duplicate 'UpdateInGroup' attribute`
+    (Entities 6.5 `UpdateInGroupAttribute` has no `AllowMultiple`; introduced by `6acf1fc`, PR #28).
+    So current `main` does not compile in Unity; Stage 01 post-#28 and Stage 02.1 have never run. Needs an
+    owner/manager decision on the lifecycle's Initialization registration (Bootstrap scope, not #33).
+  - **Local, uncommitted QA patch** (Initialization attribute replaced by a proxy system updating the same
+    lifecycle handle, plus the two tests' Initialization-membership lines pointed at the proxy):
+    EditMode **186/193 passed**; all 36 facing/movement-matrix/order cases passed, Baseline 2/100/400 and
+    FrameNativeMemory passed. 7 failures, none in #33 scope: 6 × `BattleLifecycleTests.EndRequestedInsideAFixedStep…`
+    (`[TestCase(..., 0/199)]` int cannot bind the `ushort allies` parameter — pre-existing test defect) and
+    `OnlyTheFixedStepClockDeclaresTheLifecycleOrderingDependency` (checks the attribute the patch removed).
+    PlayMode **10/10 passed**, incl. default-world State order and paused restart facing.
+    These results are evidence for the facing logic only, **not a PASS of the branch or main**.
+  - First run also exposed `NativeList.ToArray()` resolving to LINQ (`NotImplementedException`) in State-order
+    assertions; the #33 tests now use `AsArray().ToArray()` (old main code had the same pattern).
+  - No sorter warning for `CombatFacingSystem`. Pre-existing sorter warnings remain (#30): `PlayerCommandProducer`
+    UpdateBefore `AiCommandProducer` and `FixedStepSimulationSystemGroup` UpdateAfter
+    `BeginSimulationEntityCommandBufferSystem` are ignored as invalid.
+- **NOT RUN:** official 2/100/400 timings (the patched full-suite run wrote local `stage02-33-*` TSVs, not a
+  controlled baseline), Burst-off, Domain Reload manual checks, #17 Unicode path. `git diff --check` PASS;
+  new `.meta` GUIDs unique.
+
 ## Stage 00 findings and checklist
 - [x] `HolyPenguin21/mlf-legends` exists; GitHub App repository access repaired and write validated.
 - [x] `Assets/`, `Packages/` and `ProjectSettings/` exist in `main`.

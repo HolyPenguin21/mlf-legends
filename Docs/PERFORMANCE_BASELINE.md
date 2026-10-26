@@ -15,6 +15,11 @@ Both timing and memory harnesses verify the State motion owner outside measured 
 movement; they do not benchmark jumping. New report headers include runtime scope and motion component
 size; outputs use `stage02-31-...` so runs cannot overwrite or be mistaken for Stage 01 results.
 
+Stage 02.2 (#33) adds `CombatFacingSystem` (one linear pass reading `AppliedCombatCommand`, writing
+`CombatFacing`) to the same runtime list. Both harnesses now verify, outside measured regions, exactly one
+facing and one movement owner in State with facing first. Report scope says Stage 02.2 and outputs use
+`stage02-33-...`. Stage 02.2 costs at **2 / 100 / 400: NOT RUN**.
+
 ## How to run
 
 The tests are in `Assets/Tests/EditMode/Performance/` (category `Performance`) and also run as part of the normal
@@ -30,7 +35,7 @@ $u = 'C:\Path\To\6000.5.4f1\Editor\Unity.exe'
      -testCategory Performance -testResults <repo>\TestResults\perf-off.xml -logFile <repo>\TestResults\perf-off.log
 ```
 
-Current tests write `TestResults/performance/stage02-31-<burst-on|burst-off>[-memory]-n<N>.tsv` (historical Stage 01 used `stage01-7-...`) (ignored by Git): an
+Current tests write `TestResults/performance/stage02-33-<burst-on|burst-off>[-memory]-n<N>.tsv` (Stage 02.1 used `stage02-31-...`, historical Stage 01 `stage01-7-...`) (ignored by Git): an
 environment header (CPU, RAM, OS, Unity/Entities/Collections/Burst versions, Burst state proven by a probe job,
 safety checks, job debugger, managed code optimization) and one row per scenario and repetition with sample count,
 mean / median / p95 / min / max (µs, or bytes for memory rows), mean per tick, GC.Alloc count and native growth.

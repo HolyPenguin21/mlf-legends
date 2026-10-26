@@ -10,7 +10,8 @@ using UnityEngine.TestTools;
 
 namespace MLFLegends.Tests.EditMode
 {
-    // Integration tests only: real lifecycle, queue, processor, movement and publication recorder.
+    // Integration tests: real lifecycle, queue, processor, facing, movement and publication recorder (plus isolated
+    // single-system checks of writer separation and the clock guard).
     public class CombatMovementTests
     {
         static Entity Actor(ReplayWorld w, CombatantId id)
@@ -56,7 +57,47 @@ namespace MLFLegends.Tests.EditMode
                 Is.EqualTo(x == 0 && z == 0 ? 0f : CombatMovementTuning.MoveSpeed).Within(1e-4f));
             w.Step(3); // implicit None must stop horizontal movement immediately
             Assert.That(Human(w).Position, Is.EqualTo(p));
-            Assert.That(Human(w).Facing, Is.EqualTo(FacingDirection.Right), "Movement must not write facing.");
+            Assert.That(Human(w).Facing, Is.EqualTo(x < 0 ? FacingDirection.Left : FacingDirection.Right),
+                "Facing follows the sign of X; X = 0 (idle, Z-only) keeps the spawned Right, also after the None ticks.");
+        }
+
+        // Writer separation, each system alone in a World with a running-clock tag: movement never turns, facing never moves.
+        static Entity IsolatedActor(World world, FacingDirection facing, sbyte moveX)
+        {
+            world.EntityManager.CreateEntity(typeof(SimulationClockRunning));
+            var entity = world.EntityManager.CreateEntity(typeof(CombatPosition), typeof(CombatMotion), typeof(CombatFacing),
+                typeof(InCombat), typeof(AppliedCombatCommand));
+            world.EntityManager.SetComponentData(entity, new CombatMotion { Grounded = true });
+            world.EntityManager.SetComponentData(entity, new CombatFacing { Value = facing });
+            world.EntityManager.SetComponentData(entity, new AppliedCombatCommand(new CombatCommand
+            {
+                Combatant = new CombatantId { Value = 1 }, Tick = 1, MoveX = moveX, Pressed = CommandButtons.Jump, Source = CommandSource.Player,
+            }));
+            return entity;
+        }
+
+        [Test]
+        public void MovementAloneNeverWritesFacingAndFacingAloneNeverWritesMotion()
+        {
+            using (var w = new World("movement only"))
+            {
+                var entity = IsolatedActor(w, FacingDirection.Left, 1);
+                w.CreateSystem<CombatMovementSystem>().Update(w.Unmanaged);
+                Assert.That(w.EntityManager.GetComponentData<CombatPosition>(entity).Value.x, Is.GreaterThan(0f));
+                Assert.That(w.EntityManager.GetComponentData<CombatFacing>(entity).Value, Is.EqualTo(FacingDirection.Left),
+                    "Movement must not write facing.");
+            }
+
+            using (var w = new World("facing only"))
+            {
+                var entity = IsolatedActor(w, FacingDirection.Left, 1);
+                w.CreateSystem<CombatFacingSystem>().Update(w.Unmanaged);
+                Assert.That(w.EntityManager.GetComponentData<CombatFacing>(entity).Value, Is.EqualTo(FacingDirection.Right));
+                Assert.That(w.EntityManager.GetComponentData<CombatPosition>(entity).Value, Is.EqualTo(float3.zero),
+                    "Facing must not write position.");
+                var motion = w.EntityManager.GetComponentData<CombatMotion>(entity);
+                Assert.That((motion.VerticalVelocity, motion.Grounded), Is.EqualTo((0f, true)), "Facing must not start the jump.");
+            }
         }
 
         [TestCase(2)] [TestCase(100)] [TestCase(400)]

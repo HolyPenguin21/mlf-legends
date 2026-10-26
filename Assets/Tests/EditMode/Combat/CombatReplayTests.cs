@@ -200,9 +200,12 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(producers[producers.Length - 1], Is.EqualTo(w.World.GetExistingSystem<CombatCommandProcessorSystem>()),
                 "The single processor runs after every producer of the tick.");
             Assert.That(w.FixedStep.Timestep, Is.EqualTo(SimulationTiming.TickDuration));
+            ReplayWorld.AssertStateOwners(w.World);
             using var states = w.World.GetExistingSystemManaged<CombatStateUpdateSystemGroup>().GetAllSystems(Allocator.Temp);
-            Assert.That(states.ToArray(), Is.EqualTo(new[] { w.World.GetExistingSystem<CombatMovementSystem>() }),
-                "Exactly one movement owner, inside State rather than Collection or Publication.");
+            Assert.That(states.AsArray().ToArray(), Is.EqualTo(new[]
+            {
+                w.World.GetExistingSystem<CombatFacingSystem>(), w.World.GetExistingSystem<CombatMovementSystem>(),
+            }), "Without test requesters, State holds exactly the runtime facing then movement owners.");
             Assert.That(w.CountWith<SimulationClock>(), Is.EqualTo(1));
             Assert.That(w.CountWith<CombatCommandQueue>(), Is.EqualTo(1));
             Assert.That(w.CountWith<BattleSession>(), Is.EqualTo(1));
@@ -255,6 +258,10 @@ namespace MLFLegends.Tests.EditMode
                 var humanApplied = Applied(record.Combatant(record.HumanId));
                 var aiApplied = Applied(record.Combatant(record.AiId));
                 Assert.That(aiApplied.Replace(" AI", " Player"), Is.EqualTo(humanApplied), $"Same applied command on relative tick {record.RelativeTick}.");
+                // The AI spawns Left, the human Right: the accepted x+1 of r1 turns the AI on that same tick, and no
+                // rejected x-1 (r3 conflict, r6 conflict, r7 stale) turns either of them back.
+                Assert.That((record.Combatant(record.HumanId).Facing, record.Combatant(record.AiId).Facing),
+                    Is.EqualTo((FacingDirection.Right, FacingDirection.Right)), $"Same facing on relative tick {record.RelativeTick}.");
                 outcomes.UnionWith(human.Select(r => r.Outcome));
             }
 
@@ -323,6 +330,13 @@ namespace MLFLegends.Tests.EditMode
             };
 
             var expectedHumanXSteps = new[] { 1, 1, 2, 2, 3, 3, 3, 3 };
+            // Facing follows the sign of the applied MoveX, else keeps the previous value. Human: x+1 on r1, r3, r5, X-less
+            // otherwise; the rejected x-1 of r3 (conflict) and r5 (loses to the due pending x+1) must not turn it Left.
+            // AI: spawned Left, x-1 on r1, then only Guard/None/Attack until its despawn.
+            var R = FacingDirection.Right;
+            var L = FacingDirection.Left;
+            var expectedHumanFacing = new[] { R, R, R, R, R, R, R, R };
+            var expectedAiFacing = new[] { L, L, L, L, L };
             for (var i = 0; i < MatrixLength; i++)
             {
                 var record = b[i];
@@ -333,7 +347,7 @@ namespace MLFLegends.Tests.EditMode
 
                 var human = record.Combatant(record.HumanId);
                 Assert.That((human.Id, human.Team, human.Facing, human.InCombat),
-                    Is.EqualTo((1u, (byte)1, FacingDirection.Right, true)));
+                    Is.EqualTo((1u, (byte)1, expectedHumanFacing[i], true)), $"Human identity and facing on relative tick {r}.");
                 Assert.That(human.Position.x, Is.EqualTo(-2f + expectedHumanXSteps[i] * CombatMovementTuning.MoveSpeed * SimulationTiming.TickDuration).Within(1e-5f));
                 Assert.That(human.Position.z, Is.EqualTo(r >= 4 ? CombatMovementTuning.MoveSpeed * SimulationTiming.TickDuration : 0f).Within(1e-5f));
                 Assert.That(human.Position.y, Is.Zero);
@@ -341,7 +355,8 @@ namespace MLFLegends.Tests.EditMode
                 {
                     Assert.That(record.Combatants.Select(c => c.Id), Is.EqualTo(new[] { 1u, 2u }));
                     var ai = record.Combatant(record.AiId);
-                    Assert.That((ai.Team, ai.Facing, ai.InCombat), Is.EqualTo(((byte)2, FacingDirection.Left, true)));
+                    Assert.That((ai.Team, ai.Facing, ai.InCombat), Is.EqualTo(((byte)2, expectedAiFacing[i], true)),
+                        $"AI facing on relative tick {r}.");
                     Assert.That(ai.Position.x, Is.EqualTo(2f - CombatMovementTuning.MoveSpeed * SimulationTiming.TickDuration).Within(1e-5f));
                     Assert.That(ai.Position.yz, Is.EqualTo(new float2(0f)));
                     Assert.That(Applied(ai), Is.EqualTo(expectedAi[i]), $"AI command on relative tick {r}.");
