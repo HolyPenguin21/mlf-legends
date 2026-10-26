@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="4" result="Failed(Child)" total="4" passed="0" failed="4" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-26 11:15:07Z" end-time="2026-10-26 11:15:09Z" duration="2,0074291">
+  <test-suite type="TestSuite" id="1036" name="mlf-legends" fullname="mlf-legends" runstate="Runnable" testcasecount="21" result="Failed" site="Child" start-time="2026-10-26 11:15:07Z" end-time="2026-10-26 11:15:09Z" duration="2.007429" total="4" passed="0" failed="4" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1029" name="MLFLegends.Tests.PlayMode.dll" fullname="D:/Unity/Project/mlf-s7/Library/ScriptAssemblies/MLFLegends.Tests.PlayMode.dll" runstate="Runnable" testcasecount="21" result="Failed" site="Child" start-time="2026-10-26 11:15:07Z" end-time="2026-10-26 11:15:09Z" duration="1.996325" total="4" passed="0" failed="4" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="14212" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1030" name="MLFLegends" fullname="MLFLegends" runstate="Runnable" testcasecount="21" result="Failed" site="Child" start-time="2026-10-26 11:15:07Z" end-time="2026-10-26 11:15:09Z" duration="1.995131" total="4" passed="0" failed="4" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1031" name="Tests" fullname="MLFLegends.Tests" runstate="Runnable" testcasecount="21" result="Failed" site="Child" start-time="2026-10-26 11:15:07Z" end-time="2026-10-26 11:15:09Z" duration="1.994276" total="4" passed="0" failed="4" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestSuite" id="1032" name="PlayMode" fullname="MLFLegends.Tests.PlayMode" runstate="Runnable" testcasecount="21" result="Failed" site="Child" start-time="2026-10-26 11:15:07Z" end-time="2026-10-26 11:15:09Z" duration="1.993387" total="4" passed="0" failed="4" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-suite type="TestFixture" id="1011" name="PlayerInputPlayModeTests" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" testcasecount="11" result="Failed" site="Child" start-time="2026-10-26 11:15:07Z" end-time="2026-10-26 11:15:09Z" duration="1.991640" total="4" passed="0" failed="4" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1022" name="AdapterFollowsTheDefaultWorldWhenItAppearsOrIsReplaced" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests.AdapterFollowsTheDefaultWorldWhenItAppearsOrIsReplaced" methodname="AdapterFollowsTheDefaultWorldWhenItAppearsOrIsReplaced" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" seed="1002859228" result="Failed" start-time="2026-10-26 11:15:07Z" end-time="2026-10-26 11:15:08Z" duration="0.171113" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  ...attached once the World appears...
+  Expected: same as <MLFLegends.Combat.PlayerInputCapture>
+  But was:  null
+]]></message>
+                  <stack-trace><![CDATA[at MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests+<AdapterFollowsTheDefaultWorldWhenItAppearsOrIsReplaced>d__41.MoveNext () [0x0019e] in D:\Unity\Project\mlf-s7\Assets\Tests\PlayMode\Input\PlayerInputPlayModeTests.cs:434
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@1405238725ab\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+                </failure>
+              </test-case>
+              <test-case id="1024" name="CameraRebindsOnRestartAndHoldsItsViewWhenTheBattleEnds" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests.CameraRebindsOnRestartAndHoldsItsViewWhenTheBattleEnds" methodname="CameraRebindsOnRestartAndHoldsItsViewWhenTheBattleEnds" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" seed="1494402846" result="Failed" start-time="2026-10-26 11:15:08Z" end-time="2026-10-26 11:15:08Z" duration="0.035145" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  End: the last view, pan included, is kept.
+  Expected: (-2.03, 20.28, -22.98)
+  But was:  (-2.00, 20.28, -22.98)
+]]></message>
+                  <stack-trace><![CDATA[at MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests+<CameraRebindsOnRestartAndHoldsItsViewWhenTheBattleEnds>d__43.MoveNext () [0x00206] in D:\Unity\Project\mlf-s7\Assets\Tests\PlayMode\Input\PlayerInputPlayModeTests.cs:559
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@1405238725ab\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+                </failure>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1021" name="RealFocusLossAndRegainWithDeviceResyncTurnsNoRestoredHoldIntoAPress" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests.RealFocusLossAndRegainWithDeviceResyncTurnsNoRestoredHoldIntoAPress" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" testcasecount="2" result="Failed" site="Child" start-time="2026-10-26 11:15:08Z" end-time="2026-10-26 11:15:09Z" duration="1.769656" total="2" passed="0" failed="2" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                </properties>
+                <failure>
+                  <message><![CDATA[One or more child tests had errors]]></message>
+                </failure>
+                <test-case id="1019" name="RealFocusLossAndRegainWithDeviceResyncTurnsNoRestoredHoldIntoAPress(True)" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests.RealFocusLossAndRegainWithDeviceResyncTurnsNoRestoredHoldIntoAPress(True)" methodname="RealFocusLossAndRegainWithDeviceResyncTurnsNoRestoredHoldIntoAPress" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" seed="1623499699" result="Failed" start-time="2026-10-26 11:15:08Z" end-time="2026-10-26 11:15:08Z" duration="0.883665" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <failure>
+                    <message><![CDATA[  The restored K hold did not jump.
+  Expected: True
+  But was:  False
+]]></message>
+                    <stack-trace><![CDATA[at MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests+<RealFocusLossAndRegainWithDeviceResyncTurnsNoRestoredHoldIntoAPress>d__40.MoveNext () [0x002b5] in D:\Unity\Project\mlf-s7\Assets\Tests\PlayMode\Input\PlayerInputPlayModeTests.cs:390
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@1405238725ab\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+                  </failure>
+                </test-case>
+                <test-case id="1020" name="RealFocusLossAndRegainWithDeviceResyncTurnsNoRestoredHoldIntoAPress(False)" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests.RealFocusLossAndRegainWithDeviceResyncTurnsNoRestoredHoldIntoAPress(False)" methodname="RealFocusLossAndRegainWithDeviceResyncTurnsNoRestoredHoldIntoAPress" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" seed="932400458" result="Failed" start-time="2026-10-26 11:15:08Z" end-time="2026-10-26 11:15:09Z" duration="0.883113" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <failure>
+                    <message><![CDATA[  The restored K hold did not jump.
+  Expected: True
+  But was:  False
+]]></message>
+                    <stack-trace><![CDATA[at MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests+<RealFocusLossAndRegainWithDeviceResyncTurnsNoRestoredHoldIntoAPress>d__40.MoveNext () [0x002b5] in D:\Unity\Project\mlf-s7\Assets\Tests\PlayMode\Input\PlayerInputPlayModeTests.cs:390
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@1405238725ab\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+                  </failure>
+                  <output><![CDATA[Saving results to: C:/Users/Стас/AppData/LocalLow/DefaultCompany/mlf-legends\TestResults.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

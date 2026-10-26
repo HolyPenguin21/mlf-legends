@@ -1,5 +1,98 @@
 # MLF Legends — Quality assurance and evidence
 
+## Stage 02.3 + 02.4 / #22 after manager review (2026-10-26, PR #37, branch `feature/stage02-22-input-camera`)
+
+**Tested code: `4d9e431bc7474cf7233f8edaec60f0c14df65ab0`** (its code equals `4768386`; only Markdown differs), clean detached
+checkout, same machine/versions/runner as below. **Raw XML, Editor.log and TSV are committed in `Docs/Evidence/22/`**
+(index: `Docs/Evidence/22/README.md`). Agent-run; the manager has not re-run Unity.
+
+| Run | Result |
+|---|---|
+| EditMode run 1 / run 2 | **PASS 244/244**, **PASS 244/244** (5 new review regressions) |
+| PlayMode run 1 / run 2 | **PASS 21/21**, **PASS 21/21** (3 new review regressions incl. the focus case ×2) |
+| Performance, `--burst-disable-compilation` | **PASS 7/7** (probe: Burst not executed) |
+| Negative control: the 8 review regressions against `4768386` + four mutations restoring the old behaviour | **0/4 EditMode, 0/4 PlayMode** — every regression FAILS on the reviewed defect (`Docs/Evidence/22/4768386-negative-control/`) |
+
+Review findings and their fixes (all in this PR, no new subsystems):
+1. **End moved a panned camera** (pan reset on losing the target). Now only a new valid target drops the pan; End/Idle keep
+   position, size and pan exactly. Regressions: EditMode `EndKeepsThePannedViewExactlyUntilANewTargetBinds` (first refresh
+   after End without input), PlayMode `CameraRebindsOnRestartAndHoldsItsViewWhenTheBattleEnds` (view captured before End).
+2. **A fresh tap right after attaching to a running battle was lost** (Attach unbound, the first tick re-cleared). Now Attach
+   binds to the current session. Regression: `AFreshTapRightAfterAttachingToARunningBattleReachesTheFirstTickOnce` (pre-attach
+   tap still dropped, Restart still drops old presses).
+3. **The adapter bound only in OnEnable.** It now follows `World.DefaultGameObjectInjectionWorld` (once per World, checked
+   each frame); the producer keeps the highest enable order. Regressions: PlayMode
+   `AdapterFollowsTheDefaultWorldWhenItAppearsOrIsReplaced` (no World → A → B → A, stale presses, replaced adapter does not
+   retake, destroy detaches), EditMode `TheHigherEnableOrderWinsWhicheverCaptureAttachesFirst`.
+4. **Focus regain with device reset/sync.** Buttons held across a focus change or device disable/enable/reset are blocked
+   until released. Regressions: PlayMode `RealFocusLossAndRegainWithDeviceResyncTurnsNoRestoredHoldIntoAPress`
+   (InputTestFixture's runtime focus → the Input System's real `OnFocusChanged`, runInBackground true and false, device
+   re-reporting held K/J/L: Held, no Jump/Attack; release → press jumps), EditMode
+   `KeysHeldAcrossAResetOrDisableEnableCycleAreHeldNotPressed` (soft reset; disable/enable). Real OS alt-tab: NOT RUN.
+
+Logs: no `error CS`/`warning CS`; one known intentional clock-less sorter warning per EditMode run; no `Leak Detected`;
+PlayMode only `No Graphics Device found` (environment). `ProjectSettings/TimeManager.asset` batchmode reformat reverted,
+not committed. Benchmark: GC.Alloc 0 in every held series and every existing-benchmark series; **one** GC.Alloc sample in
+one *detached* (inert producer) series (Burst on, run 1, N = 400, 1 tick/frame, rep 3, max frame 67.5 us), not reproduced
+in run 2; origin not attributed (the detached producer returns before any work).
+
+**NOT RUN:** owner GUI manual check (`Input/INPUT.md`); real hardware devices and real OS focus switching; Domain-Reload-
+disabled Play Mode with the new components; player build; cold import / Cyrillic path for this branch (#30/#17
+unchanged); camera and Initialization/full-frame cost.
+
+The earlier section below (`d879d4c`) is superseded: those runs did not cover the reviewed defects.
+
+## Stage 02.3 + 02.4 / #22 agent verification, first PR revision (2026-10-26) — SUPERSEDED by the section above
+
+**Tested code SHA: `d879d4cb47917bb72ed4d48a056487314a1818e3`** (later branch commits change Markdown only). Clean detached
+checkout in the ASCII worktree `D:/Unity/Project/mlf-s7` (warm Library), no local patches; Windows 11 Pro 10.0.26100, AMD
+Ryzen 5 3600, 32 GB; Unity **6000.5.4f1**, Entities 6.5.0, Collections 6.5.0, Burst 1.8.29, URP 17.5.0, **Input System
+1.19.0** (unchanged); `Tools/Run-UnityTests.ps1` (batchmode `-nographics`), each run a separate Unity process.
+
+| Run | Result |
+|---|---|
+| EditMode run 1 | **PASS 239/239** (195 previous + 44 new, incl. a 7th Performance test) |
+| EditMode run 2 | **PASS 239/239** |
+| PlayMode run 1 | **PASS 18/18** (10 previous + 8 new) |
+| PlayMode run 2 | **PASS 18/18** |
+| EditMode `-testCategory Performance`, `--burst-disable-compilation` | **PASS 7/7** (probe: Burst code not executed, as intended) |
+| Burst-on Performance | inside both full EditMode runs; probe: Burst code executed |
+
+Evidence (XML, Editor.log, TSV) is now committed in `Docs/Evidence/22/d879d4c/` (and the failed `1408887` series in
+`Docs/Evidence/22/1408887-failed/`).
+Logs: no `error CS`/`warning CS`; one `Ignoring invalid [UpdateAfter] ... CombatClockSystem` per EditMode run, the known
+intentional clock-less fixture (`CombatClockTests.CombatPhasesDoNotRunWithoutAClock`); no new sorter warnings; no
+`Leak Detected` (warm Library); PlayMode logs only the environmental `No Graphics Device found` (Entities Graphics,
+`-nographics`). Batchmode rewrote `ProjectSettings/TimeManager.asset` to Unity's serializedVersion 2 rational timestep
+(0.02 = 2822399/141120000, `m_TimeScale` 1) in the worktree; reverted, not committed (same class of side effect as the
+known URP asset churn).
+
+An earlier full series on `1408887` failed 2 new tests (EditMode 237/239 twice, Burst-off Performance 6/7; PlayMode 18/18
+twice): an asset without maps made `InputActionAsset.FindActionMap(..., throwIfNotFound: true)` return null (runtime fix:
+explicit `ArgumentException`), and the producer benchmark's virtual key state did not survive EditMode editor frames
+under InputTestFixture (test fix: the hold is re-reported untimed before each frame). Both fixed before `d879d4c`.
+
+**What the new tests cover (real Input System events, real asset, real producer/processor/facing/movement):**
+- EditMode `PlayerInputProducerTests` (InputTestFixture virtual devices): 30/60/120 FPS and uneven pacing with 0-10 ticks
+  per frame; 0/1/2/3/10 ticks per frame; Held/Move on every catch-up tick, Pressed once; tap between ticks (Pressed with
+  Held = None); several presses -> one bit; holding K jumps once; WASD diagonal and stick quantization; gamepad; Restart
+  between catch-up ticks and between frames; End/idle, despawn, disabled InCombat; pause; focus and device loss;
+  attach/replace/detach/dispose (one Player command per tick); replay worlds without adapter get no hardware command;
+  player-vs-AI parity of identical canonical commands (bit-identical position/motion/facing); 200 vs 200 (all 400 ticked).
+- EditMode `CombatCameraControllerTests`: follow after movement/jump, fixed angle, pan/zoom clamps, invalid input, yaw,
+  Restart rebinding, End/Despawn/defeat/World disposal, and a 200 vs 200 snapshot (all combatants, session, queue, clock,
+  entity count) identical before/after 50 camera-only frames.
+- PlayMode `PlayerInputPlayModeTests` (default world, CombatSmoke): real PlayerLoop order PreUpdate input -> Update
+  `SimulationSystemGroup` -> PreLateUpdate `LateUpdate`; one producer before the processor; taps reach the first tick after
+  their frame and holds the ticks of their frames at 30/60/120 FPS (`Time.captureFramerate`, both 0- and 1-tick frames at
+  120); pause (no tick/position change, pan/zoom work, no jump on resume); focus loss; additive scene switch and adapter
+  re-enable (one producer, one Player command per tick); camera rebinding on bootstrap re-enable.
+
+**NOT RUN / limits:** owner GUI manual check (`Input/INPUT.md`, Manual check); real hardware keyboard/gamepad, real OS
+focus switching (tests drive `OnApplicationFocus` / the capture API) and Domain-Reload-disabled Play Mode with the new
+components; player build; cold import and Cyrillic path for this branch (#30/#17 unchanged). Initialization/full-frame
+cost (#30) and the camera's frame cost are unmeasured. The earlier 195/195 and 10/10 are not evidence for this code.
+
 ## Manager review of merged PR #36 (2026-10-26)
 
 Reviewed main `013cf238a1ecdfe5f50fca9660dc8585aed9cc42` bottom-up: the sole Lifecycle/session/ID/spawn/reset owner, Initialization proxy, clock/phase order, default-world bootstrap, replay/manual fixtures, movement/facing and benchmark call sites. **Implementation accepted; no corrective runtime change identified. #35 remains CLOSED. Stage 02.3 input work may proceed; #30 remains OPEN for the residual checks below.**

@@ -1,0 +1,48 @@
+# Date (UTC): 2026-10-26 10:42
+# CPU: AMD Ryzen 5 3600 6-Core Processor, 12 logical, 3593 MHz
+# RAM: 32699 MB
+# GPU (Unity): Null Device (Null)
+# OS: Windows 11  (10.0.26100)
+# Unity: 6000.5.4f1
+# Mode: Editor EditMode test runner, batchmode=True
+# Entities: 6.5.0
+# Collections: 6.5.0
+# Burst: 1.8.29
+# Burst compilation enabled: True
+# Burst code executes (probe job): True
+# Burst safety checks: True
+# Collections checks (ENABLE_UNITY_COLLECTIONS_CHECKS): True
+# Job debugger: True
+# Job worker count: 11
+# Managed code optimization: Release
+# Stopwatch: 10000000 Hz, high resolution True
+# GC byte counter works: False
+# Simulation rate: 60 Hz
+# Runtime scope: Stage 02.2 (#33): clock + lifecycle + commands + CombatFacingSystem + CombatMovementSystem; not the historical Stage 01 baseline
+# CombatMotion bytes per actor: 12
+# Scenario scope: Stage 02.3 (#22): ReplayWorld.RuntimeSystems + real PlayerInputCommandSystem; InputTestFixture virtual keyboard
+scenario	combatants	rep	ticksPerFrame	samples	mean_us	median_us	p95_us	min_us	max_us	meanPerTick_us	gcAllocs	nativeDeltaBytes	note
+player-input-detached	2	1	1	1000	15.6	15.4	16.7	14.9	59.1	15.6	0	65536	same World, producer detached (inert)
+player-input-detached	2	1	10	100	110.4	93.7	145.4	91.5	159.0	11.0	0	0	same World, producer detached (inert)
+player-input-held	2	1	1	1000	22.8	22.4	23.2	21.8	116.9	22.8	0	131072	real PlayerInputCommandSystem + capture, virtual keyboard holds D: 1 Player command/tick
+player-input-held	2	1	10	100	134.7	133.1	137.9	132.0	207.2	13.5	0	65536	real PlayerInputCommandSystem + capture, virtual keyboard holds D: 1 Player command/tick
+player-input-detached	2	2	1	1000	15.6	15.4	15.9	14.9	58.8	15.6	0	0	same World, producer detached (inert)
+player-input-detached	2	2	10	100	95.1	93.2	97.3	92.6	145.9	9.5	0	0	same World, producer detached (inert)
+player-input-held	2	2	1	1000	23.0	22.4	26.0	21.9	83.2	23.0	0	0	real PlayerInputCommandSystem + capture, virtual keyboard holds D: 1 Player command/tick
+player-input-held	2	2	10	100	137.2	133.2	158.9	131.9	211.8	13.7	0	65536	real PlayerInputCommandSystem + capture, virtual keyboard holds D: 1 Player command/tick
+player-input-detached	2	3	1	1000	15.7	15.4	17.3	15.0	61.1	15.7	0	65536	same World, producer detached (inert)
+player-input-detached	2	3	10	100	92.8	91.9	95.4	91.4	146.9	9.3	0	0	same World, producer detached (inert)
+player-input-held	2	3	1	1000	22.6	22.4	23.1	21.9	79.9	22.6	0	65536	real PlayerInputCommandSystem + capture, virtual keyboard holds D: 1 Player command/tick
+player-input-held	2	3	10	100	134.1	133.0	137.0	131.9	203.2	13.4	0	0	real PlayerInputCommandSystem + capture, virtual keyboard holds D: 1 Player command/tick
+player-input-detached	400	1	1	1000	22.5	22.3	22.9	21.8	66.0	22.5	0	0	same World, producer detached (inert)
+player-input-detached	400	1	10	100	162.8	161.2	166.9	159.9	215.3	16.3	0	0	same World, producer detached (inert)
+player-input-held	400	1	1	1000	29.8	29.6	31.2	29.0	89.1	29.8	0	0	real PlayerInputCommandSystem + capture, virtual keyboard holds D: 1 Player command/tick
+player-input-held	400	1	10	100	206.1	204.1	210.4	203.0	277.0	20.6	0	0	real PlayerInputCommandSystem + capture, virtual keyboard holds D: 1 Player command/tick
+player-input-detached	400	2	1	1000	22.6	22.3	24.0	21.8	68.7	22.6	0	65536	same World, producer detached (inert)
+player-input-detached	400	2	10	100	162.9	161.4	166.2	160.6	226.9	16.3	0	0	same World, producer detached (inert)
+player-input-held	400	2	1	1000	30.0	29.5	31.5	29.0	104.4	30.0	0	-262144	real PlayerInputCommandSystem + capture, virtual keyboard holds D: 1 Player command/tick
+player-input-held	400	2	10	100	206.8	204.5	212.2	203.4	280.1	20.7	0	65536	real PlayerInputCommandSystem + capture, virtual keyboard holds D: 1 Player command/tick
+player-input-detached	400	3	1	1000	22.6	22.3	23.5	21.8	68.7	22.6	0	-65536	same World, producer detached (inert)
+player-input-detached	400	3	10	100	163.0	161.6	167.1	160.4	227.2	16.3	0	-65536	same World, producer detached (inert)
+player-input-held	400	3	1	1000	30.6	29.6	40.5	29.0	89.5	30.6	0	-131072	real PlayerInputCommandSystem + capture, virtual keyboard holds D: 1 Player command/tick
+player-input-held	400	3	10	100	206.6	204.4	209.9	203.0	313.0	20.7	0	0	real PlayerInputCommandSystem + capture, virtual keyboard holds D: 1 Player command/tick

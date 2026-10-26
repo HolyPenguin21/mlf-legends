@@ -6,7 +6,9 @@
     "Unity.Burst",
     "Unity.Collections",
     "Unity.Entities",
-    "Unity.RenderPipelines.Universal.Runtime"
+    "Unity.RenderPipelines.Universal.Runtime",
+    "Unity.InputSystem",
+    "Unity.InputSystem.TestFramework"
   ],
   "includePlatforms": [
     "Editor"

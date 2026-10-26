@@ -7,6 +7,37 @@
 - Reuse existing InputSystem_Actions asset and CombatSmoke Main Camera where appropriate. Bindings/numeric camera settings are provisional and configurable. No alternate command queue, clock, combatant views, Cinemachine framework or early visual scene; the first sprite-backed visible scene remains Stage 03.
 - PR #36 / #35 is manager-accepted. #30 and #17 remain separate nonblocking QA; their latest findings are in QA.md. This decision prepares the combined implementation, it does not mark either substage implemented.
 
+## Stage 02.3 + 02.4 implementation choices (#22, agent PR, 2026-10-26)
+
+- **Producer placement:** `PlayerInputCommandSystem` (`SystemBase`) inside the existing `CombatCommandCollectionSystemGroup`,
+  before the `OrderLast` processor, auto-created in the default world only. It reads an attached
+  `PlayerInputCapture`; no capture → inert. No frame-rate `Tick + 1` path, no accumulator, no manual `InputSystem.Update()`.
+- **Input update mode:** the Input System default `ProcessEventsInDynamicUpdate` (no settings asset). Verified in the real
+  PlayerLoop: `PreUpdate.NewInputUpdate` → `Update` (MonoBehaviours, then `SimulationSystemGroup` with N fixed ticks) →
+  `PreLateUpdate` (camera `LateUpdate`). `ProcessEventsInFixedUpdate` would follow MonoBehaviour `FixedUpdate`, unrelated
+  to the ECS tick, and was rejected.
+- **Sampling:** Move = `ReadValue` + one quantization policy (dead zone 0.25, 8 × 45° sectors); Held = device state of
+  the bound buttons (so a button held before enabling is Held but never Pressed); Pressed = `performed` callbacks, OR-ed,
+  consumed by the first produced tick. Presses are dropped (never replayed) on pause (`Time.timeScale = 0`), focus loss
+  or gain, device removal/reset, End/Restart/new human (binding = battle number + human ID) and adapter attach/detach.
+- **Ownership:** each capture and the camera clone their action map from the shared asset and dispose the clone; the
+  shared/project-wide asset is never enabled or disabled by them. The latest enabled `PlayerInputAdapter` attaches
+  (bootstrap-like ownership); a replaced adapter cannot detach its successor. Static process-global state: none.
+- **Bindings:** existing asset extended: Guard action (L, gamepad right shoulder), J → Attack, K → Jump; arrow keys moved
+  from Player/Move to the new Camera map (Pan) to avoid conflicts; Camera map Pan/Zoom/ZoomStep/Recenter. UI map unchanged.
+- **Camera:** `CombatCameraController` on CombatSmoke's existing Main Camera (now orthographic, 40° pitch); `LateUpdate`,
+  unscaled presentation delta, read-only queries; pan dropped on a new battle, zoom kept; no Cinemachine, packages,
+  smoothing pipeline, per-fighter objects or new scene. Altitude follow defaults to 0 (configurable).
+- **Manager review corrections (PR #37, 2026-10-26):** (1) losing the camera target (End/Idle) keeps pan and view exactly;
+  only a new valid target drops the pan. (2) `Attach` binds to the session current at that moment (presses before it are
+  dropped, fresh ones reach the next tick). (3) `PlayerInputAdapter` checks the default World every frame and moves its
+  binding when a World appears or is replaced; competition is resolved in the producer by enable order (latest enabled
+  wins whichever attaches first; each World tried once). (4) Buttons held across a focus change or a device
+  disable/enable/reset are blocked until the device reports them released, so a restored hold is Held, never Pressed;
+  conservative edge: a button released while unfocused and never re-reported loses its first press after regain.
+- **Assemblies:** `Unity.InputSystem` added to the runtime asmdef (Input/ and Presentation/ folders, no new runtime
+  assembly); test asmdefs add `Unity.InputSystem` + `Unity.InputSystem.TestFramework`. Pure ECS suites stay device-free.
+
 ## Compile blocker remediation decision (2026-10-26)
 
 - Owner's project was compiled in Unity 6000.5.4f1 by the Stage 02.2 implementer. Current main failed with CS0579 from two `UpdateInGroup` attributes on `BattleLifecycleSystem` introduced by PR #28; the manager verified the duplicated annotations in source. This is a real, presently blocking build issue, not historical `NOT RUN`.

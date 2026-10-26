@@ -10,7 +10,7 @@ movement, attack or AI logic.
 | Type | Role | Writer |
 |---|---|---|
 | `CombatCommandQueue` | Singleton: `BattleStartTick`, `LastProcessedTick`, bounds, `ResetForBattle`. Its entity holds the three buffers below. | processor; `ResetForBattle` |
-| `CombatCommandSubmission` (buffer) | Producer inbox. Producers only append. | producers (player input adapter, AI) |
+| `CombatCommandSubmission` (buffer) | Producer inbox. Producers only append. | producers: `PlayerInputCommandSystem` (#22), future AI |
 | `PendingCombatCommand` (buffer, internal) | Valid future commands, submission order, ≤ `MaxPendingCommands`. | processor |
 | `CombatCommandResult` (buffer) | Outcome of every command processed on `LastProcessedTick`, sorted by (`Combatant`, `Tick`, submission order). | processor |
 | `AppliedCombatCommand` (per combatant) | The command each in-combat combatant executes on the current tick (accepted or implicit None). Input of the Stage 02+ state owners (`CombatFacingSystem`, `CombatMovementSystem`). | processor |
@@ -28,9 +28,16 @@ SystemAPI.GetSingletonBuffer<CombatCommandSubmission>().Add(new CombatCommandSub
   `SimulationClock.Tick`. The order of producer systems in that group is the submission order, so
   producers must fix it explicitly with `[UpdateBefore]`/`[UpdateAfter]`; the relative order of
   unconstrained systems is not a contract.
-- Outside the fixed step (frame-rate input): target `Tick + 1` (or up to `MaxLeadTicks` ahead). These
-  submissions precede every in-step producer of the next tick. On frames that run no tick the producer
-  must not resubmit the same key: the first submission wins and later ones are `Duplicate`/`Conflict`.
+- Outside the fixed step: target `Tick + 1` (or up to `MaxLeadTicks` ahead). These submissions precede
+  every in-step producer of the next tick. On frames that run no tick the producer must not resubmit the
+  same key: the first submission wins and later ones are `Duplicate`/`Conflict`. This path is valid but is
+  **not** how player input is produced: one command per render frame is pacing-dependent when a frame runs
+  0 or several ticks (PR #20 test `FrameRateProducerTargetingTheNextTickDependsOnFramePacing`).
+- **Player input (#22, `Input/INPUT.md`):** `PlayerInputCommandSystem` runs inside this phase on every real
+  tick and submits at most one `Player` command for `BattleSession.HumanCombatant` for the current tick
+  (live Move/Held, Pressed consumed once). It is auto-created in the default world only and does nothing
+  without an attached capture; replay/benchmark worlds and their scripted test producers do not compete
+  with it. A future AI producer that shares the phase orders itself explicitly against it.
 - Never write `AppliedCombatCommand` or any combat component. No `UnityEngine.Input` in the processor.
 
 ## Policy per tick T (same rules for every `Source`)
