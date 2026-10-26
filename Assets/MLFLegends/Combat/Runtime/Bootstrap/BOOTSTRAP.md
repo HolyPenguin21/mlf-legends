@@ -20,10 +20,18 @@ folder has no movement, attack, input or AI logic.
 two owners) and `OnDestroy` removes it together with any remaining combatant. Exiting Play Mode disposes
 the default World with everything in it; entering it again starts with IDs from 1 and battle number 0.
 
-## Where it runs (#19)
-The **same `BattleLifecycleSystem` instance** is a member of both `InitializationSystemGroup`
-(`OrderFirst`) and `FixedStepSimulationSystemGroup` (normal ordering bucket). There is one session,
-one request buffer, one allocator and one `OnUpdate`/`Apply` path, not two lifecycle owners.
+## Where it runs (#19, #35)
+The **same `BattleLifecycleSystem` instance** runs at two boundaries. It has exactly one
+`[UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]` (normal ordering bucket): Entities 6.5 does not
+allow a second `UpdateInGroup` attribute (CS0579, the #19 version did not compile). In
+`InitializationSystemGroup` (`OrderFirst`) the thin `BattleLifecycleInitializationProxy` calls `Update()` on
+that existing handle (`WorldUnmanaged.GetExistingUnmanagedSystem` + `SystemHandle.Update`). The proxy has no
+logic, state or Burst path; it requires a `BattleSession` and skips a missing/destroyed lifecycle, and the
+lifecycle's own `RequireForUpdate` (clock, queue) still decides whether it runs. There is one session, one
+request buffer, one allocator and one `OnUpdate`/`Apply` path, not two lifecycle owners. Default world
+auto-creates both; `ReplayWorld.RuntimeSystems` (also the benchmark) lists both; manual test worlds add
+the proxy to Initialization and the lifecycle to FixedStep. The benchmark applies requests by updating the
+lifecycle handle directly, outside measured regions.
 
 - Initialization is a main-thread boundary outside combat phases. It runs on rendered frames even with
   `Time.timeScale = 0`, without calling the fixed-step group, clock, command processor or combat phases.
@@ -35,7 +43,7 @@ one request buffer, one allocator and one `OnUpdate`/`Apply` path, not two lifec
   constraint, since Clock exists only in FixedStep and must not be an ordering target in Initialization.
 - Both boundaries read `SimulationClock.Tick` as the last completed tick. Each call copies and clears
   the request buffer before structural changes. The next call sees an empty buffer, so no request or
-  queue reset is repeated merely because the system belongs to two groups.
+  queue reset is repeated merely because the system is reached from two groups.
 
 | Request made | Applied |
 |---|---|

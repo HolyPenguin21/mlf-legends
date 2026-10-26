@@ -52,8 +52,9 @@ SimulationSystemGroup
 - The tick number of the step is available before commands for that step are collected.
 - The battle lifecycle owner runs before the clock, i.e. at the boundary between two steps, also between the
   catch-up steps of one frame. It reads the clock and never writes it (see `Bootstrap/BOOTSTRAP.md`); it is not
-  a combat phase. The same lifecycle handle also belongs to Initialization (`OrderFirst`), so End and
-  Restart apply on paused frames with no fixed step. Initialization does not update the clock, processor
+  a combat phase. In Initialization (`OrderFirst`), `BattleLifecycleInitializationProxy` updates that same
+  lifecycle handle (#35; a second `UpdateInGroup` does not compile), so End and Restart apply on paused frames
+  with no fixed step. Initialization does not update the clock, processor
   or phases. Fixed lifecycle and clock use the normal ordering bucket after the `OrderFirst`
   BeginFixedStep ECB. Fixed-only Clock declares `UpdateAfter(BattleLifecycleSystem)`; Collection explicitly
   follows Clock. Lifecycle has no cross-group UpdateBefore/After constraint, and Clock has no redundant
