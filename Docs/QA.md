@@ -2,6 +2,9 @@
 
 ## Stage 02.3 + 02.4 / #22 after manager review (2026-10-26, PR #37, branch `feature/stage02-22-input-camera`)
 
+**Merged on the owner's instruction as main `fc5fb675ee1a13de7ee839e40337e1cb78adcbb0` (2026-10-26).** Merged code equals the
+tested `4d9e431` (later commits: Markdown and evidence files only). Manager re-review of the corrections: not yet recorded.
+
 **Tested code: `4d9e431bc7474cf7233f8edaec60f0c14df65ab0`** (its code equals `4768386`; only Markdown differs), clean detached
 checkout, same machine/versions/runner as below. **Raw XML, Editor.log and TSV are committed in `Docs/Evidence/22/`**
 (index: `Docs/Evidence/22/README.md`). Agent-run; the manager has not re-run Unity.
