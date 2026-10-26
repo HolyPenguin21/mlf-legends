@@ -1,5 +1,19 @@
 # MLF Legends — Quality assurance and evidence
 
+## Manager review of merged PR #36 (2026-10-26)
+
+Reviewed main `013cf238a1ecdfe5f50fca9660dc8585aed9cc42` bottom-up: the sole Lifecycle/session/ID/spawn/reset owner, Initialization proxy, clock/phase order, default-world bootstrap, replay/manual fixtures, movement/facing and benchmark call sites. **Implementation accepted; no corrective runtime change identified. #35 remains CLOSED. Stage 02.3 input work may proceed; #30 remains OPEN for the residual checks below.**
+
+Independently downloaded and inspected the [evidence archive](https://gist.github.com/HolyPenguin21/1cfd8ac9ca4b34206be07572c69297b8): **11 NUnit XML, 11 Editor logs, 12 benchmark TSV (34 files)**, correcting the earlier 12/16/6 inventory. Six full EditMode runs passed **195/195** (including all six repaired End-in-catch-up cases), three PlayMode runs passed **10/10**, and two Performance runs passed **6/6**. GitHub comparison confirms the tested `f841bbfbba2569a369a0967ccc2955274313686b` and current main differ only in Markdown documentation. The manager reviewed supplied evidence, not a new local Unity execution.
+
+**Residual evidence findings (not silently PASS):**
+- Both cold EditMode logs (`f912f37-ascii-cold-editmode.log:12788`, `f912f37-cyrillic-cold-editmode.log:12763`) report **`Leak Detected : Persistent allocates 4 individual allocations.`** at shutdown. Warm logs do not contain that message. Allocation stacks are absent; ownership is UNKNOWN, and this is not proof of a Lifecycle leak or of an upstream Unity defect. Repeat cold/warm with allocation stack tracing, first import without tests, then relevant suites; identify the owner before changing code/packages. Retained in #30.
+- The dedicated N=400 memory TSVs contain series deltas **-576 B** (Burst on, cmd k10 rep 2) and **-27,546 B** (Burst off, lead32 k18 rep 3). Timing TSVs also contain nonzero total-memory deltas, including **+135,152 B** in Burst-off cmd k1 rep 3. Thus “native drift 0 in every series” is false. These process-counter fluctuations alone establish neither a growing leak nor its absence; GC.Alloc samples are zero. See corrected PERFORMANCE_BASELINE.md.
+- `f912f37-ascii-warm-playmode.log:778` reports modification of the immutable package asset `Packages/com.unity.render-pipelines.core/Runtime/Debugging/Runtime UI Resources/RuntimeDebugWindow_PanelSettings.asset`. Qualify clean-checkout/source equivalence with this import side effect; do not edit package sources as a workaround.
+- Only the intentional clock-less fixture retains an invalid ordering warning; no C# compiler error/warning was found in supplied logs. No-graphics and licensing notices are separate environment messages.
+- Initialization-proxy/full Unity-frame performance is **NOT MEASURED** by this fixed-step harness. Start/end/restart timings measure the direct Lifecycle call. Domain/Scene Reload GUI checks remain **OWNER-REPORTED PASS**, not independently logged.
+- #17: ASCII/Cyrillic cold/warm XML all show `Done=1; RanManaged=0; BurstEnabled=True`. Historical failure **NOT REPRODUCED** on this machine/version; root cause UNKNOWN and the broader original path/protocol matrix is not complete. #17 stays OPEN, nonblocking.
+
 **Scope note:** GitHub repository and serialized Unity project settings can be reviewed, but Editor tests have **not** been performed directly by this assistant. On **2026-10-25**, the project owner reported **all Stage 00 tests PASSED**. This is an **owner-reported PASS**, without attached XML/log evidence; it is not an independently audited run.
 
 **Non-blocking delivery rule (approved 2026-10-25):** The owner currently cannot run Unity tests from their environment. This MUST NOT block committing, merging or pushing requested changes, nor prevent moving on to subsequent implementation tasks. Perform every feasible static check, label Unity checks **NOT RUN**, record the residual risk and verify later when execution becomes possible. Delivery is not the same as test approval.
@@ -57,7 +71,7 @@ Enter/Exit Play Mode ×3 with *Do not reload Domain or Scene* and with *Reload S
 attached. 200v200, restart during movement/jump and several fixed ticks per frame have no GUI entry point: covered
 by the EditMode/PlayMode suites above (2/100/400 rosters, catch-up k = 2…18), not by manual checks.
 
-**Performance:** see `Docs/PERFORMANCE_BASELINE.md`, "Stage 02.2 + #35 measurement". GC.Alloc 0, no native drift.
+**Performance:** see `Docs/PERFORMANCE_BASELINE.md`, "Stage 02.2 + #35 measurement". GC.Alloc samples 0; nonzero native deltas and cold-import leak warnings are qualified in the manager review above.
 
 ## Actual Unity results from Stage 02.2 PR #34, 2026-10-26 — compile blocker
 

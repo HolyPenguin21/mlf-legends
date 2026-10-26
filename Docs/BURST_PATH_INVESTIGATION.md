@@ -1,5 +1,11 @@
 # Issue #17 — Windows project paths and Burst
 
+## Controlled full-suite retest reviewed by manager (2026-10-26)
+
+Supersedes the old “Windows reproduction NOT RUN” status below: [PR #36 evidence](https://gist.github.com/HolyPenguin21/1cfd8ac9ca4b34206be07572c69297b8) includes one commit `f912f37e5f1dee7c44b7e31e46a2583cc482d4f9` tested at ASCII and Cyrillic project paths, cold then warm. All four full EditMode runs pass 195/195; the unchanged Burst regression outputs `Done=1; RanManaged=0; BurstEnabled=True`. No fix is demonstrated: the historical failure is NOT REPRODUCED and its root cause remains UNKNOWN. The complete targeted/full-suite, spaces/path and reverse-order protocol below was not executed. #17 stays OPEN, nonblocking. Separate cold-import Persistent leak warnings occur in BOTH paths (#30), without evidence tying them to the original Burst failure. Manager inspected supplied files; no new local Unity run.
+
+## Historical diagnostic handoff
+
 ## Status and evidence boundary (2026-10-26)
 
 **INCOMPLETE: Windows reproduction blocked by the available environment. Root cause UNKNOWN.**

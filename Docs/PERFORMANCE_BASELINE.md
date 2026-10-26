@@ -56,8 +56,14 @@ GC.Alloc was **0** in every series, Burst on and off.
 | cmd-lead32, 1 tick/frame — runtime | 28.9 / 28.7 / 29.3 | 488.3 / 488.0 / 496.6 | 2130.8 / 2117.5 / 2130.6 | 2108.5–2119.0 |
 
 Memory: combatant chunks 1 / 1 / 4 (16 / 16 / 64 KiB), queue buffer high-water 312 KB at N = 400, unchanged.
-Native growth per frame (cmd k1/k10, lead32 k1/**k18**, 100 frames × 3 reps): median and p95 0 B, at most one 64 KiB
-step, drift 0 B in every series, Burst on and off. Start/end/restart series: 0 B native growth in 35 of 36 (one single 64 KiB step in one N = 2 restart series, not repeated). GC.Alloc 0.
+Native growth per frame (cmd k1/k10, lead32 k1/**k18**, 100 frames × 3 reps): median and p95 0 B, with isolated 64 KiB steps.
+Manager inspection of the raw TSVs corrects the previous claim of zero drift in every series: dedicated N = 400 memory-series
+nativeDeltaBytes are -576 B (Burst on, cmd k10, rep 2) and -27,546 B (Burst off, lead32 k18, rep 3); other dedicated series
+end at 0 B. Timing reports also contain small nonzero process-memory deltas and a +135,152 B Burst-off cmd k1 rep 3 sample.
+These counter changes are not an allocation ownership trace or proof of a persistent leak. GC.Alloc samples are 0 in all reports.
+Separately, both cold-import EditMode Editor logs report four Persistent allocations leaked on shutdown; source UNKNOWN,
+tracked in #30. Zero benchmark growth must not be used to dismiss that shutdown warning. Initialization and the full Unity
+frame are outside this harness and remain unmeasured.
 
 Reading (measured, not optimised): with Burst the added State pass (facing + movement over N actors, plus two system
 dispatches) costs ≈ +2 µs/tick at N = 2 and ≈ +5 µs/tick at N = 400 (idle and cmd alike); spawn/restart ≈ +23 µs at

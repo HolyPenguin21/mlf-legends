@@ -1,5 +1,7 @@
 # MLF Legends — Combat development roadmap
 
+**Current manager review (2026-10-26):** main `013cf23` / merged PR #36 accepted after source and raw evidence inspection. #35 CLOSED; Stage 02.3 / #22 is next. XML: six EditMode runs 195/195, three PlayMode 10/10, two Performance 6/6; tested code equals current main (later changes are docs only). #30 stays OPEN for cold-import leak attribution and remaining measurement/evidence qualifications; #17 stays OPEN / NOT REPRODUCED, cause unknown. GUI checks are owner-reported. Earlier blocker/NOT RUN entries are historical. See QA.md.
+
 ## Governing rules
 - Focus **only on combat** until the owner explicitly reopens campaign design.
 - One authoritative ECS combat architecture from 1v1 through 200v200, without a separate duel/mass code path.
@@ -15,7 +17,7 @@
 |---|---|---|---|
 | 00 | GitHub/Unity/URP bootstrap, dependencies, folders, test harness, CI feasibility | Source tracked; editor/packages committed; tests owner-reported PASS; CI and independent evidence deferred | ACCEPTED (OWNER) |
 | 01 | ECS simulation, fixed-step scheduler, entity data, command buffer, replay tests and 2/100/400 ECS baseline | Six main tasks delivered, Bootstrap debt #19 implemented; independent code audit #23 static PASS, owner accepted Stage 02 transition with missing Unity proof tracked in #30 and Windows Unicode/Burst #17 separate. No movement/AI/collisions/renderer yet. | ACCEPTED FOR NEXT STAGE (OWNER) — UNITY QA DEFERRED |
-| 02 | Movement and camera | Deterministic X/Z movement + jump Y, facing/action-state, tick-aligned input, fixed orthographic camera follow/zoom/pan, with one ECS authority | IN PROGRESS — #31 MERGED / MANAGER STATIC REVIEW PASS, UNITY NOT RUN |
+| 02 | Movement and camera | Deterministic X/Z movement + jump Y, facing/action-state, tick-aligned input, fixed orthographic camera follow/zoom/pan, with one ECS authority | IN PROGRESS — #31/#33/#35 REVIEWED; UNITY XML/LOG EVIDENCE CHECKED; #22 NEXT |
 | 03 | GPU sprite rendering | Atlas animation, direction/frame selection, stable depth sorting, optional equipment layers, instancing/indirect render assessment | NOT STARTED |
 | 04 | Collisions | Custom actor/world collision, spatial index, masses, allies yield, enemies block, knockback | NOT STARTED |
 | 05 | Attack resolution | Windup/active/recovery; fast/heavy/jump attacks; shapes, multi-hit rules, damage/impact/stagger | NOT STARTED |
@@ -28,15 +30,15 @@
 | 12 | 200v200 scale | ECS/Burst/rendering/perf benchmark on 400 actors; profile collisions, AI, render, frame pacing | NOT STARTED |
 | 13 | Magic and destruction | Prepared spells, multiple resources, systemic area effects, destructible objects/terrain, nav changes | NOT STARTED |
 
-## Confirmed Unity compilation blocker (2026-10-26; manager disposition)
+## Historical Unity compilation blocker (resolved by reviewed PR #36)
 
 Stage 02.2 [PR #34](https://github.com/HolyPenguin21/mlf-legends/pull/34) / #33 is **MERGED / STATIC REVIEW PASS FOR FACING**, but the implementer actually attempted Unity 6000.5.4f1 compilation in an ASCII worktree and reported **FAIL (CS0579 Duplicate UpdateInGroupAttribute)** in pre-existing BattleLifecycleSystem (two group attributes introduced by Stage 01 PR #28). This supersedes earlier blanket `NOT RUN` for compilation of this HEAD. A temporary uncommitted proxy workaround yielded **186/193 EditMode** (7 failed for pre-existing NUnit binding and old attribute assertion) and **10/10 PlayMode**; those are **NOT a clean main PASS**.
 
-**NEXT/BLOCKER: [#35](https://github.com/HolyPenguin21/mlf-legends/issues/35)** — retain exactly one FixedStep lifecycle owner and add minimal Initialization proxy forwarding to the SAME system, preserve pause handling and catch-up End/Restart; repair six NUnit cases with int→ushort TestCase binding; rebuild/test clean branch and record real XML/log in [#30](https://github.com/HolyPenguin21/mlf-legends/issues/30). No second session owner or architecture expansion. Stage 02.3 input adapter is on hold for integration until #35 yields a compiling project. #17 Unicode/Burst remains independently OPEN.
+**Historical blocker, now resolved: [#35](https://github.com/HolyPenguin21/mlf-legends/issues/35)** — retain exactly one FixedStep lifecycle owner and add minimal Initialization proxy forwarding to the SAME system, preserve pause handling and catch-up End/Restart; repair six NUnit cases with int→ushort TestCase binding; rebuild/test clean branch and record real XML/log in [#30](https://github.com/HolyPenguin21/mlf-legends/issues/30). No second session owner or architecture expansion. The compile/integration gate was satisfied by PR #36 and its manager review. #17 Unicode/Burst remains independently OPEN.
 
 ## Stage 02 authorization and execution sequence — owner decision (2026-10-26)
 
-**Update 2026-10-26 (#35/#30):** corrective branch `fix/35-lifecycle-proxy` compiles; clean-checkout Unity runs EditMode 195/195 and PlayMode 10/10 (ASCII and Cyrillic paths, cold and warm Library), owner manual GUI checks PASS, benchmark re-measured (see QA.md). [PR #36](https://github.com/HolyPenguin21/mlf-legends/pull/36) **MERGED on the owner's instruction (2026-10-26)**; manager review of the merged result still precedes Stage 02.3.
+**Update 2026-10-26 (#35/#30):** corrective branch `fix/35-lifecycle-proxy` compiles; clean-checkout Unity runs EditMode 195/195 and PlayMode 10/10 (ASCII and Cyrillic paths, cold and warm Library), owner manual GUI checks PASS, benchmark re-measured (see QA.md). [PR #36](https://github.com/HolyPenguin21/mlf-legends/pull/36) **MERGED on the owner's instruction (2026-10-26)**; manager review of the merged result is now complete; Stage 02.3 preparation may proceed.
 
 **Stage 02 starts NOW.** The owner explicitly approved deferring actual Unity verification to technical debt. This supersedes the earlier Stage 01 closure gate that required all Editor/Windows QA before starting Stage 02. The independent Stage 01 source-code audit [#23](https://github.com/HolyPenguin21/mlf-legends/issues/23) is **CLOSED / STATIC PASS**, not Unity-verified. All pending post-PR #29 compile, full EditMode/PlayMode, ECS sorting warnings, paused scene/Domain Reload GUI and post-change profiling are tracked in **[#30 Unity QA debt](https://github.com/HolyPenguin21/mlf-legends/issues/30)**. **[#17 Unicode/Burst path](https://github.com/HolyPenguin21/mlf-legends/issues/17)** independently remains OPEN, cause unknown, actual Windows tests NOT RUN. Neither is silently promoted to PASS. An observed critical regression is fixed promptly before its Stage 02 consumer.
 
