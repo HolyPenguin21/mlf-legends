@@ -89,6 +89,14 @@ namespace MLFLegends.Combat
                     return null;
                 }
 
+                // The reader stops at the end of the root value and ignores what follows: checked here.
+                var end = RootObjectEnd(json);
+                if (end < 0 || !string.IsNullOrWhiteSpace(json.Substring(end)))
+                {
+                    context.Error("manifest", $"is not valid JSON: content after the root object (offset {(end < 0 ? json.Length : end)})");
+                    return null;
+                }
+
                 return Convert(view, "", context);
             }
             catch (Exception e)
@@ -96,6 +104,43 @@ namespace MLFLegends.Combat
                 context.Error("manifest", "is not valid JSON: " + e.Message);
                 return null;
             }
+        }
+
+        /// <summary>Index just after the brace closing the first top-level object (strings and escapes respected); −1 if unclosed.</summary>
+        static int RootObjectEnd(string json)
+        {
+            var depth = 0;
+            var inString = false;
+            for (var i = 0; i < json.Length; i++)
+            {
+                var c = json[i];
+                if (inString)
+                {
+                    if (c == '\\')
+                        i++;
+                    else if (c == '"')
+                        inString = false;
+                    continue;
+                }
+
+                switch (c)
+                {
+                    case '"':
+                        inString = true;
+                        break;
+                    case '{':
+                    case '[':
+                        depth++;
+                        break;
+                    case '}':
+                    case ']':
+                        if (--depth == 0)
+                            return i + 1;
+                        break;
+                }
+            }
+
+            return -1;
         }
 
         static Node Convert(SerializedValueView view, string path, Context context)
