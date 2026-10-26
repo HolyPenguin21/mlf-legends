@@ -156,6 +156,55 @@ namespace MLFLegends.Tests.EditMode
         }
 
         [Test]
+        public void FightersCrossingInDepthOrAlongXSwapFrontOnlyWhenTheirDepthOrderChanges()
+        {
+            // Real movement on fixed ticks: the human walks +Z and the AI −Z through each other (same X), then the human
+            // walks along X past the AI at equal depth. Front = smaller Z; at equal Z the lower ID (human); never flickers.
+            var setup = new BattleSetup
+            {
+                Human = new CombatantSetup { Team = 1, Position = new float3(0f, 0f, -1f), Facing = FacingDirection.Right },
+                Ai = new CombatantSetup { Team = 2, Position = new float3(0f, 0f, 1f), Facing = FacingDirection.Left },
+            };
+            m_Replay.Request(BattleRequest.Start(setup));
+            const uint crossing = 30, alongX = 30;
+            for (uint r = 1; r <= crossing; r++)
+                m_Replay.Script.Player(r, r, ReplayRole.Human, moveZ: 1).Ai(r, r, ReplayRole.Ai, moveZ: -1);
+            for (uint r = crossing + 1; r <= crossing + alongX; r++)
+                m_Replay.Script.Player(r, r, ReplayRole.Human, moveX: 1);
+
+            var humanFrontTicks = 0;
+            var aiFrontTicks = 0;
+            var lastFront = 0u;
+            var switches = 0;
+            for (var tick = 0; tick < crossing + alongX; tick++)
+            {
+                m_Replay.Step();
+                Run();
+                var record = m_Replay.Records.Last();
+                var human = record.Combatant(record.HumanId);
+                var ai = record.Combatant(record.AiId);
+                var instances = ById();
+                var humanDepth = m_Basis.DepthKey(instances[record.HumanId].Position) - instances[record.HumanId].DepthOffset;
+                var aiDepth = m_Basis.DepthKey(instances[record.AiId].Position) - instances[record.AiId].DepthOffset;
+                var expectedHumanFront = human.Position.z < ai.Position.z || human.Position.z == ai.Position.z;
+                Assert.That(humanDepth < aiDepth, Is.EqualTo(expectedHumanFront),
+                    $"tick {tick}: human z {human.Position.z}, AI z {ai.Position.z}");
+                var front = humanDepth < aiDepth ? record.HumanId : record.AiId;
+                if (lastFront != 0 && front != lastFront)
+                    switches++;
+                lastFront = front;
+                if (front == record.HumanId)
+                    humanFrontTicks++;
+                else
+                    aiFrontTicks++;
+            }
+
+            Assert.That(aiFrontTicks, Is.GreaterThan(0), "The AI is in front after crossing.");
+            Assert.That(humanFrontTicks, Is.GreaterThan(0), "The human is in front while it is nearer.");
+            Assert.That(switches, Is.EqualTo(1), "Exactly one front change: the crossing; walking past along X changes nothing.");
+        }
+
+        [Test]
         public void EndRestartDefeatAndDespawnLeaveNoStaleInstances()
         {
             m_Replay.Request(BattleRequest.Start(Setup(2)));

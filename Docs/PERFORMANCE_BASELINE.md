@@ -5,6 +5,13 @@ processor and the battle lifecycle — with 2, 100 and 400 light combatants that
 **What this is not:** a combat performance figure. Stage 01 has no movement, collisions, attacks, AI, physics or
 character rendering; nothing here predicts the cost of a real 200 vs 200 battle or a frame rate.
 
+## Stage 03 sprite renderer measurements (#38, 2026-10-26)
+
+The GPU sprite renderer is not part of this ECS harness (replay/benchmark Worlds have no renderer and no GPU resource).
+Its own 2/100/400 measurements — extraction and submission CPU time, GC.Alloc, buffer re-creation, draw calls with and
+without the renderer, page/frame/instance memory — are produced by the PlayMode `[Category("Performance")]` test
+`CombatSpritePerformanceTests` with a graphics device and recorded in `Docs/QA.md` (raw TSVs in `Docs/Evidence/38/`).
+
 ## Stage 02.1 measurement boundary (#31, 2026-10-26)
 
 All measured figures below are **historical Stage 01**, before the motion system (and before PR #28/#29).

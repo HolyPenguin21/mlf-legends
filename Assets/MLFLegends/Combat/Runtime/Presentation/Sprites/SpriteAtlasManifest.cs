@@ -40,6 +40,8 @@ namespace MLFLegends.Combat
             if (errors == null)
                 throw new ArgumentNullException(nameof(errors));
             var context = new Context(errors);
+            // A UTF-8 byte order mark from the exporter is not part of the JSON text.
+            json = json?.TrimStart((char)0xFEFF);
             if (string.IsNullOrWhiteSpace(json))
             {
                 context.Error("manifest", "is empty");
