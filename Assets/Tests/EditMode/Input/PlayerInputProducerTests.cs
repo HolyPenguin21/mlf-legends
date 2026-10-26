@@ -542,6 +542,116 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(HumanCommand(Last).MoveX, Is.EqualTo(1), "…and drives the fighter.");
         }
 
+        /// <summary>
+        /// Review regression (#22): a device reset or disable/enable (what the Input System does on focus loss/regain) followed
+        /// by the device re-reporting keys that are still physically down must give Held, not a new Pressed; a key not held
+        /// across it presses normally; releasing and pressing again a restored key presses.
+        /// </summary>
+        [TestCase(false, Description = "soft reset")]
+        [TestCase(true, Description = "disable, then enable (sync unsupported: reset)")]
+        public void KeysHeldAcrossAResetOrDisableEnableCycleAreHeldNotPressed(bool disable)
+        {
+            StartRig();
+            Frame(1);
+            Frame(1, () =>
+            {
+                Down(Key.K);
+                Down(Key.L);
+            });
+            Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.Jump | CommandButtons.Guard));
+            for (var i = 0; i < 6; i++)
+                Frame(10); // land, K and L still held
+
+            if (disable)
+            {
+                InputSystem.DisableDevice(m_Keyboard);
+                Frame(1);
+                Assert.That(HumanCommand(Last).Held, Is.EqualTo(CommandButtons.None), "A disabled keyboard holds nothing.");
+                InputSystem.EnableDevice(m_Keyboard);
+            }
+            else
+            {
+                InputSystem.ResetDevice(m_Keyboard);
+            }
+
+            // The device reports the keys that are still down (sync response / next OS report).
+            Frame(1, () => InputSystem.QueueStateEvent(m_Keyboard, new KeyboardState(m_Keys.ToArray())));
+            Frame(2);
+            var ticks = BattleTicks();
+            foreach (var record in ticks.Skip(ticks.Length - 3))
+            {
+                Assert.That(HumanCommand(record).Held, Is.EqualTo(CommandButtons.Jump | CommandButtons.Guard), "Restored hold.");
+                Assert.That(HumanCommand(record).Pressed, Is.EqualTo(CommandButtons.None), "A restored hold is not a press.");
+                Assert.That(Human(record).Motion.Grounded, Is.True, "No unwanted jump.");
+            }
+
+            Frame(1, () => Tap(Key.J));
+            Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.Attack), "A key not held across the cycle presses.");
+            Frame(1, () => Up(Key.K));
+            Frame(1, () => Down(Key.K));
+            Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.Jump), "Release, then a fresh press.");
+            Assert.That(Human(Last).Motion.Grounded, Is.False);
+            Assert.That(m_Capture.BlockedButtons, Is.EqualTo(CommandButtons.Guard), "L stays blocked until it is released.");
+        }
+
+        /// <summary>
+        /// Review regression (#22): attaching to a battle that is already running binds to it at once, so a fresh tap made
+        /// after the attach (no tick in between) reaches the first tick exactly once; a tap made before the attach does not.
+        /// </summary>
+        [Test]
+        public void AFreshTapRightAfterAttachingToARunningBattleReachesTheFirstTickOnce()
+        {
+            StartRig(attach: false);
+            Frame(2);
+            Frame(0, () => Tap(Key.K)); // before the attach: dropped
+            Assert.That(m_Producer.Attach(m_Capture), Is.True);
+            Frame(1);
+            Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.None), "A pre-attach tap never reaches a tick.");
+
+            Assert.That(m_Producer.Detach(m_Capture), Is.True);
+            Frame(1);
+            Assert.That(m_Producer.Attach(m_Capture), Is.True);
+            Frame(1, () =>
+            {
+                Tap(Key.K);
+                Tap(Key.J);
+            });
+            Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.Jump | CommandButtons.Attack), "Fresh taps after the attach.");
+            Assert.That(HumanCommand(Last).Held, Is.EqualTo(CommandButtons.None));
+            Assert.That(Human(Last).Motion.Grounded, Is.False);
+            Frame(2);
+            Assert.That(BattleTicks().Count(r => HumanCommand(r).Pressed != CommandButtons.None), Is.EqualTo(1), "Exactly once.");
+
+            // Restart between frames still drops presses of the old battle.
+            Frame(0, () => Tap(Key.J));
+            m_Replay.Request(BattleRequest.Restart(BattleSetup.Default));
+            Frame(1);
+            Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.None));
+        }
+
+        [Test]
+        public void TheHigherEnableOrderWinsWhicheverCaptureAttachesFirst()
+        {
+            StartRig(attach: false);
+            var later = new PlayerInputCapture(m_Asset);
+            try
+            {
+                Assert.That(m_Producer.Attach(later, order: 7), Is.True);
+                Assert.That(m_Producer.Attach(m_Capture, order: 3), Is.False, "An earlier adapter cannot take over.");
+                Assert.That(m_Producer.Source, Is.SameAs(later));
+                Assert.That(m_Producer.Detach(m_Capture), Is.False);
+                Assert.That(m_Producer.Attach(m_Capture, order: 9), Is.True, "A later one replaces it.");
+                Assert.That(m_Producer.Source, Is.SameAs(m_Capture));
+                Assert.That(m_Producer.Detach(m_Capture), Is.True);
+                Assert.That(m_Producer.Attach(later, order: 7), Is.True, "Free again after the detach.");
+            }
+            finally
+            {
+                m_Producer.Detach(later);
+                later.Dispose();
+            }
+        }
+
         // ---- ownership ----
 
         [Test]

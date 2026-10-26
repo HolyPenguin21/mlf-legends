@@ -147,6 +147,17 @@ namespace MLFLegends.Tests.PlayMode
             Assert.That(Producer.Source, Is.Not.Null, "The scene adapter attached its capture.");
         }
 
+        // The fixture's InputTestRuntime is internal; its public focus API drives the Input System's real focus handling
+        // (InputManager.OnFocusChanged: device disable/soft reset, re-enable + sync or reset on regain).
+        object TestRuntime => typeof(InputTestFixture)
+            .GetProperty("runtime", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+            .GetValue(this);
+
+        void InputSystemFocus(bool focus) =>
+            TestRuntime.GetType().GetMethod("InvokePlayerFocusChanged").Invoke(TestRuntime, new object[] { focus });
+
+        void RunInBackground(bool value) => TestRuntime.GetType().GetProperty("runInBackground").SetValue(TestRuntime, value);
+
         static PlayerInputAdapter Adapter(Scene scene) => scene.GetRootGameObjects()
             .SelectMany(o => o.GetComponentsInChildren<PlayerInputAdapter>(true)).Single();
 
@@ -341,6 +352,131 @@ namespace MLFLegends.Tests.PlayMode
             yield return null;
         }
 
+        /// <summary>
+        /// Review regression (#22): the Input System's own focus cycle (runInBackground: disable + soft reset on loss,
+        /// re-enable on regain; otherwise reset on regain), plus Unity's OnApplicationFocus, then the device re-reporting the
+        /// still-held K/J/L: Held, never Pressed (no jump/attack); a fresh press after releasing works.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator RealFocusLossAndRegainWithDeviceResyncTurnsNoRestoredHoldIntoAPress([Values(true, false)] bool runInBackground)
+        {
+            yield return StartSmokeBattle();
+            var human = HumanEntity();
+            var adapter = Adapter(SmokeScenes().Single());
+            RunInBackground(runInBackground);
+            Down(Key.K);
+            Down(Key.J);
+            Down(Key.L);
+            yield return null;
+            yield return Until(() => !Manager.GetComponentData<CombatMotion>(human).Grounded);
+            yield return Until(() => Manager.GetComponentData<CombatMotion>(human).Grounded); // landed, K/J/L still held
+
+            InputSystemFocus(false);
+            adapter.SendMessage("OnApplicationFocus", false);
+            var tick = Tick;
+            yield return Until(() => Tick > tick + 1);
+            Assert.That(Manager.GetComponentData<AppliedCombatCommand>(human).Command.IsNone, Is.True, "Unfocused: neutral.");
+
+            InputSystemFocus(true);
+            adapter.SendMessage("OnApplicationFocus", true);
+            // The keys are still physically down: the device reports them again (sync response / next OS report).
+            InputSystem.QueueStateEvent(m_Keyboard, new KeyboardState(m_Keys.ToArray()));
+            yield return null;
+            tick = Tick;
+            yield return Until(() => Tick > tick + 2);
+            var applied = Manager.GetComponentData<AppliedCombatCommand>(human).Command;
+            Assert.That(applied.Held, Is.EqualTo(CommandButtons.Jump | CommandButtons.Attack | CommandButtons.Guard), "Restored hold.");
+            Assert.That(adapter.Capture.PendingPressed, Is.EqualTo(CommandButtons.None));
+            Assert.That(Manager.GetComponentData<CombatMotion>(human).Grounded, Is.True, "The restored K hold did not jump.");
+            Assert.That(Results.Where(r => r.Command.Source == CommandSource.Player).Select(r => r.Command.Pressed),
+                Is.All.EqualTo(CommandButtons.None), "No Pressed from the restored holds.");
+
+            Up(Key.K);
+            yield return null;
+            Down(Key.K);
+            yield return null; // processed in this frame's PreUpdate, consumed by its first tick
+            tick = Tick;
+            yield return Until(() => Tick > tick);
+            Assert.That(Manager.GetComponentData<CombatMotion>(human).Grounded, Is.False, "Release, then a fresh K press jumps.");
+            Up(Key.K);
+            Up(Key.J);
+            Up(Key.L);
+            yield return null;
+        }
+
+        /// <summary>
+        /// Review regression (#22): an enabled adapter follows the default World: it attaches when a World appears after it
+        /// was enabled and moves A → B → A without disable/enable, dropping stale presses; a replaced (earlier) adapter
+        /// neither retakes control nor detaches its successor; destroying the adapters leaves no attached capture.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator AdapterFollowsTheDefaultWorldWhenItAppearsOrIsReplaced()
+        {
+            yield return null;
+            var a = DefaultWorld;
+            var producerA = Producer;
+            World b = null;
+            try
+            {
+                World.DefaultGameObjectInjectionWorld = null; // the scene is enabled before any World exists
+                yield return LoadSmokeScene();
+                var firstScene = SmokeScenes().Single();
+                var first = Adapter(firstScene);
+                Assert.That(first.Capture, Is.Not.Null);
+                Assert.That(first.BoundWorld, Is.Null);
+                Down(Key.K);
+                Up(Key.K);
+                yield return null;
+                Assert.That(first.Capture.PendingPressed, Is.EqualTo(CommandButtons.Jump), "Recorded while no World exists...");
+
+                World.DefaultGameObjectInjectionWorld = a;
+                yield return null;
+                Assert.That(producerA.Source, Is.SameAs(first.Capture), "...attached once the World appears...");
+                Assert.That(first.Capture.PendingPressed, Is.EqualTo(CommandButtons.None), "...without the stale press.");
+
+                b = new World("Player input test World B");
+                DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups(b, new[]
+                {
+                    typeof(BeginSimulationEntityCommandBufferSystem), typeof(FixedStepSimulationSystemGroup),
+                    typeof(BattleLifecycleSystem), typeof(CombatClockSystem), typeof(CombatCommandCollectionSystemGroup),
+                    typeof(CombatCommandProcessorSystem), typeof(PlayerInputCommandSystem),
+                });
+                var producerB = b.GetExistingSystemManaged<PlayerInputCommandSystem>();
+                Down(Key.J);
+                Up(Key.J);
+                yield return null;
+                World.DefaultGameObjectInjectionWorld = b;
+                yield return null;
+                Assert.That(producerB.Source, Is.SameAs(first.Capture), "A -> B without disable/enable.");
+                Assert.That(producerA.Source, Is.Null, "Detached from A.");
+                Assert.That(first.Capture.PendingPressed, Is.EqualTo(CommandButtons.None));
+
+                yield return LoadSmokeScene(); // a later adapter in B
+                var second = Adapter(SmokeScenes().Single(s => s != firstScene));
+                Assert.That(producerB.Source, Is.SameAs(second.Capture));
+                yield return null;
+                yield return null;
+                Assert.That(producerB.Source, Is.SameAs(second.Capture), "The replaced adapter does not retake control.");
+
+                World.DefaultGameObjectInjectionWorld = a;
+                yield return null;
+                Assert.That(producerA.Source, Is.SameAs(second.Capture), "B -> A: the later adapter wins whatever the update order.");
+                Assert.That(producerB.Source, Is.Null);
+                Assert.That(first.BoundWorld, Is.SameAs(a));
+
+                Object.Destroy(second);
+                yield return null;
+                Assert.That(producerA.Source, Is.Null, "Destroying the active adapter detaches it.");
+                Assert.That(second.Capture == null || second == null, Is.True);
+            }
+            finally
+            {
+                World.DefaultGameObjectInjectionWorld = a;
+                if (b != null && b.IsCreated)
+                    b.Dispose();
+            }
+        }
+
         [UnityTest]
         public IEnumerator AdditiveSceneSwitchAndAdapterReenableKeepOneProducerAndOnePlayerCommandPerTick()
         {
@@ -411,14 +547,19 @@ namespace MLFLegends.Tests.PlayMode
             Assert.That(camera.PanOffset.x, Is.LessThan(0f));
             var first = Session.HumanCombatant;
 
+            // Captured BEFORE the End is processed: its first LateUpdate must not move the panned camera (review #22).
+            var held = camera.transform.position;
+            var pan = camera.PanOffset;
+            var size = camera.OrthographicSize;
             var bootstrap = scene.GetRootGameObjects().SelectMany(o => o.GetComponentsInChildren<CombatSmokeBootstrap>()).Single();
             bootstrap.enabled = false;
             yield return Until(() => !Session.IsActive);
-            yield return null;
-            var held = camera.transform.position;
+            yield return null; // the first LateUpdate after the End
             Assert.That(camera.HasTarget, Is.False);
+            Assert.That(camera.transform.position, Is.EqualTo(held), "End: the last view, pan included, is kept.");
+            Assert.That((camera.PanOffset, camera.OrthographicSize), Is.EqualTo((pan, size)));
             yield return null;
-            Assert.That(camera.transform.position, Is.EqualTo(held), "No target: the last view is kept.");
+            Assert.That(camera.transform.position, Is.EqualTo(held));
 
             bootstrap.enabled = true;
             yield return Until(() => Session.IsActive && !Session.HumanCombatant.Equals(first));

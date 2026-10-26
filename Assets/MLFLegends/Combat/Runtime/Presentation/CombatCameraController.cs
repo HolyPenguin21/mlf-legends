@@ -222,17 +222,21 @@ namespace MLFLegends.Combat
                 return false;
             var session = m_Sessions.GetSingleton<BattleSession>();
             var human = session.IsActive ? session.HumanCombatant : CombatantId.Invalid;
+            if (!human.IsValid)
+            {
+                // Lost target (End/Idle): the last view, pan included, stays exactly where it was.
+                m_Target = Entity.Null;
+                return false;
+            }
+
             if (session.BattleNumber != m_BoundBattle || !human.Equals(m_BoundHuman))
             {
-                // New battle or target: transient pan and the old entity go; zoom stays.
+                // A new valid target (Start/Restart, other human, new World): transient pan and the old entity go; zoom stays.
                 m_BoundBattle = session.BattleNumber;
                 m_BoundHuman = human;
                 m_Target = Entity.Null;
                 m_PanOffset = Vector3.zero;
             }
-
-            if (!human.IsValid)
-                return false;
 
             var manager = world.EntityManager;
             if (!IsTarget(manager, m_Target, human))

@@ -139,6 +139,48 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(Quaternion.Angle(m_Object.transform.rotation, Quaternion.Euler(40f, 90f, 0f)), Is.LessThan(1e-3f));
         }
 
+        /// <summary>
+        /// Review regression (#22): End must not move a panned camera. The first refresh after End, without input, keeps
+        /// position, size and pan; explicit pan still works without a target; only a new valid target drops the pan.
+        /// </summary>
+        [Test]
+        public void EndKeepsThePannedViewExactlyUntilANewTargetBinds()
+        {
+            m_Replay.Step();
+            Refresh(pan: new Vector2(1f, 0.5f), steps: 1f, dt: 0.5f);
+            var pan = m_Camera.PanOffset;
+            Assert.That(pan, Is.Not.EqualTo(Vector3.zero));
+            var position = m_Object.transform.position;
+            var rotation = m_Object.transform.rotation;
+            var size = m_Camera.OrthographicSize;
+
+            m_Replay.Request(BattleRequest.End());
+            m_Replay.Step();
+            Assert.That(m_Replay.Session.IsActive, Is.False);
+            Refresh();
+            Assert.That(m_Camera.HasTarget, Is.False);
+            Assert.That(m_Camera.PanOffset, Is.EqualTo(pan), "End keeps the pan.");
+            Assert.That(m_Object.transform.position, Is.EqualTo(position), "No jump on the first refresh after End.");
+            Assert.That(m_Object.transform.rotation, Is.EqualTo(rotation));
+            Assert.That(m_Camera.OrthographicSize, Is.EqualTo(size));
+            Refresh();
+            Assert.That(m_Object.transform.position, Is.EqualTo(position));
+
+            Refresh(pan: new Vector2(-1f, 0f), dt: 0.1f);
+            Assert.That(m_Camera.PanOffset.x, Is.LessThan(pan.x), "Explicit pan still works without a target.");
+            AssertView(m_Camera.Focus, m_Camera.PanOffset);
+
+            var setup = BattleSetup.Default;
+            setup.Human.Position = new Unity.Mathematics.float3(5f, 0f, 3f);
+            m_Replay.Request(BattleRequest.Start(setup));
+            m_Replay.Step();
+            Refresh();
+            Assert.That(m_Camera.HasTarget, Is.True);
+            Assert.That(m_Camera.PanOffset, Is.EqualTo(Vector3.zero), "A new valid target drops the transient pan.");
+            Assert.That(m_Camera.Focus, Is.EqualTo(new Vector3(5f, 0f, 3f)));
+            Assert.That(m_Camera.OrthographicSize, Is.EqualTo(size), "Zoom kept.");
+        }
+
         [Test]
         public void RestartRebindsAndDropsPanWhileEndDespawnDefeatAndWorldDisposalKeepTheLastView()
         {

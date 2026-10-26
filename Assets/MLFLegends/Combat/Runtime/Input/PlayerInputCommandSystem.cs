@@ -12,33 +12,54 @@ namespace MLFLegends.Combat
     /// ticks of one frame repeat them), Pressed is taken once, by the first tick that produces a command. Without an
     /// attached capture (replay, benchmark and manual worlds, or a scene without <see cref="PlayerInputAdapter"/>) it does
     /// nothing. It produces nothing and drops pending presses while the battle is idle or the human is despawned or not in
-    /// combat. A change of World (a new system instance), battle number or human combatant drops pending presses before
-    /// the first command of the new binding, so no press of a previous battle reaches the next one, also when a Restart
-    /// lands between catch-up ticks. Writes nothing but the submission; never the clock, session, IDs, applied commands,
+    /// combat. <see cref="Attach"/> binds to the session as it is at that moment and drops older presses, so a fresh tap
+    /// right after attaching to a running battle reaches its first tick. A later change of battle number or human
+    /// combatant (and a new World, i.e. a new system instance) drops pending presses before the first command of the new
+    /// binding, so no press of a previous battle reaches the next one, also when a Restart lands between catch-up ticks. Writes nothing but the submission; never the clock, session, IDs, applied commands,
     /// position, motion or facing. One instance per World (auto-created in the default world); no static state.
     /// </remarks>
     [UpdateInGroup(typeof(CombatCommandCollectionSystemGroup))]
     public partial class PlayerInputCommandSystem : SystemBase
     {
         PlayerInputCapture m_Source;
+        uint m_SourceOrder;
         uint m_BoundBattle;
         CombatantId m_BoundHuman;
+        EntityQuery m_Sessions;
 
         /// <summary>The attached capture, or null.</summary>
         public PlayerInputCapture Source => m_Source;
 
         /// <summary>
-        /// Makes <paramref name="source"/> the World's only player input; a previously attached capture is detached (the
-        /// latest enabled scene adapter wins, as with the battle bootstrap). Pending presses of both are dropped.
+        /// Makes <paramref name="source"/> the World's only player input, unless another capture with a higher
+        /// <paramref name="order"/> is attached (returns false, nothing changes). Scene adapters pass their enable order,
+        /// so the latest enabled adapter wins whichever attaches first, also after a World change. Presses recorded before
+        /// this call are dropped; the binding is the current session, so presses after it reach the next tick.
         /// </summary>
-        public void Attach(PlayerInputCapture source)
+        public bool Attach(PlayerInputCapture source, uint order = 0)
         {
             if (source == null)
                 throw new System.ArgumentNullException(nameof(source));
-            m_Source?.ClearEdges();
+            if (m_Source != null && m_Source != source && order < m_SourceOrder)
+                return false;
+
+            if (m_Source != source)
+                m_Source?.ClearEdges();
             m_Source = source;
+            m_SourceOrder = order;
             source.ClearEdges();
-            Unbind();
+            if (m_Sessions.CalculateEntityCount() == 1)
+            {
+                var session = m_Sessions.GetSingleton<BattleSession>();
+                m_BoundBattle = session.BattleNumber;
+                m_BoundHuman = session.IsActive ? session.HumanCombatant : CombatantId.Invalid;
+            }
+            else
+            {
+                Unbind();
+            }
+
+            return true;
         }
 
         /// <summary>Detaches <paramref name="source"/> if it is the attached one (a replaced adapter cannot detach its successor).</summary>
@@ -48,12 +69,14 @@ namespace MLFLegends.Combat
                 return false;
             source.ClearEdges();
             m_Source = null;
+            m_SourceOrder = 0;
             Unbind();
             return true;
         }
 
         protected override void OnCreate()
         {
+            m_Sessions = GetEntityQuery(ComponentType.ReadOnly<BattleSession>());
             RequireForUpdate<BattleSession>();
             RequireForUpdate<CombatCommandQueue>();
         }

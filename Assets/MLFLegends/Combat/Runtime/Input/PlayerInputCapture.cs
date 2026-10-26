@@ -15,7 +15,10 @@ namespace MLFLegends.Combat
     /// the Input System update (dynamic update: PreUpdate of the frame, before the frame's fixed ticks), so a tap that is
     /// pressed and released between two ticks still reaches the next tick. Edges are dropped, never replayed, while
     /// <c>Time.timeScale</c> is 0, while unfocused, on device loss/reset and by <see cref="ClearEdges"/> (the producer
-    /// calls it on every rebinding). Read only by <see cref="PlayerInputCommandSystem"/> on the main thread.
+    /// calls it on every rebinding). Across a focus change or a device reset/disable/enable (the Input System's own
+    /// focus cycle: reset or disable on loss, enable + sync or reset on regain) a button that was held stays
+    /// <em>blocked</em> until the device reports it released: its restored hold is Held, never a new Pressed; the next
+    /// real press after that release counts. Read only by <see cref="PlayerInputCommandSystem"/> on the main thread.
     /// </remarks>
     public sealed class PlayerInputCapture : IDisposable
     {
@@ -40,6 +43,9 @@ namespace MLFLegends.Combat
         readonly Action<InputDevice, InputDeviceChange> m_OnDeviceChange;
         readonly Action m_OnAfterUpdate;
         CommandButtons m_Pressed;
+        CommandButtons m_LastHeld;  // device state at the end of the last Input System update
+        CommandButtons m_Blocked;   // held across an interruption; presses ignored until a real release
+        bool m_Interrupted;         // a reset/disable/focus change since the last update: its releases are not real
         bool m_Focused = true;
 
         /// <exception cref="ArgumentNullException"><paramref name="actions"/> is null.</exception>
@@ -93,12 +99,22 @@ namespace MLFLegends.Combat
                 return;
 
             Quantize(m_Move.ReadValue<Vector2>(), out moveX, out moveZ);
+            held = HeldButtons();
+        }
+
+        /// <summary>Buttons a press of which is ignored until the device reports them released (diagnostics and tests).</summary>
+        public CommandButtons BlockedButtons => m_Blocked;
+
+        CommandButtons HeldButtons()
+        {
+            var held = CommandButtons.None;
             if (IsHeld(m_Attack))
                 held |= CommandButtons.Attack;
             if (IsHeld(m_Jump))
                 held |= CommandButtons.Jump;
             if (IsHeld(m_Guard))
                 held |= CommandButtons.Guard;
+            return held;
         }
 
         /// <summary>
@@ -128,11 +144,21 @@ namespace MLFLegends.Combat
         /// <summary>Drops unconsumed presses; Held/Move stay the live device state.</summary>
         public void ClearEdges() => m_Pressed = CommandButtons.None;
 
-        /// <summary>Application focus. Both directions drop pending presses; unfocused input samples as neutral.</summary>
+        /// <summary>
+        /// Application focus. Both directions drop pending presses and block the buttons held so far; unfocused input
+        /// samples as neutral.
+        /// </summary>
         public void SetFocused(bool focused)
         {
             m_Focused = focused;
+            Interrupt();
+        }
+
+        void Interrupt()
+        {
             m_Pressed = CommandButtons.None;
+            m_Blocked |= m_LastHeld;
+            m_Interrupted = true;
         }
 
         /// <summary>
@@ -159,7 +185,7 @@ namespace MLFLegends.Combat
             if (IsDisposed)
                 return;
             IsDisposed = true;
-            m_Pressed = CommandButtons.None;
+            m_Pressed = m_Blocked = m_LastHeld = CommandButtons.None;
             InputSystem.onAfterUpdate -= m_OnAfterUpdate;
             InputSystem.onDeviceChange -= m_OnDeviceChange;
             m_Attack.performed -= m_OnAttack;
@@ -171,13 +197,22 @@ namespace MLFLegends.Combat
 
         void OnPressed(CommandButtons button)
         {
-            // Combat presses are not collected on pause or without focus; resuming never fires an old press.
-            if (m_Focused && Time.timeScale > 0f)
+            // Combat presses are not collected on pause or without focus; resuming never fires an old press. A button
+            // held across a focus change/device reset is re-reported by the device as a press: blocked until released.
+            if (m_Focused && Time.timeScale > 0f && (m_Blocked & button) == 0)
                 m_Pressed |= button;
         }
 
         void OnAfterUpdate()
         {
+            var held = HeldButtons();
+            // A held → released transition unblocks, unless it is the synthetic release of a reset/disable.
+            if (m_Interrupted)
+                m_Interrupted = false;
+            else
+                m_Blocked &= ~(m_LastHeld & ~held);
+            m_LastHeld = held;
+
             // Also drops a tap of the last unpaused frame that no tick consumed before the pause.
             if (Time.timeScale <= 0f)
                 m_Pressed = CommandButtons.None;
@@ -189,11 +224,15 @@ namespace MLFLegends.Combat
             {
                 case InputDeviceChange.Removed:
                 case InputDeviceChange.Disconnected:
-                case InputDeviceChange.Disabled:
-                case InputDeviceChange.SoftReset:
-                case InputDeviceChange.HardReset:
                     // The actions cancel their lost controls themselves (Held/Move drop to neutral).
                     m_Pressed = CommandButtons.None;
+                    break;
+                case InputDeviceChange.Disabled:
+                case InputDeviceChange.Enabled:
+                case InputDeviceChange.SoftReset:
+                case InputDeviceChange.HardReset:
+                    // The focus cycle and explicit resets: a still-held button may come back as a press after it.
+                    Interrupt();
                     break;
             }
         }
