@@ -1,5 +1,31 @@
 # MLF Legends — Combat development roadmap
 
+## Stage 03.3b / #45 — idle + run (2026-10-27)
+
+Base main `97b8c188` includes owner Unity import/scene/package changes and the owner's idle duration 1s; these are preserved.
+Delivery adds only `run` (5 frames, config default 0.5s) to the existing character atlas/config. Grounded actors use run
+when their current-tick accepted AppliedCombatCommand has nonzero MoveX or MoveZ; airborne/None/stale commands use idle.
+Both clips retain independent N/T/SpeedCurve settings and the existing common battle-relative clock phase; no clip-entry
+clock, per-id history, gameplay writer, new ECS system, Animator or transition FSM. Selector runs before footprint/depth/page
+grouping; manual partial Worlds keep their original component query. Stage 04 collisions will revisit actual-motion criteria.
+
+Input is the latest corrected PNG version4 (1152x384) with compatible revision3 manifest from the idle_run archive.
+PNG SHA256 `d22b2a5950b7902cf2d3730a98022723cfd9ba374b7a6c6cb2ec9ac71195423d`; manifest SHA256
+`27d9ffbbab436c619706673be17e92bf5b6d7634a3b8a0cc8041d89de0b3b573`. Idle row/frame metadata are unchanged.
+PNG remains external/ignored; no art was regenerated. Anchors are estimates, not independently verified anatomy.
+Independent manager bottom-up source review STATIC PASS; raw checks/source hashes are in Evidence/45/manager-static-review.json. Unity compilation/import/Burst,
+authored EditMode/PlayMode/Graphics, actual GC/performance/Game view/Frame Debugger/Domain Reload off remain NOT RUN.
+Evidence and rerun instructions: `Docs/Evidence/45/README.md`. #30/#17/#25 remain separate. One PR, no implementing-agent merge.
+Older #43 idle-only/1.2s dispatch and evidence entries below are historical and do not override the current delivery.
+
+Multi-character contract: the shared config supports many CharacterId entries, each with its OWN SpriteAtlasCatalog,
+manifest/pages and per-clip N/T/curve. Clip IDs are character-scoped; switching the renderer's selected CharacterId
+rebinds its atlas/frame indices/pixel scale/timing and clears all old page property-block references. Synthetic A→B→A
+regression covers different frame counts, page textures/sizes, source/pivot/trim/nominal height and durations, with an
+unrelated invalid entry. Current renderer still selects ONE default character type for the whole roster. Simultaneous
+mixed-character/multi-atlas fighters require separate follow-up #46; this change does not claim that feature.
+
+
 ## Current delivery — 2026-10-27 / #43
 
 `main` base fe324f83 includes merged #42; #41 is CLOSED as delivered, manager STATIC PASS.
@@ -37,7 +63,7 @@ has independent manager STATIC PASS; runtime acceptance is NOT RUN. Full state-d
 | 00 | GitHub/Unity/URP bootstrap, dependencies, folders, test harness, CI feasibility | Source tracked; editor/packages committed; tests owner-reported PASS; CI and independent evidence deferred | ACCEPTED (OWNER) |
 | 01 | ECS simulation, fixed-step scheduler, entity data, command buffer, replay tests and 2/100/400 ECS baseline | Six main tasks delivered, Bootstrap debt #19 implemented; independent code audit #23 static PASS, owner accepted Stage 02 transition with missing Unity proof tracked in #30 and Windows Unicode/Burst #17 separate. No movement/AI/collisions/renderer yet. | ACCEPTED FOR NEXT STAGE (OWNER) — UNITY QA DEFERRED |
 | 02 | Movement and camera | Deterministic X/Z movement + jump Y, facing/action-state, tick-aligned input, fixed orthographic camera follow/zoom/pan, with one ECS authority | IMPLEMENTATION COMPLETE / MANAGER REVIEW PASS — #31/#33/#35 reviewed; #22 merged via PR #37, fixes and raw 244/244 ×2 + 21/21 ×2 + Performance 7/7 independently inspected; manual/hardware/full-frame QA remains qualified in QA.md |
-| 03 | GPU sprite rendering | Atlas animation, direction/frame selection, stable depth sorting, optional equipment layers, instancing/indirect render assessment | IN PROGRESS — 03.1/03.2 and correction #41 delivered (#42 merged, STATIC PASS); #42 Unity/GPU/GC NOT RUN; #43 real idle + shared config in source review; full state-driven 03.3 deferred |
+| 03 | GPU sprite rendering | Atlas animation, direction/frame selection, stable depth sorting, optional equipment layers, instancing/indirect render assessment | IN PROGRESS — 03.1/03.2 and correction #41 delivered (#42 merged, STATIC PASS); #42 Unity/GPU/GC NOT RUN; #43/#44 real idle + shared config merged; #45 idle/run STATIC PASS with Unity/GPU NOT RUN; mixed-character #46 next; remaining03.3 open |
 | 04 | Collisions | Custom actor/world collision, spatial index, masses, allies yield, enemies block, knockback | NOT STARTED |
 | 05 | Attack resolution | Windup/active/recovery; fast/heavy/jump attacks; shapes, multi-hit rules, damage/impact/stagger | NOT STARTED |
 | 06 | Defense | Facing guard, stability, timely defense/counter opportunity, guard break, dash L+direction | NOT STARTED |

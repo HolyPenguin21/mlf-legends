@@ -1,0 +1,122 @@
+{
+  "result": "PASS (static input inspection only)",
+  "base_sha": "97b8c188d3c1d2fa30a8deb5709b8cb1e834d317",
+  "source_png": "mage_female_01_00(3).png current version4",
+  "source_manifest": "mage_female_01_idle_run.zip current version2 / Metadata JSON",
+  "png_sha256": "d22b2a5950b7902cf2d3730a98022723cfd9ba374b7a6c6cb2ec9ac71195423d",
+  "json_sha256": "27d9ffbbab436c619706673be17e92bf5b6d7634a3b8a0cc8041d89de0b3b573",
+  "rgba8_dimensions": [
+    1152,
+    384
+  ],
+  "raw_bytes": 1769472,
+  "binary_alpha": "PASS",
+  "idle_pixel_row_and_frame_metadata_unchanged": "PASS",
+  "grown_rects_nonoverlap_and_bounds": "PASS",
+  "body_bounds_128px": "PASS",
+  "frames": [
+    {
+      "id": "idle_combat_000",
+      "body_bbox_canvas": [
+        51,
+        36,
+        142,
+        160
+      ]
+    },
+    {
+      "id": "idle_combat_001",
+      "body_bbox_canvas": [
+        49,
+        32,
+        142,
+        160
+      ]
+    },
+    {
+      "id": "idle_combat_002",
+      "body_bbox_canvas": [
+        50,
+        33,
+        143,
+        160
+      ]
+    },
+    {
+      "id": "idle_combat_003",
+      "body_bbox_canvas": [
+        48,
+        36,
+        142,
+        160
+      ]
+    },
+    {
+      "id": "idle_combat_004",
+      "body_bbox_canvas": [
+        47,
+        41,
+        143,
+        160
+      ]
+    },
+    {
+      "id": "idle_combat_005",
+      "body_bbox_canvas": [
+        49,
+        36,
+        142,
+        160
+      ]
+    },
+    {
+      "id": "run_000",
+      "body_bbox_canvas": [
+        48,
+        32,
+        135,
+        159
+      ]
+    },
+    {
+      "id": "run_001",
+      "body_bbox_canvas": [
+        54,
+        31,
+        135,
+        159
+      ]
+    },
+    {
+      "id": "run_002",
+      "body_bbox_canvas": [
+        41,
+        29,
+        130,
+        155
+      ]
+    },
+    {
+      "id": "run_003",
+      "body_bbox_canvas": [
+        44,
+        31,
+        149,
+        159
+      ]
+    },
+    {
+      "id": "run_004",
+      "body_bbox_canvas": [
+        59,
+        32,
+        134,
+        158
+      ]
+    }
+  ],
+  "source_frame_reconstruction": "NOT CLAIMED for run: latest corrected PNG supersedes archive run frames",
+  "Unity_GPU": "NOT RUN",
+  "opaque_pixels_outside_useful_rects": "none",
+  "transparent_extrusion_bands": "PASS"
+}

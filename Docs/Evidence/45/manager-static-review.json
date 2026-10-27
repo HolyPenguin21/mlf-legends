@@ -1,0 +1,36 @@
+{
+  "status": "STATIC PASS",
+  "kind": "independent manager bottom-up source review; not Unity execution",
+  "base_sha": "97b8c188d3c1d2fa30a8deb5709b8cb1e834d317",
+  "scope": "input and per-character catalog -> config/timing pair -> accepted movement/clock -> frame/trim/depth/page grouping -> GPU resource bindings -> lifecycle/World -> tests/evidence",
+  "checks": {
+    "csharp_syntax_files": 68,
+    "csharp_syntax_errors": 0,
+    "unique_valid_meta_guids": 148,
+    "parsed_project_json": 7,
+    "whitespace": "PASS",
+    "legacy_depth_mutation_apply_check": "PASS; NOT applied/executed",
+    "user_idle_setting_equality_to_base": "PASS, same N/T/curve",
+    "scene_package_importer_and_authoritative_core_unchanged": "PASS",
+    "PNG_ignored_not_in_Git": "PASS"
+  },
+  "review_corrections": [
+    "Mixed graphics oracle binds current BattleNumber before setting manual per-ID frames",
+    "Old MaterialPropertyBlock bindings cleared on atlas unload/switch, preserving reusable blocks",
+    "Unused test-only producer variable removed",
+    "Added A(2 pages,3 frames)->B(1 page,2 frames,different pivot/scale/trim/timing)->A regression"
+  ],
+  "multi_character_boundary": "many config entries and correct selected-character switching; simultaneous mixed-character/multi-atlas battle is future issue #46, not implemented",
+  "source_sha256": {
+    "Assets/MLFLegends/Combat/Runtime/Presentation/Sprites/CombatSpriteRenderer.cs": "70247c45e7e41c82d83d5a0d7408a298d25af21169f263bfb5b0d6a089aa7526",
+    "Assets/MLFLegends/Combat/Runtime/Presentation/Sprites/CombatSpriteExtraction.cs": "c2a3ab1f5399fff0175645a696644ea335ebbfde7bf0c3829ff2e0f13b25d3fc",
+    "Assets/MLFLegends/Combat/Runtime/Presentation/Sprites/SpriteAnimationTiming.cs": "36fe2780c7cbf0b5441ac0c1470ad1e0c989e47a0d5bee409a1b8a8e97de66cf",
+    "Assets/MLFLegends/Combat/PresentationData/CharacterAnimationConfig.asset": "4420ce83945dfb1ba369330ce7b956414535e42ea1b7627eddc15ce3bbd16e54",
+    "Assets/MLFLegends/Art/Characters/MageFemale01/Metadata/mage_female_01.atlas.json": "27d9ffbbab436c619706673be17e92bf5b6d7634a3b8a0cc8041d89de0b3b573",
+    "Assets/Tests/EditMode/Presentation/CombatSpriteExtractionTests.cs": "4f72e1ecf447d201f0f9d086bc50b3f56ece6a88dde045f50bf646c14ba6013c",
+    "Assets/Tests/PlayMode/Presentation/CombatSpriteAnimationPlayModeTests.cs": "1b83990c999deddc5069d667fe5976be988d30ed15c1244219d80c1f8a2d5953",
+    "Assets/Tests/PlayMode/Presentation/CombatSpritePerformanceTests.cs": "631e69444a5a9db03c38e34f0b5148da5384a2350f6a6e7b5605707913cdc648",
+    "Assets/Tests/PlayMode/Presentation/SpritePlayModeSupport.cs": "1544b1b219c95373cbe480440626e3c550bf144c9c4c3bd10b0f903b751d6d17"
+  },
+  "Unity_compilation_tests_GPU_GC_performance": "NOT RUN; no Unity/compiler/graphics device"
+}

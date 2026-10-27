@@ -1,9 +1,23 @@
 # Combat sprites (Stage 03.1 + 03.2, Issue #38)
+Multi-character contract: the shared config supports many CharacterId entries, each with its OWN SpriteAtlasCatalog,
+manifest/pages and per-clip N/T/curve. Clip IDs are character-scoped; switching the renderer's selected CharacterId
+rebinds its atlas/frame indices/pixel scale/timing and clears all old page property-block references. Synthetic A→B→A
+regression covers different frame counts, page textures/sizes, source/pivot/trim/nominal height and durations, with an
+unrelated invalid entry. Current renderer still selects ONE default character type for the whole roster. Simultaneous
+mixed-character/multi-atlas fighters require separate follow-up #46; this change does not claim that feature.
+
+
+Current #45: the scene uses idle_combat/run from one CharacterAnimationConfig. Grounded current-tick accepted X/Z movement
+selects run; airborne/None/stale movement selects idle, before footprint/depth/page grouping. Manual core-only query is
+unchanged; animated extraction reads optional CombatMotion/AppliedCombatCommand via ephemeral entity handles only.
+No new query filter/system/writer/history. AnimationTiming refers to the shared idle table, RunAnimationTiming to run.
+See ANIMATION.md. Existing renderer/depth/GPU ownership is unchanged; fresh Unity/GPU checks remain NOT RUN.
+
 
 One scene-level GPU renderer draws every in-combat fighter of the active battle from a shared atlas. It reads ECS
 (`CombatantId`, `CombatPosition`, `CombatFacing`, enabled `InCombat`, `BattleSession`) and writes **nothing** to ECS.
-Input contract for art: `Docs/SPRITE_ATLAS_CONTRACT.md`. Stage 03.3a / #43 integrates the real mage and the single idle_combat loop through a shared character config.
-State-driven idle/walk/jump selection remains deferred. See [ANIMATION.md](ANIMATION.md).
+Input contract for art: `Docs/SPRITE_ATLAS_CONTRACT.md`. Stage03.3a/#43 and03.3b/#45 integrate the real mage with idle_combat/run through a shared character config.
+Further action/jump clip selection remains deferred. See [ANIMATION.md](ANIMATION.md).
 
 ## Pieces and owners
 
@@ -19,7 +33,7 @@ State-driven idle/walk/jump selection remains deferred. See [ANIMATION.md](ANIMA
 | `CombatSpriteRenderer` | `MonoBehaviour` (scene) | Atlas load/reload, material, card mesh, instance `GraphicsBuffer`, one `MaterialPropertyBlock` per page, submission, owner arbitration, debug gizmos. |
 | `CombatSprite.shader` | URP HLSL | Passes `UniversalForwardOnly`, `DepthOnly`, `DepthNormalsOnly`; alpha clip; ZWrite On / ZTest LEqual; `Cull Off`. |
 
-`CombatSmoke.unity` → *Main Camera* carries `CombatSpriteRenderer` (source: CharacterConfig, real mage idle) next to the existing
+`CombatSmoke.unity` → *Main Camera* carries `CombatSpriteRenderer` (source: CharacterConfig, real mage idle/run) next to the existing
 `CombatCameraController`. No per-fighter GameObject, Transform, SpriteRenderer, MeshRenderer or Animator.
 
 ## Frame order

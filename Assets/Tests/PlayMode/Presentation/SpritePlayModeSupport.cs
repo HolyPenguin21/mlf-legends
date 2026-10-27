@@ -167,4 +167,45 @@ namespace MLFLegends.Tests.PlayMode
             }
         }
     }
+
+    /// <summary>Opt-in fixture producer through the existing queue; never an authoritative state writer.</summary>
+    [DisableAutoCreation]
+    [UpdateInGroup(typeof(CombatCommandCollectionSystemGroup))]
+    [UpdateBefore(typeof(CombatCommandProcessorSystem))]
+    public partial class SpriteRunTestProducer : SystemBase
+    {
+        public bool Move = true;
+        public bool AlternateDirection;
+        protected override void OnUpdate()
+        {
+            var session = SystemAPI.GetSingleton<BattleSession>();
+            if (!session.IsActive || !Move) return;
+            var tick = SystemAPI.GetSingleton<SimulationClock>().Tick;
+            var queue = SystemAPI.GetSingletonEntity<CombatCommandQueue>();
+            var submissions = EntityManager.GetBuffer<CombatCommandSubmission>(queue);
+            foreach (var id in SystemAPI.Query<RefRO<CombatantId>>().WithAll<InCombat>())
+                if ((id.ValueRO.Value & 1) == 0)
+                    submissions.Add(new CombatCommandSubmission(new CombatCommand
+                    {
+                        Combatant = id.ValueRO, Tick = tick, MoveZ = (sbyte)(AlternateDirection && (tick & 1) != 0 ? -1 : 1), Source = CommandSource.AI,
+                    }));
+        }
+
+        public static SpriteRunTestProducer Install(World world)
+        {
+            var producer = world.CreateSystemManaged<SpriteRunTestProducer>();
+            var group = world.GetExistingSystemManaged<CombatCommandCollectionSystemGroup>();
+            group.AddSystemToUpdateList(producer);
+            group.SortSystems();
+            return producer;
+        }
+
+        public static void Remove(World world, SpriteRunTestProducer producer)
+        {
+            if (producer == null || world == null || !world.IsCreated) return;
+            world.GetExistingSystemManaged<CombatCommandCollectionSystemGroup>().RemoveSystemFromUpdateList(producer);
+            world.DestroySystemManaged(producer);
+        }
+    }
+
 }

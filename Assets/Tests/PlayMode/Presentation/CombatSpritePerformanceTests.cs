@@ -134,7 +134,7 @@ namespace MLFLegends.Tests.PlayMode
         {
             RequireGraphicsDevice();
             var count = 2 + 2 * allies;
-            var prefix = realArt ? "stage03-idle" : "stage03-sprites";
+            var prefix = realArt ? "stage03-idle-run" : "stage03-sprites";
             CharacterAnimationConfig config = null;
             if (realArt)
             {
@@ -146,13 +146,18 @@ namespace MLFLegends.Tests.PlayMode
             RenderTexture target = null;
             Camera camera = null;
             CombatSpriteRenderer renderer = null;
+            SpriteRunTestProducer movementProducer = null;
             var profilerWasEnabled = Profiler.enabled;
             try
             {
                 target = CreateTarget(512);
                 camera = CreateCamera("Sprite perf camera", new Vector3(0f, 1f, 0f), 14f, target);
                 renderer = CreateRenderer(camera);
-                if (realArt) renderer.ConfigureAnimation(Shader.Find(ShaderName), camera, config, "mage_female_01");
+                if (realArt)
+                {
+                    renderer.ConfigureAnimation(Shader.Find(ShaderName), camera, config, "mage_female_01");
+                    movementProducer = SpriteRunTestProducer.Install(DefaultWorld);
+                }
                 yield return RestartBattle(Duel(new float3(-2f, 0f, 0f), FacingDirection.Right, new float3(2f, 0f, 0f), FacingDirection.Left, allies));
                 Profiler.enabled = true;
                 using var meter = new AllocationMeter();
@@ -234,7 +239,7 @@ namespace MLFLegends.Tests.PlayMode
                             var buffers = renderer.Stats.InstanceBuffersCreated;
                             var frameBuffers = atlas.GpuBuffersCreated;
                             var firstTick = Tick;
-                            var span = (uint)Math.Ceiling(3 * renderer.AnimationTiming.DurationSeconds * SimulationTiming.TickRateHz);
+                            var span = (uint)Math.Ceiling(3 * Math.Max(renderer.AnimationTiming.DurationSeconds, renderer.RunAnimationTiming.DurationSeconds) * SimulationTiming.TickRateHz);
                             var seen = new HashSet<uint>();
                             yield return Until(() =>
                             {
@@ -242,7 +247,7 @@ namespace MLFLegends.Tests.PlayMode
                                 foreach (var instance in renderer.Extraction.Instances) seen.Add(instance.Frame);
                                 return Tick - firstTick >= span;
                             }, 30);
-                            Assert.That(seen.Count, Is.EqualTo(6), "Observe all six real idle frames across >=3 full cycles.");
+                            Assert.That(seen.Count, Is.EqualTo(11), "Observe all six idle and five run frames across >=3 cycles of each clip.");
                             Assert.That(renderer.Atlas, Is.SameAs(atlas));
                             Assert.That(renderer.TimingBuilds, Is.EqualTo(timingBuilds));
                             Assert.That(renderer.Stats.InstanceBuffersCreated, Is.EqualTo(buffers));
@@ -260,6 +265,7 @@ namespace MLFLegends.Tests.PlayMode
             }
             finally
             {
+                SpriteRunTestProducer.Remove(DefaultWorld, movementProducer);
                 Profiler.enabled = profilerWasEnabled;
                 if (camera != null) camera.targetTexture = null;
                 DestroyAll(renderer, camera, target);

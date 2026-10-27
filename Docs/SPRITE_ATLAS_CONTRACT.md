@@ -1,5 +1,11 @@
 # Sprite atlas contract v1 (Stage 03, Issue #38)
 
+Current art delivery (#45): ONLY idle_combat (6 frames) and run (5 frames); page1152x384, source192x192, nominal128, pivot[96,160].
+The example now contains both actual clips. The parser remains general v1: future clip names do not imply gameplay permission.
+Config N/T/SpeedCurve is runtime timing; JSON duration_ms stays validated export metadata (idle1200ms/run500ms), whereas
+the owner-configured current idle cycle is1s and run defaults to0.5s. No schema changes or new markers/transitions.
+
+
 **Audience:** the graphic agent exporting character atlases and the code that loads them. This file is the input contract
 between the two. It does not depend on the character's clothes or hair design. Machine-readable example:
 [`SpriteAtlas/mage_female_01.example.json`](SpriteAtlas/mage_female_01.example.json) (validated by the EditMode suite).

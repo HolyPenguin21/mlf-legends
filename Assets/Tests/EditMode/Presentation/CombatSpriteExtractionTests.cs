@@ -343,6 +343,112 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(m_Extraction.PageInstances(0), Is.EqualTo(2), "New battle phase starts at its own boundary.");
         }
 
+        SpriteAnimationTiming OneFrame(int frame, string clip)
+        {
+            var errors = new List<string>();
+            var timing = SpriteAnimationTiming.Create(new SpriteAtlasClip(clip, new[] { frame }, new[] { 100f },
+                true, false, new Dictionary<string, int[]>()), new CharacterAnimationSettings
+                { ClipId = clip, FrameCount = 1, TotalDurationSeconds = 0.5 }, clip, errors);
+            Assert.That(timing, Is.Not.Null, string.Join("\n", errors));
+            return timing;
+        }
+
+        Entity EntityOf(CombatantId id)
+        {
+            using var query = m_Replay.Manager.CreateEntityQuery(typeof(CombatantId));
+            using var entities = query.ToEntityArray(Allocator.Temp);
+            foreach (var entity in entities)
+                if (m_Replay.Manager.GetComponentData<CombatantId>(entity).Value == id.Value) return entity;
+            Assert.Fail("Combatant missing: " + id.Value);
+            return Entity.Null;
+        }
+
+        void ExtractPair(SpriteAnimationTiming idle, SpriteAnimationTiming run) =>
+            m_Extraction.Run(m_Replay.World, m_Atlas, m_Basis, Separation, 0, 2f / 96f, idle, run);
+
+        [TestCase(-1, -1)] [TestCase(-1, 0)] [TestCase(-1, 1)] [TestCase(0, -1)]
+        [TestCase(0, 1)] [TestCase(1, -1)] [TestCase(1, 0)] [TestCase(1, 1)]
+        public void EveryAcceptedDirectionUsesRunForPlayerAndAiAndNoneReturnsToIdle(int x, int z)
+        {
+            var idle = OneFrame(0, "idle_combat");
+            var run = OneFrame(2, "run");
+            m_Replay.Request(BattleRequest.Start(Setup(1)));
+            m_Replay.Step();
+            foreach (var source in new[] { CommandSource.Player, CommandSource.AI })
+            {
+                m_Replay.SubmitBetweenFrames(new CombatCommand { Combatant = m_Replay.Session.HumanCombatant,
+                    Tick = m_Replay.Tick + 1, MoveX = (sbyte)x, MoveZ = (sbyte)z, Source = source });
+                m_Replay.Step();
+                ExtractPair(idle, run);
+                var instances = ById();
+                Assert.That(instances[m_Replay.Session.HumanCombatant.Value].Frame, Is.EqualTo(2u));
+                Assert.That(instances[m_Replay.Session.AiCombatant.Value].Frame, Is.Zero, "Different clips share one extraction.");
+                Assert.That(m_Extraction.PageInstances(0), Is.EqualTo(1));
+                Assert.That(m_Extraction.PageInstances(1), Is.EqualTo(1), "Chosen page/trim resolves before grouping.");
+                m_Replay.Step();
+                ExtractPair(idle, run);
+                Assert.That(ById()[m_Replay.Session.HumanCombatant.Value].Frame, Is.Zero, "Implicit None stops run.");
+            }
+            m_Replay.SubmitBetweenFrames(new CombatCommand { Combatant = m_Replay.Session.HumanCombatant,
+                Tick = m_Replay.Tick + 1, MoveX = 2, Source = CommandSource.Player });
+            m_Replay.Step();
+            ExtractPair(idle, run);
+            Assert.That(ById()[m_Replay.Session.HumanCombatant.Value].Frame, Is.Zero, "Rejected raw movement never reaches presentation.");
+        }
+
+        [Test]
+        public void AirborneMovementUsesIdleUntilTheExistingMotionOwnerLands()
+        {
+            var idle = OneFrame(0, "idle_combat"); var run = OneFrame(2, "run");
+            m_Replay.Request(BattleRequest.Start(Setup(1))); m_Replay.Step();
+            var human = m_Replay.Session.HumanCombatant;
+            var entity = EntityOf(human);
+            m_Replay.SubmitBetweenFrames(new CombatCommand { Combatant = human, Tick = m_Replay.Tick + 1,
+                MoveX = 1, Pressed = CommandButtons.Jump, Source = CommandSource.Player });
+            m_Replay.Step();
+            ExtractPair(idle, run);
+            Assert.That(m_Replay.Manager.GetComponentData<CombatMotion>(entity).Grounded, Is.False);
+            Assert.That(ById()[human.Value].Frame, Is.Zero);
+            var landed = false;
+            for (var i = 0; i < 120; i++)
+            {
+                m_Replay.SubmitBetweenFrames(new CombatCommand { Combatant = human, Tick = m_Replay.Tick + 1,
+                    MoveX = -1, Source = CommandSource.Player });
+                m_Replay.Step();
+                ExtractPair(idle, run);
+                var motion = m_Replay.Manager.GetComponentData<CombatMotion>(entity);
+                var instance = ById()[human.Value];
+                Assert.That(instance.Facing, Is.EqualTo(-1f), "Airborne facing remains authoritative.");
+                Assert.That(instance.Position, Is.EqualTo(m_Replay.Manager.GetComponentData<CombatPosition>(entity).Value));
+                Assert.That(instance.Frame, Is.EqualTo(motion.Grounded ? 2u : 0u));
+                if (motion.Grounded) { landed = true; break; }
+            }
+            Assert.That(landed, Is.True);
+        }
+
+        [Test]
+        public void StaleAppliedAndMissingMotionCannotBecomeRunAndManualWorldsRemainCompatible()
+        {
+            var idle = OneFrame(0, "idle_combat"); var run = OneFrame(2, "run");
+            m_Replay.Request(BattleRequest.Start(Setup(1))); m_Replay.Step();
+            var human = m_Replay.Session.HumanCombatant; var entity = EntityOf(human);
+            m_Replay.SubmitBetweenFrames(new CombatCommand { Combatant = human, Tick = m_Replay.Tick + 1,
+                MoveZ = 1, Source = CommandSource.AI });
+            m_Replay.Step(); ExtractPair(idle, run);
+            Assert.That(ById()[human.Value].Frame, Is.EqualTo(2u));
+            m_Replay.Manager.SetComponentEnabled<InCombat>(entity, false);
+            m_Replay.Step();
+            m_Replay.Manager.SetComponentEnabled<InCombat>(entity, true);
+            ExtractPair(idle, run);
+            Assert.That(ById()[human.Value].Frame, Is.Zero, "Re-enabled stale Applied Tick cannot imply movement.");
+            m_Replay.Manager.RemoveComponent<CombatMotion>(entity);
+            m_Replay.Manager.RemoveComponent<AppliedCombatCommand>(entity);
+            Run(defaultFrame: 1);
+            Assert.That(ById()[human.Value].Frame, Is.EqualTo(1u), "Manual extraction keeps its original core-only query.");
+            ExtractPair(idle, run);
+            Assert.That(ById()[human.Value].Frame, Is.Zero, "An incomplete animated actor remains visible as idle.");
+        }
+
         [TestCase(false)]
         [TestCase(true)]
         public void ExtractionIsReadOnlyAndLeavesTheSimulationIdentical(bool animated)
@@ -351,6 +457,7 @@ namespace MLFLegends.Tests.EditMode
             var timing = animated ? SpriteAnimationTiming.Create(new SpriteAtlasClip("idle_combat", new[] { 0, 2 },
                 new[] { 100f, 100f }, true, false, new Dictionary<string, int[]>()),
                 new CharacterAnimationSettings { FrameCount = 2, TotalDurationSeconds = 0.1 }, "read-only", errors) : null;
+            var running = animated ? OneFrame(1, "run") : null;
             // Same script in two Worlds; one is extracted between every frame. Every recorded tick must match.
             using var plain = new ReplayWorld("Sprites plain");
             foreach (var world in new[] { m_Replay, plain })
@@ -369,8 +476,8 @@ namespace MLFLegends.Tests.EditMode
                 var version = m_Replay.Manager.GetComponentOrderVersion<CombatPosition>();
                 var tick = m_Replay.Tick;
                 var queue = (m_Replay.PendingCount, m_Replay.ResultCount, m_Replay.SubmissionCount);
-                m_Extraction.Run(m_Replay.World, m_Atlas, m_Basis, Separation, 0, 2f / 96f, timing);
-                m_Extraction.Run(m_Replay.World, m_Atlas, m_Basis, Separation, 0, 2f / 96f, timing);
+                m_Extraction.Run(m_Replay.World, m_Atlas, m_Basis, Separation, 0, 2f / 96f, timing, running);
+                m_Extraction.Run(m_Replay.World, m_Atlas, m_Basis, Separation, 0, 2f / 96f, timing, running);
                 Assert.That(m_Replay.Manager.GetComponentOrderVersion<CombatPosition>(), Is.EqualTo(version), "No structural change.");
                 Assert.That(m_Replay.Tick, Is.EqualTo(tick), "No clock advance.");
                 Assert.That((m_Replay.PendingCount, m_Replay.ResultCount, m_Replay.SubmissionCount), Is.EqualTo(queue), "Queue untouched.");

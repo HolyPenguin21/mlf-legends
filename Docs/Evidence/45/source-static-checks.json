@@ -1,0 +1,22 @@
+{
+  "base_sha": "97b8c188d3c1d2fa30a8deb5709b8cb1e834d317",
+  "kind": "implementing-agent static source checks; NOT Unity execution",
+  "csharp_syntax_parse": {
+    "files": 68,
+    "errors": 0,
+    "compiler": "NOT RUN"
+  },
+  "unique_valid_meta_guids": 148,
+  "project_json_parse_files": 7,
+  "git_diff_check": "PASS",
+  "legacy_depth_negative_control_apply_check": "PASS; mutation NOT applied or executed",
+  "preserved_user_changes": "scene/package/importer untouched relative to97b8c188; idle entry preserved at1s",
+  "PNG": "ignored/excluded from changes",
+  "source_sha256": {
+    "Assets/MLFLegends/Combat/Runtime/Presentation/Sprites/CombatSpriteRenderer.cs": "70247c45e7e41c82d83d5a0d7408a298d25af21169f263bfb5b0d6a089aa7526",
+    "Assets/MLFLegends/Combat/Runtime/Presentation/Sprites/CombatSpriteExtraction.cs": "c2a3ab1f5399fff0175645a696644ea335ebbfde7bf0c3829ff2e0f13b25d3fc",
+    "Assets/MLFLegends/Combat/PresentationData/CharacterAnimationConfig.asset": "4420ce83945dfb1ba369330ce7b956414535e42ea1b7627eddc15ce3bbd16e54",
+    "Assets/MLFLegends/Art/Characters/MageFemale01/Metadata/mage_female_01.atlas.json": "27d9ffbbab436c619706673be17e92bf5b6d7634a3b8a0cc8041d89de0b3b573"
+  },
+  "Unity_EditMode_PlayMode_Graphics_GC_Performance": "NOT RUN"
+}

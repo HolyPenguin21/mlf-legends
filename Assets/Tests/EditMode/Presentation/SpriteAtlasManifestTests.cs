@@ -49,12 +49,17 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(definition.NominalHeightPx, Is.EqualTo(128f));
             Assert.That(definition.Pivot, Is.EqualTo(new float2(96f, 160f)));
             Assert.That(definition.Pages.Count, Is.EqualTo(1));
-            Assert.That(definition.Frames.Count, Is.EqualTo(6));
-            Assert.That(definition.Clips.Count, Is.EqualTo(1));
+            Assert.That(definition.Frames.Count, Is.EqualTo(11));
+            Assert.That(definition.Clips.Count, Is.EqualTo(2));
             Assert.That(definition.TryGetClipIndex("idle_combat", out var idle), Is.True);
             Assert.That(definition.Clips[idle].Frames.Count, Is.EqualTo(6));
             Assert.That(definition.Clips[idle].Loop, Is.True);
             Assert.That(definition.Clips[idle].HoldLast, Is.False);
+            Assert.That(definition.TryGetClipIndex("run", out var run), Is.True);
+            Assert.That(definition.Clips[run].Frames.Count, Is.EqualTo(5));
+            Assert.That(definition.Clips[run].Loop, Is.True);
+            Assert.That(definition.Clips[run].HoldLast, Is.False);
+            Assert.That(definition.Clips[run].DurationsMs.Sum(), Is.EqualTo(500f));
             Assert.That(definition.Frames.All(f => !f.HasCastOrigin), Is.True);
             Assert.That(definition.Transitions, Is.Empty);
         }
