@@ -1,66 +1,314 @@
 {
   "schema_version": 1,
   "character_id": "mage_female_01",
-  "source_size": [192, 192],
-  "nominal_height_px": 96,
-  "pivot": [96, 160],
+  "source_size": [
+    192,
+    192
+  ],
+  "nominal_height_px": 128,
+  "pivot": [
+    96,
+    160
+  ],
   "authored_facing": "right",
   "pages": [
-    { "file": "mage_female_01_page0.png", "width": 256, "height": 128 }
+    {
+      "file": "mage_female_01_00.png",
+      "width": 1152,
+      "height": 192
+    }
   ],
   "frames": {
-    "idle_relaxed_00": {
+    "idle_combat_000": {
       "page": 0,
-      "rect": [2, 2, 60, 112],
-      "trim_offset": [64, 50],
+      "rect": [
+        28,
+        28,
+        136,
+        136
+      ],
+      "trim_offset": [
+        28,
+        28
+      ],
       "anchors": {
-        "hand_left": { "position": [74.5, 118], "direction": [-0.2, 1], "layer": "back", "visible": true },
-        "hand_right": { "position": [117, 119.5], "direction": [0.25, 1], "layer": "front", "visible": true },
+        "hand_left": {
+          "position": [
+            87.53,
+            76.76
+          ],
+          "direction": [
+            0.3,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            131.35,
+            95.86
+          ],
+          "direction": [
+            1,
+            0.2
+          ],
+          "layer": "back",
+          "visible": true
+        },
         "cast_origin": null
       }
     },
-    "idle_relaxed_01": {
+    "idle_combat_001": {
       "page": 0,
-      "rect": [68, 2, 60, 112],
-      "trim_offset": [64, 51],
+      "rect": [
+        220,
+        28,
+        136,
+        136
+      ],
+      "trim_offset": [
+        28,
+        28
+      ],
       "anchors": {
-        "hand_left": { "position": [74.5, 119], "direction": [-0.2, 1], "layer": "back", "visible": true },
-        "hand_right": { "position": [117, 120.5], "direction": [0.25, 1], "layer": "front", "visible": true },
+        "hand_left": {
+          "position": [
+            86.96,
+            73.05
+          ],
+          "direction": [
+            0.3,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            130.78,
+            92.72
+          ],
+          "direction": [
+            1,
+            0.2
+          ],
+          "layer": "back",
+          "visible": true
+        },
         "cast_origin": null
       }
     },
-    "cast_release_00": {
+    "idle_combat_002": {
       "page": 0,
-      "rect": [134, 2, 84, 110],
-      "trim_offset": [60, 52],
+      "rect": [
+        412,
+        28,
+        136,
+        136
+      ],
+      "trim_offset": [
+        28,
+        28
+      ],
       "anchors": {
-        "hand_left": { "position": [82, 104], "direction": [0, 1], "layer": "back", "visible": false },
-        "hand_right": { "position": [141, 96], "direction": [1, -0.1], "layer": "front", "visible": true },
-        "cast_origin": { "position": [146, 95], "direction": [1, 0], "layer": "front", "visible": true }
+        "hand_left": {
+          "position": [
+            86.96,
+            73.62
+          ],
+          "direction": [
+            0.3,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            130.78,
+            92.72
+          ],
+          "direction": [
+            1,
+            0.2
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "idle_combat_003": {
+      "page": 0,
+      "rect": [
+        604,
+        28,
+        136,
+        136
+      ],
+      "trim_offset": [
+        28,
+        28
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            86.96,
+            77.61
+          ],
+          "direction": [
+            0.3,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            130.78,
+            97
+          ],
+          "direction": [
+            1,
+            0.2
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "idle_combat_004": {
+      "page": 0,
+      "rect": [
+        796,
+        28,
+        136,
+        136
+      ],
+      "trim_offset": [
+        28,
+        28
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            86.96,
+            81.03
+          ],
+          "direction": [
+            0.3,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            130.78,
+            100.42
+          ],
+          "direction": [
+            1,
+            0.2
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "idle_combat_005": {
+      "page": 0,
+      "rect": [
+        988,
+        28,
+        136,
+        136
+      ],
+      "trim_offset": [
+        28,
+        28
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            86.96,
+            77.61
+          ],
+          "direction": [
+            0.3,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            130.78,
+            97
+          ],
+          "direction": [
+            1,
+            0.2
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
       }
     }
   },
   "clips": {
-    "idle_relaxed": {
+    "idle_combat": {
       "frames": [
-        { "id": "idle_relaxed_00", "duration_ms": 125 },
-        { "id": "idle_relaxed_01", "duration_ms": 125 }
+        {
+          "id": "idle_combat_000",
+          "duration_ms": 200
+        },
+        {
+          "id": "idle_combat_001",
+          "duration_ms": 200
+        },
+        {
+          "id": "idle_combat_002",
+          "duration_ms": 200
+        },
+        {
+          "id": "idle_combat_003",
+          "duration_ms": 200
+        },
+        {
+          "id": "idle_combat_004",
+          "duration_ms": 200
+        },
+        {
+          "id": "idle_combat_005",
+          "duration_ms": 200
+        }
       ],
       "loop": true,
       "hold_last": false,
       "markers": {}
-    },
-    "cast_release": {
-      "frames": [
-        { "id": "idle_relaxed_01", "duration_ms": 62.5 },
-        { "id": "cast_release_00", "duration_ms": 187.5 }
-      ],
-      "loop": false,
-      "hold_last": true,
-      "markers": { "entry": [0], "release_pose": [1] }
     }
   },
-  "compatible_transitions": [
-    { "from_clip": "idle_relaxed", "exit_frame": 1, "to_clip": "cast_release", "entry_frame": 0 }
-  ]
+  "compatible_transitions": [],
+  "meta": {
+    "status": "intermediate_idle_combat_only",
+    "revision": 2,
+    "cell_size": [
+      192,
+      192
+    ],
+    "body_limit": [
+      128,
+      128
+    ],
+    "layout": "one animation per row; row 0 idle_combat",
+    "duration_ms": 1200,
+    "anchors_status": "estimated by hand, pending anatomical review",
+    "art_review": "pending",
+    "extension": "Preserve IDs and cell positions; append animation rows, then additional pages. Rects changed in v2 repair; replace PNG and JSON together."
+  }
 }

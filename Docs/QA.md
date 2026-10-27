@@ -1,5 +1,23 @@
 # MLF Legends — Quality assurance and evidence
 
+## #43 Stage 03.3a real idle/config — source delivery (2026-10-27)
+
+Base main fe324f83 includes merged PR #42; #41 delivered/CLOSED with manager STATIC PASS. Its Unity compilation,
+new GPU wall/400-layer regressions and validated-GC benchmarks are still NOT RUN. Historical #38 results do not
+verify #42 or #43. This entry supersedes older current-status headers that request an already delivered correction.
+
+Implemented: existing catalog binds exact external revision2 six-frame mage; scene uses one shared config N6/T1.2/
+flat speed1; normalized Hermite speed timing from existing battle clock, read-only extraction before depth/grouping.
+Added authored EditMode timing/config/extraction/replay and PlayMode lifecycle/config/World/2-100-400 tests, graphics
+page/trim/flip checks1/2/3px, real-art smoke and separate actual-idle perf series with3cycle buffer reuse checks.
+
+Actually performed: independent Python/PIL input geometry/alpha/reconstruction and Python/SciPy timing-source-model
+checks (raw Evidence/43 JSON). These are static content/numerical checks, not C# execution. Unity compile/import/Burst,
+all newly authored Unity tests, actual Graphics and fresh GC/performance, Game view/Frame Debugger/Domain Reload off
+remain NOT RUN. No new XML/Editor.log/performance TSV/runtime PASS is supplied. Independent manager bottom-up source review STATIC PASS; raw checks/source hashes in Evidence/43/manager-static-review.json.
+See Evidence/43/README.md and Presentation/Sprites/ANIMATION.md for rerun commands, hashes, limitations and raw evidence.
+
+
 ## Corrective #41 implementation (2026-10-26, `fix/38-depth-and-measurement`) — awaiting Unity evidence
 
 - Depth policy now uses connected projected-frame overlaps and a roster-independent maximum push of 0.0625 world

@@ -2,8 +2,8 @@
 
 One scene-level GPU renderer draws every in-combat fighter of the active battle from a shared atlas. It reads ECS
 (`CombatantId`, `CombatPosition`, `CombatFacing`, enabled `InCombat`, `BattleSession`) and writes **nothing** to ECS.
-Input contract for art: `Docs/SPRITE_ATLAS_CONTRACT.md`. State-driven animation (idle/walk/jump), the final mage and
-the visible scene are Stage 03.3; here frames are selected explicitly.
+Input contract for art: `Docs/SPRITE_ATLAS_CONTRACT.md`. Stage 03.3a / #43 integrates the real mage and the single idle_combat loop through a shared character config.
+State-driven idle/walk/jump selection remains deferred. See [ANIMATION.md](ANIMATION.md).
 
 ## Pieces and owners
 
@@ -15,11 +15,11 @@ the visible scene are Stage 03.3; here frames are selected explicitly.
 | `SpriteAtlas` | `IDisposable` | Validated binding (name, size, uncompressed), CPU frame table (`NativeArray`, 32 B/frame), lazily one GPU frame `GraphicsBuffer`. Does **not** own page textures. |
 | `TechnicalAtlasFixture` | static generator | Code-generated technical atlas (2 pages 128×128 / 96×160, 3 trims, holes, shared frames, magenta sentinel padding). Caller destroys the textures. Not a character. |
 | `SpriteCardMath`, `SpriteCardBasis` | static math | Canvas → card → world for bodies, anchors, bounds, tests; mirrored by the shader. |
-| `CombatSpriteExtraction` | `IDisposable` | Two queries per World, reused native lists, depth tie-break, per-instance frame, page grouping. Read-only; no structural changes. |
+| `CombatSpriteExtraction` | `IDisposable` | Three read-only queries per World (session, clock, combatants), reused native lists, depth tie-break, per-instance frame, page grouping. Read-only; no structural changes. |
 | `CombatSpriteRenderer` | `MonoBehaviour` (scene) | Atlas load/reload, material, card mesh, instance `GraphicsBuffer`, one `MaterialPropertyBlock` per page, submission, owner arbitration, debug gizmos. |
 | `CombatSprite.shader` | URP HLSL | Passes `UniversalForwardOnly`, `DepthOnly`, `DepthNormalsOnly`; alpha clip; ZWrite On / ZTest LEqual; `Cull Off`. |
 
-`CombatSmoke.unity` → *Main Camera* carries `CombatSpriteRenderer` (source: technical fixture) next to the existing
+`CombatSmoke.unity` → *Main Camera* carries `CombatSpriteRenderer` (source: CharacterConfig, real mage idle) next to the existing
 `CombatCameraController`. No per-fighter GameObject, Transform, SpriteRenderer, MeshRenderer or Animator.
 
 ## Frame order
@@ -28,13 +28,13 @@ the visible scene are Stage 03.3; here frames are selected explicitly.
 the frame (Begin ECB → Lifecycle → Clock → Collection → Facing → Movement → Publication → End ECB, unchanged) →
 `PreLateUpdate`: `CombatCameraController.LateUpdate` (order 0) places the camera → `CombatSpriteRenderer.LateUpdate`
 (`[DefaultExecutionOrder(100)]`, explicit) reads ECS and the camera rotation and calls `Graphics.RenderMeshPrimitives`
-→ URP renders those draws for that camera in this frame. The renderer has no tick, clock, accumulator or ECS writer.
+→ URP renders those draws for that camera in this frame. The renderer has no tick/clock writer or accumulator. Animated extraction reads the existing simulation clock; manual mode needs no clock.
 Paused (`timeScale = 0`): LateUpdate still runs, positions/frames stay, camera pan/zoom keep working.
 
 ## Geometry (sprite card)
 
 Basis from the camera (`SpriteCardBasis.FromCamera`): `Right` = horizontal screen right; `DepthAxis` = horizontal camera
-forward. With `s = NominalWorldHeight / nominal_height_px` (start 2 / 96 world units per pixel):
+forward. With `s = NominalWorldHeight / nominal_height_px` (real mage 2 / 128 world units per pixel; technical fixture retains 2 / 96):
 
 - canvas point `(x, y)` → card offset `(f·(x − pivot.x), pivot.y − y)` pixels, `f = ±1` facing (whole drawing and trim
   offset mirrored around the pivot; UVs stay, so flip ≠ UV-only flip);
@@ -100,7 +100,7 @@ in the Linux editing environment; acceptance still requires the new graphics and
 - Zero fighters → zero instances and zero submissions. End, Restart in the same World, Despawn, disabled `InCombat`,
   late/replaced/disposed World and scene unload leave no geometry and no Entity handles (IDs only, per refresh).
 - Explicit frame selections (`SetFrame`, `SetClipFrame`, `SetDefaultFrame`) are a preview/test seam: per CombatantId,
-  dropped on a new battle, another World or atlas. No clock, no state binding, no animation FSM.
+  dropped on a new battle, another World or atlas. Manual mode has no clock/state binding; CharacterConfig mode reads the existing clock for idle only, with no animation FSM.
 - Two enabled renderers on the same World + Camera: the later enabled one draws, the earlier logs one warning and stays
   idle while superseded (no ECS read, no draw; its World binding and selections are kept); other cameras/Worlds are separate owners. The static list of enabled renderers
   is presentation-only and reset on `SubsystemRegistration` (Domain Reload off).
@@ -131,8 +131,8 @@ device); `[Category("Performance")]` 2/100/400 measurements → `TestResults/per
   overlap a neighbour's legs; an airborne fighter's below-pivot part floats horizontally at its height.
 - Body alpha is clipped at 0.5 (no soft edges); no fog, motion vectors (TAA) or shadow caster pass; `#pragma target 4.5`
   (structured buffers in the vertex stage: no GLES 3.0/WebGL 1); XR single-pass instancing is not supported.
-- 96 px = 2 units at orthographic size 6 is not pixel-perfect (non-integer screen pixels per source pixel); pixel-perfect
-  calibration belongs to 03.3.
+- Real mage 128 px = 2 units (technical fixture 96 px = 2); arbitrary fractional zoom is not pixel-perfect.
+  Dedicated snapping/interpolation remains outside 03.3a.
 
 - Main-thread managed extraction (~0.2 ms for 400 in the Editor); Burst/jobs only if later profiles need it.
 - No indirect/compute culling, Entities Graphics path, shadows, lighting, translucent VFX, equipment layers or terrain

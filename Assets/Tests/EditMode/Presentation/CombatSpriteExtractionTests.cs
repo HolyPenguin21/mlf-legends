@@ -312,8 +312,45 @@ namespace MLFLegends.Tests.EditMode
         }
 
         [Test]
-        public void ExtractionIsReadOnlyAndLeavesTheSimulationIdentical()
+        public void AnimationSelectsPageTrimAndAnchorsBeforeDepthAndDropsNoVisibleOrOffscreenActors()
         {
+            var errors = new List<string>();
+            var timing = SpriteAnimationTiming.Create(new SpriteAtlasClip("idle_combat", new[] { 0, 2 },
+                new[] { 10f, 900f }, true, false, new Dictionary<string, int[]>()),
+                new CharacterAnimationSettings { FrameCount = 2, TotalDurationSeconds = 0.1 }, "animated", errors);
+            Assert.That(timing, Is.Not.Null, string.Join("\n", errors));
+            m_Replay.Request(BattleRequest.Start(Setup(200)));
+            m_Replay.Step();
+            m_Extraction.Select(m_Replay.Session.HumanCombatant, 1); // manual selections never override animation
+            m_Extraction.Run(m_Replay.World, m_Atlas, m_Basis, Separation, 0, 2f / 96f, timing);
+            Assert.That(m_Extraction.PageInstances(0), Is.EqualTo(400));
+            m_Replay.Step(3);
+            m_Extraction.Run(m_Replay.World, m_Atlas, m_Basis, Separation, 0, 2f / 96f, timing);
+            Assert.That(m_Extraction.PageInstances(1), Is.EqualTo(400));
+            Assert.That(m_Extraction.PageInstances(0), Is.Zero);
+            Assert.That(m_Extraction.Instances.ToArray().All(i => i.Frame == 2), Is.True);
+            Assert.That(m_Extraction.MaxDepthOffset, Is.LessThanOrEqualTo(0.0625f));
+            var snapshot = m_Extraction.Instances.ToArray();
+            m_Extraction.Run(m_Replay.World, m_Atlas, m_Basis, Separation, 0, 2f / 96f, timing);
+            Assert.That(m_Extraction.Instances.ToArray(), Is.EqualTo(snapshot), "Refresh without a tick keeps phase.");
+            m_Replay.Request(BattleRequest.End());
+            m_Replay.Step();
+            m_Extraction.Run(m_Replay.World, m_Atlas, m_Basis, Separation, 0, 2f / 96f, timing);
+            Assert.That(m_Extraction.Count, Is.Zero);
+            m_Replay.Request(BattleRequest.Start(Setup(1)));
+            m_Replay.Step();
+            m_Extraction.Run(m_Replay.World, m_Atlas, m_Basis, Separation, 0, 2f / 96f, timing);
+            Assert.That(m_Extraction.PageInstances(0), Is.EqualTo(2), "New battle phase starts at its own boundary.");
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void ExtractionIsReadOnlyAndLeavesTheSimulationIdentical(bool animated)
+        {
+            var errors = new List<string>();
+            var timing = animated ? SpriteAnimationTiming.Create(new SpriteAtlasClip("idle_combat", new[] { 0, 2 },
+                new[] { 100f, 100f }, true, false, new Dictionary<string, int[]>()),
+                new CharacterAnimationSettings { FrameCount = 2, TotalDurationSeconds = 0.1 }, "read-only", errors) : null;
             // Same script in two Worlds; one is extracted between every frame. Every recorded tick must match.
             using var plain = new ReplayWorld("Sprites plain");
             foreach (var world in new[] { m_Replay, plain })
@@ -332,8 +369,8 @@ namespace MLFLegends.Tests.EditMode
                 var version = m_Replay.Manager.GetComponentOrderVersion<CombatPosition>();
                 var tick = m_Replay.Tick;
                 var queue = (m_Replay.PendingCount, m_Replay.ResultCount, m_Replay.SubmissionCount);
-                Run();
-                Run();
+                m_Extraction.Run(m_Replay.World, m_Atlas, m_Basis, Separation, 0, 2f / 96f, timing);
+                m_Extraction.Run(m_Replay.World, m_Atlas, m_Basis, Separation, 0, 2f / 96f, timing);
                 Assert.That(m_Replay.Manager.GetComponentOrderVersion<CombatPosition>(), Is.EqualTo(version), "No structural change.");
                 Assert.That(m_Replay.Tick, Is.EqualTo(tick), "No clock advance.");
                 Assert.That((m_Replay.PendingCount, m_Replay.ResultCount, m_Replay.SubmissionCount), Is.EqualTo(queue), "Queue untouched.");

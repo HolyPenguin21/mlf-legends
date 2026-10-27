@@ -46,34 +46,17 @@ namespace MLFLegends.Tests.EditMode
             var definition = ParseValid(File.ReadAllText(ExamplePath));
             Assert.That(definition.CharacterId, Is.EqualTo("mage_female_01"));
             Assert.That(definition.SourceSize, Is.EqualTo(new int2(192, 192)));
-            Assert.That(definition.NominalHeightPx, Is.EqualTo(96f));
+            Assert.That(definition.NominalHeightPx, Is.EqualTo(128f));
             Assert.That(definition.Pivot, Is.EqualTo(new float2(96f, 160f)));
             Assert.That(definition.Pages.Count, Is.EqualTo(1));
-            Assert.That(definition.Frames.Select(f => f.Id), Is.EqualTo(new[] { "idle_relaxed_00", "idle_relaxed_01", "cast_release_00" }));
-            Assert.That(definition.Clips.Count, Is.EqualTo(2));
-
-            Assert.That(definition.TryGetClipIndex("cast_release", out var cast), Is.True);
-            var clip = definition.Clips[cast];
-            Assert.That(clip.DurationsMs, Is.EqualTo(new[] { 62.5f, 187.5f }), "Fractional durations are kept.");
-            Assert.That(clip.Loop, Is.False);
-            Assert.That(clip.HoldLast, Is.True);
-            Assert.That(clip.Markers["release_pose"], Is.EqualTo(new[] { 1 }), "A single marker is an array of one local index.");
-            Assert.That(definition.TryGetFrameIndex("idle_relaxed_01", out var shared), Is.True);
-            Assert.That(clip.Frames[0], Is.EqualTo(shared), "Two clips may share one frame id.");
-            Assert.That(definition.Clips[0].Frames[1], Is.EqualTo(shared));
-
-            var frame = definition.Frames[(int)definition.Frames.ToList().FindIndex(f => f.Id == "cast_release_00")];
-            Assert.That(frame.HasCastOrigin, Is.True);
-            Assert.That(frame.HandLeft.Visible, Is.False, "A hidden hand keeps its virtual position.");
-            Assert.That(frame.HandLeft.Position, Is.EqualTo(new float2(82f, 104f)));
-            Assert.That(frame.HandRight.Layer, Is.EqualTo(SpriteAnchorLayer.Front));
-            Assert.That(definition.Frames[0].HasCastOrigin, Is.False, "cast_origin null outside casting.");
-
-            var transition = definition.Transitions.Single();
-            Assert.That(definition.Clips[transition.FromClip].Id, Is.EqualTo("idle_relaxed"));
-            Assert.That(transition.ExitFrame, Is.EqualTo(1));
-            Assert.That(definition.Clips[transition.ToClip].Id, Is.EqualTo("cast_release"));
-            Assert.That(transition.EntryFrame, Is.EqualTo(0));
+            Assert.That(definition.Frames.Count, Is.EqualTo(6));
+            Assert.That(definition.Clips.Count, Is.EqualTo(1));
+            Assert.That(definition.TryGetClipIndex("idle_combat", out var idle), Is.True);
+            Assert.That(definition.Clips[idle].Frames.Count, Is.EqualTo(6));
+            Assert.That(definition.Clips[idle].Loop, Is.True);
+            Assert.That(definition.Clips[idle].HoldLast, Is.False);
+            Assert.That(definition.Frames.All(f => !f.HasCastOrigin), Is.True);
+            Assert.That(definition.Transitions, Is.Empty);
         }
 
         [Test]
@@ -90,6 +73,23 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(definition.Clips[1].Markers.Keys, Is.EquivalentTo(new[] { "release_pose", "return" }));
             Assert.That(definition.TryGetClipFrame("tech_cast", 2, out _), Is.False);
             Assert.That(definition.TryGetFrameIndex("missing", out _), Is.False);
+            Assert.That(definition.Clips[0].DurationsMs, Is.EqualTo(new[] { 100f, 62.5f }), "Fractional JSON durations remain valid metadata.");
+            var cast = definition.Clips[1];
+            Assert.That(cast.Loop, Is.False);
+            Assert.That(cast.HoldLast, Is.True);
+            Assert.That(cast.Markers["release_pose"], Is.EqualTo(new[] { 0 }));
+            Assert.That(cast.Markers["return"], Is.EqualTo(new[] { 1 }));
+            var hidden = definition.Frames[1];
+            Assert.That(hidden.HandLeft.Visible, Is.False);
+            Assert.That(hidden.HandLeft.Position, Is.EqualTo(new float2(100, 140)));
+            Assert.That(hidden.HandRight.Layer, Is.EqualTo(SpriteAnchorLayer.Front));
+            Assert.That(hidden.HasCastOrigin, Is.True);
+            Assert.That(definition.Frames[0].HasCastOrigin, Is.False);
+            var transition = definition.Transitions.Single();
+            Assert.That(definition.Clips[transition.FromClip].Id, Is.EqualTo("tech_idle"));
+            Assert.That(transition.ExitFrame, Is.EqualTo(1));
+            Assert.That(definition.Clips[transition.ToClip].Id, Is.EqualTo("tech_cast"));
+            Assert.That(transition.EntryFrame, Is.Zero);
         }
 
         [Test]

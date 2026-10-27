@@ -39,6 +39,9 @@ namespace MLFLegends.Combat
 
             /// <summary><see cref="TechnicalAtlasFixture"/> generated at load (no art needed).</summary>
             TechnicalFixture = 1,
+
+            /// <summary>One character and idle_combat timing from the shared config.</summary>
+            CharacterConfig = 2,
         }
 
         /// <summary>Anchor of a frame, for <see cref="TryGetAnchor"/>.</summary>
@@ -94,6 +97,8 @@ namespace MLFLegends.Combat
         [Header("Atlas")]
         [SerializeField] AtlasSource m_Source = AtlasSource.Catalog;
         [SerializeField] SpriteAtlasCatalog m_Catalog;
+        [SerializeField] CharacterAnimationConfig m_AnimationConfig;
+        [SerializeField] string m_CharacterId = "mage_female_01";
         [Tooltip("Frame drawn for every combatant without an explicit selection. Empty: first frame of the first clip.")]
         [SerializeField] string m_DefaultFrameId = "";
 
@@ -101,7 +106,7 @@ namespace MLFLegends.Combat
         [SerializeField] Shader m_Shader;
         [Tooltip("Camera to draw in. Empty: the Camera on this GameObject.")]
         [SerializeField] Camera m_Camera;
-        [Tooltip("World height of nominal_height_px (start calibration 96 px = 2 units); one scale for the whole atlas.")]
+        [Tooltip("World height of nominal_height_px (mage calibration 128 px = 2 units); one scale for the whole atlas.")]
         [SerializeField, Min(0.01f)] float m_NominalWorldHeight = 2f;
         [SerializeField, Range(0.01f, 1f)] float m_AlphaCutoff = 0.5f;
 
@@ -128,6 +133,19 @@ namespace MLFLegends.Combat
         bool m_LoadAttempted;
         uint m_DefaultFrame;
         string m_ResolvedDefaultId;
+        CharacterAnimationConfig m_ResolvedConfig;
+        int m_ConfigVersion;
+        string m_ResolvedCharacter;
+        bool m_ConfigAttempted;
+        bool m_ConfigValid;
+        SpriteAtlasCatalog m_CharacterCatalog;
+        CharacterAnimationSettings m_AnimationSettings;
+        bool m_TimingDirty;
+        SpriteAnimationTiming m_Timing;
+
+        public SpriteAnimationTiming AnimationTiming => m_Timing;
+        public int TimingBuilds { get; private set; }
+        public bool UsesCharacterAnimation => m_Source == AtlasSource.CharacterConfig;
 
         // World
         World m_ExplicitWorld;
@@ -262,9 +280,22 @@ namespace MLFLegends.Combat
             m_Catalog = catalog;
         }
 
+        /// <summary>Uses only idle_combat from a shared character config; manual selections are disabled in this mode.</summary>
+        public void ConfigureAnimation(Shader shader, Camera targetCamera, CharacterAnimationConfig config, string characterId)
+        {
+            m_Shader = shader;
+            m_Camera = targetCamera;
+            m_Source = AtlasSource.CharacterConfig;
+            m_Catalog = null;
+            m_AnimationConfig = config;
+            m_CharacterId = characterId;
+        }
+
         /// <summary>Selects frame <paramref name="frameId"/> for every combatant without its own selection.</summary>
         public bool SetDefaultFrame(string frameId)
         {
+            if (UsesCharacterAnimation)
+                return false;
             m_DefaultFrameId = frameId ?? "";
             m_ResolvedDefaultId = null;
             return m_Atlas == null || m_Atlas.Definition.TryGetFrameIndex(frameId, out _);
@@ -276,7 +307,7 @@ namespace MLFLegends.Combat
         /// </summary>
         public bool SetFrame(CombatantId combatant, string frameId)
         {
-            if (m_Extraction == null || m_Atlas == null || !combatant.IsValid || !m_Atlas.Definition.TryGetFrameIndex(frameId, out var index))
+            if (UsesCharacterAnimation || m_Extraction == null || m_Atlas == null || !combatant.IsValid || !m_Atlas.Definition.TryGetFrameIndex(frameId, out var index))
                 return false;
             m_Extraction.Select(combatant, (uint)index);
             return true;
@@ -285,7 +316,7 @@ namespace MLFLegends.Combat
         /// <summary>Like <see cref="SetFrame"/> with local frame <paramref name="localIndex"/> of clip <paramref name="clipId"/>.</summary>
         public bool SetClipFrame(CombatantId combatant, string clipId, int localIndex)
         {
-            if (m_Extraction == null || m_Atlas == null || !combatant.IsValid || !m_Atlas.Definition.TryGetClipFrame(clipId, localIndex, out var index))
+            if (UsesCharacterAnimation || m_Extraction == null || m_Atlas == null || !combatant.IsValid || !m_Atlas.Definition.TryGetClipFrame(clipId, localIndex, out var index))
                 return false;
             m_Extraction.Select(combatant, (uint)index);
             return true;
@@ -361,7 +392,9 @@ namespace MLFLegends.Combat
             var start = Stopwatch.GetTimestamp();
             // A superseded renderer neither reads ECS nor draws (its World binding and selections are kept).
             if (IsActiveOwner)
-                m_Extraction.Run(camera != null ? ResolveWorld() : null, m_Atlas, m_Basis, m_DepthSeparation, m_DefaultFrame, PixelWorldSize);
+                m_Extraction.Run(camera != null ? ResolveWorld() : null,
+                    UsesCharacterAnimation && m_Timing == null ? null : m_Atlas, m_Basis, m_DepthSeparation,
+                    m_DefaultFrame, PixelWorldSize, UsesCharacterAnimation ? m_Timing : null);
             else
                 m_Extraction.Clear();
             m_Stats.ExtractMicroseconds = Microseconds(start);
@@ -386,17 +419,28 @@ namespace MLFLegends.Combat
 
         void EnsureAtlas()
         {
-            var version = m_Catalog != null ? m_Catalog.Version : 0;
-            if (m_LoadAttempted && m_LoadedSource == m_Source && m_LoadedCatalog == m_Catalog && m_LoadedVersion == version)
+            var catalog = m_Catalog;
+            if (UsesCharacterAnimation)
             {
-                ResolveDefaultFrame();
+                if (!ResolveCharacter())
+                {
+                    if (m_Atlas != null) UnloadAtlas();
+                    return;
+                }
+                catalog = m_CharacterCatalog;
+            }
+            var version = catalog != null ? catalog.Version : 0;
+            if (m_LoadAttempted && m_LoadedSource == m_Source && m_LoadedCatalog == catalog && m_LoadedVersion == version)
+            {
+                if (UsesCharacterAnimation) PrepareAnimation();
+                else ResolveDefaultFrame();
                 return;
             }
 
             UnloadAtlas();
             m_LoadAttempted = true;
             m_LoadedSource = m_Source;
-            m_LoadedCatalog = m_Catalog;
+            m_LoadedCatalog = catalog;
             m_LoadedVersion = version;
 
             var errors = new List<string>();
@@ -406,8 +450,8 @@ namespace MLFLegends.Combat
                 m_FixturePages = TechnicalAtlasFixture.CreatePages();
                 m_Atlas = SpriteAtlas.Load(TechnicalAtlasFixture.ManifestJson, TechnicalAtlasFixture.Bind(m_FixturePages), errors, warnings);
             }
-            else if (m_Catalog != null)
-                m_Atlas = SpriteAtlas.Load(m_Catalog, errors, warnings);
+            else if (catalog != null)
+                m_Atlas = SpriteAtlas.Load(catalog, errors, warnings);
             else
                 errors.Add("no catalog assigned");
 
@@ -421,7 +465,60 @@ namespace MLFLegends.Combat
                 return;
             }
 
-            ResolveDefaultFrame();
+            if (UsesCharacterAnimation) PrepareAnimation();
+            else ResolveDefaultFrame();
+        }
+
+        bool ResolveCharacter()
+        {
+            var version = m_AnimationConfig != null ? m_AnimationConfig.Version : 0;
+            if (m_ConfigAttempted && m_ResolvedConfig == m_AnimationConfig && m_ConfigVersion == version && m_ResolvedCharacter == m_CharacterId)
+                return m_ConfigValid;
+            m_ConfigAttempted = true;
+            m_ResolvedConfig = m_AnimationConfig;
+            m_ConfigVersion = version;
+            m_ResolvedCharacter = m_CharacterId;
+            m_Timing = null;
+            m_TimingDirty = true;
+            m_ConfigValid = false;
+            m_CharacterCatalog = null;
+            m_AnimationSettings = null;
+            string error = "no CharacterAnimationConfig assigned";
+            if (m_AnimationConfig != null && m_AnimationConfig.TryResolve(m_CharacterId, "idle_combat",
+                out m_CharacterCatalog, out m_AnimationSettings, out error))
+                m_ConfigValid = true;
+            else
+                Debug.LogError($"{nameof(CombatSpriteRenderer)} on '{name}': animation rejected, nothing is drawn. {error}", this);
+            return m_ConfigValid;
+        }
+
+        void PrepareAnimation()
+        {
+            if (!m_TimingDirty || m_Atlas == null)
+                return;
+            m_TimingDirty = false;
+            m_Timing = null;
+            m_Extraction?.ClearSelections();
+            var errors = new List<string>();
+            var warnings = new List<string>();
+            var definition = m_Atlas.Definition;
+            var path = $"characters.{m_CharacterId}.animations.idle_combat";
+            if (definition.CharacterId != m_CharacterId)
+                errors.Add($"characters.{m_CharacterId}: catalog character_id is {definition.CharacterId}");
+            if (m_CharacterId == "mage_female_01" && (definition.SourceSize.x != 192 || definition.SourceSize.y != 192 ||
+                definition.Pivot.x != 96 || definition.Pivot.y != 160 || definition.NominalHeightPx != 128))
+                errors.Add($"characters.{m_CharacterId}: expected source_size [192,192], pivot [96,160], nominal_height_px 128");
+            if (!definition.TryGetClipIndex("idle_combat", out var clip))
+                errors.Add(path + ": clip missing from manifest");
+            if (errors.Count == 0)
+            {
+                TimingBuilds++;
+                m_Timing = SpriteAnimationTiming.Create(definition.Clips[clip], m_AnimationSettings, path, errors, warnings);
+            }
+            foreach (var warning in warnings)
+                Debug.LogWarning($"{nameof(CombatSpriteRenderer)} on '{name}': {warning}", this);
+            if (m_Timing == null)
+                Debug.LogError($"{nameof(CombatSpriteRenderer)} on '{name}': animation rejected, nothing is drawn.\n  " + string.Join("\n  ", errors), this);
         }
 
         void ResolveDefaultFrame()
@@ -445,6 +542,8 @@ namespace MLFLegends.Combat
         {
             m_Atlas?.Dispose();
             m_Atlas = null;
+            m_Timing = null;
+            m_TimingDirty = true;
             DestroyFixturePages();
             m_LoadAttempted = false;
             m_ResolvedDefaultId = null;

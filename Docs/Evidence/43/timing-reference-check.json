@@ -1,0 +1,17 @@
+{
+  "check": "independent numerical model of source Hermite formula and boundary inversion against SciPy; not C#/Unity execution",
+  "seed": 43,
+  "curves": 180,
+  "amplitude_scales": [
+    1,
+    1e-25,
+    1e-10,
+    10000000000.0,
+    1e+25
+  ],
+  "segments_checked": 3060,
+  "max_boundary_error_seconds": 1.9099388737231493e-11,
+  "max_scaling_error_seconds": 3.637978807091713e-12,
+  "limit_seconds": 0.0001,
+  "result": "PASS"
+}

@@ -1,5 +1,21 @@
 # MLF Legends — Decision log
 
+## Shared character animation configuration — owner requirement, 2026-10-27 (#43)
+
+Owner authorized implementation after first idle package became ready. One CharacterAnimationConfig contains nested
+character/animation settings: N first clip elements, total seconds T and normalized relative-speed AnimationCurve.
+Config timing takes precedence over JSON duration_ms in this mode; JSON remains the authoritative content geometry/
+frame order. Curves integrate/normalize so changing speed shape does not change T. Scope supports finite unweighted
+Hermite curves, endpoint keys0/1, N within available frames and 0<T<=86400; weighted/Constant infinite tangents reject
+explicitly. Inspector displays derived frame intervals. Config edits apply by revision; no second authoritative clock.
+Only mage_female_01/idle_combat configured now; movement/jump still show idle. Common phase is derived from the existing
+battle tick boundary. Manual technical mode is retained explicitly. No PNG/art archive/source enters Git; stable PNG
+.meta and matching JSON/catalog/config/scene bindings do. No implementing-agent merge.
+
+Current base fe324f83 already merged PR #42 after manager STATIC PASS and closed #41 as implementation delivered.
+Its runtime/GPU/measurement checks remain NOT RUN; historical decisions below do not supersede that disposition.
+
+
 ## Stage 03 starts in parallel with character art — owner decision (2026-10-26)
 
 - Owner approved the next ordered task: combine 03.1 atlas contract/loading and 03.2 first GPU instanced renderer/depth in [#38](https://github.com/HolyPenguin21/mlf-legends/issues/38), one branch/PR. Final female-mage art is produced independently; use a generated technical atlas for code validation.

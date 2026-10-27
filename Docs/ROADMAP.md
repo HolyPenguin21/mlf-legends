@@ -1,5 +1,15 @@
 # MLF Legends — Combat development roadmap
 
+## Current delivery — 2026-10-27 / #43
+
+`main` base fe324f83 includes merged #42; #41 is CLOSED as delivered, manager STATIC PASS.
+Its new Unity/GPU/GC measurements remain NOT RUN. Older corrections-requested dispatch notes below are historical.
+Stage 03.3a now supplies the real mage catalog and ONLY idle_combat, plus one shared character/animation config
+(N frames, full duration, normalized speed curve). Existing ECS position/facing/clock are read-only. Source delivery
+has independent manager STATIC PASS; runtime acceptance is NOT RUN. Full state-driven idle/walk/jump remains a separate task;
+03.3 is not complete. See Evidence/43 and Presentation/Sprites/ANIMATION.md for exact boundaries/config/import.
+
+
 **Current manager review (2026-10-26):** main `b997d48` includes merged PR #39/#40 for #38. Source and raw evidence inspected: EditMode 329/329 ×2, headless PlayMode 30 Passed + 8 Ignored ×2, D3D12 Graphics/Performance 8/8 ×2. **CHANGES REQUESTED: [#41](https://github.com/HolyPenguin21/mlf-legends/issues/41)** fixes roster-wide cumulative depth push that breaks 3D occlusion and validates GC/timing measurements. Stage 03.1–03.2 delivered, acceptance pending corrections; art continues in parallel. Stage 02 accepted with earlier qualifications; #30/#17/#25 stay OPEN. Manager did not run Unity. See QA.md.
 
 ## Stage 03 dispatch — owner-approved sequence (2026-10-26)
@@ -27,7 +37,7 @@
 | 00 | GitHub/Unity/URP bootstrap, dependencies, folders, test harness, CI feasibility | Source tracked; editor/packages committed; tests owner-reported PASS; CI and independent evidence deferred | ACCEPTED (OWNER) |
 | 01 | ECS simulation, fixed-step scheduler, entity data, command buffer, replay tests and 2/100/400 ECS baseline | Six main tasks delivered, Bootstrap debt #19 implemented; independent code audit #23 static PASS, owner accepted Stage 02 transition with missing Unity proof tracked in #30 and Windows Unicode/Burst #17 separate. No movement/AI/collisions/renderer yet. | ACCEPTED FOR NEXT STAGE (OWNER) — UNITY QA DEFERRED |
 | 02 | Movement and camera | Deterministic X/Z movement + jump Y, facing/action-state, tick-aligned input, fixed orthographic camera follow/zoom/pan, with one ECS authority | IMPLEMENTATION COMPLETE / MANAGER REVIEW PASS — #31/#33/#35 reviewed; #22 merged via PR #37, fixes and raw 244/244 ×2 + 21/21 ×2 + Performance 7/7 independently inspected; manual/hardware/full-frame QA remains qualified in QA.md |
-| 03 | GPU sprite rendering | Atlas animation, direction/frame selection, stable depth sorting, optional equipment layers, instancing/indirect render assessment | IN PROGRESS — 03.1/03.2 merged (#38, PR #39/#40), manager corrections #41 OPEN for depth/3D occlusion and GC/timing evidence; art smoke NOT RUN; 03.3 follows corrective review |
+| 03 | GPU sprite rendering | Atlas animation, direction/frame selection, stable depth sorting, optional equipment layers, instancing/indirect render assessment | IN PROGRESS — 03.1/03.2 and correction #41 delivered (#42 merged, STATIC PASS); #42 Unity/GPU/GC NOT RUN; #43 real idle + shared config in source review; full state-driven 03.3 deferred |
 | 04 | Collisions | Custom actor/world collision, spatial index, masses, allies yield, enemies block, knockback | NOT STARTED |
 | 05 | Attack resolution | Windup/active/recovery; fast/heavy/jump attacks; shapes, multi-hit rules, damage/impact/stagger | NOT STARTED |
 | 06 | Defense | Facing guard, stability, timely defense/counter opportunity, guard break, dash L+direction | NOT STARTED |
