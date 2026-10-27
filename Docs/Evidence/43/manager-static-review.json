@@ -1,0 +1,44 @@
+{
+  "review": "independent bottom-up source review by manager after implementing-agent delivery",
+  "base_sha": "fe324f83ab0230f1f13ce88f2b6e2f9693837594",
+  "status": "STATIC PASS",
+  "scope": "manifest and bindings -> config validation/revision -> normalized timing -> frame/footprint/depth/page grouping -> GPU ownership -> scene/camera -> session/clock/World -> tests/evidence",
+  "corrections_before_delivery": [
+    "Relative-scale negative-overshoot validation including unused endpoint tangents",
+    "Relative loop endpoint speed-discontinuity warning",
+    "Preserved positive parser coverage on technical fixture after idle-only example change",
+    "Real-art resource check across at least three simulation-time cycles outside timed GC samples"
+  ],
+  "checks": {
+    "csharp_syntax_parse_files": 68,
+    "syntax_errors": 0,
+    "meta_guids": 128,
+    "invalid_or_duplicate_meta_guids": 0,
+    "config_catalog_guid_references": "resolved",
+    "json_parse_files": 7,
+    "git_diff_check": "PASS",
+    "legacy_depth_mutation_apply_check": "PASS (mutation NOT applied/executed)",
+    "PNG_ignored_and_excluded": "PASS",
+    "authoritative_core_commands_simulation_input_packages_settings_changes": "none"
+  },
+  "source_sha256": {
+    "Assets/MLFLegends/Combat/Runtime/Presentation/Sprites/CharacterAnimationConfig.cs": "dc14db24b118e653f68f2c32840ea90ab6125f5d9675965802baf62f7cca340b",
+    "Assets/MLFLegends/Combat/Runtime/Presentation/Sprites/SpriteAnimationTiming.cs": "52587829caa63ceea42f653b1b8a87017b3882ecf8829ecd2a9d76b021228101",
+    "Assets/MLFLegends/Combat/Runtime/Presentation/Sprites/CombatSpriteRenderer.cs": "ac80529e911b9656285da710193b0851a1f80c948bfda0b8d8338c62c6b29a31",
+    "Assets/MLFLegends/Combat/Runtime/Presentation/Sprites/CombatSpriteExtraction.cs": "01c80453d7aa877c8c6fd862688a6bcf66da80ae5715432d760488d73b80f004",
+    "Assets/MLFLegends/Combat/Editor/CharacterAnimationConfigEditor.cs": "1c5ab8e61501dda0cb316da78519018f8a13776390c01c3f01cc3abb8f106df6",
+    "Assets/Scenes/CombatSmoke.unity": "f58c10993b3143711424477789570cae0d14690b6f2725508bbacd72c629616a",
+    "Assets/MLFLegends/Combat/PresentationData/CharacterAnimationConfig.asset": "07107c97413a01bde250f7eaec30fbf6e0092861d71b29155f486dfed389ffcd",
+    "Assets/MLFLegends/Art/Characters/MageFemale01/Metadata/MageFemale01SpriteAtlasCatalog.asset": "3dc80318dd94aa6e11b64787656da5f0260a9b8af5a57a1c860adcf4b8445f3c",
+    "Assets/MLFLegends/Art/Characters/MageFemale01/Atlas/mage_female_01_00.png.meta": "d4912fa05ef7d0913041624203a2e2d0dfa772b1faea1fa85afb11ec7108b7eb"
+  },
+  "Unity compilation and test execution": "NOT RUN",
+  "GPU graphics negative control and performance": "NOT RUN",
+  "limitations": [
+    "C# syntax parsing is not type checking or Unity compilation",
+    "Numerical SciPy source-model check is not C# execution",
+    "Actual art Game view, Frame Debugger and Domain Reload off unverified",
+    "Curves support finite unweighted tangents; 0<T<=86400 seconds",
+    "No merge authorized"
+  ]
+}

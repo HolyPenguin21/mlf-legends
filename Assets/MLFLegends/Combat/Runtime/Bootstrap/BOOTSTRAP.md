@@ -194,3 +194,9 @@ AI producers, movement integration, attacks, collisions, rendering (player input
 Presentation/ #22, movement and facing in Simulation/CombatMovementSystem #31 and CombatFacingSystem #33; Spawn only sets
 the initial facing). Large rosters (#7) are the `Start` above with
 allies, reusing `Spawn` and the same allocator; the benchmark in `Assets/Tests/EditMode/Performance/` uses only that.
+
+## Stage 03.3a scene binding (#43)
+
+CombatSmoke Main Camera now uses CharacterConfig/mage_female_01 and plays only idle_combat. Install the external PNG
+with its tracked meta; JSON/catalog/shared config are committed. No runtime fixture fallback. Manual technical renderer
+mode remains for tests. See Presentation/Sprites/ANIMATION.md. Unity art smoke and GPU checks remain NOT RUN.

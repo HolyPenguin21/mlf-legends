@@ -1,0 +1,100 @@
+{
+  "type": "independent static art inspection; NOT a Unity/GPU test",
+  "base_sha": "fe324f83ab0230f1f13ce88f2b6e2f9693837594",
+  "package": "mage_female_01_idle_combat_package.zip (inner art revision 2)",
+  "png_sha256": "f931423030c6bc39de9f8374cd4d240fc460dda46488fa506ebbc7e21f9321c7",
+  "manifest_sha256": "8d7e273c80f7b7dd1e90de8301bf663e2ebcaefa2ebac867ee3cf294f3350fda",
+  "mode": "RGBA",
+  "size": [
+    1152,
+    192
+  ],
+  "raw_rgba8_bytes": 884736,
+  "alpha_values": [
+    0,
+    255
+  ],
+  "frames": [
+    {
+      "id": "idle_combat_000",
+      "body_bbox_on_canvas": [
+        51,
+        36,
+        142,
+        160
+      ],
+      "body_fits_128": true,
+      "foot_bottom_y": 160,
+      "exact_source_reconstruction": "PASS",
+      "transparent_extrusion": "PASS"
+    },
+    {
+      "id": "idle_combat_001",
+      "body_bbox_on_canvas": [
+        49,
+        32,
+        142,
+        160
+      ],
+      "body_fits_128": true,
+      "foot_bottom_y": 160,
+      "exact_source_reconstruction": "PASS",
+      "transparent_extrusion": "PASS"
+    },
+    {
+      "id": "idle_combat_002",
+      "body_bbox_on_canvas": [
+        50,
+        33,
+        143,
+        160
+      ],
+      "body_fits_128": true,
+      "foot_bottom_y": 160,
+      "exact_source_reconstruction": "PASS",
+      "transparent_extrusion": "PASS"
+    },
+    {
+      "id": "idle_combat_003",
+      "body_bbox_on_canvas": [
+        48,
+        36,
+        142,
+        160
+      ],
+      "body_fits_128": true,
+      "foot_bottom_y": 160,
+      "exact_source_reconstruction": "PASS",
+      "transparent_extrusion": "PASS"
+    },
+    {
+      "id": "idle_combat_004",
+      "body_bbox_on_canvas": [
+        47,
+        41,
+        143,
+        160
+      ],
+      "body_fits_128": true,
+      "foot_bottom_y": 160,
+      "exact_source_reconstruction": "PASS",
+      "transparent_extrusion": "PASS"
+    },
+    {
+      "id": "idle_combat_005",
+      "body_bbox_on_canvas": [
+        49,
+        36,
+        142,
+        160
+      ],
+      "body_fits_128": true,
+      "foot_bottom_y": 160,
+      "exact_source_reconstruction": "PASS",
+      "transparent_extrusion": "PASS"
+    }
+  ],
+  "Unity import and GPU render": "NOT RUN",
+  "artistic smoothness and anatomy": "not established by static checks",
+  "result": "PASS: dimensions, alpha, body bounds, shared baseline, exact frame reconstruction and transparent extrusion"
+}

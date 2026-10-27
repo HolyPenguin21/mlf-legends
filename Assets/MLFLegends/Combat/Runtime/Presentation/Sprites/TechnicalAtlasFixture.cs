@@ -5,7 +5,7 @@ namespace MLFLegends.Combat
     /// <summary>
     /// Reproducible <b>technical</b> atlas generated from code (not a character): asymmetric colour blocks with a transparent
     /// hole, three different trims (one hanging below the pivot, one floating left of and above it), shared frames in two
-    /// clips and two pages of different sizes. Used by the smoke scene until real art is bound, and by tests.
+    /// clips and two pages of different sizes. Retained for regression tests and explicit manual previews; CombatSmoke now binds the real idle catalog.
     /// </summary>
     /// <remarks>
     /// Stricter than the art contract: everything outside a rect and its 2 px extrusion is opaque magenta

@@ -30,7 +30,7 @@ namespace MLFLegends.Combat
     /// tie-break, grouped by atlas page. Owned by <see cref="CombatSpriteRenderer"/>; usable without a graphics device.
     /// </summary>
     /// <remarks>
-    /// Two queries per World, created on the first run against it and released on World change/<see cref="Dispose"/> (a
+    /// Three read-only queries per World, created on the first run against it and released on World change/<see cref="Dispose"/> (a
     /// disposed World released them already). Never writes components, adds entities or makes structural changes. Buffers
     /// are reused; after warm-up a run allocates no managed memory (native Temp only). Frame selections are keyed by
     /// <see cref="CombatantId"/> and dropped on a new battle number or World, so no ID history is kept.
@@ -48,6 +48,7 @@ namespace MLFLegends.Combat
 
         World m_World;
         EntityQuery m_Sessions;
+        EntityQuery m_Clocks;
         EntityQuery m_Combatants;
         uint m_BoundBattle;
         readonly Dictionary<uint, uint> m_Selections = new Dictionary<uint, uint>();
@@ -145,7 +146,7 @@ namespace MLFLegends.Combat
         /// Rebuilds the instances from <paramref name="world"/> (null or disposed → none). <paramref name="defaultFrame"/> is
         /// drawn without a selection; selections outside the atlas fall back to it.
         /// </summary>
-        public void Run(World world, SpriteAtlas atlas, in SpriteCardBasis basis, float depthSeparation, uint defaultFrame, float pixelWorldSize = 2f / 96f)
+        public void Run(World world, SpriteAtlas atlas, in SpriteCardBasis basis, float depthSeparation, uint defaultFrame, float pixelWorldSize = 2f / 96f, SpriteAnimationTiming animation = null)
         {
             if (m_Disposed)
                 throw new ObjectDisposedException(nameof(CombatSpriteExtraction));
@@ -176,6 +177,16 @@ namespace MLFLegends.Combat
             if (!session.IsActive)
                 return;
 
+            if (animation != null)
+            {
+                if (m_Clocks.CalculateEntityCount() != 1)
+                    return; // Invalid/incomplete World: no animation, never a wall-clock fallback.
+                var tick = m_Clocks.GetSingleton<SimulationClock>().Tick;
+                if (tick < session.BattleStartTick)
+                    return; // Guard unsigned underflow on invalid session data.
+                defaultFrame = animation.FrameAt((tick - session.BattleStartTick) / (double)SimulationTiming.TickRateHz);
+            }
+
             using var ids = m_Combatants.ToComponentDataArray<CombatantId>(Allocator.Temp);
             using var positions = m_Combatants.ToComponentDataArray<CombatPosition>(Allocator.Temp);
             using var facings = m_Combatants.ToComponentDataArray<CombatFacing>(Allocator.Temp);
@@ -203,7 +214,7 @@ namespace MLFLegends.Combat
             var screenUp = math.normalize(math.cross(basis.ViewDirection, basis.Right));
             for (var i = 0; i < count; i++)
             {
-                var frame = m_Selections.TryGetValue(ids[i].Value, out var selected) && selected < frameCount ? selected : fallback;
+                var frame = animation == null && m_Selections.TryGetValue(ids[i].Value, out var selected) && selected < frameCount ? selected : fallback;
                 frames[i] = frame;
                 m_PageCounts[framePages[(int)frame]]++;
                 var rect = atlas.Frames[(int)frame].CardRect;
@@ -346,6 +357,7 @@ namespace MLFLegends.Combat
                 return;
             var manager = world.EntityManager;
             m_Sessions = manager.CreateEntityQuery(ComponentType.ReadOnly<BattleSession>());
+            m_Clocks = manager.CreateEntityQuery(ComponentType.ReadOnly<SimulationClock>());
             m_Combatants = manager.CreateEntityQuery(ComponentType.ReadOnly<CombatantId>(), ComponentType.ReadOnly<CombatPosition>(),
                 ComponentType.ReadOnly<CombatFacing>(), ComponentType.ReadOnly<InCombat>());
         }
@@ -355,11 +367,13 @@ namespace MLFLegends.Combat
             if (m_World != null && m_World.IsCreated)
             {
                 m_Sessions.Dispose();
+                m_Clocks.Dispose();
                 m_Combatants.Dispose();
             }
 
             m_World = null;
             m_Sessions = default;
+            m_Clocks = default;
             m_Combatants = default;
             m_BoundBattle = 0;
             if (clearSelections)

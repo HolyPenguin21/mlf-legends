@@ -68,3 +68,6 @@ Desktop.ini
 
 # Locally generated Unity Test Framework XML reports and Editor logs
 /TestResults/
+
+# Character PNG pages are delivered externally; keep stable importer .meta bindings.
+/Assets/MLFLegends/Art/Characters/**/*.png

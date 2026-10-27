@@ -1,5 +1,18 @@
 # MLF Legends — Combat architecture
 
+## Stage 03.3a / #43 — current integration (2026-10-27)
+
+The existing renderer gains an explicit CharacterConfig source. One shared project ScriptableObject maps character
+IDs to existing SpriteAtlasCatalog assets and per-clip N/T/relative-speed curves. SpriteAnimationTiming compiles
+curve integrals/frame boundaries once per revision; extraction reads the existing BattleSession + SimulationClock,
+selects idle_combat BEFORE footprints/depth/page grouping, and writes nothing to ECS. All fighters share the battle
+phase, including while moving/jumping and offscreen. Pause/resume/restart require no new clock/state owner.
+Manual fixture APIs are retained in manual sources. No per-fighter object/Animator/material/texture or second render
+path. Scene uses the real external PNG + tracked JSON/catalog/config. Current nominal mage height128px maps to2units.
+Only idle is integrated; state-driven clip selection/transitions remain deferred. Details: Presentation/Sprites/ANIMATION.md.
+PR #42 is merged and manager STATIC PASS; its and #43's new Unity/GPU/performance evidence remain NOT RUN.
+
+
 **Document type:** combat architecture blueprint and responsibility map. **Stage 01 ECS runtime is implemented and source-reviewed** (#23 static PASS); real Unity compilation/EditMode/PlayMode after PR #28/#29 remain **NOT RUN**, tracked in #30, while the owner started Stage 02 on 2026-10-26. Do not confuse delivery/static review with Unity runtime verification.
 
 ## Target platform and project state

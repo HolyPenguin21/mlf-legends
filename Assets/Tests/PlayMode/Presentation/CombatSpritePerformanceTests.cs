@@ -130,10 +130,19 @@ namespace MLFLegends.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator RendererCostAndAllocationsFor2_100_400([Values(0, 49, 199)] int allies)
+        public IEnumerator RendererCostAndAllocationsFor2_100_400([Values(0, 49, 199)] int allies, [Values(false, true)] bool realArt)
         {
             RequireGraphicsDevice();
             var count = 2 + 2 * allies;
+            var prefix = realArt ? "stage03-idle" : "stage03-sprites";
+            CharacterAnimationConfig config = null;
+            if (realArt)
+            {
+                if (UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/MLFLegends/Art/Characters/MageFemale01/Atlas/mage_female_01_00.png") == null)
+                    Assert.Ignore("NOT RUN: install the external mage PNG before real-art performance.");
+                config = UnityEditor.AssetDatabase.LoadAssetAtPath<CharacterAnimationConfig>("Assets/MLFLegends/Combat/PresentationData/CharacterAnimationConfig.asset");
+                Assert.That(config, Is.Not.Null);
+            }
             RenderTexture target = null;
             Camera camera = null;
             CombatSpriteRenderer renderer = null;
@@ -143,13 +152,14 @@ namespace MLFLegends.Tests.PlayMode
                 target = CreateTarget(512);
                 camera = CreateCamera("Sprite perf camera", new Vector3(0f, 1f, 0f), 14f, target);
                 renderer = CreateRenderer(camera);
+                if (realArt) renderer.ConfigureAnimation(Shader.Find(ShaderName), camera, config, "mage_female_01");
                 yield return RestartBattle(Duel(new float3(-2f, 0f, 0f), FacingDirection.Right, new float3(2f, 0f, 0f), FacingDirection.Left, allies));
                 Profiler.enabled = true;
                 using var meter = new AllocationMeter();
                 meter.Calibrate();
                 var control = Controls(meter);
                 TestContext.WriteLine(control);
-                File.WriteAllText(OutputPath($"stage03-sprites-n{count}-gc-controls.tsv"), control);
+                File.WriteAllText(OutputPath($"{prefix}-n{count}-gc-controls.tsv"), control);
                 meter.AssertControls();
                 using var drawCalls = ProfilerRecorder.StartNew(ProfilerCategory.Render, "Draw Calls Count");
                 using var batches = ProfilerRecorder.StartNew(ProfilerCategory.Render, "Batches Count");
@@ -204,9 +214,9 @@ namespace MLFLegends.Tests.PlayMode
                         };
                     }
                     results[withRenderer] = samples;
-                    WriteRaw(count, withRenderer, samples);
+                    WriteRaw(count, withRenderer, samples, prefix);
                     rows.Add(Row(count, withRenderer, samples, withRenderer ? renderer : null));
-                    Write(count, rows); // preserve raw data even if a later allocation assertion fails
+                    Write(count, rows, prefix); // preserve raw data even if a later allocation assertion fails
                     if (meter.BytesWork || meter.SamplesWork)
                         foreach (var sample in samples) AssertNoAllocation(sample.GcBytes, sample.GcSamples);
                     if (withRenderer)
@@ -215,6 +225,29 @@ namespace MLFLegends.Tests.PlayMode
                         Assert.That(renderer.Stats.InstanceBuffersCreated, Is.EqualTo(buffersAfterWarmup), "No buffer re-creation per frame.");
                         Assert.That(renderer.Atlas.GpuBuffersCreated, Is.EqualTo(atlasBuffers));
                         Assert.That(renderer.Stats.Submissions, Is.EqualTo(1), "One draw submission for all fighters on one page.");
+                        if (realArt)
+                        {
+                            // Outside the GC/timing sample: a fast batchmode run can finish 120 frames before
+                            // one real clip cycle. Observe at least three simulation-time cycles as well.
+                            var atlas = renderer.Atlas;
+                            var timingBuilds = renderer.TimingBuilds;
+                            var buffers = renderer.Stats.InstanceBuffersCreated;
+                            var frameBuffers = atlas.GpuBuffersCreated;
+                            var firstTick = Tick;
+                            var span = (uint)Math.Ceiling(3 * renderer.AnimationTiming.DurationSeconds * SimulationTiming.TickRateHz);
+                            var seen = new HashSet<uint>();
+                            yield return Until(() =>
+                            {
+                                renderer.Refresh();
+                                foreach (var instance in renderer.Extraction.Instances) seen.Add(instance.Frame);
+                                return Tick - firstTick >= span;
+                            }, 30);
+                            Assert.That(seen.Count, Is.EqualTo(6), "Observe all six real idle frames across >=3 full cycles.");
+                            Assert.That(renderer.Atlas, Is.SameAs(atlas));
+                            Assert.That(renderer.TimingBuilds, Is.EqualTo(timingBuilds));
+                            Assert.That(renderer.Stats.InstanceBuffersCreated, Is.EqualTo(buffers));
+                            Assert.That(atlas.GpuBuffersCreated, Is.EqualTo(frameBuffers));
+                        }
                     }
                 }
                 if (results[true][MeasuredFrames - 1].DrawCalls > 0)
@@ -252,7 +285,7 @@ namespace MLFLegends.Tests.PlayMode
 
         static string Allocation(long value) => value < 0 ? "NOT MEASURED" : value.ToString(CultureInfo.InvariantCulture);
 
-        static void WriteRaw(int count, bool withRenderer, Sample[] samples)
+        static void WriteRaw(int count, bool withRenderer, Sample[] samples, string prefix)
         {
             var rows = new List<string> { "sample\trefresh_us\textract_us\tsubmit_us\tcamera_render_us\tgc_bytes\tgc_alloc_samples\tdraw_calls\tbatches\tsetpass" };
             for (var i = 0; i < samples.Length; i++)
@@ -264,7 +297,7 @@ namespace MLFLegends.Tests.PlayMode
                     Allocation(s.GcBytes), Allocation(s.GcSamples), s.DrawCalls.ToString(CultureInfo.InvariantCulture),
                     s.Batches.ToString(CultureInfo.InvariantCulture), s.SetPass.ToString(CultureInfo.InvariantCulture)));
             }
-            File.WriteAllLines(OutputPath($"stage03-sprites-n{count}-{(withRenderer ? "renderer" : "no-renderer")}-raw.tsv"), rows);
+            File.WriteAllLines(OutputPath($"{prefix}-n{count}-{(withRenderer ? "renderer" : "no-renderer")}-raw.tsv"), rows);
         }
 
         static double Median(IEnumerable<double> values)
@@ -310,12 +343,12 @@ namespace MLFLegends.Tests.PlayMode
             });
         }
 
-        static void Write(int count, List<string> rows)
+        static void Write(int count, List<string> rows, string prefix)
         {
             var header = "fighters\tmode\tdevice\trefresh_median_us\trefresh_p95_us\textract_median_us\tsubmit_median_us\tcamera_render_median_us\tgc_bytes_measured\tgc_alloc_samples\t"
                 + "draw_calls_median\tbatches_median\tsetpass_median\tsubmissions\tinstance_buffers_created\tinstance_buffer_bytes\t"
                 + "atlas_page_bytes\tframe_table_bytes";
-            File.WriteAllLines(OutputPath($"stage03-sprites-n{count}.tsv"), new[] { header }.Concat(rows));
+            File.WriteAllLines(OutputPath($"{prefix}-n{count}.tsv"), new[] { header }.Concat(rows));
         }
     }
 }

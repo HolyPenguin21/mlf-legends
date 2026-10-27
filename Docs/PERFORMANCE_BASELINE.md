@@ -1,5 +1,16 @@
 # MLF Legends — Stage 01 ECS performance baseline (Issue #7)
 
+## #43 animated real-mage series prepared — 2026-10-27 (NOT RUN)
+
+PR #42 is merged in base fe324f83; its bounded overlap cost and repaired counters/timing still need fresh actual
+measurements. #43 retains technical stage03-sprites-* and adds stage03-idle-* real six-frame1.2s playback at2/100/400,
+with renderer/no-renderer modes,30warmup/120measured frames, raw TSV and same-process live/empty GC controls. Frame
+selection runs inside extraction's measured scope. Outside GC/timing samples, real-art runs observe >=3 full simulation
+cycles/all6frames and assert no extra timing/atlas/instance/frame-buffer creation. Requires external PNG with tracked meta.
+No new runtime metrics/zero-allocation/FPS claims are made here: Unity/GPU/GC/timing series NOT RUN. Historical #38
+figures precede #42 and cannot validate its changed depth policy. Evidence/43/README.md defines the required series.
+
+
 **What this is:** the measured overhead of the Stage 01 ECS foundation — the fixed-step clock, the command
 processor and the battle lifecycle — with 2, 100 and 400 light combatants that exist at the same time.
 **What this is not:** a combat performance figure. Stage 01 has no movement, collisions, attacks, AI, physics or

@@ -1,5 +1,14 @@
 # Agent workflow — MLF Legends
 
+## Current dispatch — #43 (2026-10-27)
+
+Implement/review Stage 03.3a on feature/stage03-idle-combat: real mage idle_combat ONLY and shared character-animation
+config (N/T/normalized speed curve), existing read-only renderer/extraction and existing simulation clock. One PR,
+no implementing-agent merge, no PNG/art sources committed. Current base main fe324f83 already merged #42 after
+manager STATIC PASS; #41 CLOSED as delivered. Its Unity/GPU/GC reruns and #43 runtime acceptance remain NOT RUN.
+The dated correction task and older dispatch notes below are historical. See #43, ANIMATION.md and Evidence/43.
+
+
 **Current manager correction task (2026-10-26): [#41](https://github.com/HolyPenguin21/mlf-legends/issues/41), after merged PR #39/#40 / #38.** Reviewed main `b997d48`; source + supplied raw evidence inspected, Unity not run by manager. Fix cumulative depth push (distant equal-Z roster members must not pull a fighter through a foreground wall), validate the allocation counter with a positive control and capture Refresh split stats before yield; restore test profiler/resources on failure. One narrow `fix/38-depth-and-measurement` PR, no simulation rewrite or new renderer. #38 is delivered but manager acceptance awaits corrections. Art continues in parallel; 03.3 follows correction review. Full evidence and qualification: QA.md.
 
 **Current implementation dispatch (owner decision, 2026-10-26): [#22](https://github.com/HolyPenguin21/mlf-legends/issues/22) combines Stage 02.3 input and Stage 02.4 camera in ONE branch/PR.** Read the expanded Issue: one tick-aligned Player producer through the existing queue, read-only orthographic follow/pan/zoom, lifecycle/focus/pause cleanup, joint tests. Reuse existing action asset and technical smoke camera; no new visible battle scene before Stage 03. Agent opens the combined PR; manager reviews; owner alone authorizes merge. **Status: MERGED / MANAGER REVIEW PASS** - PR #37 merged on the owner's instruction (2026-10-26) as main `fc5fb67`; the four manager review items were fixed before the merge; agent Unity evidence on `4d9e431` committed in `Docs/Evidence/22/`. Manager inspected the fixed source and raw XML/log/TSV: EditMode 244/244 twice, PlayMode 21/21 twice, Performance 7/7; the 8 mutation regressions fail as intended. Manager did not re-run Unity. Owner GUI, actual hardware/OS focus, Domain Reload disabled and camera/full-frame checks remain unverified; INPUT.md documents conservative first-press loss after an unreported release.
