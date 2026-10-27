@@ -11,14 +11,14 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e0cd4284045e577f9f5347eaa71fee0f, type: 3}
   m_Name: CharacterAnimationConfig
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   m_Characters:
   - CharacterId: mage_female_01
     AtlasCatalog: {fileID: 11400000, guid: 134c5535ff90542f8fcdfb0aa1562436, type: 2}
     Animations:
     - ClipId: idle_combat
       FrameCount: 6
-      TotalDurationSeconds: 1.2
+      TotalDurationSeconds: 1
       SpeedCurve:
         serializedVersion: 2
         m_Curve:
@@ -27,19 +27,19 @@ MonoBehaviour:
           value: 1
           inSlope: 0
           outSlope: 0
-          tangentMode: 0
+          tangentMode: 34
           weightedMode: 0
-          inWeight: 0.33333334
-          outWeight: 0.33333334
+          inWeight: 0
+          outWeight: 0
         - serializedVersion: 3
           time: 1
           value: 1
           inSlope: 0
           outSlope: 0
-          tangentMode: 0
+          tangentMode: 34
           weightedMode: 0
-          inWeight: 0.33333334
-          outWeight: 0.33333334
+          inWeight: 0
+          outWeight: 0
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
