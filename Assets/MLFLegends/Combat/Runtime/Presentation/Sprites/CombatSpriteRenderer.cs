@@ -140,10 +140,14 @@ namespace MLFLegends.Combat
         bool m_ConfigValid;
         SpriteAtlasCatalog m_CharacterCatalog;
         CharacterAnimationSettings m_AnimationSettings;
+        CharacterAnimationSettings m_RunSettings;
         bool m_TimingDirty;
         SpriteAnimationTiming m_Timing;
+        SpriteAnimationTiming m_RunTiming;
 
+        /// <summary>Shared idle_combat timing (not the current per-combatant clip).</summary>
         public SpriteAnimationTiming AnimationTiming => m_Timing;
+        public SpriteAnimationTiming RunAnimationTiming => m_RunTiming;
         public int TimingBuilds { get; private set; }
         public bool UsesCharacterAnimation => m_Source == AtlasSource.CharacterConfig;
 
@@ -280,7 +284,7 @@ namespace MLFLegends.Combat
             m_Catalog = catalog;
         }
 
-        /// <summary>Uses only idle_combat from a shared character config; manual selections are disabled in this mode.</summary>
+        /// <summary>Uses idle_combat/run from a shared character config; manual selections are disabled in this mode.</summary>
         public void ConfigureAnimation(Shader shader, Camera targetCamera, CharacterAnimationConfig config, string characterId)
         {
             m_Shader = shader;
@@ -393,8 +397,8 @@ namespace MLFLegends.Combat
             // A superseded renderer neither reads ECS nor draws (its World binding and selections are kept).
             if (IsActiveOwner)
                 m_Extraction.Run(camera != null ? ResolveWorld() : null,
-                    UsesCharacterAnimation && m_Timing == null ? null : m_Atlas, m_Basis, m_DepthSeparation,
-                    m_DefaultFrame, PixelWorldSize, UsesCharacterAnimation ? m_Timing : null);
+                    UsesCharacterAnimation && (m_Timing == null || m_RunTiming == null) ? null : m_Atlas, m_Basis, m_DepthSeparation,
+                    m_DefaultFrame, PixelWorldSize, UsesCharacterAnimation ? m_Timing : null, UsesCharacterAnimation ? m_RunTiming : null);
             else
                 m_Extraction.Clear();
             m_Stats.ExtractMicroseconds = Microseconds(start);
@@ -479,13 +483,16 @@ namespace MLFLegends.Combat
             m_ConfigVersion = version;
             m_ResolvedCharacter = m_CharacterId;
             m_Timing = null;
+            m_RunTiming = null;
             m_TimingDirty = true;
             m_ConfigValid = false;
             m_CharacterCatalog = null;
             m_AnimationSettings = null;
+            m_RunSettings = null;
             string error = "no CharacterAnimationConfig assigned";
             if (m_AnimationConfig != null && m_AnimationConfig.TryResolve(m_CharacterId, "idle_combat",
-                out m_CharacterCatalog, out m_AnimationSettings, out error))
+                out m_CharacterCatalog, out m_AnimationSettings, out error) &&
+                m_AnimationConfig.TryResolve(m_CharacterId, "run", out _, out m_RunSettings, out error))
                 m_ConfigValid = true;
             else
                 Debug.LogError($"{nameof(CombatSpriteRenderer)} on '{name}': animation rejected, nothing is drawn. {error}", this);
@@ -498,27 +505,39 @@ namespace MLFLegends.Combat
                 return;
             m_TimingDirty = false;
             m_Timing = null;
+            m_RunTiming = null;
             m_Extraction?.ClearSelections();
             var errors = new List<string>();
             var warnings = new List<string>();
             var definition = m_Atlas.Definition;
-            var path = $"characters.{m_CharacterId}.animations.idle_combat";
             if (definition.CharacterId != m_CharacterId)
                 errors.Add($"characters.{m_CharacterId}: catalog character_id is {definition.CharacterId}");
             if (m_CharacterId == "mage_female_01" && (definition.SourceSize.x != 192 || definition.SourceSize.y != 192 ||
                 definition.Pivot.x != 96 || definition.Pivot.y != 160 || definition.NominalHeightPx != 128))
                 errors.Add($"characters.{m_CharacterId}: expected source_size [192,192], pivot [96,160], nominal_height_px 128");
-            if (!definition.TryGetClipIndex("idle_combat", out var clip))
-                errors.Add(path + ": clip missing from manifest");
             if (errors.Count == 0)
             {
                 TimingBuilds++;
-                m_Timing = SpriteAnimationTiming.Create(definition.Clips[clip], m_AnimationSettings, path, errors, warnings);
+                var idle = PrepareClip("idle_combat", m_AnimationSettings, errors, warnings);
+                var run = PrepareClip("run", m_RunSettings, errors, warnings);
+                // Atomic pair: an invalid clip cannot retain either old table or silently substitute idle.
+                if (errors.Count == 0) { m_Timing = idle; m_RunTiming = run; }
             }
             foreach (var warning in warnings)
                 Debug.LogWarning($"{nameof(CombatSpriteRenderer)} on '{name}': {warning}", this);
-            if (m_Timing == null)
+            if (m_Timing == null || m_RunTiming == null)
                 Debug.LogError($"{nameof(CombatSpriteRenderer)} on '{name}': animation rejected, nothing is drawn.\n  " + string.Join("\n  ", errors), this);
+        }
+
+        SpriteAnimationTiming PrepareClip(string clipId, CharacterAnimationSettings settings, List<string> errors, List<string> warnings)
+        {
+            var path = $"characters.{m_CharacterId}.animations.{clipId}";
+            if (!m_Atlas.Definition.TryGetClipIndex(clipId, out var clip))
+            {
+                errors.Add(path + ": clip missing from manifest");
+                return null;
+            }
+            return SpriteAnimationTiming.Create(m_Atlas.Definition.Clips[clip], settings, path, errors, warnings);
         }
 
         void ResolveDefaultFrame()
@@ -540,9 +559,12 @@ namespace MLFLegends.Combat
 
         void UnloadAtlas()
         {
+            // A later character may use fewer pages: do not retain the old catalog's texture/buffer bindings.
+            foreach (var block in m_PageBlocks) block?.Clear();
             m_Atlas?.Dispose();
             m_Atlas = null;
             m_Timing = null;
+            m_RunTiming = null;
             m_TimingDirty = true;
             DestroyFixturePages();
             m_LoadAttempted = false;

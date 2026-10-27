@@ -1,5 +1,31 @@
 # MLF Legends — Stage 01 ECS performance baseline (Issue #7)
 
+## Stage 03.3b / #45 — idle + run (2026-10-27)
+
+Base main `97b8c188` includes owner Unity import/scene/package changes and the owner's idle duration 1s; these are preserved.
+Delivery adds only `run` (5 frames, config default 0.5s) to the existing character atlas/config. Grounded actors use run
+when their current-tick accepted AppliedCombatCommand has nonzero MoveX or MoveZ; airborne/None/stale commands use idle.
+Both clips retain independent N/T/SpeedCurve settings and the existing common battle-relative clock phase; no clip-entry
+clock, per-id history, gameplay writer, new ECS system, Animator or transition FSM. Selector runs before footprint/depth/page
+grouping; manual partial Worlds keep their original component query. Stage 04 collisions will revisit actual-motion criteria.
+
+Input is the latest corrected PNG version4 (1152x384) with compatible revision3 manifest from the idle_run archive.
+PNG SHA256 `d22b2a5950b7902cf2d3730a98022723cfd9ba374b7a6c6cb2ec9ac71195423d`; manifest SHA256
+`27d9ffbbab436c619706673be17e92bf5b6d7634a3b8a0cc8041d89de0b3b573`. Idle row/frame metadata are unchanged.
+PNG remains external/ignored; no art was regenerated. Anchors are estimates, not independently verified anatomy.
+Independent manager bottom-up source review STATIC PASS; raw checks/source hashes are in Evidence/45/manager-static-review.json. Unity compilation/import/Burst,
+authored EditMode/PlayMode/Graphics, actual GC/performance/Game view/Frame Debugger/Domain Reload off remain NOT RUN.
+Evidence and rerun instructions: `Docs/Evidence/45/README.md`. #30/#17/#25 remain separate. One PR, no implementing-agent merge.
+Older #43 idle-only/1.2s dispatch and evidence entries below are historical and do not override the current delivery.
+
+Multi-character contract: the shared config supports many CharacterId entries, each with its OWN SpriteAtlasCatalog,
+manifest/pages and per-clip N/T/curve. Clip IDs are character-scoped; switching the renderer's selected CharacterId
+rebinds its atlas/frame indices/pixel scale/timing and clears all old page property-block references. Synthetic A→B→A
+regression covers different frame counts, page textures/sizes, source/pivot/trim/nominal height and durations, with an
+unrelated invalid entry. Current renderer still selects ONE default character type for the whole roster. Simultaneous
+mixed-character/multi-atlas fighters require separate follow-up #46; this change does not claim that feature.
+
+
 ## #43 animated real-mage series prepared — 2026-10-27 (NOT RUN)
 
 PR #42 is merged in base fe324f83; its bounded overlap cost and repaired counters/timing still need fresh actual

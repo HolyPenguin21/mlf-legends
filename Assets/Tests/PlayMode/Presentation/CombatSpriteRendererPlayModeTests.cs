@@ -275,7 +275,7 @@ namespace MLFLegends.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator TheSmokeSceneDrawsItsBattleWithTheRealIdleCatalog()
+        public IEnumerator TheSmokeSceneDrawsItsBattleWithTheRealIdleRunCatalog()
         {
             if (UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/MLFLegends/Art/Characters/MageFemale01/Atlas/mage_female_01_00.png") == null)
                 Assert.Ignore("NOT RUN: install the external mage PNG with its tracked .meta before real-art smoke.");
@@ -288,7 +288,11 @@ namespace MLFLegends.Tests.PlayMode
             Assert.That(renderer.Atlas.Definition.CharacterId, Is.EqualTo("mage_female_01"));
             Assert.That(renderer.UsesCharacterAnimation, Is.True);
             Assert.That(renderer.AnimationTiming.FrameCount, Is.EqualTo(6));
-            Assert.That(renderer.AnimationTiming.DurationSeconds, Is.EqualTo(1.2));
+            var config = UnityEditor.AssetDatabase.LoadAssetAtPath<CharacterAnimationConfig>("Assets/MLFLegends/Combat/PresentationData/CharacterAnimationConfig.asset");
+            Assert.That(config.TryResolve("mage_female_01", "idle_combat", out _, out var idle, out _), Is.True);
+            Assert.That(renderer.AnimationTiming.DurationSeconds, Is.EqualTo(idle.TotalDurationSeconds));
+            Assert.That(renderer.RunAnimationTiming.FrameCount, Is.EqualTo(5));
+            Assert.That(renderer.RunAnimationTiming.DurationSeconds, Is.EqualTo(0.5));
             Assert.That(renderer.PixelWorldSize, Is.EqualTo(2f / 128f));
             Assert.That(renderer.IsActiveOwner, Is.True);
             AssertMatchesEcs(renderer);

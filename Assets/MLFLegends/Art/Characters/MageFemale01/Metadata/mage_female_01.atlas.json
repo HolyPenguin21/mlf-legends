@@ -15,7 +15,7 @@
     {
       "file": "mage_female_01_00.png",
       "width": 1152,
-      "height": 192
+      "height": 384
     }
   ],
   "frames": {
@@ -258,6 +258,206 @@
         },
         "cast_origin": null
       }
+    },
+    "run_000": {
+      "page": 0,
+      "rect": [
+        20,
+        212,
+        152,
+        152
+      ],
+      "trim_offset": [
+        20,
+        20
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            120,
+            86
+          ],
+          "direction": [
+            1,
+            -0.2
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            77,
+            107
+          ],
+          "direction": [
+            -0.5,
+            0.8
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "run_001": {
+      "page": 0,
+      "rect": [
+        212,
+        212,
+        152,
+        152
+      ],
+      "trim_offset": [
+        20,
+        20
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            119,
+            87
+          ],
+          "direction": [
+            1,
+            -0.2
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            85,
+            108
+          ],
+          "direction": [
+            -0.5,
+            0.8
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "run_002": {
+      "page": 0,
+      "rect": [
+        404,
+        212,
+        152,
+        152
+      ],
+      "trim_offset": [
+        20,
+        20
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            122,
+            86
+          ],
+          "direction": [
+            1,
+            -0.2
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            83,
+            101
+          ],
+          "direction": [
+            -0.5,
+            0.8
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "run_003": {
+      "page": 0,
+      "rect": [
+        596,
+        212,
+        152,
+        152
+      ],
+      "trim_offset": [
+        20,
+        20
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            54,
+            99
+          ],
+          "direction": [
+            -0.5,
+            0.8
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            132,
+            87
+          ],
+          "direction": [
+            1,
+            -0.2
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "run_004": {
+      "page": 0,
+      "rect": [
+        788,
+        212,
+        152,
+        152
+      ],
+      "trim_offset": [
+        20,
+        20
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            118,
+            86
+          ],
+          "direction": [
+            1,
+            -0.2
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            87,
+            108
+          ],
+          "direction": [
+            -0.5,
+            0.8
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
     }
   },
   "clips": {
@@ -291,12 +491,39 @@
       "loop": true,
       "hold_last": false,
       "markers": {}
+    },
+    "run": {
+      "frames": [
+        {
+          "id": "run_000",
+          "duration_ms": 100
+        },
+        {
+          "id": "run_001",
+          "duration_ms": 100
+        },
+        {
+          "id": "run_002",
+          "duration_ms": 100
+        },
+        {
+          "id": "run_003",
+          "duration_ms": 100
+        },
+        {
+          "id": "run_004",
+          "duration_ms": 100
+        }
+      ],
+      "loop": true,
+      "hold_last": false,
+      "markers": {}
     }
   },
   "compatible_transitions": [],
   "meta": {
-    "status": "intermediate_idle_combat_only",
-    "revision": 2,
+    "status": "intermediate_two_clips",
+    "revision": 3,
     "cell_size": [
       192,
       192
@@ -305,10 +532,16 @@
       128,
       128
     ],
-    "layout": "one animation per row; row 0 idle_combat",
-    "duration_ms": 1200,
-    "anchors_status": "estimated by hand, pending anatomical review",
-    "art_review": "pending",
-    "extension": "Preserve IDs and cell positions; append animation rows, then additional pages. Rects changed in v2 repair; replace PNG and JSON together."
+    "layout": {
+      "row_0": "idle_combat",
+      "row_1": "run; sixth cell empty"
+    },
+    "duration_ms": {
+      "idle_combat": 1200,
+      "run": 500
+    },
+    "anchors_status": "hand-position estimates; visual debug preview included",
+    "art_review": "visual consistency checked at final pixel size; not a Unity playback check",
+    "extension": "Preserve current frame IDs, page indices and rects; append new 192px rows or pages."
   }
 }

@@ -58,7 +58,7 @@ namespace MLFLegends.Combat
                 return null;
             }
             if (!clip.Loop || clip.HoldLast)
-                errors.Add(path + ": idle playback requires loop=true and hold_last=false");
+                errors.Add(path + ": looping playback requires loop=true and hold_last=false");
             var n = settings.FrameCount;
             var duration = settings.TotalDurationSeconds;
             if (n < 1 || n > clip.Frames.Count)

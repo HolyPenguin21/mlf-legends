@@ -1,7 +1,7 @@
-# Character animation — Stage 03.3a / #43
+# Character animation — Stage 03.3b / #45
 
-Current scope is one real `mage_female_01`, one `idle_combat` loop, used even while moving/jumping.
-No state-driven clip selection, transitions, root motion, gameplay events or per-fighter visual objects.
+Current #45 scope is one real `mage_female_01`, with `idle_combat` and `run` loops. Grounded current-tick accepted X/Z movement uses run; airborne, implicit None, zero or stale movement uses idle.
+The two-clip presentation selector reads existing state only. No transitions, action FSM, root motion, gameplay events or per-fighter visual objects.
 
 ## Setup and ownership
 
@@ -11,17 +11,17 @@ The one shared config has Characters → CharacterId / AtlasCatalog / Animations
 TotalDurationSeconds / SpeedCurve. It points to the existing per-character `SpriteAtlasCatalog`, which binds
 JSON and exact PNG basenames. The renderer has no second active catalog reference in this mode.
 
-Install the external revision-2 PNG at
+Install the latest corrected external PNG version4 at
 `Assets/MLFLegends/Art/Characters/MageFemale01/Atlas/mage_female_01_00.png`, preserving the tracked `.meta`.
 The matching JSON and catalog/.meta are included. PNG SHA256:
-`f931423030c6bc39de9f8374cd4d240fc460dda46488fa506ebbc7e21f9321c7`;
-JSON SHA256: `8d7e273c80f7b7dd1e90de8301bf663e2ebcaefa2ebac867ee3cf294f3350fda`.
+`d22b2a5950b7902cf2d3730a98022723cfd9ba374b7a6c6cb2ec9ac71195423d`;
+JSON SHA256: `27d9ffbbab436c619706673be17e92bf5b6d7634a3b8a0cc8041d89de0b3b573`.
 The PNG is intentionally ignored in Git. It is not generated or substituted at runtime.
 Import RGBA32/sRGB, Point, Clamp, no mipmaps/compression/NPOT resize, max 2048, not Read/Write.
 
-Defaults: 6 frames, 1.2 seconds, speed 1. Nominal 128 px = 2 world units (`2/128` per source pixel),
-canvas 192x192, common pivot [96,160]. All six source bodies fit 128x128 and their bottom bound is y160.
-Transparent guards inside 136x136 useful rects keep extrusion outside body pixels. A row is an art packing
+Owner idle settings preserved: 6 frames, 1 second, speed 1. Added run defaults: 5 frames, 0.5 second, speed 1. The 1152x384 page has idle in row 0, run in row 1 (sixth cell empty); RGBA8 mip0 storage 1769472 bytes. Nominal 128 px = 2 world units (`2/128` per source pixel),
+canvas 192x192, common pivot [96,160]. All source bodies fit 128x128; idle bottom is y160. Run has authored airborne stride poses; no per-frame normalization of their bounds.
+Transparent guards inside idle 136x136 / run 152x152 useful rects keep extrusion outside body pixels. A row is an art packing
 convention; runtime reads rects/pages, never assumes a fixed grid. Point is not pixel-perfect at arbitrary
 fractional camera zoom; no pixel snapping/morphing system was added.
 
@@ -45,21 +45,21 @@ intervals. A zero-speed plateau exactly on a frame boundary belongs to the NEXT 
 Within the supported duration domain the boundary target is <0.1ms; independent Python/SciPy checks are numerical
 source-model evidence, not execution of this C# or Unity. Frames shorter than a tick/render interval can be skipped.
 
-Everyone shares the battle phase; no per-id timing state is needed. The fixed clock freezes on pause, repeated
+Both clips use the same elapsed battle time and their own T/curve, including at switches; switching never restarts at frame0. Everyone shares the battle phase; no per-id timing state is needed. The fixed clock freezes on pause, repeated
 Refresh never advances phase, resume retains it. Restart uses the new BattleStartTick, even while paused. World
 change/disposal rebinds read-only queries; invalid/missing session/clock or Tick<start draws nothing. Offscreen,
 disabled renderer and zero active roster do not stop ECS or elapsed time. Reappearance uses the current phase.
 
 ## Integration, caching and edits
 
-The existing extraction adds one read-only clock query (three queries per World total). It selects the current
+The existing extraction keeps three read-only queries per World. With a run table it also obtains a temporary entity array and reads optional CombatMotion/AppliedCombatCommand; manual fixtures need no new components. It selects the current
 frame BEFORE projected footprint/depth offsets/page grouping, so changed trim/pages/anchors use the same frame.
 The bounded #42 depth policy and shader are unchanged. Renderer manual `Configure`/SetFrame/SetClipFrame/
 SetDefaultFrame remain for technical tests; Set* returns false in CharacterConfig mode. Explicitly configure
 manual mode to preview individual frames; it cannot silently override the animated mode.
 
-JSON/atlas tables load once per catalog/version. Timing resolves once per selected config revision and is shared
-by the whole roster. Timing edits do not reload an unchanged atlas or its GPU frame table. Use Inspector or
+JSON/atlas tables load once per catalog/version. Both timings resolve once per selected config revision and are shared
+by the whole roster. Missing/invalid either clip atomically rejects the pair and clears old timing; no idle substitution for missing run. Timing edits do not reload an unchanged atlas or its GPU frame table. Use Inspector or
 `CharacterAnimationConfig.Set` to replace runtime settings (defensive copy, Version++); do not mutate objects
 exposed by Characters directly. Edits recompute phase from current battle time with the new N/T/curve. Invalid
 settings clear timing/draw and log once per revision; corrected config/catalog Version resumes without restart.
@@ -73,14 +73,39 @@ Atlas reload invalidates indices/timing; buffers grow by capacity only, unchange
 
 ## Validation boundary
 
-New EditMode: timing/count/duration/curve errors and scale invariance, config IDs/copies, animated extraction pages
-and 400 roster, read-only identical replay. New PlayMode: 2/100/400, pause, paused Restart/End, visibility/disable,
+EditMode additionally covers all eight directions and Player/AI sources, rejected input, airborne/landing/facing, stale Applied tick on re-enable, manual partial Worlds, mixed pages/trim and read-only identical replay. New PlayMode: 2/100/400, pause, paused Restart/End, visibility/disable,
 config error/recovery/no-fallback, atlas reuse, World disposal/rebind. Graphics compares animated page/trim/flip
 with an independently selected manual frame at 1/2/3 pixels per source pixel. Existing manual graphics/depth tests
 remain. Real-art smoke skips explicitly BEFORE scene loading if external PNG is absent. Performance retains
-`stage03-sprites-*` technical controls and adds `stage03-idle-*` real animated series at 2/100/400, with the same
+`stage03-sprites-*` technical controls and adds `stage03-idle-run-*` mixed real animated series at 2/100/400, with a test-only producer in existing Collection/queue (allocations outside Refresh measurement), at least three cycles of both clips/all11 frames, and the same
 validated allocation controls and synchronous pre-yield timing. The two prefixes do not overwrite each other.
 
 Unity compilation/import/Burst, all authored Unity tests, real GPU output, fresh GC/performance, art Game view,
 Frame Debugger/player build/Domain Reload off are NOT RUN here. No historical #38 result verifies #42/#43.
-See `Docs/Evidence/43/README.md` for required exact-SHA runs and collected static evidence.
+See `Docs/Evidence/45/README.md` for required exact-SHA runs and collected static evidence.
+
+## #45 source-selection details
+
+Grounded is read AFTER movement, so jump takeoff already selects idle and landing with nonzero movement selects run.
+Command.Tick must equal SimulationClock.Tick and Command.Combatant must match the extracted ID. WasSubmitted is not a
+movement criterion; raw input and held jump are never read. Current Movement has no blocking collisions: accepted MoveX/Z
+is its actual planar movement input. When collision resolution arrives this graphical criterion needs explicit review.
+AnimationTiming is always the idle cached table, not a per-combatant current-clip property; RunAnimationTiming exposes run.
+Both share one atlas/GPU tables and one submission per occupied page. No curve integration or config lookup occurs per actor.
+The latest PNG supersedes run pixels in the earlier idle_run ZIP; do not extract the old archive PNG over the correction.
+Its metadata is geometrically compatible and kept unchanged, but equality to the ZIP's older separate run frames is not claimed.
+User Unity package/import/scene edits from97b8c188 and idle1s curve are preserved; GPU rendering uses JSON trim/pivot rather
+than Unity Sprite Editor slices. Download only the latest PNG to the existing Atlas path, keeping the existing .meta GUID.
+
+## Multiple characters and catalogs
+
+The common config can contain many character entries. Every CharacterId binds its own SpriteAtlasCatalog/manifest/pages
+and its own idle/run settings; same clip IDs in different characters never share frame indices or timing. ConfigureAnimation
+selects the desired character for this renderer. A catalog/character switch disposes old native/GPU frame data, clears
+all old MaterialPropertyBlock texture/buffer references (including unused page slots), and binds the new frame table,
+PixelWorldSize and timing. Imported catalogs/textures remain project-owned. Synthetic A→B→A regression checks two very
+different catalogs plus an unrelated invalid entry.
+
+Currently the renderer applies ONE selected default character type to the whole ECS roster. Different characters
+simultaneously in one battle need the separate #46 per-combatant appearance/multi-atlas integration; it is not implemented
+by adding config entries alone. No second real character, appearance writer or universal atlas registry was added here.
