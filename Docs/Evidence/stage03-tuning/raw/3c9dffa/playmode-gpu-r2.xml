@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="22" result="Passed" total="22" passed="22" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-28 12:05:23Z" end-time="2026-10-28 12:05:50Z" duration="26,6681257">
+  <test-suite type="TestSuite" id="1094" name="mlf-legends" fullname="mlf-legends" runstate="Runnable" testcasecount="66" result="Passed" start-time="2026-10-28 12:05:23Z" end-time="2026-10-28 12:05:50Z" duration="26.668126" total="22" passed="22" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1087" name="MLFLegends.Tests.PlayMode.dll" fullname="D:/Unity/Project/mlf-w48/Library/ScriptAssemblies/MLFLegends.Tests.PlayMode.dll" runstate="Runnable" testcasecount="66" result="Passed" start-time="2026-10-28 12:05:23Z" end-time="2026-10-28 12:05:50Z" duration="26.656090" total="22" passed="22" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="400" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1088" name="MLFLegends" fullname="MLFLegends" runstate="Runnable" testcasecount="66" result="Passed" start-time="2026-10-28 12:05:23Z" end-time="2026-10-28 12:05:50Z" duration="26.654405" total="22" passed="22" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1089" name="Tests" fullname="MLFLegends.Tests" runstate="Runnable" testcasecount="66" result="Passed" start-time="2026-10-28 12:05:23Z" end-time="2026-10-28 12:05:50Z" duration="26.653118" total="22" passed="22" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1090" name="PlayMode" fullname="MLFLegends.Tests.PlayMode" runstate="Runnable" testcasecount="66" result="Passed" start-time="2026-10-28 12:05:23Z" end-time="2026-10-28 12:05:50Z" duration="26.651951" total="22" passed="22" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1029" name="CombatSpriteAnimationPlayModeTests" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" testcasecount="17" result="Passed" start-time="2026-10-28 12:05:23Z" end-time="2026-10-28 12:05:30Z" duration="6.672002" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="ParameterizedMethod" id="1045" name="AnimatedPageChangesMatchTheIndependentlySelectedManualFrame" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.AnimatedPageChangesMatchTheIndependentlySelectedManualFrame" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-28 12:05:23Z" end-time="2026-10-28 12:05:26Z" duration="2.600602" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="Category" value="Graphics" />
+                </properties>
+                <test-case id="1042" name="AnimatedPageChangesMatchTheIndependentlySelectedManualFrame(1)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.AnimatedPageChangesMatchTheIndependentlySelectedManualFrame(1)" methodname="AnimatedPageChangesMatchTheIndependentlySelectedManualFrame" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" seed="1857621482" result="Passed" start-time="2026-10-28 12:05:23Z" end-time="2026-10-28 12:05:25Z" duration="1.195588" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+]]></output>
+                </test-case>
+                <test-case id="1043" name="AnimatedPageChangesMatchTheIndependentlySelectedManualFrame(2)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.AnimatedPageChangesMatchTheIndependentlySelectedManualFrame(2)" methodname="AnimatedPageChangesMatchTheIndependentlySelectedManualFrame" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" seed="1770229340" result="Passed" start-time="2026-10-28 12:05:25Z" end-time="2026-10-28 12:05:25Z" duration="0.722089" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+]]></output>
+                </test-case>
+                <test-case id="1044" name="AnimatedPageChangesMatchTheIndependentlySelectedManualFrame(3)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.AnimatedPageChangesMatchTheIndependentlySelectedManualFrame(3)" methodname="AnimatedPageChangesMatchTheIndependentlySelectedManualFrame" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" seed="1570771965" result="Passed" start-time="2026-10-28 12:05:25Z" end-time="2026-10-28 12:05:26Z" duration="0.669905" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+]]></output>
+                </test-case>
+              </test-suite>
+              <test-suite type="ParameterizedMethod" id="1049" name="MixedIdleRunStrikeMatchesManualFramesAcrossPagesAndDepth" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.MixedIdleRunStrikeMatchesManualFramesAcrossPagesAndDepth" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-28 12:05:26Z" end-time="2026-10-28 12:05:30Z" duration="4.067138" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="Category" value="Graphics" />
+                </properties>
+                <test-case id="1046" name="MixedIdleRunStrikeMatchesManualFramesAcrossPagesAndDepth(1)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.MixedIdleRunStrikeMatchesManualFramesAcrossPagesAndDepth(1)" methodname="MixedIdleRunStrikeMatchesManualFramesAcrossPagesAndDepth" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" seed="98604585" result="Passed" start-time="2026-10-28 12:05:26Z" end-time="2026-10-28 12:05:27Z" duration="1.380611" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+]]></output>
+                </test-case>
+                <test-case id="1047" name="MixedIdleRunStrikeMatchesManualFramesAcrossPagesAndDepth(2)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.MixedIdleRunStrikeMatchesManualFramesAcrossPagesAndDepth(2)" methodname="MixedIdleRunStrikeMatchesManualFramesAcrossPagesAndDepth" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" seed="499246022" result="Passed" start-time="2026-10-28 12:05:27Z" end-time="2026-10-28 12:05:29Z" duration="1.329432" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+]]></output>
+                </test-case>
+                <test-case id="1048" name="MixedIdleRunStrikeMatchesManualFramesAcrossPagesAndDepth(3)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.MixedIdleRunStrikeMatchesManualFramesAcrossPagesAndDepth(3)" methodname="MixedIdleRunStrikeMatchesManualFramesAcrossPagesAndDepth" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" seed="1919728679" result="Passed" start-time="2026-10-28 12:05:29Z" end-time="2026-10-28 12:05:30Z" duration="1.355717" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestFixture" id="1052" name="CombatSpriteGraphicsTests" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-10-28 12:05:30Z" end-time="2026-10-28 12:05:38Z" duration="7.590552" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="Graphics" />
+              </properties>
+              <test-case id="1055" name="AFighterPassingThroughAnotherInDepthSwapsFrontExactlyAtEqualDepth" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.AFighterPassingThroughAnotherInDepthSwapsFrontExactlyAtEqualDepth" methodname="AFighterPassingThroughAnotherInDepthSwapsFrontExactlyAtEqualDepth" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" seed="1168374653" result="Passed" start-time="2026-10-28 12:05:30Z" end-time="2026-10-28 12:05:31Z" duration="0.979588" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1060" name="CloseWallOcclusionIsIndependentOfDistantRoster" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.CloseWallOcclusionIsIndependentOfDistantRoster" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-28 12:05:31Z" end-time="2026-10-28 12:05:31Z" duration="0.460333" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                </properties>
+                <test-case id="1057" name="CloseWallOcclusionIsIndependentOfDistantRoster(0)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.CloseWallOcclusionIsIndependentOfDistantRoster(0)" methodname="CloseWallOcclusionIsIndependentOfDistantRoster" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" seed="1485075572" result="Passed" start-time="2026-10-28 12:05:31Z" end-time="2026-10-28 12:05:31Z" duration="0.155100" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1058" name="CloseWallOcclusionIsIndependentOfDistantRoster(49)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.CloseWallOcclusionIsIndependentOfDistantRoster(49)" methodname="CloseWallOcclusionIsIndependentOfDistantRoster" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" seed="621218464" result="Passed" start-time="2026-10-28 12:05:31Z" end-time="2026-10-28 12:05:31Z" duration="0.149813" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1059" name="CloseWallOcclusionIsIndependentOfDistantRoster(199)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.CloseWallOcclusionIsIndependentOfDistantRoster(199)" methodname="CloseWallOcclusionIsIndependentOfDistantRoster" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" seed="1750019755" result="Passed" start-time="2026-10-28 12:05:31Z" end-time="2026-10-28 12:05:31Z" duration="0.154259" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-case id="1061" name="FourHundredCoincidentFightersKeepIdOrderAcrossPagesAndChunkChanges" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.FourHundredCoincidentFightersKeepIdOrderAcrossPagesAndChunkChanges" methodname="FourHundredCoincidentFightersKeepIdOrderAcrossPagesAndChunkChanges" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" seed="296558160" result="Passed" start-time="2026-10-28 12:05:31Z" end-time="2026-10-28 12:05:36Z" duration="4.432121" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1056" name="JumpPanAndZoomKeepTheDepthOrder" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.JumpPanAndZoomKeepTheDepthOrder" methodname="JumpPanAndZoomKeepTheDepthOrder" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" seed="1574841434" result="Passed" start-time="2026-10-28 12:05:36Z" end-time="2026-10-28 12:05:36Z" duration="0.428373" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1054" name="NearerFightersCoverFartherOnesAcrossPagesAndTiesFollowTheId" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.NearerFightersCoverFartherOnesAcrossPagesAndTiesFollowTheId" methodname="NearerFightersCoverFartherOnesAcrossPagesAndTiesFollowTheId" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" seed="1886660402" result="Passed" start-time="2026-10-28 12:05:36Z" end-time="2026-10-28 12:05:37Z" duration="0.894609" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1062" name="OpaqueGeometryOccludesInFrontAndNotBehindAndFeetStayOnTheFloor" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.OpaqueGeometryOccludesInFrontAndNotBehindAndFeetStayOnTheFloor" methodname="OpaqueGeometryOccludesInFrontAndNotBehindAndFeetStayOnTheFloor" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" seed="429537398" result="Passed" start-time="2026-10-28 12:05:37Z" end-time="2026-10-28 12:05:37Z" duration="0.040018" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1053" name="TrimFlipColoursHolesAndFramesLandOnTheExpectedPixels" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.TrimFlipColoursHolesAndFramesLandOnTheExpectedPixels" methodname="TrimFlipColoursHolesAndFramesLandOnTheExpectedPixels" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" seed="1523883655" result="Passed" start-time="2026-10-28 12:05:37Z" end-time="2026-10-28 12:05:38Z" duration="0.351402" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1063" name="CombatSpritePerformanceTests" fullname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests" classname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-10-28 12:05:38Z" end-time="2026-10-28 12:05:50Z" duration="12.386718" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="Performance" />
+              </properties>
+              <test-case id="1064" name="AllocationMeasurementDetectsALiveAllocationAndRejectsAZeroAllocationClaim" fullname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests.AllocationMeasurementDetectsALiveAllocationAndRejectsAZeroAllocationClaim" methodname="AllocationMeasurementDetectsALiveAllocationAndRejectsAZeroAllocationClaim" classname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests" runstate="Runnable" seed="1731480856" result="Passed" start-time="2026-10-28 12:05:38Z" end-time="2026-10-28 12:05:38Z" duration="0.030269" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[device	positive_bytes	empty_bytes	byte_counter_valid	positive_samples	empty_samples	sample_counter_valid
+Direct3D12	0	0	False	1	0	True
+
+]]></output>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1071" name="RendererCostAndAllocationsFor2_100_400" fullname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests.RendererCostAndAllocationsFor2_100_400" classname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-10-28 12:05:38Z" end-time="2026-10-28 12:05:50Z" duration="12.354406" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                </properties>
+                <test-case id="1065" name="RendererCostAndAllocationsFor2_100_400(0,False)" fullname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests.RendererCostAndAllocationsFor2_100_400(0,False)" methodname="RendererCostAndAllocationsFor2_100_400" classname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests" runstate="Runnable" seed="1175114333" result="Passed" start-time="2026-10-28 12:05:38Z" end-time="2026-10-28 12:05:38Z" duration="0.502615" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[device	positive_bytes	empty_bytes	byte_counter_valid	positive_samples	empty_samples	sample_counter_valid
+Direct3D12	0	0	False	1	0	True
+
+]]></output>
+                </test-case>
+                <test-case id="1066" name="RendererCostAndAllocationsFor2_100_400(0,True)" fullname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests.RendererCostAndAllocationsFor2_100_400(0,True)" methodname="RendererCostAndAllocationsFor2_100_400" classname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests" runstate="Runnable" seed="1378889777" result="Passed" start-time="2026-10-28 12:05:38Z" end-time="2026-10-28 12:05:42Z" duration="3.450640" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CombatSpriteRenderer on 'Combat sprites': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+device	positive_bytes	empty_bytes	byte_counter_valid	positive_samples	empty_samples	sample_counter_valid
+Direct3D12	0	0	False	1	0	True
+
+CombatSpriteRenderer on 'Combat sprites': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+]]></output>
+                </test-case>
+                <test-case id="1067" name="RendererCostAndAllocationsFor2_100_400(49,False)" fullname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests.RendererCostAndAllocationsFor2_100_400(49,False)" methodname="RendererCostAndAllocationsFor2_100_400" classname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests" runstate="Runnable" seed="2060840971" result="Passed" start-time="2026-10-28 12:05:42Z" end-time="2026-10-28 12:05:42Z" duration="0.490211" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[device	positive_bytes	empty_bytes	byte_counter_valid	positive_samples	empty_samples	sample_counter_valid
+Direct3D12	0	0	False	1	0	True
+
+]]></output>
+                </test-case>
+                <test-case id="1068" name="RendererCostAndAllocationsFor2_100_400(49,True)" fullname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests.RendererCostAndAllocationsFor2_100_400(49,True)" methodname="RendererCostAndAllocationsFor2_100_400" classname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests" runstate="Runnable" seed="1417336922" result="Passed" start-time="2026-10-28 12:05:42Z" end-time="2026-10-28 12:05:46Z" duration="3.473632" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CombatSpriteRenderer on 'Combat sprites': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+device	positive_bytes	empty_bytes	byte_counter_valid	positive_samples	empty_samples	sample_counter_valid
+Direct3D12	0	0	False	1	0	True
+
+CombatSpriteRenderer on 'Combat sprites': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+]]></output>
+                </test-case>
+                <test-case id="1069" name="RendererCostAndAllocationsFor2_100_400(199,False)" fullname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests.RendererCostAndAllocationsFor2_100_400(199,False)" methodname="RendererCostAndAllocationsFor2_100_400" classname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests" runstate="Runnable" seed="951317589" result="Passed" start-time="2026-10-28 12:05:46Z" end-time="2026-10-28 12:05:46Z" duration="0.743111" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[device	positive_bytes	empty_bytes	byte_counter_valid	positive_samples	empty_samples	sample_counter_valid
+Direct3D12	0	0	False	1	0	True
+
+]]></output>
+                </test-case>
+                <test-case id="1070" name="RendererCostAndAllocationsFor2_100_400(199,True)" fullname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests.RendererCostAndAllocationsFor2_100_400(199,True)" methodname="RendererCostAndAllocationsFor2_100_400" classname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests" runstate="Runnable" seed="610167332" result="Passed" start-time="2026-10-28 12:05:46Z" end-time="2026-10-28 12:05:50Z" duration="3.691147" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CombatSpriteRenderer on 'Combat sprites': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+device	positive_bytes	empty_bytes	byte_counter_valid	positive_samples	empty_samples	sample_counter_valid
+Direct3D12	0	0	False	1	0	True
+
+CombatSpriteRenderer on 'Combat sprites': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+Saving results to: C:/Users/Стас/AppData/LocalLow/DefaultCompany/mlf-legends\TestResults.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
