@@ -23,7 +23,8 @@ namespace MLFLegends.Combat
     /// give <see cref="CombatStrikeSchedule"/> (phases, duration and curve → ticks), published on enable and again whenever
     /// the config or its atlas catalog changes (one version compare per frame; derived only on change). Running strikes keep
     /// their timing; an invalid config is reported and the previous table stays. Without a config the World keeps its table
-    /// (the <see cref="CombatAttackTuning"/> defaults unless something else published). On disable the table this bootstrap
+    /// (the <see cref="CombatAttackTuning"/> defaults unless something else published); a World without the table (no
+    /// CombatActionSystem) is skipped, and a replaced default World gets the table again. On disable the table this bootstrap
     /// replaced is restored, unless someone published after it (e.g. the next scene's bootstrap), so a scene's windows never
     /// outlive it.</para>
     /// </remarks>
@@ -54,7 +55,8 @@ namespace MLFLegends.Combat
         static uint s_LastOwner;
         uint m_Owner;
 
-        // What the last publish attempt was derived from; any change triggers one new derivation.
+        // What the last publish attempt was derived from (and into which World); any change triggers one new derivation.
+        World m_ScheduleWorld;
         CharacterAnimationConfig m_ScheduleConfig;
         string m_ScheduleCharacter;
         int m_ScheduleVersion;
@@ -222,7 +224,7 @@ namespace MLFLegends.Combat
         }
 
         bool ScheduleSourceChanged() =>
-            !m_ScheduleAttempted || m_ScheduleConfig != m_AnimationConfig || m_ScheduleCharacter != m_StrikeCharacterId
+            !m_ScheduleAttempted || m_ScheduleWorld != World.DefaultGameObjectInjectionWorld || m_ScheduleConfig != m_AnimationConfig || m_ScheduleCharacter != m_StrikeCharacterId
             || (m_AnimationConfig != null && m_ScheduleVersion != m_AnimationConfig.Version)
             || (m_ScheduleCatalog != null && m_ScheduleCatalogVersion != m_ScheduleCatalog.Version);
 
@@ -233,11 +235,17 @@ namespace MLFLegends.Combat
         void PublishSchedule(EntityManager entityManager)
         {
             m_ScheduleAttempted = true;
+            if (m_ScheduleWorld != World.DefaultGameObjectInjectionWorld)
+                m_HasReplacedSchedule = false; // the table to restore belongs to the World it was taken from
+            m_ScheduleWorld = World.DefaultGameObjectInjectionWorld;
             m_ScheduleConfig = m_AnimationConfig;
             m_ScheduleCharacter = m_StrikeCharacterId;
             m_ScheduleVersion = m_AnimationConfig != null ? m_AnimationConfig.Version : 0;
             m_ScheduleCatalog = null;
             var prefix = $"{nameof(CombatSmokeBootstrap)} on '{name}'";
+            // A World without CombatActionSystem (e.g. a partial test World) simulates no strikes and has no table.
+            if (!TryGetSchedule(entityManager, out _))
+                return;
             if (m_AnimationConfig == null)
             {
                 Debug.LogWarning($"{prefix}: no CharacterAnimationConfig assigned; strikes keep the World's current windows " +

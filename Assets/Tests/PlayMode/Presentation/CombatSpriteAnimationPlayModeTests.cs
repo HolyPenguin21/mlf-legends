@@ -432,7 +432,9 @@ namespace MLFLegends.Tests.PlayMode
             Rejects(manifest.text.Replace("\"run\":", "\"unavailable_run\":"), "run: clip missing");
             Rejects(manifest.text.Replace("\"kick_spin\":", "\"unavailable_spin\":"), "kick_spin: clip missing");
             Rejects(manifest.text.Replace("\"land\": [4, 5]", "\"landing\": [4, 5]"), "jump.markers.land: missing");
-            Rejects(manifest.text.Replace("\"strike_pose\": [1] } }, \"punch_right\"", "\"pose\": [1] } }, \"punch_right\""), "punch_left.markers.strike_pose: missing");
+            // Atlas update that shortens punch_left to 2 frames: the stale EndFrame 2 is reported (phases come from the config).
+            Rejects(manifest.text.Replace("\"punch_left\": { \"frames\": [ { \"id\": \"tech_a\", \"duration_ms\": 100 }, ", "\"punch_left\": { \"frames\": [ "),
+                "punch_left.EndFrame: 2 is outside the clip's local frames 0..1");
             m_Config.Set(new CharacterAnimationEntry
             {
                 CharacterId = TechnicalAtlasFixture.CharacterId, AtlasCatalog = m_Catalog,
