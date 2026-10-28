@@ -207,14 +207,16 @@ namespace MLFLegends.Tests.EditMode
             }
         }
 
-        [Test]
-        public void JumpFramesFollowTheMotionOwnersPhysicsAndLandingPlaysOnlyOnTheGround()
+        [TestCase(false)]
+        [TestCase(true)]
+        public void JumpFramesFollowTheMotionOwnersPhysicsAndLandingPlaysOnlyOnTheGround(bool projectLanding)
         {
             var definition = Parse(Json);
-            var jump = JumpFixture();
+            var jump = projectLanding ? Project("jump") : JumpFixture();
             var set = Build(definition, clip => clip == "jump" ? jump : Project(clip), out var errors, out _);
             Assert.That(set, Is.Not.Null, string.Join("\n", errors));
-            Assert.That(set.LandingTicks, Is.EqualTo(16u), "Two of six flat frames at T=0.8: 16 ticks, eight per frame.");
+            Assert.That(set.LandingTicks, Is.EqualTo(projectLanding ? 12u : 16u),
+                "Project: one of five flat frames at T=1 (12 ticks); fixture: two of six at T=0.8 (16 ticks).");
             using var w = new ReplayWorld("jump frames");
             CombatStrikeSchedule.Publish(w.Manager, set.StrikeSchedule);
             w.Script = new ReplayScript().Player(1, 1, ReplayRole.Human, pressed: CommandButtons.Jump);
@@ -223,6 +225,8 @@ namespace MLFLegends.Tests.EditMode
             var records = w.BattleRecords(1);
             var landing = System.Array.FindIndex(records, r => r.Combatant(r.HumanId).Motion.Grounded);
             Assert.That(landing, Is.GreaterThan(30));
+            var contact = records[landing].Combatant(records[landing].HumanId).Motion;
+            Assert.That(contact.LandingRecoveryTicks, Is.EqualTo(projectLanding ? 12u : 16u), "Movement copies the published duration at contact.");
             for (var i = 0; i < records.Length; i++)
             {
                 var r = records[i];
@@ -235,7 +239,7 @@ namespace MLFLegends.Tests.EditMode
                     Assert.That(c.Position.y, Is.GreaterThan(0f), "World height comes from CombatPosition.");
                 }
                 else if (i - landing < set.LandingTicks)
-                    Assert.That(id, Is.EqualTo(i - landing < 8 ? "jump_004" : "jump_005"), $"r{i + 1}: landing on the ground");
+                    Assert.That(id, Is.EqualTo(projectLanding || i - landing < 8 ? "jump_004" : "jump_005"), $"r{i + 1}: landing on the ground");
                 else
                     Assert.That(id, Does.StartWith("idle_combat_"), $"r{i + 1}");
             }
@@ -246,14 +250,15 @@ namespace MLFLegends.Tests.EditMode
                 "Idle restarts at its first frame when entered.");
         }
 
-        [Test]
-        public void LandingWhileMovingRecoversBeforeRunAndRunPhaseFollowsDistanceNotTime()
+        [TestCase(false)]
+        [TestCase(true)]
+        public void LandingWhileMovingRecoversBeforeRunAndRunPhaseFollowsDistanceNotTime(bool projectLanding)
         {
             var definition = Parse(Json);
-            var jump = JumpFixture();
+            var jump = projectLanding ? Project("jump") : JumpFixture();
             var set = Build(definition, clip => clip == "jump" ? jump : Project(clip), out var errors, out _);
             Assert.That(set, Is.Not.Null, string.Join("\n", errors));
-            Assert.That(set.LandingTicks, Is.EqualTo(16u));
+            Assert.That(set.LandingTicks, Is.EqualTo(projectLanding ? 12u : 16u));
             using var w = new ReplayWorld("run frames");
             var script = new ReplayScript().Player(1, 1, ReplayRole.Human, moveX: 1, pressed: CommandButtons.Jump);
             for (uint r = 2; r <= 120; r++)
@@ -265,6 +270,7 @@ namespace MLFLegends.Tests.EditMode
             var records = w.BattleRecords(1);
             var landing = System.Array.FindIndex(records, r => r.Combatant(r.HumanId).Motion.Grounded);
             var land = records[landing].Combatant(records[landing].HumanId);
+            Assert.That(land.Motion.LandingRecoveryTicks, Is.EqualTo(projectLanding ? 12u : 16u));
             Assert.That(land.Motion.MoveStreakStartTick, Is.EqualTo(SimulationClock.NoTick), "Contact clears the run streak.");
             Assert.That(Id(definition, set.FrameFor(records[landing].Tick, 0, land.Motion, land.Attack)), Is.EqualTo("jump_004"));
             for (var i = landing; i < landing + set.LandingTicks; i++)
@@ -361,7 +367,8 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(warnings.Any(w => w.Contains("punch_left: Preparation lasts")), Is.True, string.Join("\n", warnings));
             Assert.That(warnings.Any(w => w.Contains("punch_left: Recovery lasts")), Is.True, string.Join("\n", warnings));
 
-            var moved = Copy(Project("punch_right"));
+            var moved = PunchFixture();
+            moved.ClipId = "punch_right";
             moved.PreparationEndFrame = 2;
             warnings.Clear();
             Assert.That(CombatAnimationSet.TryCreateStrikeSchedule(definition, c => c == "punch_right" ? moved : Project(c), Character, errors, warnings,
@@ -387,7 +394,7 @@ namespace MLFLegends.Tests.EditMode
                 Assert.That(errors.Any(e => e.Contains(expected)), Is.True, $"Expected '{expected}' in:\n{string.Join("\n", errors)}");
             }
 
-            var legacyJump = Copy(Project("jump"));
+            var legacyJump = JumpFixture();
             legacyJump.LandingStartFrame = -1; // Explicit config ranges intentionally do not require the old marker.
             Rejected(Without(Json, "jump", "land", "\"landing\": [4, 5]"),
                 c => c == "jump" ? legacyJump : Project(c), "mage_female_01.jump.markers.land: missing");
@@ -395,7 +402,7 @@ namespace MLFLegends.Tests.EditMode
             Rejected(Json, c => c == "kick_spin" ? null : Project(c), "mage_female_01.kick_spin: animation settings missing");
             CharacterAnimationSettings Punch(int end, int preparationEnd, int activeEnd)
             {
-                var punch = Copy(Project("punch_left"));
+                var punch = PunchFixture();
                 punch.EndFrame = end;
                 punch.PreparationEndFrame = preparationEnd;
                 punch.ActiveEndFrame = activeEnd;

@@ -242,9 +242,10 @@ for name in changed:
 # including its new Body/index files and lifecycle changes that intentionally differ from the original BASE.
 correction_changes = git('diff', '--name-only', CORRECTION_BASE, TESTED_SHA).splitlines()
 for name in correction_changes:
-    assert name.endswith('.md') or not name.startswith(('Assets/MLFLegends/', 'Assets/Scenes/', 'Packages/', 'ProjectSettings/'))
-    assert name != 'Assets/InputSystem_Actions.inputactions'
-subprocess.run(['git', 'diff', '--check'], cwd=ROOT, check=True)
+    assert (name.endswith('.md') or name.startswith('Assets/Tests/')
+            or not name.startswith(('Assets/', 'Packages/', 'ProjectSettings/'))), 'Production changed from #60 base: ' + name
+# A clean tree has no unstaged diff. Check the committed delivery, not that empty diff.
+subprocess.run(['git', 'diff', '--check', BASE, TESTED_SHA], cwd=ROOT, check=True)
 source_hashes = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
                  for p in cs if 'Spatial' in p.name or 'CombatBody' in p.name or p.name in {'BattleLifecycleSystem.cs', 'CombatReplayDriver.cs', 'CombatBaselineTests.cs', 'CombatBenchmarkHarness.cs', 'CombatStrikeBenchmarkTests.cs', 'CombatAnimationSetTests.cs', 'BootstrapRosterAndStrikeWindowTests.cs', 'CombatSpriteRendererPlayModeTests.cs'}}
 report = {
@@ -269,6 +270,7 @@ report = {
     'protected_base_files_byte_unchanged': len(protected),
     'protected_base_files_with_pinned_tuning': len(TUNING_BLOBS),
     'all_production_non_document_files_byte_unchanged_from_correction_base': 'PASS',
+    'committed_diff_whitespace_from_original_base': 'PASS',
     'source_hashes_sha256': source_hashes,
     'status': 'PASS',
     'results': {'source': 'PASS', 'python_model': 'PASS', 'observed_failures': [],

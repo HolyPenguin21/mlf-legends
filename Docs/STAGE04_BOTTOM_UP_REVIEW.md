@@ -1,5 +1,26 @@
 # Stage 04.1 / #58 — bottom-up review of PR #59
 
+## #60 / PR #62 second bottom-up review (2026-10-29)
+
+Reviewed PR head `7a65651a620494b7d32487a2cbcf52e819828b3f` against merged main
+`180b4121792e68931f27c109b78cd0d24c21a4d4`. This is implementing-agent source review; not manager acceptance.
+
+| Layer / finding | Review and correction |
+|---|---|
+| Asset → manifest → timing | Two exact 68c43c blobs remain pinned. Config phases, all configured frame IDs, quantization, final kick frames and chain_exit remain consistent. Synthetic jump's 4/5 boundary remains eight ticks per frame. No asset or production code edit. |
+| Timing → publication → Movement → presentation | Existing synthetic replay covered landing 16 only; project landing 12 was checked separately in publication/frame tests. Both existing landing replay tests now run for **project 12 and synthetic 16**, asserting the copied Motion duration, airborne frames, exact grounded frame holds, no held-direction slide, immediate idle/run and distance-based run phase. These C# cases are authored, **NOT RUN**. Other negative timing fixtures now use explicit fixture inputs too. |
+| Action / Facing / Hit / final index | Frozen strike timing still controls all phases; damage/ledger is still Hit-only, input buffer and 50/25/25 unchanged. Index remains read-only after Movement and before Hit in default/replay/benchmark. No owner, clock or allocation/lifecycle change in #60. |
+| Config/cache/World lifecycle | Bootstrap republishes only on config/catalog/World revision and restores its own World's table by publication lease; renderer owns shared timing/cache independently, reads ECS and invalidates on config/catalog change. Test config edits use an instantiated config and defensive Set. Destroy/disable cleanup and World leases remain unchanged. This is source inspection, not runtime lifecycle evidence. |
+| Verifier committed whitespace gap | `git diff --check` with no refs is empty on the required clean head. It now checks **BASE → TESTED_SHA**, so committed whitespace defects cannot get a misleading PASS. Report has an explicit committed-diff result. |
+| Verifier production-path gap | The #60-base guard formerly covered selected Assets directories and the inputactions file, allowing other Assets roots/input metadata to escape its all-production claim. It now rejects **every Assets change except test files and Markdown**, plus Packages/ProjectSettings non-document changes. Original-base protection and exact two-blob tuning checks are retained. |
+
+Reproduce the final source/model result from a clean checkout using the command in QA.md; the report records its own
+tested SHA/tree. Evidence-only commits store the preceding tested source report; the PR records the additional clean
+final-head rerun. Unity compilation/import, Entities/Burst, C# suites, GPU and actual allocations/performance remain
+**NOT RUN**. No new runtime gameplay failure is established by these source findings; the gaps were in validation.
+
+## Historical 04.1 implementation review
+
 2026-10-28. Reviewed implementation: `c73897d2453fe2c39ce6d6a55dfb84978825e484`, against base main
 `a6e96295c0a1e008327e28e8ff89205caf0a4f77`. Corrections stay in the same branch/PR; no merge.
 This is the implementing agent's second source review, not an independent manager review or Unity execution.
