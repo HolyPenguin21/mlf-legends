@@ -76,6 +76,14 @@ namespace MLFLegends.Combat
         public static float2 CanvasToCard(float2 canvas, float2 pivot, FacingDirection facing) =>
             new float2((canvas.x - pivot.x) * Sign(facing), pivot.y - canvas.y);
 
+        /// <summary>Fixed canvas support plus artistic translation; mirrors the complete aligned image exactly once.</summary>
+        public static float2 AlignedCanvasToCard(float2 canvas, float2 worldSupport, float2 imageOffsetCard, FacingDirection facing)
+        {
+            var card = CanvasToCard(canvas, worldSupport, FacingDirection.Right) + imageOffsetCard;
+            card.x *= Sign(facing);
+            return card;
+        }
+
         /// <summary>Direction in canvas axes (Y down) → card axes (Y up), mirrored for facing left.</summary>
         public static float2 CanvasDirectionToCard(float2 direction, FacingDirection facing) =>
             new float2(direction.x * Sign(facing), -direction.y);

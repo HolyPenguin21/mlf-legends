@@ -29,6 +29,8 @@ namespace MLFLegends.Editor
             var height = rows * Line + EditorGUI.GetPropertyHeight(curve, true) + EditorGUIUtility.standardVerticalSpacing;
             if (IsAttack(property))
                 height += 4 * Line; // header + three phases
+            if (property.FindPropertyRelative(nameof(CharacterAnimationSettings.ClipId)).stringValue == CombatAnimationSet.JumpClip)
+                height += 2 * Line;
             return height;
         }
 
@@ -70,6 +72,13 @@ namespace MLFLegends.Editor
             var curveHeight = EditorGUI.GetPropertyHeight(curve, true);
             EditorGUI.PropertyField(new Rect(row.x, row.y, row.width, curveHeight), curve, true);
             row.y += curveHeight + EditorGUIUtility.standardVerticalSpacing;
+
+            if (clipId.stringValue == CombatAnimationSet.JumpClip)
+            {
+                EditorGUI.PropertyField(row, property.FindPropertyRelative(nameof(CharacterAnimationSettings.LandingStartFrame)));
+                row.y += Line;
+                EditorGUI.LabelField(row, "Landing ends at EndFrame; -1 uses manifest land. Duration = frame holds.", EditorStyles.miniLabel);
+            }
 
             if (IsAttack(property))
             {

@@ -5,8 +5,8 @@ namespace MLFLegends.Combat
 {
     /// <summary>The sole fixed-tick writer of <see cref="CombatAttackState"/>: starts, chains and ends strikes.</summary>
     /// <remarks>
-    /// Runs first in State, before facing and movement, so both see this tick's strike (they lock turning, planar
-    /// movement and jump while a strike runs). Per actor, from its accepted command only (player and AI alike):
+    /// Runs first in State, before facing and movement, so both see this tick's strike (turning and jump locks, phase-scaled
+    /// planar movement). Landing recovery suppresses new action starts and buffering. Per actor, from accepted commands only:
     /// a fresh Attack/Kick press (Held never repeats) starts a series when the actor is free and grounded at the start of
     /// the tick and does not press Jump on the same tick (the jump wins); airborne presses are dropped. During Windup
     /// presses are dropped; from Active to the end of Recovery the
@@ -50,6 +50,13 @@ namespace MLFLegends.Combat
                     .WithAll<InCombat>())
             {
                 var current = attack.ValueRO;
+                // Input is still polled/consumed. Landing presses are dropped, never added to the strike buffer.
+                if (motion.ValueRO.IsLandingRecovery(tick))
+                {
+                    current.Buffered = CommandButtons.None;
+                    attack.ValueRW = current;
+                    continue;
+                }
                 var pressed = CombatAttackTuning.StrikeButton(applied.ValueRO.Command.Pressed);
                 if (current.IsAttacking)
                 {

@@ -170,7 +170,7 @@ namespace MLFLegends.Tests.EditMode
         }
 
         [Test]
-        public void StrikesMoveOnlyInPreparationNeverJumpAndAirbornePressesStartNothing()
+        public void StrikesMoveAtPhaseSpeedNeverJumpAndAirbornePressesStartNothing()
         {
             var script = new ReplayScript();
             Press(script, 1, A, moveX: 1);
@@ -182,13 +182,14 @@ namespace MLFLegends.Tests.EditMode
             var step = CombatMovementTuning.MoveSpeed * SimulationTiming.TickDuration;
             for (var t = 1; t < end; t++)
             {
-                // Strike tick t - 1: Preparation ticks (incl. the first) move normally, Active/Recovery hold the position.
-                var moved = System.Math.Min(t, punch.WindupTicks);
-                Assert.That(H(records[t - 1]).Position.x, Is.EqualTo(moved * step).Within(1e-4f), $"r{t}: planar move only in Preparation");
+                var preparation = System.Math.Min(t, punch.WindupTicks);
+                var slowedSteps = preparation * 0.5f + (t - preparation) * 0.25f;
+                Assert.That(H(records[t - 1]).Position.x, Is.EqualTo(slowedSteps * step).Within(1e-4f), $"r{t}: 50% Preparation, 25% Active/Recovery");
                 Assert.That(H(records[t - 1]).Motion.Grounded, Is.True, $"r{t}: no takeoff during the strike, Preparation included");
                 Assert.That(H(records[t - 1]).Attack.Kind, Is.EqualTo(CombatAttackKind.PunchLeft), $"r{t}: moving never cancels the strike");
             }
-            Assert.That(H(records[end - 1]).Position.x, Is.GreaterThan(punch.WindupTicks * step + step / 2), "Movement resumes on the first free tick.");
+            Assert.That(H(records[end - 1]).Position.x - H(records[end - 2]).Position.x,
+                Is.EqualTo(step).Within(1e-4f), "Full speed resumes on the first free tick.");
 
             script = new ReplayScript().Player(1, 1, ReplayRole.Human, pressed: CommandButtons.Jump).Player(5, 5, ReplayRole.Human, pressed: A);
             records = Play(Duel(new float3(0.5f, 0f, 0f)), script, 80);

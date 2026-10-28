@@ -7,7 +7,7 @@ namespace MLFLegends.Combat
 {
     /// <summary>
     /// Scene entry point for a battle in the default ECS world: requests a (re)start when enabled and the end of the battle
-    /// when disabled or destroyed, and publishes the strike windows of the selected character's animation phases.
+    /// when disabled or destroyed, and publishes strike windows plus jump landing recovery from the selected character's animation.
     /// Holds no combat state; the battle lives in ECS.
     /// </summary>
     /// <remarks>
@@ -45,10 +45,10 @@ namespace MLFLegends.Combat
         [Tooltip("Fighters on the AI team, the AI leader included (1..200). Applied on the next battle start/restart.")]
         [SerializeField] int m_AiTeamSize = 1;
 
-        [Tooltip("Shared animation config whose strike phases (Preparation / Active / Recovery frames, duration, curve) set the simulated strike windows.")]
+        [Tooltip("Shared animation config: strike phases set simulated strike windows; jump landing frame holds set landing recovery. No independent landing delay.")]
         [SerializeField] CharacterAnimationConfig m_AnimationConfig;
 
-        [Tooltip("Character entry of the config that supplies the strike windows (the whole roster uses one character type).")]
+        [Tooltip("Character entry that supplies strike and landing timing (the whole roster uses one character type). Must match the renderer's character/config.")]
         [SerializeField] string m_StrikeCharacterId = "mage_female_01";
 
         // Owner token per enable; only needs to differ between bootstraps that are alive at the same time.
@@ -268,10 +268,11 @@ namespace MLFLegends.Combat
                     errors.Add($"characters.{m_StrikeCharacterId}.AtlasCatalog: manifest missing");
                 if (definition != null)
                 {
-                    CombatAnimationSet.TryCreateStrikeSchedule(definition, clipId =>
+                    var set = CombatAnimationSet.Create(definition, clipId =>
                             m_AnimationConfig.TryResolve(m_StrikeCharacterId, clipId, out _, out var settings, out var resolveError)
                                 ? settings : Missing(errors, resolveError),
-                        path, errors, warnings, out schedule);
+                        path, errors, warnings);
+                    if (set != null) schedule = set.StrikeSchedule;
                 }
             }
 
@@ -300,12 +301,12 @@ namespace MLFLegends.Combat
             }
 
             Debug.Log($"{prefix}: strike windows (ticks @{SimulationTiming.TickRateHz} Hz, Preparation/Active/Recovery) revision " +
-                $"{PublishedScheduleRevision}: {Describe(schedule)}. New strikes use them; running strikes finish with their own.", this);
+                $"{PublishedScheduleRevision}: {Describe(schedule)}. Landing recovery {schedule.LandingRecoveryTicks} ticks. New strikes/landings use them; running states keep their duration.", this);
         }
 
         static CharacterAnimationSettings Missing(List<string> errors, string error)
         {
-            // TryCreateStrikeSchedule reports "settings missing" itself; the resolver's reason (e.g. duplicate ClipId) is added.
+            // CombatAnimationSet reports "settings missing" itself; the resolver's reason (e.g. duplicate ClipId) is added.
             if (error != null && !error.EndsWith("animation settings missing"))
                 errors.Add(error);
             return null;

@@ -85,6 +85,7 @@ namespace MLFLegends.Combat
         static readonly int s_PixelWorldSize = Shader.PropertyToID("_PixelWorldSize");
         static readonly int s_DepthBias = Shader.PropertyToID("_DepthBias");
         static readonly int s_AlphaCutoff = Shader.PropertyToID("_AlphaCutoff");
+        static readonly int s_ImageOffsetCard = Shader.PropertyToID("_ImageOffsetCard");
 
         static readonly ProfilerMarker s_SubmitMarker = new ProfilerMarker("CombatSpriteRenderer.Submit");
 
@@ -141,6 +142,7 @@ namespace MLFLegends.Combat
         SpriteAtlasCatalog m_CharacterCatalog;
         readonly Dictionary<string, CharacterAnimationSettings> m_ClipSettings = new Dictionary<string, CharacterAnimationSettings>();
         bool m_TimingDirty;
+        float2 m_ImageOffsetCard;
         CombatAnimationSet m_Animations;
 
         /// <summary>Shared timing of every combat clip of the selected character (null while rejected).</summary>
@@ -374,8 +376,10 @@ namespace MLFLegends.Combat
             }
 
             var facing = instance.Facing < 0f ? FacingDirection.Left : FacingDirection.Right;
-            position = SpriteCardMath.CanvasToWorld(m_Basis, instance.Position, anchor.Position, m_Atlas.Definition.Pivot, facing,
-                PixelWorldSize, instance.DepthOffset + m_DepthBias);
+            var definition = m_Atlas.Definition;
+            var card = SpriteCardMath.AlignedCanvasToCard(anchor.Position, definition.WorldSupport,
+                definition.LegacyPivotOffsetCard + m_ImageOffsetCard, facing);
+            position = SpriteCardMath.CardToWorld(m_Basis, instance.Position, card, PixelWorldSize, instance.DepthOffset + m_DepthBias);
             direction = SpriteCardMath.CanvasDirectionToWorld(m_Basis, anchor.Direction, facing);
             return true;
         }
@@ -399,7 +403,7 @@ namespace MLFLegends.Combat
             if (IsActiveOwner)
                 m_Extraction.Run(camera != null ? ResolveWorld() : null,
                     UsesCharacterAnimation && m_Animations == null ? null : m_Atlas, m_Basis, m_DepthSeparation,
-                    m_DefaultFrame, PixelWorldSize, UsesCharacterAnimation ? m_Animations : null);
+                    m_DefaultFrame, PixelWorldSize, UsesCharacterAnimation ? m_Animations : null, m_ImageOffsetCard);
             else
                 m_Extraction.Clear();
             m_Stats.ExtractMicroseconds = Microseconds(start);
@@ -424,6 +428,7 @@ namespace MLFLegends.Combat
 
         void EnsureAtlas()
         {
+            if (!UsesCharacterAnimation) m_ImageOffsetCard = float2.zero;
             var catalog = m_Catalog;
             if (UsesCharacterAnimation)
             {
@@ -488,7 +493,11 @@ namespace MLFLegends.Combat
             m_ConfigValid = false;
             m_CharacterCatalog = null;
             m_ClipSettings.Clear();
+            var imageOffset = m_AnimationConfig != null ? m_AnimationConfig.ImageOffsetFor(m_CharacterId) : Vector2.zero;
+            m_ImageOffsetCard = new float2(imageOffset.x, -imageOffset.y);
             var errors = new List<string>();
+            if (!math.all(math.isfinite(m_ImageOffsetCard)))
+                errors.Add("ImageOffsetPixels must be finite");
             if (m_AnimationConfig == null)
                 errors.Add("no CharacterAnimationConfig assigned");
             else
@@ -528,8 +537,8 @@ namespace MLFLegends.Combat
             if (definition.CharacterId != m_CharacterId)
                 errors.Add($"characters.{m_CharacterId}: catalog character_id is {definition.CharacterId}");
             if (m_CharacterId == "mage_female_01" && (definition.SourceSize.x != 192 || definition.SourceSize.y != 192 ||
-                definition.Pivot.x != 96 || definition.Pivot.y != 160 || definition.NominalHeightPx != 128))
-                errors.Add($"characters.{m_CharacterId}: expected source_size [192,192], pivot [96,160], nominal_height_px 128");
+                definition.NominalHeightPx != 128))
+                errors.Add($"characters.{m_CharacterId}: expected source_size [192,192], nominal_height_px 128 (pivot is artistic alignment)");
             if (errors.Count == 0)
             {
                 TimingBuilds++;
@@ -626,6 +635,7 @@ namespace MLFLegends.Combat
                 block.SetVector(s_CardView, ToVector(m_Basis.ViewDirection));
                 block.SetFloat(s_PixelWorldSize, s);
                 block.SetFloat(s_DepthBias, m_DepthBias);
+                block.SetVector(s_ImageOffsetCard, new Vector4(m_ImageOffsetCard.x, m_ImageOffsetCard.y, 0f, 0f));
 
                 var (supportMin, supportMax) = m_Extraction.PageSupportBounds(p);
                 var min = supportMin + extents.min;
@@ -662,9 +672,11 @@ namespace MLFLegends.Combat
                 max += math.max(a, b);
             }
 
-            Add(m_Basis.Right, -m_Atlas.MaxHalfWidthPx * s, m_Atlas.MaxHalfWidthPx * s);
-            Add(m_Basis.Up, 0f, m_Atlas.MaxTopPx * s);
-            Add(m_Basis.Ground, 0f, m_Atlas.MaxBelowPx * s);
+            var rect = m_Atlas.CardBoundsPx + new float4(m_ImageOffsetCard, m_ImageOffsetCard);
+            var halfWidth = math.max(math.abs(rect.x), math.abs(rect.z));
+            Add(m_Basis.Right, -halfWidth * s, halfWidth * s);
+            Add(m_Basis.Up, 0f, math.max(0f, rect.w) * s);
+            Add(m_Basis.Ground, 0f, math.max(0f, -rect.y) * s);
             Add(-m_Basis.ViewDirection, 0f, m_Extraction.MaxDepthOffset + m_DepthBias);
             return (min, max);
         }
@@ -743,13 +755,46 @@ namespace MLFLegends.Combat
             for (var i = 0; i < ids.Length; i++)
             {
                 var id = new CombatantId { Value = ids[i] };
+                var instance = m_Extraction.Instances[i];
+                var definition = m_Atlas.Definition;
+                // Cyan is the fixed virtual canvas; amber is the source image after legacy pivot + artistic offset.
+                DrawCanvas(instance, definition.WorldSupport, float2.zero, Color.cyan);
+                DrawCanvas(instance, definition.WorldSupport, definition.LegacyPivotOffsetCard + m_ImageOffsetCard, new Color(1f, 0.7f, 0.2f));
                 Gizmos.color = Color.white;
-                Gizmos.DrawWireSphere(m_Extraction.Instances[i].Position, 0.05f);
+                Gizmos.DrawWireSphere(instance.Position, 0.05f);
                 DrawAnchor(id, AnchorKind.HandLeft, new Color(0.3f, 0.6f, 1f));
                 DrawAnchor(id, AnchorKind.HandRight, new Color(1f, 0.6f, 0.2f));
                 DrawAnchor(id, AnchorKind.CastOrigin, Color.magenta);
             }
         }
+
+        void DrawCanvas(in SpriteInstanceGpu instance, float2 pivot, float2 offset, Color color)
+        {
+            var size = m_Atlas.Definition.SourceSize;
+            var left = -pivot.x + offset.x;
+            var right = size.x - pivot.x + offset.x;
+            var bottom = pivot.y - size.y + offset.y;
+            var top = pivot.y + offset.y;
+            var split = math.clamp(0f, bottom, top);
+            // The side edges bend at world support height, just like the two shader quads.
+            var p0 = CanvasGizmoPoint(instance, left, bottom);
+            var p1 = CanvasGizmoPoint(instance, right, bottom);
+            var p2 = CanvasGizmoPoint(instance, right, split);
+            var p3 = CanvasGizmoPoint(instance, right, top);
+            var p4 = CanvasGizmoPoint(instance, left, top);
+            var p5 = CanvasGizmoPoint(instance, left, split);
+            Gizmos.color = color;
+            Gizmos.DrawLine(p0, p1);
+            Gizmos.DrawLine(p1, p2);
+            Gizmos.DrawLine(p2, p3);
+            Gizmos.DrawLine(p3, p4);
+            Gizmos.DrawLine(p4, p5);
+            Gizmos.DrawLine(p5, p0);
+        }
+
+        Vector3 CanvasGizmoPoint(in SpriteInstanceGpu instance, float x, float y) =>
+            SpriteCardMath.CardToWorld(m_Basis, instance.Position, new float2(x * instance.Facing, y), PixelWorldSize,
+                instance.DepthOffset + m_DepthBias);
 
         void DrawAnchor(CombatantId id, AnchorKind kind, Color color)
         {

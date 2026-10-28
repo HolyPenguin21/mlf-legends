@@ -27,9 +27,12 @@ namespace MLFLegends.Combat
         {
             var tick = SystemAPI.TryGetSingleton<SimulationClock>(out var clock) ? clock.Tick : SimulationClock.NoTick;
             var attacks = SystemAPI.GetComponentLookup<CombatAttackState>(true);
+            var motions = SystemAPI.GetComponentLookup<CombatMotion>(true);
             foreach (var (facing, applied, entity) in
                 SystemAPI.Query<RefRW<CombatFacing>, RefRO<AppliedCombatCommand>>().WithAll<InCombat>().WithEntityAccess())
             {
+                if (motions.TryGetComponent(entity, out var motion) && motion.IsLandingRecovery(tick))
+                    continue;
                 if (attacks.TryGetComponent(entity, out var attack) && attack.IsAttacking && attack.StartTick != tick)
                     continue;
                 var moveX = applied.ValueRO.Command.MoveX;

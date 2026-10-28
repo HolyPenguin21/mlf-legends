@@ -149,7 +149,8 @@ namespace MLFLegends.Combat
         /// fighter's frame comes from its authoritative CombatMotion/CombatAttackState and the clock
         /// (<see cref="CombatAnimationSet.FrameFor"/>); a fighter lacking them (manual worlds) shows idle from battle start.
         /// </summary>
-        public void Run(World world, SpriteAtlas atlas, in SpriteCardBasis basis, float depthSeparation, uint defaultFrame, float pixelWorldSize = 2f / 96f, CombatAnimationSet animations = null)
+        public void Run(World world, SpriteAtlas atlas, in SpriteCardBasis basis, float depthSeparation, uint defaultFrame, float pixelWorldSize = 2f / 96f, CombatAnimationSet animations = null,
+            float2 imageOffsetCard = default)
         {
             if (m_Disposed)
                 throw new ObjectDisposedException(nameof(CombatSpriteExtraction));
@@ -235,7 +236,7 @@ namespace MLFLegends.Combat
                 }
                 frames[i] = frame;
                 m_PageCounts[framePages[(int)frame]]++;
-                var rect = atlas.Frames[(int)frame].CardRect;
+                var rect = atlas.Frames[(int)frame].CardRect + new float4(imageOffsetCard, imageOffsetCard);
                 var facing = facings[i].Value == FacingDirection.Left ? -1f : 1f;
                 var a = SpriteCardMath.CardToWorld(basis, positions[i].Value, new float2(rect.x * facing, rect.y), pixelWorldSize);
                 var b = SpriteCardMath.CardToWorld(basis, positions[i].Value, new float2(rect.z * facing, rect.w), pixelWorldSize);

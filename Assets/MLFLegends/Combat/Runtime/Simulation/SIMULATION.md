@@ -1,3 +1,15 @@
+# Stage 03 final polish — movement and landing (2026-10-28)
+
+See [configuration and owner handoff](../../../../../Docs/STAGE03_FINAL_POLISH.md).
+CombatMovementTuning now supplies 50%/25%/25% planar speed for Preparation/Active/Recovery, selected from the running
+strike's authoritative frozen timing and applied once by CombatMovementSystem. Vertical physics is unchanged.
+The existing CombatStrikeSchedule also carries the configured jump landing duration. The sole movement owner resolves
+physical contact first, copies LandingRecoveryTicks into CombatMotion, clears the run streak and blocks controlled
+movement/jump for that window. Action and facing owners read the same IsLandingRecovery(tick); Attack/Kick presses are
+dropped, not buffered, during recovery. Input polling/command collection continue. Clock pause freezes the window;
+spawn/restart/despawn use the existing motion lifecycle. No additional ECS systems, singleton or position writer.
+These rules replace old Preparation-only movement and visual-only landing below. Stage 03 awaits owner confirmation.
+
 # Combat simulation tick (Stage 01.2, Issue #3)
 
 One fixed simulation tick drives every combat system, for a duel and for 200 vs 200 alike. The tick

@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: MageFemale01SpriteAtlasCatalog
   m_EditorClassIdentifier:
   m_Manifest: {fileID: 4900000, guid: fd13afc7b35d5666811b50617b7865eb, type: 3}
+  m_FrameStorage: 1
   m_Pages:
   - File: mage_female_01_00.png
     Texture: {fileID: 2800000, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}

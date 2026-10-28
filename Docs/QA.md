@@ -1,3 +1,10 @@
+## Stage 03 final polish — current validation boundary (2026-10-28)
+
+[Owner handoff and exact checks](STAGE03_FINAL_POLISH.md). Source/metadata/numerical review performed; Unity compile,
+EditMode/PlayMode, GPU/GC/performance, PNG and manual visual acceptance NOT RUN in this environment. Existing assertions
+for changed movement/landing semantics adjusted; no new test cases. Historical PASS evidence is not a PASS for this PR.
+One PR, no merge; Stage 03 closes only after owner confirmation.
+
 # MLF Legends — Quality assurance and evidence
 
 ## Stage 03 tuning — Inspector roster size, frame ranges and strike phases (2026-10-28)

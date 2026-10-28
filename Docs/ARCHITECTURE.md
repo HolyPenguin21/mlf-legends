@@ -1,3 +1,10 @@
+## Stage 03 final polish — pending owner acceptance (2026-10-28)
+
+[Current handoff and settings](STAGE03_FINAL_POLISH.md): full source-cell mage rendering (packed trim retained), fixed
+fractional support separate from artistic alignment, 50%/25%/25% authoritative-phase movement, ECS landing recovery tied
+to jump frame holds. Existing owners/table/renderer only; no new systems, input path or per-fighter render objects.
+This supersedes Preparation-only movement and cancellable visual landing described below. Unity validation NOT RUN.
+
 # MLF Legends — Combat architecture
 
 ## Stage 03 tuning — strike windows from animation phases (2026-10-28)

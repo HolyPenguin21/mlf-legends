@@ -19,6 +19,12 @@ namespace MLFLegends.Combat
         /// <summary>Tick on which the fighter last touched down after a jump.</summary>
         public uint LandTick;
 
+        /// <summary>Landing window copied from the published animation schedule at contact. Zero in worlds without a config.</summary>
+        public uint LandingRecoveryTicks;
+
+        /// <summary>The contact tick is the first landing tick; free on LandTick + LandingRecoveryTicks.</summary>
+        public bool IsLandingRecovery(uint tick) => Grounded && LandTick != 0 && tick - LandTick < LandingRecoveryTicks;
+
         /// <summary>Last tick with a nonzero planar (X/Z) displacement.</summary>
         public uint LastMoveTick;
 

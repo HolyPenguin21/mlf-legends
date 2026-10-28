@@ -1,3 +1,11 @@
+## Stage 03 final polish — owner-requested corrections (2026-10-28)
+
+The [final-polish handoff](STAGE03_FINAL_POLISH.md) supersedes older movement/pivot/landing decisions where they conflict:
+fixed support at [50%,85%] of source size; legacy pivot is art alignment; extra image offset is character-wide; mage uses
+explicit full-source cells; attacks move at 50%/25%/25%; landing blocks controlled movement/new starts for the configured
+landing frames' quantized duration. No separate delay, auto-centering, config layer or ECS writer. Stage 03 acceptance
+still belongs to the owner after Unity review. No merge authorized.
+
 # MLF Legends — Decision log
 
 ## Stage 03 tuning — Inspector roster size, frame ranges and strike phases (2026-10-28)

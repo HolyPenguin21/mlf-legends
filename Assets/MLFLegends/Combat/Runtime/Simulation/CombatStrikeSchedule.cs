@@ -104,12 +104,12 @@ namespace MLFLegends.Combat
     }
 
     /// <summary>
-    /// The World's strike timing table: the <see cref="CombatStrikeTiming"/> every newly started strike copies. Starts with
+    /// The World's combat timing table: strike windows every newly started strike copies and landing recovery copied at contact. Starts with
     /// <see cref="Default"/> (<see cref="CombatAttackTuning"/> windows, used by worlds that publish nothing: tests and
     /// benchmarks); a scene publishes the table derived from the character's animation phases (frames, duration, curve).
     /// </summary>
     /// <remarks>
-    /// Singleton created and destroyed by <see cref="CombatActionSystem"/>, which only reads it when a strike starts.
+    /// Singleton created/destroyed by CombatActionSystem; read there for strike starts and by CombatMovementSystem at landing.
     /// Written only through <see cref="Publish"/> on the main thread outside fixed steps (e.g. CombatSmokeBootstrap), so a
     /// change takes effect from the next strike start; a strike already running keeps the timing it started with.
     /// </remarks>
@@ -120,6 +120,9 @@ namespace MLFLegends.Combat
         public CombatStrikeTiming KickLeft;
         public CombatStrikeTiming KickRight;
         public CombatStrikeTiming KickSpin;
+
+        /// <summary>Jump landing frames' duration quantized to ticks. 0 = no animation config published, no artificial delay.</summary>
+        public uint LandingRecoveryTicks;
 
         /// <summary>Successful <see cref="Publish"/> calls in this World; 0 = still the default table.</summary>
         public uint Revision;
