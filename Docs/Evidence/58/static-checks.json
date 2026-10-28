@@ -1,8 +1,8 @@
 {
   "base": "a6e96295c0a1e008327e28e8ff89205caf0a4f77",
   "correction_base": "180b4121792e68931f27c109b78cd0d24c21a4d4",
-  "tested_sha": "bb1d325b7409005eaca78d3cf5fa3d850f85bb36",
-  "tested_tree": "30e956097ac22f78b0c73a6a4a5720a7a88ce9ff",
+  "tested_sha": "65b533a43182b1b76f01c653d80daf2250afa1c3",
+  "tested_tree": "18843d81e914f1ffef04198514f6bc19ec369bd0",
   "worktree_clean_at_start": true,
   "included_tuning_assets": {
     "Assets/MLFLegends/Art/Characters/MageFemale01/Atlas/mage_female_01_00.png.meta": {
@@ -71,6 +71,7 @@
     "Assets/Tests/PlayMode/Presentation/CombatSpriteRendererPlayModeTests.cs",
     "Docs/COMBAT_SPEC.md",
     "Docs/DECISIONS.md",
+    "Docs/Evidence/58/static-checks.json",
     "Docs/QA.md",
     "Docs/STAGE04_BOTTOM_UP_REVIEW.md",
     "Docs/STAGE04_SPATIAL_INDEX.md",
@@ -94,6 +95,7 @@
   "protected_base_files_byte_unchanged": 195,
   "protected_base_files_with_pinned_tuning": 2,
   "all_production_non_document_files_byte_unchanged_from_correction_base": "PASS",
+  "committed_diff_whitespace_from_original_base": "PASS",
   "source_hashes_sha256": {
     "Assets/MLFLegends/Combat/Runtime/Bootstrap/BattleLifecycleSystem.cs": "f55c5a6225eb8a533fd433bba108261b71643d27615eca877fb03484f0195c41",
     "Assets/MLFLegends/Combat/Runtime/Core/CombatBody.cs": "f8eb576d5be8d7883ab40c1322a1ced92bfae9beae810f702901f900623b9319",
@@ -107,7 +109,7 @@
     "Assets/Tests/EditMode/Performance/CombatBenchmarkHarness.cs": "98948f6c807f9e9c85da8ad9d2c1ca50a8d899c2a971a18142fec5817c3a9acc",
     "Assets/Tests/EditMode/Performance/CombatSpatialBenchmarkTests.cs": "566e813b4d947b7ce8d0d81a1261f592a150531c168b11607d60cb33860de74f",
     "Assets/Tests/EditMode/Performance/CombatStrikeBenchmarkTests.cs": "36765da800bf89f26ebf5be0b46ca9539786e16d8021c41b824a777e94559ab2",
-    "Assets/Tests/EditMode/Presentation/CombatAnimationSetTests.cs": "f0f19f6011963149216ee9af37997caf4148a4b8f696c6fa68fc7e476ffcfd50",
+    "Assets/Tests/EditMode/Presentation/CombatAnimationSetTests.cs": "b38a80a4ca9cb7dc7b290b36eaba34e3f4858a05eb77d6c514227bd17770104d",
     "Assets/Tests/PlayMode/Bootstrap/BootstrapRosterAndStrikeWindowTests.cs": "c35b220db300e5cee3980b31db0d4672c2c0aba243cd3f7c0af0089a8aa21af6",
     "Assets/Tests/PlayMode/Presentation/CombatSpriteRendererPlayModeTests.cs": "74f85e767ff41586b0b14bf115ffb0981a0def1a3966eaa2f01d47ad52638f9e"
   },
