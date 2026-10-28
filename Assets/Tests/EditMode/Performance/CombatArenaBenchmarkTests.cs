@@ -32,6 +32,8 @@ namespace MLFLegends.Tests.EditMode
         public void ArenaPressureAndJumpingForSparseDense2_100_400()
         {
             var profilerWasEnabled = Profiler.enabled;
+            var allocationRecorder = Recorder.Get("GC.Alloc");
+            var allocationRecorderWasEnabled = allocationRecorder.enabled;
             try
             {
             Profiler.enabled = true;
@@ -50,6 +52,8 @@ namespace MLFLegends.Tests.EditMode
                 for (var i = 1; i < walls; i++) rows.Add(CombatArenaTests.Box(10 + i * 2, 0, 0, .1f, 4, 1000));
                 var lease = CombatArenaSystem.Acquire(bench.Manager);
                 Assert.That(CombatArenaSystem.Stage(bench.Manager, lease, rows.ToArray()), Is.True);
+                var schedule = CombatStrikeSchedule.Default; schedule.LandingRecoveryTicks = 12;
+                CombatStrikeSchedule.Publish(bench.Manager, schedule);
                 var setup = BattleSetup.Default; setup.HumanAllies = setup.AiAllies = (ushort)(count / 2 - 1);
                 bench.Submit(BattleRequest.Start(setup)); bench.ApplyRequests();
                 using (var entities = bench.Combatants.ToEntityArray(Allocator.Temp))
@@ -93,14 +97,15 @@ namespace MLFLegends.Tests.EditMode
                 var arenaEntity = arenaQuery.GetSingletonEntity();
                 var activeCapacity = bench.Manager.GetBuffer<CombatArenaShape>(arenaEntity).Capacity;
                 var pendingCapacity = bench.Manager.GetBuffer<PendingCombatArenaShape>(arenaEntity).Capacity;
-                var nativeBefore = Profiler.GetTotalAllocatedMemoryLong();
                 var control = GcAllocationScope.Begin(); var live = new byte[4096]; GC.KeepAlive(live);
                 var valid = control.End() > 0;
                 if (!valid) Assert.Inconclusive("NOT RUN: allocation counter failed its positive control.");
+                var nativeBefore = Profiler.GetTotalAllocatedMemoryLong();
                 var gc = GcAllocationScope.Begin(); int samples;
                 try { for (var i = 0; i < MeasuredTicks; i++) Tick(true); }
                 finally { samples = gc.End(); }
                 Assert.That(samples, Is.Zero, "Measured owner loop after warmup.");
+                GC.KeepAlive(live);
                 var nativeDelta = Profiler.GetTotalAllocatedMemoryLong() - nativeBefore;
                 // Measure the real fixed group independently; no owner is executed twice in any one tick.
                 for (var i = 0; i < WarmupTicks; i++) bench.Frames(1, 1);
@@ -117,7 +122,7 @@ namespace MLFLegends.Tests.EditMode
             Directory.CreateDirectory(BenchmarkReport.Directory);
             File.WriteAllLines(Path.Combine(BenchmarkReport.Directory, "stage04-arena.tsv"), lines);
             }
-            finally { Profiler.enabled = profilerWasEnabled; }
+            finally { allocationRecorder.enabled = allocationRecorderWasEnabled; Profiler.enabled = profilerWasEnabled; }
         }
     }
 }
