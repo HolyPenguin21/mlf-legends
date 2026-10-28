@@ -196,7 +196,7 @@ namespace MLFLegends.Editor
                 if (character == null) { m_Characters[c] = new CharacterDiagnostics(); continue; }
                 var signature = new StringBuilder(identities.ToString());
                 signature.Append('|').Append(character.CharacterId);
-                signature.Append('|').Append(character.AtlasCatalog != null ? character.AtlasCatalog.GetInstanceID() : 0);
+                signature.Append('|').Append(character.AtlasCatalog != null ? character.AtlasCatalog.GetEntityId().ToString() : "0");
                 foreach (var settings in character.Animations ?? Array.Empty<CharacterAnimationSettings>())
                     signature.Append('|').Append(settings == null ? "null" : JsonUtility.ToJson(settings));
                 // Offset-only edits and unchanged Undo/Apply do not integrate the speed curve again.
