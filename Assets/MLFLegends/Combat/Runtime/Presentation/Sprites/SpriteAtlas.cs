@@ -35,12 +35,16 @@ namespace MLFLegends.Combat
         NativeArray<SpriteFrameGpu> m_Frames;
         NativeArray<int> m_FramePages;
         GraphicsBuffer m_FrameBuffer;
+        readonly float2[] m_ImagePivots;
 
         public SpriteAtlasDefinition Definition { get; }
 
         public int FrameCount => Definition.Frames.Count;
 
         public int PageCount => m_Pages.Length;
+
+        /// <summary>Effective source-canvas pivot for the current atlas frame, resolved at load (Sprite or JSON fallback).</summary>
+        public float2 ImagePivot(int frame) => m_ImagePivots[frame];
 
         /// <summary>Frame table on the CPU (index = runtime frame index).</summary>
         public NativeArray<SpriteFrameGpu>.ReadOnly Frames => m_Frames.AsReadOnly();
@@ -68,10 +72,11 @@ namespace MLFLegends.Combat
 
         public bool IsDisposed { get; private set; }
 
-        SpriteAtlas(SpriteAtlasDefinition definition, Texture2D[] pages, SpriteAtlasCatalog.FrameStorage storage)
+        SpriteAtlas(SpriteAtlasDefinition definition, Texture2D[] pages, SpriteAtlasCatalog.FrameStorage storage, float2[] imagePivots)
         {
             Definition = definition;
             m_Pages = pages;
+            m_ImagePivots = imagePivots;
             var frames = definition.Frames;
             m_Frames = new NativeArray<SpriteFrameGpu>(frames.Count, Allocator.Persistent);
             m_FramePages = new NativeArray<int>(frames.Count, Allocator.Persistent);
@@ -81,10 +86,7 @@ namespace MLFLegends.Combat
             {
                 var frame = frames[i];
                 SpriteAtlasCatalog.TryFrameRegion(definition, frame, storage, out var rect, out var trim, out _);
-                // Equivalent to placing the image at WorldSupport - legacy Pivot on the fixed virtual canvas.
-                // Retaining this baseline preserves old [96,160] exports without rewriting their JSON.
-                var alignment = definition.LegacyPivotOffsetCard;
-                var card = SpriteCardMath.FrameCardRect(rect, trim, definition.WorldSupport) + new float4(alignment, alignment);
+                var card = SpriteCardMath.FrameCardRect(rect, trim, imagePivots[i]);
                 m_Frames[i] = new SpriteFrameGpu { Uv = SpriteCardMath.FrameUv(rect, definition.Pages[frame.Page].Size), CardRect = card };
                 m_FramePages[i] = frame.Page;
                 bounds = new float4(math.min(bounds.xy, card.xy), math.max(bounds.zw, card.zw));
@@ -112,7 +114,7 @@ namespace MLFLegends.Combat
                 return null;
             }
 
-            return Load(catalog.Manifest.text, catalog.Pages, errors, warnings, catalog.Storage);
+            return Load(catalog.Manifest.text, catalog.Pages, errors, warnings, catalog.Storage, catalog);
         }
 
         /// <summary>
@@ -120,7 +122,11 @@ namespace MLFLegends.Combat
         /// Returns null (and allocates nothing) on any error.
         /// </summary>
         public static SpriteAtlas Load(string json, IReadOnlyList<SpriteAtlasPageBinding> bindings, List<string> errors, List<string> warnings,
-            SpriteAtlasCatalog.FrameStorage storage = SpriteAtlasCatalog.FrameStorage.TrimmedRects)
+            SpriteAtlasCatalog.FrameStorage storage = SpriteAtlasCatalog.FrameStorage.TrimmedRects) =>
+            Load(json, bindings, errors, warnings, storage, null);
+
+        static SpriteAtlas Load(string json, IReadOnlyList<SpriteAtlasPageBinding> bindings, List<string> errors, List<string> warnings,
+            SpriteAtlasCatalog.FrameStorage storage, SpriteAtlasCatalog catalog)
         {
             if (errors == null)
                 throw new ArgumentNullException(nameof(errors));
@@ -219,7 +225,18 @@ namespace MLFLegends.Combat
                 ok = false;
             }
 
-            return ok ? new SpriteAtlas(definition, pages, storage) : null;
+            if (!ok) return null;
+            float2[] pivots;
+            if (catalog != null)
+            {
+                if (!catalog.TryImagePivots(definition, pages, errors, out pivots)) return null;
+            }
+            else
+            {
+                pivots = new float2[definition.Frames.Count];
+                for (var i = 0; i < pivots.Length; i++) pivots[i] = definition.Pivot;
+            }
+            return new SpriteAtlas(definition, pages, storage, pivots);
         }
 
         public Texture2D GetPage(int page) => m_Pages[page];

@@ -1,3 +1,12 @@
+## Current #56 validation boundary — pivot/Inspector correction (2026-10-28)
+
+Fresh base `311c3d7d06b5320b9df701ae6f21f519d07c6af1`; [implementation, exact source/model checks and owner checklist](STAGE03_PIVOT_CORRECTION.md).
+PASS (source/model only): 84 C# syntax trees, 50 stable Sprite bindings under 100 enumeration shuffles, 43,200 world-bound
+points with pivot/facing/offset variants, 1,000 trim/fallback cases; 134 protected files byte-identical. No observed source/model
+FAIL. This is not Unity execution. Compile/import/EditMode/PlayMode/GPU/build/Domain Reload-off/GUI profile and visual
+acceptance are NOT RUN (Unity and external PNG absent). Owner slowdown cause proportions remain unmeasured.
+Stage 03 is unaccepted; one PR, no merge and no Stage 04.1 work. Older PASS records do not certify this delivery.
+
 ## Current #52 validation boundary (2026-10-28)
 
 Base `1c96c6f`; [control implementation and checks](STAGE03_CONTROLS.md). Existing fixtures are updated for the final

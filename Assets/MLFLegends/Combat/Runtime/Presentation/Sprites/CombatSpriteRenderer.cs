@@ -380,9 +380,8 @@ namespace MLFLegends.Combat
             }
 
             var facing = instance.Facing < 0f ? FacingDirection.Left : FacingDirection.Right;
-            var definition = m_Atlas.Definition;
-            var card = SpriteCardMath.AlignedCanvasToCard(anchor.Position, definition.WorldSupport,
-                definition.LegacyPivotOffsetCard + ImageOffsetCard, facing);
+            var card = SpriteCardMath.AlignedCanvasToCard(anchor.Position, m_Atlas.ImagePivot((int)instance.Frame),
+                ImageOffsetCard, facing);
             position = SpriteCardMath.CardToWorld(m_Basis, instance.Position, card, PixelWorldSize, instance.DepthOffset + m_DepthBias);
             direction = SpriteCardMath.CanvasDirectionToWorld(m_Basis, anchor.Direction, facing, card.y);
             return true;
@@ -762,9 +761,9 @@ namespace MLFLegends.Combat
                 var id = new CombatantId { Value = ids[i] };
                 var instance = m_Extraction.Instances[i];
                 var definition = m_Atlas.Definition;
-                // Cyan is the fixed virtual canvas; amber is the source image after legacy pivot + artistic offset.
+                // Cyan is the fixed reference canvas; amber uses this image's effective pivot and artistic offset.
                 DrawCanvas(instance, definition.WorldSupport, float2.zero, Color.cyan);
-                DrawCanvas(instance, definition.WorldSupport, definition.LegacyPivotOffsetCard + ImageOffsetCard, new Color(1f, 0.7f, 0.2f));
+                DrawCanvas(instance, m_Atlas.ImagePivot((int)instance.Frame), ImageOffsetCard, new Color(1f, 0.7f, 0.2f));
                 Gizmos.color = Color.white;
                 Gizmos.DrawWireSphere(instance.Position, 0.05f);
                 DrawAnchor(id, AnchorKind.HandLeft, new Color(0.3f, 0.6f, 1f));

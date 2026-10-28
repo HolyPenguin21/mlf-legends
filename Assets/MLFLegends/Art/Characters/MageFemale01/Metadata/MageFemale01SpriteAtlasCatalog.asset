@@ -17,3 +17,104 @@ MonoBehaviour:
   m_Pages:
   - File: mage_female_01_00.png
     Texture: {fileID: 2800000, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  m_ImagePivots:
+  - FrameId: idle_combat_000
+    Sprite: {fileID: 969546624, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: idle_combat_001
+    Sprite: {fileID: -1180552439, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: idle_combat_002
+    Sprite: {fileID: -1902473016, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: idle_combat_003
+    Sprite: {fileID: -405403146, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: idle_combat_004
+    Sprite: {fileID: 373637236, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: idle_combat_005
+    Sprite: {fileID: 291941157, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: run_000
+    Sprite: {fileID: -204077458, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: run_001
+    Sprite: {fileID: -1703019354, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: run_002
+    Sprite: {fileID: 354816379, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: run_003
+    Sprite: {fileID: 435853849, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: run_004
+    Sprite: {fileID: 827793321, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: punch_left_000
+    Sprite: {fileID: -51851814, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: punch_left_001
+    Sprite: {fileID: 636707295, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: punch_left_002
+    Sprite: {fileID: 1284815293, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: punch_left_003
+    Sprite: {fileID: -1208386382, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: punch_left_004
+    Sprite: {fileID: -660559152, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: punch_left_005
+    Sprite: {fileID: -1794790205, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: punch_right_000
+    Sprite: {fileID: -876850695, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: punch_right_001
+    Sprite: {fileID: 50526527, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: punch_right_002
+    Sprite: {fileID: -910266423, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: punch_right_003
+    Sprite: {fileID: 1832980769, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: punch_right_004
+    Sprite: {fileID: 679243668, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: punch_right_005
+    Sprite: {fileID: 1682359028, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: jump_000
+    Sprite: {fileID: 81780272, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: jump_001
+    Sprite: {fileID: 706799761, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: jump_002
+    Sprite: {fileID: -1630428471, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: jump_003
+    Sprite: {fileID: -1016802482, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: jump_004
+    Sprite: {fileID: -249933110, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: jump_005
+    Sprite: {fileID: 911598914, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: kick_left_000
+    Sprite: {fileID: -1198229085, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: kick_left_001
+    Sprite: {fileID: -97733966, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: kick_left_002
+    Sprite: {fileID: -1392510226, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: kick_left_003
+    Sprite: {fileID: -1026897495, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: kick_left_004
+    Sprite: {fileID: 82756776, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: kick_left_005
+    Sprite: {fileID: 829070609, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: kick_right_000
+    Sprite: {fileID: -113433996, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: kick_right_001
+    Sprite: {fileID: -1050537395, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: kick_right_002
+    Sprite: {fileID: -966043214, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: kick_right_003
+    Sprite: {fileID: 1098540890, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: kick_right_004
+    Sprite: {fileID: -1593930085, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: kick_right_005
+    Sprite: {fileID: 1056861281, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: kick_spin_000
+    Sprite: {fileID: -1763426475, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: kick_spin_001
+    Sprite: {fileID: 180821396, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: kick_spin_002
+    Sprite: {fileID: 1745538212, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: kick_spin_003
+    Sprite: {fileID: -83345047, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: kick_spin_004
+    Sprite: {fileID: -1324339279, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: kick_spin_005
+    Sprite: {fileID: 1223285458, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: kick_spin_006
+    Sprite: {fileID: 338775994, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: kick_spin_007
+    Sprite: {fileID: -1192074697, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}
+  - FrameId: kick_spin_008
+    Sprite: {fileID: 913476178, guid: 57ac4797365b542c9358e7e0fd26b7c4, type: 3}

@@ -1,3 +1,10 @@
+# Current correction #56 — Sprite Editor pivot and Inspector cost
+
+[Current implementation, migration and owner checks](STAGE03_PIVOT_CORRECTION.md). Imported per-image pivots now take
+precedence over JSON; JSON is fallback only. The embedded raster preview is removed, and timing/validation diagnostics
+are cached by their inputs. The historical #50/#51 handoff below is updated for these two corrected contracts.
+Stage 03 remains unaccepted; no Stage 04.1 work or merge is authorized by this delivery.
+
 # Current follow-up #52 — final controls
 
 [Final keyboard layout, compatibility, verification and manual handoff](STAGE03_CONTROLS.md).
@@ -70,23 +77,22 @@ Configure the drawing in **Assets/MLFLegends/Combat/PresentationData/CharacterAn
 mage_female_01 → Image Offset Pixels**. This is ONE offset for all clips of that character, in pixels (+X right, +Y down).
 Keep the same character entry and catalog for every animation. Do not use separate support points for jump or strikes.
 
-Compatibility is explicit: the manifest's old `pivot` becomes the baseline ART alignment. On the fixed virtual canvas,
-the image translation is `WorldSupport - JSON pivot + ImageOffsetPixels`. Thus old `[96,160]` data gets a baseline
-translation `[0,+3.2]` and preserves its previous world drawing/anchor placement at zero extra offset. The fixed support
-is still `[96,163.2]`; the art pivot is not a second physical position. If the owner wants the source image origin exactly
-on the reference canvas, use Image Offset Pixels `[0,-3.2]` with the old JSON. New exports may use pivot `[96,163.2]`
-and zero offset. No batch JSON migration or automatic source-file overwrite occurs.
+Compatibility: a catalog frame with an Image Pivots binding uses that imported Sprite’s pivot, edited in Sprite Editor
+with Apply. JSON pivot is used ONLY for an absent binding. Old JSON-only catalogs retain their previous world drawing
+and anchors without manual JSON migration. Imported pivot and legacy JSON alignment are never added together.
+All 50 mage frame IDs now reference the existing page Sprite subassets; their authored pivots and importer metadata are
+unchanged. In particular, a selected Center pivot is real data and will change the mage image placement.
 
-Algebraically, source point `p` has authored card position `(p.x - pivot.x + offset.x, pivot.y - p.y - offset.y)`.
-For left facing the complete X result changes sign, including the offset; hand/effect points use exactly that transform.
-The source-image translation is applied once. Hand/effect direction vectors are mirrored but never translated.
+For source point p, effective P and extra ImageOffsetPixels A, card position is
+`[(p.x - P.x + A.x) * facingSign, P.y - p.y - A.y]`. At A=0, P coincides with CombatPosition. Reference support remains
+[96,163.2] on a 192×192 canvas. Full-canvas Sprite normalized [0.5,0.15] converts to exactly that point without integer
+rounding. Anchors, their local tangents, full-cell geometry, footprints and bounds follow the current image pivot.
 
-The config Inspector's **Full source canvas preview** selects any clip/local frame and facing, including frames outside
-the configured playback range. Cyan = fixed full canvas; white + = fixed world support; amber = aligned source-image
-canvas; blue/magenta = hands; green = effect anchor. Fit/scale is derived from source size and the shared offset, never
-the current silhouette. Scene renderer anchor gizmos show the same cyan/amber outlines and white support sphere.
-Missing external PNG is reported; outlines and anchors still display. Frame-to-frame drawing errors remain artistic work:
-the renderer deliberately does not normalize each pose to its bounding box.
+The CharacterAnimationConfig Inspector has no raster preview, clip/frame/facing selector, DrawTexture, coloured overlays
+or preview state. Timing/set diagnostics reuse runtime builders and are cached by config settings and manifest revision;
+frame holds are collapsed and materialized on demand. Undo/Redo, reimport and asset switches invalidate the appropriate
+cache. Optional Scene anchor gizmos still show the fixed reference canvas and the image transformed by its own pivot.
+No replacement preview window is introduced. See the current correction handoff for invalidation and build details.
 
 ## Attack movement
 
