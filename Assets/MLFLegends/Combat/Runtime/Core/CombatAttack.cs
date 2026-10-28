@@ -41,7 +41,7 @@ namespace MLFLegends.Combat
         /// <summary>Current strike; <see cref="CombatAttackKind.None"/> when the fighter is free.</summary>
         public CombatAttackKind Kind;
 
-        /// <summary>Attack or Kick pressed during Active/Recovery, waiting for the chain point; None otherwise.</summary>
+        /// <summary>One exact OR general strike intention accepted during Active/Recovery; resolved only at execution.</summary>
         public CommandButtons Buffered;
 
         /// <summary>Strikes in the current series, the current one included; 0 when free.</summary>

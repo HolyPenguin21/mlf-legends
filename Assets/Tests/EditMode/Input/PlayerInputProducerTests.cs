@@ -174,9 +174,9 @@ namespace MLFLegends.Tests.EditMode
         // ---- frame pacing: 30/60/120 FPS and variable pacing ----
 
         /// <summary>
-        /// The same timed input at different frame pacings: D held 0.0–0.5 s, a K tap at 0.1 s, K held 1.2–2.2 s (after the
+        /// The same timed input at different frame pacings: D held 0.0–0.5 s, a Space tap at 0.1 s, Space held 1.2–2.2 s (after the
         /// first landing). Every tick's accepted command equals the device state of its frame; each press reaches exactly
-        /// the first tick at or after its frame; two jumps happen, holding K never re-jumps.
+        /// the first tick at or after its frame; two jumps happen, holding Space never re-jumps.
         /// </summary>
         [TestCase(30)]
         [TestCase(60)]
@@ -217,20 +217,20 @@ namespace MLFLegends.Tests.EditMode
 
                     if (tapPending && t >= 0.1)
                     {
-                        Tap(Key.K);
+                        Tap(Key.Space);
                         tapPending = false;
                         tapFrame = frame;
                     }
 
                     if (!kDown && t >= 1.2 && t < 2.2)
                     {
-                        Down(Key.K);
+                        Down(Key.Space);
                         kDown = true;
                         holdFrame = frame;
                     }
                     else if (kDown && t >= 2.2)
                     {
-                        Up(Key.K);
+                        Up(Key.Space);
                         kDown = false;
                     }
                 });
@@ -291,7 +291,7 @@ namespace MLFLegends.Tests.EditMode
             Frame(ticks, () =>
             {
                 Down(Key.D);
-                Tap(Key.K);
+                Tap(Key.Space);
                 Down(Key.L);
             });
             Frame(3);
@@ -302,8 +302,8 @@ namespace MLFLegends.Tests.EditMode
             {
                 var command = HumanCommand(battle[i]);
                 Assert.That(command.MoveX, Is.EqualTo(1), $"tick {i}");
-                Assert.That(command.Held, Is.EqualTo(CommandButtons.Guard), $"tick {i}: L held, K already released");
-                Assert.That(command.Pressed, Is.EqualTo(i == 0 ? CommandButtons.Jump | CommandButtons.Guard : CommandButtons.None),
+                Assert.That(command.Held, Is.EqualTo(CommandButtons.Kick), $"tick {i}: L held, Space already released");
+                Assert.That(command.Pressed, Is.EqualTo(i == 0 ? CommandButtons.Jump | CommandButtons.Kick : CommandButtons.None),
                     $"tick {i}: presses only on the first tick after the frame (a 0-tick frame keeps them)");
             }
 
@@ -319,31 +319,31 @@ namespace MLFLegends.Tests.EditMode
         {
             StartRig();
             Frame(1);
-            Frame(0, () => Tap(Key.K));
-            Frame(0, () => Tap(Key.K));
+            Frame(0, () => Tap(Key.Space));
+            Frame(0, () => Tap(Key.Space));
             Frame(0, () =>
             {
-                Tap(Key.K);
-                Tap(Key.J);
+                Tap(Key.Space);
+                Tap(Key.I);
             });
             Frame(1);
             Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.Jump | CommandButtons.Attack));
             Frame(1);
             Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.None), "Consumed by one tick.");
 
-            // Land, then hold K for 2 s.
+            // Land, then hold Space for 2 s.
             for (var i = 0; i < 6; i++)
                 Frame(10);
             Assert.That(Human(Last).Motion.Grounded, Is.True);
             var before = BattleTicks().Length;
-            Frame(1, () => Down(Key.K));
+            Frame(1, () => Down(Key.Space));
             for (var i = 0; i < 120; i++)
                 Frame(1);
             var held = BattleTicks().Skip(before).ToArray();
             Assert.That(held.Count(r => HumanCommand(r).Pressed != CommandButtons.None), Is.EqualTo(1));
             Assert.That(held.All(r => HumanCommand(r).Held == CommandButtons.Jump), Is.True);
             Assert.That(Enumerable.Range(1, held.Length - 1).Count(i => Human(held[i - 1]).Motion.Grounded && !Human(held[i]).Motion.Grounded)
-                + (Human(held[0]).Motion.Grounded ? 0 : 1), Is.EqualTo(1), "Holding K jumps once, never again after landing.");
+                + (Human(held[0]).Motion.Grounded ? 0 : 1), Is.EqualTo(1), "Holding Space jumps once, never again after landing.");
             Assert.That(Human(Last).Motion.Grounded, Is.True);
         }
 
@@ -383,7 +383,7 @@ namespace MLFLegends.Tests.EditMode
         }
 
         [Test]
-        public void GamepadButtonsMapToTheSameIntentions()
+        public void CombatButtonsUseOnlyTheFinalKeyboardBindings()
         {
             StartRig();
             Frame(1); // the battle's first tick drops presses made before it started
@@ -395,8 +395,20 @@ namespace MLFLegends.Tests.EditMode
                 Pad(GamepadButton.West, false);
             });
             var command = HumanCommand(Last);
-            Assert.That(command.Held, Is.EqualTo(CommandButtons.Jump | CommandButtons.Guard));
-            Assert.That(command.Pressed, Is.EqualTo(CommandButtons.Jump | CommandButtons.Guard | CommandButtons.Attack));
+            Assert.That(command.Held, Is.EqualTo(CommandButtons.None), "Gamepad combat aliases removed; movement stick remains tested separately.");
+            Assert.That(command.Pressed, Is.EqualTo(CommandButtons.None));
+            var keys = new[] { Key.Y, Key.U, Key.I, Key.H, Key.J, Key.K, Key.L, Key.Space };
+            var flags = new[] { CommandButtons.PunchLeft, CommandButtons.PunchRight, CommandButtons.Attack,
+                CommandButtons.KickLeft, CommandButtons.KickRight, CommandButtons.KickSpin, CommandButtons.Kick, CommandButtons.Jump };
+            for (var i = 0; i < keys.Length; i++)
+            {
+                Frame(1, () => Tap(keys[i]));
+                Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(flags[i]), $"Physical {keys[i]}");
+                Assert.That(HumanCommand(Last).Held, Is.EqualTo(CommandButtons.None), "A released tap is Pressed only.");
+            }
+            Frame(1, () => { Tap(Key.Enter); Tap(Key.C); Tap(Key.LeftShift); });
+            Assert.That(HumanCommand(Last).IsNone, Is.True, "Old template/Enter combat aliases are gone.");
+
         }
 
         // ---- lifecycle ----
@@ -408,11 +420,11 @@ namespace MLFLegends.Tests.EditMode
             Frame(1);
             m_Replay.RequestInStep(typeof(CombatStateUpdateSystemGroup), battle: 1, relativeTick: 2,
                 BattleRequest.Restart(BattleSetup.Default));
-            Frame(0, () => Tap(Key.K));
+            Frame(0, () => Tap(Key.Space));
             Frame(4, () =>
             {
                 Down(Key.D);
-                Tap(Key.J); // pressed in battle 1's frame, consumed by its tick 2
+                Tap(Key.I); // pressed in battle 1's frame, consumed by its tick 2
             });
             var first = BattleTicks(1);
             Assert.That(first.Length, Is.EqualTo(2), "Battle 1 ends after its tick 2; the Restart applies before the next catch-up tick.");
@@ -429,7 +441,7 @@ namespace MLFLegends.Tests.EditMode
             }
 
             // A press made while battle 2 runs, then a Restart between frames: the press belongs to battle 2 and is dropped.
-            Frame(0, () => Tap(Key.K));
+            Frame(0, () => Tap(Key.Space));
             m_Replay.Request(BattleRequest.Restart(BattleSetup.Default));
             Frame(3);
             Assert.That(BattleTicks(3).Select(r => HumanCommand(r).Pressed), Is.All.EqualTo(CommandButtons.None));
@@ -441,13 +453,13 @@ namespace MLFLegends.Tests.EditMode
         {
             StartRig();
             Frame(1);
-            Frame(0, () => Tap(Key.K));
+            Frame(0, () => Tap(Key.Space));
             m_Replay.Request(BattleRequest.End());
             Frame(3, () => Down(Key.D));
             Assert.That(m_Replay.Records.Skip(1).All(r => !r.Active && r.Results.Length == 0), Is.True, "Idle: nothing submitted.");
             Assert.That(m_Capture.PendingPressed, Is.EqualTo(CommandButtons.None), "Idle ticks drop presses.");
 
-            Frame(0, () => Tap(Key.J));
+            Frame(0, () => Tap(Key.I));
             m_Replay.Request(BattleRequest.Start(BattleSetup.Default));
             Frame(2);
             Assert.That(BattleTicks(2).Select(r => HumanCommand(r).Pressed), Is.All.EqualTo(CommandButtons.None),
@@ -457,13 +469,13 @@ namespace MLFLegends.Tests.EditMode
             // Defeat stand-in: a test disables InCombat (the future defeat owner's only write).
             var human = HumanEntity();
             m_Replay.Manager.SetComponentEnabled<InCombat>(human, false);
-            Frame(2, () => Tap(Key.K));
+            Frame(2, () => Tap(Key.Space));
             Assert.That(Last.Results, Is.Empty, "No command (and no UnknownCombatant) for a defeated human.");
             Assert.That(m_Capture.PendingPressed, Is.EqualTo(CommandButtons.None));
             m_Replay.Manager.SetComponentEnabled<InCombat>(human, true); // restore for the despawn case
 
             m_Replay.Request(BattleRequest.Despawn(m_Replay.Session.HumanCombatant));
-            Frame(2, () => Tap(Key.K));
+            Frame(2, () => Tap(Key.Space));
             Assert.That(Last.Results, Is.Empty, "No command for a despawned human.");
             Assert.That(Last.Combatant(Last.AiId).Applied.Command.Tick, Is.EqualTo(Last.Tick), "The AI keeps being simulated.");
         }
@@ -485,12 +497,12 @@ namespace MLFLegends.Tests.EditMode
         {
             StartRig();
             Frame(1);
-            Frame(0, () => Tap(Key.J)); // a tap of the last unpaused frame, not consumed by any tick
+            Frame(0, () => Tap(Key.I)); // a tap of the last unpaused frame, not consumed by any tick
             Time.timeScale = 0f;
-            Frame(0, () => Tap(Key.K));
+            Frame(0, () => Tap(Key.Space));
             Frame(0, () =>
             {
-                Down(Key.K);
+                Down(Key.Space);
                 Down(Key.D);
             });
             Frame(0);
@@ -502,13 +514,13 @@ namespace MLFLegends.Tests.EditMode
                 Assert.That(HumanCommand(record).Pressed, Is.EqualTo(CommandButtons.None), "No press from before or during the pause.");
                 Assert.That(HumanCommand(record).Held, Is.EqualTo(CommandButtons.Jump), "Held is the actual state after the pause.");
                 Assert.That(HumanCommand(record).MoveX, Is.EqualTo(1));
-                Assert.That(Human(record).Motion.Grounded, Is.True, "Holding K through the pause does not jump on resume.");
+                Assert.That(Human(record).Motion.Grounded, Is.True, "Holding Space through the pause does not jump on resume.");
             }
 
             Frame(1, () =>
             {
-                Up(Key.K);
-                Down(Key.K);
+                Up(Key.Space);
+                Down(Key.Space);
             });
             Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.Jump), "A fresh press after resume works.");
         }
@@ -519,9 +531,9 @@ namespace MLFLegends.Tests.EditMode
             StartRig();
             Frame(1, () => Down(Key.D));
             Assert.That(HumanCommand(Last).MoveX, Is.EqualTo(1));
-            Frame(0, () => Tap(Key.K));
+            Frame(0, () => Tap(Key.Space));
             m_Capture.SetFocused(false);
-            Frame(1, () => Tap(Key.J));
+            Frame(1, () => Tap(Key.I));
             Assert.That(HumanCommand(Last).IsNone, Is.True, "Unfocused: neutral, the fighter stops on the next tick.");
             var x = Human(Last).Position.x;
             m_Capture.SetFocused(true);
@@ -530,7 +542,7 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.None), "Presses around the focus change are dropped.");
             Assert.That(Human(Last).Position.x, Is.GreaterThan(x));
 
-            Frame(0, () => Tap(Key.K));
+            Frame(0, () => Tap(Key.Space));
             InputSystem.RemoveDevice(m_Keyboard);
             Frame(1);
             Assert.That(HumanCommand(Last).IsNone, Is.True, "Removed keyboard: no move, no press.");
@@ -555,10 +567,10 @@ namespace MLFLegends.Tests.EditMode
             Frame(1);
             Frame(1, () =>
             {
-                Down(Key.K);
+                Down(Key.Space);
                 Down(Key.L);
             });
-            Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.Jump | CommandButtons.Guard));
+            Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.Jump | CommandButtons.Kick));
             for (var i = 0; i < 6; i++)
                 Frame(10); // land, K and L still held
 
@@ -580,21 +592,21 @@ namespace MLFLegends.Tests.EditMode
             var ticks = BattleTicks();
             foreach (var record in ticks.Skip(ticks.Length - 3))
             {
-                Assert.That(HumanCommand(record).Held, Is.EqualTo(CommandButtons.Jump | CommandButtons.Guard), "Restored hold.");
+                Assert.That(HumanCommand(record).Held, Is.EqualTo(CommandButtons.Jump | CommandButtons.Kick), "Restored hold.");
                 Assert.That(HumanCommand(record).Pressed, Is.EqualTo(CommandButtons.None), "A restored hold is not a press.");
                 Assert.That(Human(record).Motion.Grounded, Is.True, "No unwanted jump.");
             }
 
-            Frame(1, () => Tap(Key.J));
+            Frame(1, () => Tap(Key.I));
             Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.Attack), "A key not held across the cycle presses.");
             // Stage 05.1: J now strikes, and a running strike blocks the jump until its recovery ends.
             for (var i = 0; i < CombatAttackTuning.Get(CombatAttackKind.PunchLeft).TotalTicks; i++)
                 Frame(1);
-            Frame(1, () => Up(Key.K));
-            Frame(1, () => Down(Key.K));
+            Frame(1, () => Up(Key.Space));
+            Frame(1, () => Down(Key.Space));
             Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.Jump), "Release, then a fresh press.");
             Assert.That(Human(Last).Motion.Grounded, Is.False);
-            Assert.That(m_Capture.BlockedButtons, Is.EqualTo(CommandButtons.Guard), "L stays blocked until it is released.");
+            Assert.That(m_Capture.BlockedButtons, Is.EqualTo(CommandButtons.Kick), "L stays blocked until it is released.");
         }
 
         /// <summary>
@@ -606,7 +618,7 @@ namespace MLFLegends.Tests.EditMode
         {
             StartRig(attach: false);
             Frame(2);
-            Frame(0, () => Tap(Key.K)); // before the attach: dropped
+            Frame(0, () => Tap(Key.Space)); // before the attach: dropped
             Assert.That(m_Producer.Attach(m_Capture), Is.True);
             Frame(1);
             Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.None), "A pre-attach tap never reaches a tick.");
@@ -616,8 +628,8 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(m_Producer.Attach(m_Capture), Is.True);
             Frame(1, () =>
             {
-                Tap(Key.K);
-                Tap(Key.J);
+                Tap(Key.Space);
+                Tap(Key.I);
             });
             Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.Jump | CommandButtons.Attack), "Fresh taps after the attach.");
             Assert.That(HumanCommand(Last).Held, Is.EqualTo(CommandButtons.None));
@@ -626,7 +638,7 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(BattleTicks().Count(r => HumanCommand(r).Pressed != CommandButtons.None), Is.EqualTo(1), "Exactly once.");
 
             // Restart between frames still drops presses of the old battle.
-            Frame(0, () => Tap(Key.J));
+            Frame(0, () => Tap(Key.I));
             m_Replay.Request(BattleRequest.Restart(BattleSetup.Default));
             Frame(1);
             Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.None));
@@ -664,7 +676,7 @@ namespace MLFLegends.Tests.EditMode
             var second = new PlayerInputCapture(m_Asset);
             try
             {
-                Frame(0, () => Tap(Key.K));
+                Frame(0, () => Tap(Key.Space));
                 m_Producer.Attach(second);
                 Frame(2, () => Down(Key.D));
                 Assert.That(m_Producer.Source, Is.SameAs(second));
@@ -678,13 +690,13 @@ namespace MLFLegends.Tests.EditMode
                 Assert.That(m_Producer.Detach(m_Capture), Is.False, "A replaced capture cannot detach its successor.");
                 Assert.That(m_Producer.Source, Is.SameAs(second));
                 Assert.That(m_Producer.Detach(second), Is.True);
-                Frame(2, () => Tap(Key.K));
+                Frame(2, () => Tap(Key.Space));
                 Assert.That(Last.Results, Is.Empty);
                 Assert.That(Human(Last).Applied.WasSubmitted, Is.False);
 
                 m_Producer.Attach(second);
                 second.Dispose();
-                Frame(1, () => Tap(Key.K));
+                Frame(1, () => Tap(Key.Space));
                 Assert.That(Last.Results, Is.Empty, "A disposed capture is ignored, without exceptions.");
                 Assert.That(second.TakePressed(), Is.EqualTo(CommandButtons.None));
             }
@@ -704,14 +716,14 @@ namespace MLFLegends.Tests.EditMode
             Frame(3, () =>
             {
                 Down(Key.D);
-                Tap(Key.K);
+                Tap(Key.Space);
             });
             Assert.That(BattleTicks().All(r => r.Results.Length == 0 && !Human(r).Applied.WasSubmitted), Is.True, "Replay World: no producer.");
             m_Replay.Dispose();
 
             StartRig(attach: false);
             m_TickFrames.Clear();
-            Frame(3, () => Tap(Key.K));
+            Frame(3, () => Tap(Key.Space));
             Assert.That(BattleTicks().All(r => r.Results.Length == 0), Is.True, "Producer without capture: inert.");
             Assert.That(m_Producer.Source, Is.Null);
         }
@@ -744,7 +756,7 @@ namespace MLFLegends.Tests.EditMode
             {
                 Assert.That(() => new PlayerInputCapture(incomplete), Throws.ArgumentException, "No Player map.");
                 incomplete.AddActionMap(PlayerInputCapture.MapName).AddAction("Move");
-                Assert.That(() => new PlayerInputCapture(incomplete), Throws.ArgumentException, "No Attack/Jump/Guard.");
+                Assert.That(() => new PlayerInputCapture(incomplete), Throws.ArgumentException, "Required strike actions missing.");
             }
             finally
             {
@@ -763,7 +775,7 @@ namespace MLFLegends.Tests.EditMode
         {
             StartRig();
             Frame(4, () => Down(Key.D));
-            Frame(0, () => Tap(Key.K));
+            Frame(0, () => Tap(Key.Space));
             Frame(5, () => Down(Key.W));
             Frame(3, () =>
             {
@@ -805,7 +817,7 @@ namespace MLFLegends.Tests.EditMode
             setup.HumanAllies = setup.AiAllies = 199;
             StartRig(setup);
             Frame(10, () => Down(Key.D));
-            Frame(10, () => Tap(Key.K));
+            Frame(10, () => Tap(Key.Space));
             foreach (var record in BattleTicks())
             {
                 Assert.That(record.Combatants.Length, Is.EqualTo(400));

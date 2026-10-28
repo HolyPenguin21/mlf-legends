@@ -88,9 +88,14 @@ namespace MLFLegends.Combat
         /// <summary>Phase of the default windows on the tick <paramref name="elapsed"/> ticks after the strike's first tick; None once it ended.</summary>
         public static CombatAttackPhase PhaseAt(in CombatAttackDefinition strike, uint elapsed) => strike.DefaultTiming.PhaseAt(elapsed);
 
-        /// <summary>The strike button of a tick's Pressed: Attack (hand) wins over Kick; None without either.</summary>
+        /// <summary>One deterministic intention for Player/AI: exact hand L/R, foot L/R/spin, then general hand/foot.</summary>
         public static CommandButtons StrikeButton(CommandButtons pressed) =>
-            (pressed & CommandButtons.Attack) != 0 ? CommandButtons.Attack
+            (pressed & CommandButtons.PunchLeft) != 0 ? CommandButtons.PunchLeft
+            : (pressed & CommandButtons.PunchRight) != 0 ? CommandButtons.PunchRight
+            : (pressed & CommandButtons.KickLeft) != 0 ? CommandButtons.KickLeft
+            : (pressed & CommandButtons.KickRight) != 0 ? CommandButtons.KickRight
+            : (pressed & CommandButtons.KickSpin) != 0 ? CommandButtons.KickSpin
+            : (pressed & CommandButtons.Attack) != 0 ? CommandButtons.Attack
             : (pressed & CommandButtons.Kick) != 0 ? CommandButtons.Kick
             : CommandButtons.None;
 
@@ -101,6 +106,15 @@ namespace MLFLegends.Combat
         /// </summary>
         public static CombatAttackKind Select(CommandButtons button, CombatAttackKind previous)
         {
+            // Exact requests survive buffering unchanged, including repeated right-side strikes and a free-state spin.
+            switch (button)
+            {
+                case CommandButtons.PunchLeft: return CombatAttackKind.PunchLeft;
+                case CommandButtons.PunchRight: return CombatAttackKind.PunchRight;
+                case CommandButtons.KickLeft: return CombatAttackKind.KickLeft;
+                case CommandButtons.KickRight: return CombatAttackKind.KickRight;
+                case CommandButtons.KickSpin: return CombatAttackKind.KickSpin;
+            }
             var left = previous != CombatAttackKind.PunchLeft && previous != CombatAttackKind.KickLeft;
             if (button == CommandButtons.Attack)
                 return left ? CombatAttackKind.PunchLeft : CombatAttackKind.PunchRight;

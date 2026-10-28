@@ -30,18 +30,17 @@ namespace MLFLegends.Combat
         // sin(22.5°): an axis counts when it is at least this fraction of the stick's magnitude, i.e. 8 equal sectors.
         const float k_AxisFraction = 0.38268343f;
 
-        static readonly string[] s_Actions = { "Move", "Attack", "Jump", "Guard", "Kick" };
+        static readonly string[] s_ButtonNames = { "PunchLeft", "PunchRight", "KickLeft", "KickRight", "KickSpin", "Attack", "Kick", "Jump" };
+        static readonly CommandButtons[] s_ButtonFlags =
+        {
+            CommandButtons.PunchLeft, CommandButtons.PunchRight, CommandButtons.KickLeft, CommandButtons.KickRight,
+            CommandButtons.KickSpin, CommandButtons.Attack, CommandButtons.Kick, CommandButtons.Jump,
+        };
 
         readonly InputActionMap m_Map;
         readonly InputAction m_Move;
-        readonly InputAction m_Attack;
-        readonly InputAction m_Jump;
-        readonly InputAction m_Guard;
-        readonly InputAction m_Kick;
-        readonly Action<InputAction.CallbackContext> m_OnAttack;
-        readonly Action<InputAction.CallbackContext> m_OnJump;
-        readonly Action<InputAction.CallbackContext> m_OnGuard;
-        readonly Action<InputAction.CallbackContext> m_OnKick;
+        readonly InputAction[] m_Buttons;
+        readonly Action<InputAction.CallbackContext>[] m_OnButtons;
         readonly Action<InputDevice, InputDeviceChange> m_OnDeviceChange;
         readonly Action m_OnAfterUpdate;
         CommandButtons m_Pressed;
@@ -51,7 +50,7 @@ namespace MLFLegends.Combat
         bool m_Focused = true;
 
         /// <exception cref="ArgumentNullException"><paramref name="actions"/> is null.</exception>
-        /// <exception cref="ArgumentException">The asset has no Player map with Move, Attack, Jump, Guard and Kick.</exception>
+        /// <exception cref="ArgumentException">The asset has no Player map with Move, Jump, general hand/foot and all five exact strikes.</exception>
         public PlayerInputCapture(InputActionAsset actions)
         {
             if (actions == null)
@@ -61,25 +60,23 @@ namespace MLFLegends.Combat
             // FindActionMap returns null (does not throw) on an asset without maps.
             var shared = actions.FindActionMap(MapName, throwIfNotFound: true)
                 ?? throw new ArgumentException($"No '{MapName}' action map in '{actions.name}'.", nameof(actions));
-            foreach (var name in s_Actions)
+            shared.FindAction("Move", throwIfNotFound: true);
+            foreach (var name in s_ButtonNames)
                 shared.FindAction(name, throwIfNotFound: true);
             m_Map = shared.Clone();
             m_Move = m_Map.FindAction("Move", throwIfNotFound: true);
-            m_Attack = m_Map.FindAction("Attack", throwIfNotFound: true);
-            m_Jump = m_Map.FindAction("Jump", throwIfNotFound: true);
-            m_Guard = m_Map.FindAction("Guard", throwIfNotFound: true);
-            m_Kick = m_Map.FindAction("Kick", throwIfNotFound: true);
-
-            m_OnAttack = _ => OnPressed(CommandButtons.Attack);
-            m_OnJump = _ => OnPressed(CommandButtons.Jump);
-            m_OnGuard = _ => OnPressed(CommandButtons.Guard);
-            m_OnKick = _ => OnPressed(CommandButtons.Kick);
+            // Arrays/delegates are created once per capture, never while sampling or producing a tick.
+            m_Buttons = new InputAction[s_ButtonNames.Length];
+            m_OnButtons = new Action<InputAction.CallbackContext>[s_ButtonNames.Length];
+            for (var i = 0; i < m_Buttons.Length; i++)
+            {
+                var flag = s_ButtonFlags[i]; // one captured VALUE per callback; no loop-index aliasing
+                m_Buttons[i] = m_Map.FindAction(s_ButtonNames[i], throwIfNotFound: true);
+                m_OnButtons[i] = _ => OnPressed(flag);
+                m_Buttons[i].performed += m_OnButtons[i];
+            }
             m_OnDeviceChange = OnDeviceChange;
             m_OnAfterUpdate = OnAfterUpdate;
-            m_Attack.performed += m_OnAttack;
-            m_Jump.performed += m_OnJump;
-            m_Guard.performed += m_OnGuard;
-            m_Kick.performed += m_OnKick;
             InputSystem.onDeviceChange += m_OnDeviceChange;
             InputSystem.onAfterUpdate += m_OnAfterUpdate;
 
@@ -113,14 +110,9 @@ namespace MLFLegends.Combat
         CommandButtons HeldButtons()
         {
             var held = CommandButtons.None;
-            if (IsHeld(m_Attack))
-                held |= CommandButtons.Attack;
-            if (IsHeld(m_Jump))
-                held |= CommandButtons.Jump;
-            if (IsHeld(m_Guard))
-                held |= CommandButtons.Guard;
-            if (IsHeld(m_Kick))
-                held |= CommandButtons.Kick;
+            for (var i = 0; i < m_Buttons.Length; i++)
+                if (IsHeld(m_Buttons[i]))
+                    held |= s_ButtonFlags[i];
             return held;
         }
 
@@ -195,10 +187,8 @@ namespace MLFLegends.Combat
             m_Pressed = m_Blocked = m_LastHeld = CommandButtons.None;
             InputSystem.onAfterUpdate -= m_OnAfterUpdate;
             InputSystem.onDeviceChange -= m_OnDeviceChange;
-            m_Attack.performed -= m_OnAttack;
-            m_Jump.performed -= m_OnJump;
-            m_Guard.performed -= m_OnGuard;
-            m_Kick.performed -= m_OnKick;
+            for (var i = 0; i < m_Buttons.Length; i++)
+                m_Buttons[i].performed -= m_OnButtons[i];
             m_Map.Disable();
             m_Map.Dispose();
         }

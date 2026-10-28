@@ -1,3 +1,13 @@
+## Current runtime interpretation after #50/#51 (used by #52)
+
+The JSON v1 schema remains unchanged. Fixed world support is source_size × [0.5,0.85] ([96,163.2] for 192×192);
+JSON pivot is an artistic export baseline, preserved through an image translation. The mage catalog explicitly samples
+SourceCanvasCells; truly packed atlases restore their useful rect at trim_offset. No silhouette normalization.
+Strike phases/T/curve in CharacterAnimationConfig define gameplay windows; strike_pose is a graphic diagnostic.
+Jump rise/fall markers choose air poses; LandingStartFrame..EndFrame sets landing recovery, with -1 falling back to land.
+Thus land can supply the fallback range whose frame holds determine the ECS lock. See [current controls](STAGE03_CONTROLS.md)
+and [alignment/landing settings](STAGE03_FINAL_POLISH.md). These statements supersede older runtime support/marker wording.
+
 # Sprite atlas contract v1 (Stage 03, Issue #38)
 
 Current art delivery (Stage 05.1, PR #48): eight clips on one 1728x1536 page (idle_combat 6, run 5, jump 6, punch_left 6,
@@ -45,8 +55,8 @@ GPU data; the battle keeps simulating and nothing is drawn.
   (start: 192 × 192). This is the drawing's frame, not the body size.
 - Origin is the **top-left** corner of the canvas (and of each page), **X right, Y down**, in pixels.
 - Coordinates are continuous: pixel `(i, j)` covers `[i, i+1) × [j, j+1)`. Pixel edges are integers, centres are `+0.5`.
-- **pivot:** the virtual support point on the source canvas (start `[96, 160]`). It is placed exactly at the fighter's
-  authoritative `CombatPosition`. It may be fractional.
+- **pivot:** the artistic export baseline (legacy `[96,160]`), which may be fractional. Runtime world support is fixed
+  at source_size × [0.5,0.85]; image translation = WorldSupport − pivot + ImageOffsetPixels. The ECS position is unchanged.
 - **nominal_height_px:** height of the calm standing figure (current mage 128), not of every bent pose. The runtime scale maps it
   to a configurable world height (start 2 world units); no other size is derived from it.
 - **authored_facing:** `"right"` (the only accepted v1 value). Facing left mirrors the whole drawing and its anchors

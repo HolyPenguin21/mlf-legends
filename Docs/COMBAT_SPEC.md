@@ -1,28 +1,38 @@
 # MLF Legends — Combat specification
 
-**Approval status:** approved high-level mechanics. All unapproved numbers, exact hotkeys and timing parameters remain provisional.
+**Approval status:** approved high-level mechanics. The keyboard layout is owner-specified in #52; unapproved balance values and other future mechanics remain provisional.
 
 ## Fundamentals
 A moderately paced Little Fighter 2 / Nekketsu-inspired 2.5D action brawler on true 3D arenas with sprite characters. Fixed camera angle independent of zoom; player directly controls **one fighter**, remaining combatants use AI. One world scales from 1v1 to 200v200. Death lasts until encounter end; no respawn in match. Map size and winning conditions are scenario-dependent: annihilation, defense, capture or survival.
 
-## Controls (proposed bindings)
-- WASD: movement X/Z; character attacks toward left/right with limited depth hitbox allowance.
-- J: primary attack; heavy/combination mapping remains open.
-- K: jump.
-- L: hold front-facing block.
-- L + **fresh press of direction**: one short directional defensive dash; forward/back, depth, diagonals allowed. No repeated dashing merely from holding a direction.
-Controls should be easily remappable. All input enters the same action command validation pipeline as AI.
+## Controls — current owner layout (#52)
 
-**Implemented input policy (Stage 02.3, #22; bindings provisional):** WASD = world X/Z (W = +Z depth, not
-camera-relative), J = Attack, K = Jump, L = Guard (also Space = Jump, Enter/left mouse = Attack; gamepad left stick,
-West, South, right shoulder). Stage 05.1 adds U / gamepad North = Kick and executes Attack/Kick as the strikes below;
-Guard is still an intention only; guard and L + direction dash are not implemented. Sampling: one player command per real fixed simulation tick, never per render frame; Move and
-Held are the live device state on every tick (also every catch-up tick of one frame); a press reaches exactly one
-tick — the first produced after it — so a tap shorter than a tick is never lost and holding a button never repeats it.
-Several presses of one button before a tick are one press. Analog sticks are quantized to the digital
-{-1, 0, +1} axes (dead zone 0.25, eight 45° sectors). **Pause** (`Time.timeScale = 0`) collects no combat presses;
-resuming uses the buttons actually held, with no synthetic press. **Focus loss** stops the fighter on the next tick and
-drops pending presses; so do device loss, End/Restart and a change of controlled fighter. Details: `Input/INPUT.md`.
+Physical keys, without Shift. Movement remains WASD in world X/Z. Combat action bindings live only in
+`Assets/InputSystem_Actions.inputactions` → Player; camera/UI maps and existing movement bindings are unchanged.
+
+| Key | Logical intention | Executed strike |
+|---|---|---|
+| Y | PunchLeft | punch_left, always |
+| U | PunchRight | punch_right, always |
+| I | Attack | existing alternating hand series |
+| H | KickLeft | kick_left, always |
+| J | KickRight | kick_right, always |
+| K | KickSpin | kick_spin, including from free grounded stance |
+| L | Kick | existing kick_left → kick_right → kick_spin series |
+| Space | Jump | jump |
+
+One press produces one intention, holding never repeats. Simultaneous strikes use the same deterministic rule for
+player and AI: **PunchLeft → PunchRight → KickLeft → KickRight → KickSpin → Attack → Kick**. Jump + strike from a free
+grounded state starts the jump and drops the strike. All intentions use the common command queue and fixed simulation.
+The single existing follow-up slot stores the exact/general intention until execution; exact sides never alternate.
+
+Old combat aliases (Enter, mouse, gamepad/other-device buttons) are removed. Guard is unbound and unimplemented; its
+future key is decided before Stage 06. Crouch is excluded from the project. Dash and Cast are deferred and unbound;
+unused Player template actions are removed. These decisions do not change Camera/UI controls.
+
+Input is sampled once per real fixed tick: live Move/Held every catch-up tick, Pressed consumed once. Pause,
+focus/device interruptions and battle/World rebinding retain their existing press cleanup. During landing recovery,
+all strike/jump presses are dropped rather than executed after the lock; device polling and other simulation continue.
 
 **Camera (Stage 02.4, #22; values provisional):** orthographic, one fixed configurable angle (40° pitch, 0° yaw by
 default) at every zoom level; follows the controlled fighter's authoritative position (ground plane; jump height is not
@@ -44,17 +54,16 @@ A canonical attack has Windup → Active → Recovery, attack shapes, interrupt/
 > **Stage 03 tuning update (owner instruction).** Strike windows are no longer fixed numbers: each strike clip's
 > Preparation (= Windup) / Active / Recovery frame ranges in `CharacterAnimationConfig`, with its duration and speed curve,
 > define them (quantized to 60 Hz ticks, Active never shorter than one tick; see `Presentation/Sprites/ANIMATION.md`). The
-> current project values are punch_left 14/6/9, punch_right 9/11/9, kicks 11/6/16, kick_spin 20/5/20 ticks; the table
-> below is the headless default only. **During Preparation the fighter may move** (normal movement rules; the strike keeps
-> playing, no jump); Active/Recovery keep the lock below. A strike keeps the windows it started with. The chain point is
+> current project values are punch_left/right 14/6/9, kicks 20/10/30, kick_spin 53/14/53 ticks; the table
+> below is the headless default only. **During attacks planar movement is 50% Preparation / 25% Active / 25% Recovery** (the strike keeps
+> playing, no jump); facing keeps the strike lock described below. A strike keeps the windows it started with. The chain point is
 > Recovery start + the chain delay below, capped at the strike's end.
 
 The spec leaves the heavy/combination mapping, series, air strikes and movement during attacks open. Stage 05.1
 implements the smallest coherent set below; every item marked *proposed* is a decision for the owner to confirm or change
-(all numbers live in `Simulation/CombatAttackTuning.cs`, one authoritative source).
+(reach/damage/chain rules/default windows live in CombatAttackTuning; live phase windows come from CharacterAnimationConfig).
 
-- **Controls (proposed):** J / Enter / left mouse / gamepad West = `Attack` (hand strike, existing button); new logical
-  button `Kick` = **U** / gamepad North (foot strike). Both go through the one command queue; AI presses the same bits.
+- **Controls:** the owner-approved table above; the same exact/general flags are available to AI.
 - **Strikes:** `punch_left`, `punch_right`, `kick_left`, `kick_right`, `kick_spin`. Each has Windup → Active → Recovery in
   fixed ticks (60 Hz). Hits resolve only on Active ticks, in the fixed simulation tick, never from animation or markers.
 
@@ -68,17 +77,16 @@ implements the smallest coherent set below; every item marked *proposed* is a de
   All boxes: |ΔZ| ≤ 0.4, |ΔY| ≤ 0.9 (world units; 2 units = nominal body height). Windows follow the delivered art's frame
   proportions; reach follows the drawn fist/foot. Every combatant spawns with 100 HP.
 - **Start (proposed):** a fresh press (Held never repeats) starts a series when the fighter is free and grounded at the
-  start of the tick. Attack wins over Kick when both are pressed on one tick; Attack + Jump on one grounded tick strikes.
+  start of the tick. Simultaneous strikes use the priority above; Jump + strike from free grounded stance starts Jump and drops the strike.
   **Air strikes are not implemented**: an airborne press is dropped (no jump-attack clip exists yet), contrary to the
   approved "jump attacks enabled" goal — deferred to a later stage with its own clip.
-- **Series (proposed):** the first strike is left; each follow-up uses the other side; Kick after `kick_right` is the
+- **Series (proposed):** general requests start left and alternate sides; general Kick after `kick_right` is the
   `kick_spin` finisher. A press during Windup is dropped; from the first Active tick to the end of Recovery the latest
   press is buffered in one slot. The follow-up starts on the first tick at/after the strike's chain point (Windup + Active +
   chain delay), cutting the rest of Recovery; without a buffered press Recovery runs out and the fighter is free on the next
   tick. `kick_spin` and the 4th strike of a series cannot chain: they always play the full Recovery and drop the buffer.
-  Examples: J J J J = L R L R; U U U = kick L, kick R, spin; J U U = punch L, kick R, spin; U J J = kick L, punch R, punch L.
-- **During a strike (proposed; Preparation movement by owner instruction):** planar movement only during Preparation
-  (Windup) ticks, never a jump; facing is locked except on the first tick of each strike (series start or follow-up), where
+  Examples: I I I I = hand L R L R; L L L = kick L, kick R, spin. Exact Y/U/H/J/K keep the selected strike even when buffered; spin remains a full-Recovery finisher.
+- **During a strike:** planar speed = 50% Preparation (Windup), 25% Active, 25% Recovery; never a jump; facing is locked except on the first tick of each strike (series start or follow-up), where
   that tick's MoveX may still turn the fighter, before the hit box is tested. Moving never cancels the strike.
 - **Targets:** every in-combat combatant of another team inside the box (forward along the attacker's `CombatFacing`).
   Allies and self are never hit. Several targets per strike are allowed (spec: "individual attacks can strike several
@@ -96,10 +104,10 @@ Each impact separately resolves:
 Attack animation follows state and simulation windows, not Animator events.
 
 ## Guard
-Blocking protects only from front. Regular guard drains stability according to hit and defender's guard strength; stability recovers by defined rules. Heavy strikes may push defending fighter. Stability reaching zero triggers guard break and a vulnerable interval. **Timely guard** reduces loss and opens a temporary advantage for player/AI to use; **does not perform counter automatically**. Attacks from rear bypass normal front guard.
+Future Stage 06, not implemented or bound; key undecided (L is general Kick). Blocking protects only from front. Regular guard drains stability according to hit and defender's guard strength; stability recovers by defined rules. Heavy strikes may push defending fighter. Stability reaching zero triggers guard break and a vulnerable interval. **Timely guard** reduces loss and opens a temporary advantage for player/AI to use; **does not perform counter automatically**. Attacks from rear bypass normal front guard.
 
 ## Dash and jump
-Directional defensive dash creates rapid repositioning about **1–1.5 fighter widths** as a starting tuning estimate. A brief defined segment may avoid ordinary attack hit registration, but dash is *not universally invulnerable* to magical/environmental hazards. Has punishable recovery, command gating and physical collision throughout, with no phasing through crowds or walls. Jump changes altitude and attack eligibility, vulnerable air state and landing.
+Dash is deferred/unbound; no L+direction action exists. Future directional defensive dash creates rapid repositioning about **1–1.5 fighter widths** as a starting tuning estimate. A brief defined segment may avoid ordinary attack hit registration, but dash is *not universally invulnerable* to magical/environmental hazards. Has punishable recovery, command gating and physical collision throughout, with no phasing through crowds or walls. Jump changes altitude and attack eligibility, vulnerable air state and landing.
 
 ## Body collisions
 All characters interact physically. Ally yield creates slight movement priority, and user-controlled fighter passes through allied clusters almost effortlessly **without** disabling collision. Enemies physically obstruct movement. Knockback into other fighters/environment can have chain effects.
@@ -124,6 +132,6 @@ Fixed simulation tick, combat responsiveness, stability capacity/recovery, perfe
 - Player and AI use identical action legality and battle resolution.
 - Front block works, rear hit bypasses; repeated guard pressure eventually breaks defense.
 - Timely guard grants advantage without auto-counter.
-- Held L + direction creates one dash, not endless dash; no clipping through actors/obstacles.
+- Future defense acceptance: a separately chosen guard/dash binding must not repeat from holding or clip through actors/obstacles.
 - Damage/stagger applies exactly once per intended hit; multi-target hits all valid separate targets.
 - Broken arm/leg/eye changes executable actions, perception or movement, and death stops further action.

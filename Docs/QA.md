@@ -1,3 +1,10 @@
+## Current #52 validation boundary (2026-10-28)
+
+Base `1c96c6f`; [control implementation and checks](STAGE03_CONTROLS.md). Existing fixtures are updated for the final
+keyboard layout, absent gamepad combat aliases, widened flag mask and exact/general buffer semantics. No new test cases.
+Unity compile/EditMode/PlayMode/GPU/GC/performance remain NOT RUN here; earlier exact-SHA results are historical and do
+not certify #52. Stage 03 acceptance remains with the owner.
+
 ## Stage 03 final polish — current validation boundary (2026-10-28)
 
 Follow-up: [bottom-up source/integration review](STAGE03_BOTTOM_UP_REVIEW.md), corrections in the same PR #51.

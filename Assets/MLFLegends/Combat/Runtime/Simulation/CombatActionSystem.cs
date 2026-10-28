@@ -7,11 +7,11 @@ namespace MLFLegends.Combat
     /// <remarks>
     /// Runs first in State, before facing and movement, so both see this tick's strike (turning and jump locks, phase-scaled
     /// planar movement). Landing recovery suppresses new action starts and buffering. Per actor, from accepted commands only:
-    /// a fresh Attack/Kick press (Held never repeats) starts a series when the actor is free and grounded at the start of
+    /// a fresh exact/general strike press (Held never repeats) starts a series when free and grounded at the start of
     /// the tick and does not press Jump on the same tick (the jump wins); airborne presses are dropped. During Windup
     /// presses are dropped; from Active to the end of Recovery the
     /// latest press is buffered in one slot. Once ChainDelayTicks of Recovery have played, a buffered press starts the next
-    /// strike of the series on that tick (sides alternate, Kick after kick_right is the spin finisher), unless the strike
+    /// strike of the series on that tick (exact requests keep their side; general requests use the existing series), unless the strike
     /// is a finisher or the series is full. Otherwise Recovery runs out, the buffer is dropped and the actor is free on
     /// the following tick, where a fresh press may start a new series. Every strike start clears the hit ledger.
     /// Every strike start copies its phase timing from the World's <see cref="CombatStrikeSchedule"/> (created here with

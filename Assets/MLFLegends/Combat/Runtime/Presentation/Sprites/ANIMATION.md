@@ -1,3 +1,13 @@
+# Current #52 control integration
+
+[Current keyboard/intent contract](../../../../../../Docs/STAGE03_CONTROLS.md). Exact hand/foot/spin and general-series
+requests feed the existing CombatAttackState; this renderer selects the existing named clips and never reads keys.
+PR #51 already supplies the shared bootstrap config binding and empty-clips preview guard; neither is duplicated here.
+Authoritative selection remains strike → airborne jump → landing recovery → run → idle. Phase speed is 50/25/25;
+landing is uninterruptible by controlled move/new actions for the configured frame holds (currently 27 ticks).
+Older dated animation descriptions below are historical where they state fixed strike tuning, run-before-landing,
+Preparation-only movement or old input keys. Stage 03 is NOT accepted until the owner confirms the Unity check.
+
 # Stage 03 final polish — pending owner acceptance (2026-10-28)
 
 Current settings and compatibility: [Stage 03 final polish handoff](../../../../../../Docs/STAGE03_FINAL_POLISH.md).

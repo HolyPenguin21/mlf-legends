@@ -393,7 +393,7 @@ namespace MLFLegends.Tests.EditMode
             var moveZ = Cmd(1, 1, source: CommandSource.AI);
             moveZ.MoveZ = -2;
             var buttons = Cmd(1, 1, source: CommandSource.AI);
-            buttons.Held = (CommandButtons)0x80;
+            buttons.Held = (CommandButtons)0x200;
             var noSource = Cmd(1, 1, source: CommandSource.None);
             var badSource = Cmd(1, 1, source: (CommandSource)9);
             Submit(moveX, moveZ, buttons, noSource, badSource, Cmd(0, 1));

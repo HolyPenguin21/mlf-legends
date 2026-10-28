@@ -16,17 +16,28 @@ stay with their owners in `Simulation/`; player and AI commands are validated an
 The actions asset is `Assets/InputSystem_Actions.inputactions` (also the project-wide actions). Nobody here enables or
 disables the shared asset or its maps: each capture enables and disposes only its own clone.
 
-## Bindings (provisional, remappable in the asset)
+## Bindings — current owner layout (#52)
 
-| Action (Player map) | Keyboard | Gamepad | Command |
-|---|---|---|---|
-| Move (Vector2) | W A S D (W = world +Z, D = world +X) | left stick | `MoveX`, `MoveZ` |
-| Attack (Button) | **J** (also Enter, left mouse) | West | `Attack` |
-| Jump (Button) | **K** (also Space) | South | `Jump` |
-| Guard (Button, new) | **L** | right shoulder | `Guard` |
+| Player action | Physical key | Logical flag |
+|---|---|---|
+| PunchLeft | Y | PunchLeft |
+| PunchRight | U | PunchRight |
+| Attack | I | Attack (general hand series) |
+| KickLeft | H | KickLeft |
+| KickRight | J | KickRight |
+| KickSpin | K | KickSpin |
+| Kick | L | Kick (general foot series) |
+| Jump | Space | Jump |
 
-Arrow keys were removed from Move: they pan the camera (`Presentation/CAMERA.md`). Attack and Guard are passed as the
-existing intentions only (historical #22 text; Stage 05.1 executes Attack/Kick as strikes, see below); guard and L + direction dash are later stages. Input is never camera-relative.
+No Shift is required. These are the only combat action bindings; no mouse/Enter/gamepad/other-device combat aliases.
+Move/WASD and its existing stick bindings are preserved. Camera/UI maps are unchanged. Player template Look, Interact,
+Crouch, Previous, Next, Sprint and Guard are removed. Crouch is excluded; Guard has no key/implementation; Dash/Cast deferred.
+
+The capture uses one cloned map and shared arrays of the eight button names/flags. Arrays/callback delegates are created
+once per capture; sampling/disposal iterate those same arrays. Capture ORs all pressed bits; it does NOT choose strikes.
+CombatAttackTuning.StrikeButton applies priority in simulation: exact hand L/R, exact foot L/R/spin, general hand, general
+foot. Jump wins from free grounded stance. Exact/general flags remain distinct through the existing one-slot combo buffer.
+See [current settings and validation](../../../../../Docs/STAGE03_CONTROLS.md).
 
 ## Sampling policy (what one command contains)
 
@@ -61,7 +72,7 @@ Update
    └─ FixedStepSimulationSystemGroup × N (0..N ticks)
       BeginFixedStep ECB → BattleLifecycleSystem → CombatClockSystem →
       CombatCommandCollectionSystemGroup [PlayerInputCommandSystem … CombatCommandProcessorSystem (OrderLast)] →
-      CombatStateUpdateSystemGroup [CombatFacingSystem → CombatMovementSystem] → Publication → EndFixedStep ECB
+      CombatStateUpdateSystemGroup [CombatActionSystem → CombatFacingSystem → CombatMovementSystem → CombatHitSystem] → Publication → EndFixedStep ECB
 PreLateUpdate.ScriptRunBehaviourLateUpdate   CombatCameraController (reads ECS, writes the camera only)
 ```
 
@@ -101,20 +112,16 @@ re-reported, loses its first press after regain (the next release unblocks it).
 
 ## Manual check (owner GUI, record in Docs/QA.md; NOT RUN until performed)
 
-Since #38 CombatSmoke draws the fighters with the generated technical atlas (not a character); for exact state observe *Window > Entities > Hierarchy* (`Combatant Human` →
-`CombatPosition`, `CombatMotion`, `CombatFacing`, `AppliedCombatCommand`) and the Main Camera Transform/Inspector.
-1. Open `Assets/Scenes/CombatSmoke.unity`, enter Play Mode, click the Game view. Hold D/A/W/S: the human's X/Z change,
-   `AppliedCombatCommand.Source = Player`; release: it stops. Tap K: one jump; hold K: one jump only. J/L: `Held`/`Pressed`
-   Attack/Guard appear in the applied command, nothing else happens (no attacks/guard yet).
-2. Camera: it follows the human's X/Z; arrows pan, `=`/`-` and the wheel zoom (limits 2…20), Home recenters; the
-   rotation (40°, 0°, 0°) never changes; `Projection = Orthographic`.
-3. Set `Time.timeScale = 0` (debugger or a temporary tool): K/J taps and WASD do not change ECS state, pan/zoom still
-   work; restore 1 while holding D: the human moves, no jump from the paused taps.
-4. Alt-tab away while holding D: the human stops on the next tick; return: it moves again only while D is held. Hold K,
-   alt-tab away and back still holding K: no jump; release and press K: one jump.
-5. Disable/enable *Player Input*: control stops/resumes, no jump on enable. Disable/enable *Combat Bootstrap*: the
-   camera keeps its view while idle, then follows the new human with the pan reset.
-6. Repeat with *Enter Play Mode Settings* = *Do not reload Domain or Scene*: no Console errors, no leak warnings on exit.
+Use the external art PNG and `Assets/Scenes/CombatSmoke.unity`. Inspect AppliedCombatCommand/CombatAttackState and the
+bootstrap's published timing revision alongside the Game view.
+1. Y/U/H/J/K always choose their named strike; K starts spin from free grounded stance. I alternates hands, L follows
+   the existing foot series. Holding never repeats; simultaneous keys follow the documented priority, Space wins when free.
+2. Hold direction through jump/landing: frames 4 then 5 play on the ground before run/idle, no sliding. Strike/Space taps
+   during recovery do not execute later. Startup log shows the configured landing duration (currently 27 ticks).
+3. Verify pause, focus/device reset, disable/re-enable, restart/despawn and World replacement drop stale presses; live
+   holds resume without a synthetic press. Repeat with Domain/Scene reload disabled.
+4. Camera controls still follow/pan/zoom/recenter; UI bindings work. Enter/mouse/gamepad buttons do not start combat actions.
+5. Record the tested SHA and actual Unity results; source/model checks alone do not close Stage 03.
 
 ## Tests
 
@@ -127,12 +134,13 @@ Since #38 CombatSmoke draws the fighters with the generated technical atlas (not
 - `Tests/PlayMode/Input/PlayerInputPlayModeTests`: real PlayerLoop order, real-loop taps/holds at 30/60/120 FPS
   (`Time.captureFramerate`), pause, focus, additive scene switch/re-enable, camera follow/rebind and the exact view on End
   (CombatSmoke); the Input System's real focus cycle (test runtime focus, runInBackground on/off) with the device
-  re-reporting held K/J/L; an adapter following a default World that appears late or is replaced A → B → A.
+  re-reporting held Space/I/L; an adapter following a default World that appears late or is replaced A → B → A.
 - `Tests/EditMode/Performance/PlayerInputBenchmarkTests`: producer cost, see `Docs/PERFORMANCE_BASELINE.md`.
 
-## Stage 05.1 Kick (PR #48)
+## Compatibility and scope (#52)
 
-The Player map gains a `Kick` Button action (keyboard **U**, gamepad **North**; provisional, remappable). The capture
-treats it exactly like Attack/Jump/Guard (Held = device state, Pressed = one tick, blocked across focus/device resets).
-`Interact` (template action) is also bound to gamepad North; it has no combat meaning and is not read. J now executes a
-strike and U a kick (rules in `Docs/COMBAT_SPEC.md`); during a strike K does not jump.
+CommandButtons is now ushort. Old numeric values Attack=1, Jump=2, Guard=4, Kick=8 remain stable; the five exact bits are
+16/32/64/128/256. Guard remains a reserved logical flag for compatibility, without an action or device binding.
+Typed command/buffer/replay fields carry all bits; no byte truncation. Rebuild consumers of the unmanaged command layout;
+no binary command-file format is promised. Undefined bits 512 and above remain invalid at the common processor.
+Existing lifecycle, input pacing and generic strike rules are retained; historical Unity evidence uses its original SHA.
