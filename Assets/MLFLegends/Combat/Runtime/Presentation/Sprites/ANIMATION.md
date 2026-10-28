@@ -11,8 +11,9 @@ Preparation-only movement or old input keys. Stage 03 is NOT accepted until the 
 # Stage 03 final polish — pending owner acceptance (2026-10-28)
 
 Current settings and compatibility: [Stage 03 final polish handoff](../../../../../../Docs/STAGE03_FINAL_POLISH.md).
-World support is source_size × [0.5,0.85]; JSON pivot is artistic baseline, with one ImageOffsetPixels per character.
-Inspector preview shows the full fixed source canvas/support and aligned image/anchors, never a silhouette fit.
+Reference world support is source_size × [0.5,0.85]. Imported Sprite pivots position each image; JSON is fallback only.
+One ImageOffsetPixels per character adds a translation. Raster Inspector preview is removed; diagnostics are cached.
+[Current pivot and Inspector contract](../../../../../../Docs/STAGE03_PIVOT_CORRECTION.md).
 Attack planar speed is 50% Preparation, 25% Active, 25% Recovery. Landing now has an authoritative motion recovery window:
 physical contact → jump landing frames (movement/new actions locked) → run if held, otherwise idle_combat. In jump settings,
 LandingStartFrame..EndFrame sets the range; -1 uses the old land marker. T/curve frame holds set the duration (ceil to ticks),

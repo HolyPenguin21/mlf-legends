@@ -1,3 +1,9 @@
+## Current task #56 — pivot and Inspector corrective delivery
+
+Fresh base main `311c3d7d06b5320b9df701ae6f21f519d07c6af1`. Branch `fix/56-sprite-pivot-inspector`, one PR, no merge.
+[Current implementation and verification](STAGE03_PIVOT_CORRECTION.md). Stage 03 still requires owner manual acceptance.
+The older #52 input layout, phase speeds, damage/simulation, landing and owner timing settings are preserved.
+
 ## Current task #52 — final controls (2026-10-28)
 
 Base main `1c96c6f` already contains #50/#51; do not duplicate their scene/config/preview fixes. Work in

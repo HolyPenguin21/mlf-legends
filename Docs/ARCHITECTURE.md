@@ -1,3 +1,12 @@
+## Current #56 — image pivot and target-owned Inspector cache
+
+Catalog Image Pivots stores stable frame_id → Sprite subasset references. Atlas load converts imported rect/pivot into
+one effective full-canvas pivot per frame, shared by geometry/anchors; absent bindings retain JSON fallback. GPU bounds
+and footprints derive from the same CardRects. Editor-only import hooks migrate missing bindings by exact page/rect and
+invalidate catalog Version after Apply/reimport; player builds read referenced Sprite data with no disk/Editor API.
+CharacterAnimationConfigEditor has no raster preview. Its target-owned manifest/settings/diagnostic caches are invalidated
+by revisions and Undo/project events and cleared on disable. [Contract and limitations](STAGE03_PIVOT_CORRECTION.md).
+
 ## Current controls #52 — shared exact/general intentions (2026-10-28)
 
 [Current controls and handoff](STAGE03_CONTROLS.md): the existing Input System capture emits ushort CommandButtons, through

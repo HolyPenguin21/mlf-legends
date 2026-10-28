@@ -132,11 +132,10 @@ namespace MLFLegends.Combat
         public string CharacterId { get; }
         public int2 SourceSize { get; }
         public float NominalHeightPx { get; }
+        /// <summary>JSON fallback image pivot, used only for a frame without an imported Sprite binding.</summary>
         public float2 Pivot { get; }
         /// <summary>Fixed world support in the virtual source canvas (top-left origin): 50% X, 15% above the bottom.</summary>
         public float2 WorldSupport { get; }
-        /// <summary>Legacy JSON pivot converted ONCE to artistic translation in card pixels (+Y up).</summary>
-        public float2 LegacyPivotOffsetCard { get; }
         public IReadOnlyList<SpriteAtlasPage> Pages { get; }
 
         /// <summary>Frames in manifest order; the index is the runtime frame index.</summary>
@@ -153,7 +152,6 @@ namespace MLFLegends.Combat
             NominalHeightPx = nominalHeightPx;
             Pivot = pivot;
             WorldSupport = new float2(sourceSize.x * 0.5f, sourceSize.y * 0.85f);
-            LegacyPivotOffsetCard = new float2(WorldSupport.x - pivot.x, pivot.y - WorldSupport.y);
             Pages = pages;
             Frames = frames;
             Clips = clips;

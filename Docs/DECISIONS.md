@@ -1,3 +1,11 @@
+## Owner correction #56 — working Sprite Editor pivot, no embedded raster preview
+
+Imported per-frame Sprite pivot is the image positioning source; JSON pivot is used only without a binding. Center is
+valid. Preserve pivots/.meta and use stable frame_id → Sprite references, never array order. Reference support stays
+[96,163.2] for 192×192; ImageOffsetPixels is the single additional art translation. Anchors/footprints/bounds use the
+same transform. Remove raster preview entirely and cache Inspector parsing/timing, with frame details opt-in.
+[Migration, invalidation and QA](STAGE03_PIVOT_CORRECTION.md). Stage 03 remains unaccepted; no Stage 04.1 or merge.
+
 ## Owner decisions #52 — current controls and command representation (2026-10-28)
 
 [Authoritative keyboard table and validation](STAGE03_CONTROLS.md). Physical Y/U/H/J/K select exact hand L/R, foot L/R/spin;
