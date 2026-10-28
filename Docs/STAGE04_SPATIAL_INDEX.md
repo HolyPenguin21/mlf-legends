@@ -26,7 +26,7 @@ CombatBodyTuning or substitutes defaults. Valid setup changes to body values app
 All position/body scalars must be finite, body fields strictly positive; computed bounds must also remain finite.
 `CombatSpatialBounds.TryFromBody` implements this validation. Invalid data, duplicate/zero IDs or an impossible grid
 footprint fail with explicit exceptions and leave no readable partially rebuilt snapshot. No fighter is silently dropped.
-An active partial World whose enabled fighters lack Body does not publish; no body/session/clock is manufactured.
+An active partial World whose enabled fighters lack Body, Position or Team does not publish; no body/session/clock is manufactured.
 
 ## Geometry and API
 
@@ -55,6 +55,14 @@ representable cell coordinates, overflowing its cell-count product or exceeding 
 snapshot** bounds scan. `LastQueryUsedFullScan` makes that rare fallback explicit. There is no candidate cap/truncation.
 A build exceeding MaxBuildEntries/unrepresentable coordinates fails diagnostically instead of attempting unbounded work.
 
+`TryQueryAabbBatch(queries, results, ranges)` performs the same queries atomically in one main-thread call. The caller
+supplies a NativeArray of bounds, a reusable flat NativeList of body copies and a reusable NativeList<int2> of ranges
+(`x = offset`, `y = count`). Every range is separately Id-sorted and duplicate-free. Membership is validated once for the
+whole call; there is no callback, yield, read lease or escaping owner-memory view. All query inputs are validated before
+any result is appended; stale/invalid input clears both outputs. Counters aggregate the batch and use long for entry visits/
+duplicates. Only the appended range is sorted; later queries cannot reorder earlier ranges. Batches retain every range's
+output, so dense output memory can grow with queries × candidates; callers may choose smaller batches. No candidate cap.
+
 No managed List/array is created for each fighter or query. Deduplication uses reusable per-row query stamps, with a
 clear on stamp wrap; rows/results sort by Id, independently of chunk/hash/insertion order. Consumers build pairs by the
 single Id comparison above, not by the cell iteration order. Bounds queries are the only geometry API added.
@@ -71,14 +79,17 @@ manager remain the only clock/accumulator. SnapshotInfo exposes Tick/BattleNumbe
 
 Every public read checks allocation/publication, live active session, matching tick/battle, a tick after BattleStartTick,
 World structural EntityOrderVersion, exact enabled-fighter count, and the enabled bits of every published member. The last
-check catches a disable/enable swap at equal count. This costs O(N) membership validation **per public read**; timing includes
-it. It is not a bounds full scan and does not allocate; no claim of sublinear total query cost is made. A later measured
-optimization can amend that contract with an explicit enable-version owner rather than trust structural versions alone.
+check catches a disable/enable swap at equal count. Both expected fighter membership (Id + enabled InCombat) and complete
+spatial membership must match, including a newly enabled partial fighter that has no Body/Position/Team. Validation is O(N)
+per public read: **once for an entire atomic batch**, rather than once per fighter query. Single-query convenience calls
+still each validate membership. Timing includes this cost. No bounds full scan is needed for membership and no allocation
+is made; no sublinear total single-query guarantee is claimed.
 Unrelated structural changes conservatively invalidate too: availability resumes on the next real rebuild. Body/position
 value edits between ticks are setup changes, published only by the next rebuild, not silently patched into a final snapshot.
 
 Paused End/Restart is seen immediately through the live session even without another fixed step; paused Despawn changes
-the structural version and also rejects the old snapshot. Scene switches use the same existing lifecycle path. An old
+the structural version and also rejects the old snapshot. Lifecycle cleanup now includes whole-entity Unity Disabled tags
+as well as disabled InCombat bits, so no disabled actor survives End/Restart/Despawn. Scene switches use the same existing lifecycle path. An old
 World/retained managed system returns false after disposal, without touching disposed native memory. Two Worlds have
 separate storage, even when their Id/Tick/BattleNumber happen to match.
 
@@ -98,26 +109,36 @@ switch to finalized candidates (04.5) remain outside this PR.
 Executed SOURCE / PYTHON MODEL checks are in `Docs/Evidence/58/static-checks.json`; rerun with
 `python Tools/Verify-Stage04Spatial.py` (Python packages tree-sitter and tree-sitter-c-sharp). They syntax-parse all C#,
 validate GUIDs/metadata and protected-source identity, and compare a deterministic independent Python bounds scan with a
-grid model under reversed insertion orders/unique-pair enumeration. This does not execute the C# implementation.
+grid model under reversed insertion orders/unique-pair enumeration. It also checks 4,608 flat batch ranges, four deliberately
+broken Python model variants, membership/cleanup counterexamples and extreme cell-count guards. These do not execute or
+mutate the C# implementation. [Bottom-up review and corrections](STAGE04_BOTTOM_UP_REVIEW.md).
 
 Authored Unity tests (**NOT RUN here**):
 
 - `CombatSpatialIndexTests`: all invalid fields, finite/overflow bounds, tiny/large bodies, closed/negative cells, Y overlap,
-  independent full scan (128 actors × 260 queries × two insertion/chunk orders), unique pairs, enormous fallback and errors.
+  independent full scan (128 actors × 260 queries × two insertion/chunk orders), unique pairs, enormous fallback and errors;
+  batch range equivalence/growth/mixed fallback, invalid/stale batch clearing, stamp wrap, extreme keys/count overflow and
+  duplicate IDs / failed-build recovery.
 - `CombatSpatialLifecycleTests`: actual lifecycle bodies 2/100/400, repeated paused Restart/End/Despawn, destroyed old entities,
   1/2/3/10 catch-up and duplicate-update guard, setup body changes and replay recording, enable/disable/count-preserving
-  membership swaps, tick mismatch, independent Worlds/disposal/partial fixtures. Control replay disables only index updating
+  membership swaps, tick mismatch, independent Worlds/disposal/partial fixtures; missing each spatial component and newly
+  enabled incomplete actors, independent clock/session prerequisites, whole-entity Disabled cleanup and second-owner rejection. Control replay disables only index updating
   and compares all old combat state for player/AI scripted movement/jumps/strikes against 1-tick pacing.
 - Existing lifecycle AssertCombatant includes body defaults; replay records all three body values. Existing replay,
   default-world and benchmark order assertions retain unique-owner checks and add SpatialIndex between Movement and Hit.
 - Default-world jump/pause test checks the snapshot's position after Movement, body default, paused Restart and End rejection.
   Existing scene-unload lifecycle tests continue to exercise the same session invalidation path.
+- Existing baseline archetype guard now requires/allows CombatBody while retaining rejection of unrelated/managed types.
+  The source verifier compares its exact list with the lifecycle archetype plus processor-added AppliedCombatCommand;
+  the old reviewed-head omission is reproduced as a source counterexample.
 
 `CombatStrikeBenchmarkTests.SpatialBuildAndQueriesForSparseAndDense2_100_400` extends the existing harness (no recorder/
 renderer or new runtime profiling framework): 120 warm-up ticks, 600 measured ticks × 32 typical AABB queries; sparse/dense
-at 2/100/400. First build/capacity growth is separate. Output `TestResults/performance/stage04-spatial.tsv` includes build
-mean/p95, query-batch mean/p95, candidates, duplicates, occupied cells/entries/capacity, native payload capacity **lower bound**
-(excludes hash buckets/allocator metadata), process-wide Profiler native delta, GC.Alloc samples with a positive control and
+at 2/100/400, both 32 single calls and one atomic batch with the same bounds. First build/capacity growth is separate.
+Output `TestResults/performance/stage04-spatial.tsv` includes full fixed-tick mean/p95, build mean/p95 (including epoch/count
+checks), query-batch mean/p95, candidates, duplicates, occupied cells/entries/capacity, native payload capacity **lower bound**
+(excludes hash buckets/allocator metadata), caller-buffer capacity/bytes, process-wide Profiler native delta, GC.Alloc samples
+with a positive control (recorder restored in finally) and
 machine/package/Burst probe context. The spatial owner itself is managed SystemBase; other systems retain their existing
 Burst paths. Capacity equality after warm-up is asserted; process-wide native deltas are not index-only allocation totals.
 No linear dense-case guarantee: most/all bodies can become candidates. No CPU/memory/GPU measurement is claimed yet.

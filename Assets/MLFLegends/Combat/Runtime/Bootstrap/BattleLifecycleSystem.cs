@@ -48,7 +48,7 @@ namespace MLFLegends.Combat
                 typeof(CombatantId), typeof(CombatTeam), typeof(CombatPosition), typeof(CombatFacing), typeof(InCombat), typeof(CombatMotion), typeof(CombatBody),
                 typeof(CombatAttackState), typeof(CombatHealth), typeof(CombatHitRecord));
             m_Combatants = SystemAPI.QueryBuilder().WithAll<CombatantId>()
-                .WithOptions(EntityQueryOptions.IgnoreComponentEnabledState).Build();
+                .WithOptions(EntityQueryOptions.IgnoreComponentEnabledState | EntityQueryOptions.IncludeDisabledEntities).Build();
             m_Clock = SystemAPI.QueryBuilder().WithAll<SimulationClock>().Build();
             m_RunningClock = SystemAPI.QueryBuilder().WithAll<SimulationClock, SimulationClockRunning>().Build();
 

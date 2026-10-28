@@ -11,7 +11,8 @@ where they say Stage 03 awaits acceptance or Stage 04 has not started; their ori
 Current scope is only #58: use existing lifecycle/Movement/Hit, one World-owned index between Movement and Hit,
 no second position writer or clock. Register the same owner in default/replay/benchmark and preserve unique-owner order
 assertions. Actual new component: CombatBody. New system: CombatSpatialIndexSystem (managed native-container owner).
-Unity-unavailable checks remain NOT RUN without blocking PR delivery; do not merge or close follow-up issues.
+[Bottom-up review and corrections](STAGE04_BOTTOM_UP_REVIEW.md): atomic AABB batches, complete enabled-ID membership,
+whole-entity Disabled cleanup and new edge/measurement tests. Unity-unavailable checks remain NOT RUN without blocking PR delivery; do not merge or close follow-up issues.
 
 ## Current task #56 — pivot and Inspector corrective delivery
 

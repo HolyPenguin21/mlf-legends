@@ -9,7 +9,8 @@ clock Tick/BattleNumber, no second accumulator. It writes no authoritative gamep
 version and enabled membership, including paused End/Restart/Despawn. Empty/partial Worlds gain no hidden state. Results
 are Id-sorted unique value copies; no borrowed native view. Closed X/Y/Z bounds and floor-based closed X/Z cells, one
 CombatSpatialTuning.CellSize=1. Huge queries explicitly scan all snapshot rows; impossible build ranges fail diagnostically.
-Membership checks cost O(N) per public read. [Full API, limits, defaults, memory lifetime and tests](../../../../../Docs/STAGE04_SPATIAL_INDEX.md).
+Membership checks cost O(N) per read; TryQueryAabbBatch validates once for an entire atomic batch of AABB queries,
+returning Id-sorted unique ranges in reusable caller-owned native buffers, without an escaping view. [Full API, limits, defaults, memory lifetime and tests](../../../../../Docs/STAGE04_SPATIAL_INDEX.md).
 04.2/04.3 must extend this owner for proposed movement while preserving one Movement position writer; 04.5 moves Hit to
 finalized candidates. Existing historical four-owner/order descriptions below predate 04.1.
 

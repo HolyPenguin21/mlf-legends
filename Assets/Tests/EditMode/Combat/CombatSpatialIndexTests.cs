@@ -191,5 +191,110 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(results.Length, Is.Zero);
             Assert.Throws<ArgumentException>(() => index.TryQueryAabb(Box(new float3(float.NaN), new float3(1)), results));
         }
+
+        [Test]
+        public void AtomicBatchMatchesSingleQueriesAndPreservesEachRangeAcrossBufferGrowth()
+        {
+            using var world = DataWorld(out var index);
+            for (uint id = 12; id > 0; id--)
+                Add(world.EntityManager, id, new float3((int)id - 6, id % 3, -(int)id % 4));
+            index.Update();
+            using var queryStorage = new NativeArray<CombatSpatialBounds>(5, Allocator.Temp);
+            var queries = queryStorage; // Writable alias; the using local owns disposal.
+            queries[0] = Everywhere; // Huge full scan followed by grid queries; never sort an earlier range again.
+            queries[1] = Box(new float3(-3, 0, -5), new float3(2, 4, 2));
+            queries[2] = Box(new float3(100), new float3(101));
+            queries[3] = Everywhere;
+            queries[4] = queries[1]; // Stamps are query-local, not batch-local.
+            using var batch = new NativeList<CombatSpatialBody>(1, Allocator.Temp);
+            using var ranges = new NativeList<int2>(1, Allocator.Temp);
+            using var single = new NativeList<CombatSpatialBody>(Allocator.Temp);
+            Assert.That(index.TryQueryAabbBatch(queries, batch, ranges), Is.True);
+            Assert.That(index.LastQueryCandidates, Is.EqualTo(batch.Length));
+            Assert.That(index.LastQueryUsedFullScan, Is.True);
+            Assert.That(ranges.Length, Is.EqualTo(queries.Length));
+            var offset = 0;
+            for (var q = 0; q < queries.Length; q++)
+            {
+                Assert.That(ranges[q].x, Is.EqualTo(offset));
+                Assert.That(index.TryQueryAabb(queries[q], single), Is.True);
+                var actual = batch.AsArray().GetSubArray(ranges[q].x, ranges[q].y).ToArray().Select(b => b.Id.Value).ToArray();
+                Assert.That(actual, Is.EqualTo(Ids(single)));
+                offset += ranges[q].y;
+            }
+            Assert.That(offset, Is.EqualTo(batch.Length));
+            queries[1] = Box(new float3(float.NaN), new float3(1));
+            Assert.Throws<ArgumentException>(() => index.TryQueryAabbBatch(queries, batch, ranges));
+            Assert.That(batch.Length, Is.Zero, "Validate every query before producing any partial result.");
+            Assert.That(ranges.Length, Is.Zero);
+            queries[1] = queries[0];
+            using var clock = world.EntityManager.CreateEntityQuery(typeof(SimulationClock));
+            world.EntityManager.SetComponentData(clock.GetSingletonEntity(), SimulationClock.AtTick(2));
+            Assert.That(index.TryQueryAabbBatch(queries, batch, ranges), Is.False);
+            Assert.That(batch.Length, Is.Zero);
+            Assert.That(ranges.Length, Is.Zero);
+        }
+
+        [Test]
+        public void QueryStampWrapDoesNotReuseOldSeenMarks()
+        {
+            using var world = DataWorld(out var index);
+            Add(world.EntityManager, 1, float3.zero);
+            index.Update();
+            using var results = new NativeList<CombatSpatialBody>(Allocator.Temp);
+            var q = Box(new float3(-1), new float3(3));
+            Assert.That(index.TryQueryAabb(q, results), Is.True);
+            Assert.That(results.Length, Is.EqualTo(1));
+            // Force the otherwise four-billion-query boundary without adding a production mutation API.
+            var stamp = typeof(CombatSpatialIndexSystem).GetField("m_QueryStamp", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            Assert.That(stamp, Is.Not.Null);
+            stamp.SetValue(index, uint.MaxValue);
+            Assert.That(index.TryQueryAabb(q, results), Is.True);
+            Assert.That(results.Length, Is.EqualTo(1), "Old stamp 1 must be cleared before wrap returns to stamp 1.");
+        }
+
+        [Test]
+        public void FailedRebuildHidesOldSnapshotAndNextRealTickCanRecover()
+        {
+            using var world = DataWorld(out var index);
+            var first = Add(world.EntityManager, 1, float3.zero);
+            var duplicate = Add(world.EntityManager, 1, new float3(2, 0, 0));
+            Assert.Throws<InvalidOperationException>(() => index.Update());
+            Assert.That(index.TryGetSnapshotInfo(out _), Is.False);
+            world.EntityManager.DestroyEntity(duplicate);
+            using var clock = world.EntityManager.CreateEntityQuery(typeof(SimulationClock));
+            world.EntityManager.SetComponentData(clock.GetSingletonEntity(), SimulationClock.AtTick(2));
+            index.Update();
+            Assert.That(index.TryGetSnapshotInfo(out _), Is.True);
+            world.EntityManager.SetComponentData(first, default(CombatBody));
+            world.EntityManager.SetComponentData(clock.GetSingletonEntity(), SimulationClock.AtTick(3));
+            Assert.Throws<InvalidOperationException>(() => index.Update());
+            Assert.That(index.TryGetSnapshotInfo(out _), Is.False, "A good old snapshot must not survive a failed rebuild.");
+            world.EntityManager.SetComponentData(first, CombatBodyTuning.Default);
+            world.EntityManager.SetComponentData(clock.GetSingletonEntity(), SimulationClock.AtTick(4));
+            index.Update();
+            Assert.That(index.TryGetSnapshotInfo(out var info), Is.True);
+            Assert.That(info.Tick, Is.EqualTo(4));
+        }
+
+        [Test]
+        public void RepresentableExtremeCellsAndCellCountOverflowRemainConservative()
+        {
+            using var world = DataWorld(out var index);
+            Add(world.EntityManager, 1, new float3(int.MinValue, 0, int.MinValue));
+            Add(world.EntityManager, 2, new float3(2147483520f, 0, 2147483520f)); // Largest float cell below int.MaxValue.
+            Add(world.EntityManager, 3, float3.zero);
+            index.Update();
+            using var results = new NativeList<CombatSpatialBody>(Allocator.Temp);
+            var point = new float3(int.MinValue, 0, int.MinValue);
+            Assert.That(index.TryQueryAabb(Box(point, point), results), Is.True);
+            Assert.That(Ids(results), Is.EqualTo(new uint[] { 1 }));
+            point = new float3(2147483520f, 0, 2147483520f);
+            Assert.That(index.TryQueryAabb(Box(point, point), results), Is.True);
+            Assert.That(Ids(results), Is.EqualTo(new uint[] { 2 }));
+            Assert.That(index.TryQueryAabb(Box(new float3(-2_000_000_000f), new float3(2_000_000_000f)), results), Is.True);
+            Assert.That(index.LastQueryUsedFullScan, Is.True, "Representable keys but overflowing cell-count product uses complete scan.");
+            Assert.That(Ids(results), Is.EqualTo(new uint[] { 3 }));
+        }
     }
 }

@@ -61,8 +61,9 @@ namespace MLFLegends.Combat
     /// Copies are only current until rebuild, membership/epoch change or disposal. Retaining Entity across that boundary
     /// is not supported. No borrowed NativeArray escapes, so a retained result cannot access disposed owner memory.
     /// Every public read validates clock/session and live membership, even when Initialization ran while paused.
-    /// Membership validation is O(N), deliberately including enable bits (not structural changes). Grid traversal then
-    /// visits only queried cells. No geometry/bounds full scan except the explicit enormous-query fallback.
+    /// Membership validation includes enable bits (not structural changes). Use TryQueryAabbBatch for per-fighter
+    /// queries: one atomic main-thread call validates membership once, then visits the queried cells for all bounds.
+    /// No geometry/bounds full scan except the explicit enormous-query fallback.
     /// </remarks>
     [UpdateInGroup(typeof(CombatStateUpdateSystemGroup))]
     [UpdateAfter(typeof(CombatMovementSystem))]
@@ -88,8 +89,8 @@ namespace MLFLegends.Combat
         public double LastBuildMicroseconds { get; private set; }
         public double LastQueryMicroseconds { get; private set; }
         public int LastQueryCandidates { get; private set; }
-        public int LastQueryEntriesVisited { get; private set; }
-        public int LastQueryDuplicatesEliminated { get; private set; }
+        public long LastQueryEntriesVisited { get; private set; }
+        public long LastQueryDuplicatesEliminated { get; private set; }
         public bool LastQueryUsedFullScan { get; private set; }
 
         struct ById : IComparer<CombatSpatialBody>
@@ -106,8 +107,8 @@ namespace MLFLegends.Combat
             m_Clock = GetEntityQuery(ComponentType.ReadOnly<SimulationClock>());
             m_Fighters = GetEntityQuery(ComponentType.ReadOnly<CombatantId>(), ComponentType.ReadOnly<CombatTeam>(),
                 ComponentType.ReadOnly<CombatPosition>(), ComponentType.ReadOnly<CombatBody>(), ComponentType.ReadOnly<InCombat>());
-            m_ExpectedFighters = GetEntityQuery(ComponentType.ReadOnly<CombatantId>(), ComponentType.ReadOnly<CombatTeam>(),
-                ComponentType.ReadOnly<CombatPosition>(), ComponentType.ReadOnly<InCombat>());
+            // Count every enabled fighter, including partial fixtures missing any required spatial data.
+            m_ExpectedFighters = GetEntityQuery(ComponentType.ReadOnly<CombatantId>(), ComponentType.ReadOnly<InCombat>());
             try
             {
                 m_Bodies = new NativeList<CombatSpatialBody>(1, Allocator.Persistent);
@@ -149,6 +150,7 @@ namespace MLFLegends.Combat
 
         protected override void OnUpdate()
         {
+            var started = Stopwatch.GetTimestamp();
             if (!TryEpoch(out var tick, out var battle) || m_ExpectedFighters.CalculateEntityCount() != m_Fighters.CalculateEntityCount())
             {
                 m_Published = false;
@@ -160,7 +162,6 @@ namespace MLFLegends.Combat
             m_LastBuildTick = tick;
             m_LastBuildBattle = battle;
             m_Published = false; // A validation/capacity exception must never expose a partially built snapshot.
-            var started = Stopwatch.GetTimestamp();
             m_Bodies.Clear();
             m_Cells.Clear();
             foreach (var (id, team, position, body, entity) in
@@ -229,7 +230,8 @@ namespace MLFLegends.Combat
         bool IsCurrent()
         {
             if (!m_Published || !TryEpoch(out var tick, out var battle) || tick != m_Info.Tick || battle != m_Info.BattleNumber
-                || EntityManager.EntityOrderVersion != m_EntityOrderVersion || m_Fighters.CalculateEntityCount() != m_Bodies.Length)
+                || EntityManager.EntityOrderVersion != m_EntityOrderVersion || m_ExpectedFighters.CalculateEntityCount() != m_Bodies.Length
+                || m_Fighters.CalculateEntityCount() != m_Bodies.Length)
                 return false;
             // Enable changes do not change EntityOrderVersion. Count alone misses one disable + one enable.
             for (var i = 0; i < m_Bodies.Length; i++)
@@ -255,56 +257,107 @@ namespace MLFLegends.Combat
         public bool TryQueryAabb(in CombatSpatialBounds bounds, NativeList<CombatSpatialBody> results)
         {
             var started = Stopwatch.GetTimestamp();
+            ResetQueryDiagnostics();
+            if (!results.IsCreated)
+                throw new ArgumentException("Spatial query requires an allocated caller-owned results buffer.", nameof(results));
             results.Clear();
-            LastQueryCandidates = LastQueryEntriesVisited = LastQueryDuplicatesEliminated = 0;
-            LastQueryUsedFullScan = false;
-            LastQueryMicroseconds = 0;
-            if (!bounds.IsValid)
-                throw new ArgumentException("Spatial query requires finite ordered AABB bounds.", nameof(bounds));
+            ValidateQuery(bounds);
             if (!IsCurrent())
                 return false;
+            AppendQuery(bounds, results);
+            LastQueryCandidates = results.Length;
+            LastQueryMicroseconds = MicrosSince(started);
+            return true;
+        }
+
+        /// <summary>
+        /// Atomic batch of the same AABB query. Validates live membership once for the entire main-thread call, with no
+        /// callbacks or escaping view. Each caller-owned range is (offset, count) into the caller-owned flat results.
+        /// Every range is independently unique and Id-sorted. Diagnostic counters aggregate all queries in the batch.
+        /// Outputs are cleared on stale state or invalid input. No fixed limit on queries/candidates, no hidden buffers.
+        /// </summary>
+        public bool TryQueryAabbBatch(NativeArray<CombatSpatialBounds> queries, NativeList<CombatSpatialBody> results,
+            NativeList<int2> ranges)
+        {
+            var started = Stopwatch.GetTimestamp();
+            ResetQueryDiagnostics();
+            if (!results.IsCreated || !ranges.IsCreated)
+                throw new ArgumentException("Spatial batch requires allocated caller-owned results and ranges buffers.");
+            results.Clear();
+            ranges.Clear();
+            if (!queries.IsCreated)
+                throw new ArgumentException("Spatial batch requires an allocated bounds array.", nameof(queries));
+            for (var i = 0; i < queries.Length; i++)
+                ValidateQuery(queries[i]); // All inputs before any partial output.
+            if (!IsCurrent())
+                return false;
+            for (var i = 0; i < queries.Length; i++)
+            {
+                var offset = results.Length;
+                AppendQuery(queries[i], results);
+                ranges.Add(new int2(offset, results.Length - offset));
+            }
+            LastQueryCandidates = results.Length;
+            LastQueryMicroseconds = MicrosSince(started);
+            return true;
+        }
+
+        void ResetQueryDiagnostics()
+        {
+            LastQueryCandidates = 0;
+            LastQueryEntriesVisited = LastQueryDuplicatesEliminated = 0;
+            LastQueryUsedFullScan = false;
+            LastQueryMicroseconds = 0;
+        }
+
+        static void ValidateQuery(in CombatSpatialBounds bounds)
+        {
+            if (!bounds.IsValid)
+                throw new ArgumentException("Spatial query requires finite ordered AABB bounds.", nameof(bounds));
+        }
+
+        // Called only after one complete live-membership check. A batch never yields or calls consumer code between
+        // queries, so a read lease/version owner and repeated O(N) membership scans are unnecessary.
+        void AppendQuery(in CombatSpatialBounds bounds, NativeList<CombatSpatialBody> results)
+        {
+            var offset = results.Length;
             if (!TryCells(bounds, out var min, out var max, out var cells) || cells > CombatSpatialTuning.MaxQueryCells)
             {
-                LastQueryUsedFullScan = true; // Explicit diagnostic; scan every row, no capacity-limited candidate set.
+                LastQueryUsedFullScan = true; // Scan every row, no capacity-limited candidate set.
                 for (var i = 0; i < m_Bodies.Length; i++)
                 {
                     LastQueryEntriesVisited++;
                     if (bounds.Overlaps(m_Bodies[i].Bounds))
                         results.Add(m_Bodies[i]);
                 }
+                return; // Snapshot already sorted by Id; this appended range is sorted as well.
             }
-            else
+            m_QueryStamp = unchecked(m_QueryStamp + 1);
+            if (m_QueryStamp == 0)
             {
-                m_QueryStamp = unchecked(m_QueryStamp + 1);
-                if (m_QueryStamp == 0)
-                {
-                    for (var i = 0; i < m_Seen.Length; i++)
-                        m_Seen[i] = 0;
-                    m_QueryStamp = 1;
-                }
-                for (long x = min.x; x <= max.x; x++)
-                for (long z = min.y; z <= max.y; z++)
-                {
-                    if (!m_Cells.TryGetFirstValue(new int2((int)x, (int)z), out var row, out var iterator))
-                        continue;
-                    do
-                    {
-                        LastQueryEntriesVisited++;
-                        if (m_Seen[row] == m_QueryStamp)
-                        {
-                            LastQueryDuplicatesEliminated++;
-                            continue;
-                        }
-                        m_Seen[row] = m_QueryStamp;
-                        if (bounds.Overlaps(m_Bodies[row].Bounds))
-                            results.Add(m_Bodies[row]);
-                    } while (m_Cells.TryGetNextValue(out row, ref iterator));
-                }
-                results.Sort(new ById());
+                for (var i = 0; i < m_Seen.Length; i++)
+                    m_Seen[i] = 0;
+                m_QueryStamp = 1;
             }
-            LastQueryCandidates = results.Length;
-            LastQueryMicroseconds = MicrosSince(started);
-            return true;
+            for (long x = min.x; x <= max.x; x++)
+            for (long z = min.y; z <= max.y; z++)
+            {
+                if (!m_Cells.TryGetFirstValue(new int2((int)x, (int)z), out var row, out var iterator))
+                    continue;
+                do
+                {
+                    LastQueryEntriesVisited++;
+                    if (m_Seen[row] == m_QueryStamp)
+                    {
+                        LastQueryDuplicatesEliminated++;
+                        continue;
+                    }
+                    m_Seen[row] = m_QueryStamp;
+                    if (bounds.Overlaps(m_Bodies[row].Bounds))
+                        results.Add(m_Bodies[row]);
+                } while (m_Cells.TryGetNextValue(out row, ref iterator));
+            }
+            results.AsArray().GetSubArray(offset, results.Length - offset).Sort(new ById());
         }
 
         // Both insertion and query use floor and closed [min,max] cells. No casts toward zero, epsilon or clamping.

@@ -138,7 +138,7 @@ namespace MLFLegends.Tests.EditMode
         static readonly ComponentType[] s_CombatantComponents =
         {
             typeof(CombatantId), typeof(CombatTeam), typeof(CombatPosition), typeof(CombatFacing), typeof(InCombat),
-            typeof(AppliedCombatCommand), typeof(CombatMotion),
+            typeof(AppliedCombatCommand), typeof(CombatMotion), typeof(CombatBody),
             typeof(CombatAttackState), typeof(CombatHealth), typeof(CombatHitRecord), // Stage 05.1 strike state, HP, hit ledger
         };
 
@@ -179,7 +179,7 @@ namespace MLFLegends.Tests.EditMode
             ReplayWorld.AssertStateOwners(bench.World);
             using var systems = bench.World.GetExistingSystemManaged<CombatStateUpdateSystemGroup>().GetAllSystems(Allocator.Temp);
             Assert.That(systems.AsArray().ToArray(), Is.EqualTo(ReplayWorld.StateOwners(bench.World)),
-                "Stage 05.1 State contains exactly the strike, facing, movement and hit owners.");
+                "Stage 04.1 State contains exactly the strike, facing, movement, spatial and hit owners.");
         }
 
         static int[] SceneObjectCounts() => new[]

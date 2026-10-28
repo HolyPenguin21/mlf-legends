@@ -2,7 +2,8 @@
 
 Same CreateArchetype/private Spawn adds CombatBody for both leaders/allies at 2/100/400. One default table in
 Simulation/CombatBodyTuning.cs: Radius 0.3, Height 2, Mass 1, technical calibration only. No new setup layer, spawner,
-cleanup system or art dependency. Existing End/Despawn/Restart destroys it with the entity.
+cleanup system or art dependency. Existing End/Despawn/Restart destroys it with the entity. Cleanup includes whole-entity Unity Disabled tags in addition
+to ignoring InCombat enable bits; disabled fighters cannot survive a lifecycle boundary.
 The final-position index belongs to the World, not bootstrap/renderer. Its read API checks live Session/Clock and
 membership; paused Initialization End/Restart/Despawn already rejects the old snapshot before FixedStep resumes.
 Memory capacity may remain for reuse; scene/World teardown never transfers it to another owner.

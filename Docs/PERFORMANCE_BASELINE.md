@@ -4,10 +4,12 @@ Base main `a6e96295c0a1e008327e28e8ff89205caf0a4f77`; the common RuntimeSystems 
 between Movement and Hit. Historical timings below remain tied to their older runtime list/SHA.
 Existing CombatStrikeBenchmarkTests gains SpatialBuildAndQueriesForSparseAndDense2_100_400, reusing CombatBenchmarkWorld,
 BenchmarkSamples/environment/GC scope: sparse and dense 2/100/400, cold build separate from 120 warm-up + 600 sampled ticks,
-32 AABB queries/tick, build/query mean/p95 and candidates/duplicates/cells/entries/capacity. Output stage04-spatial.tsv.
+32 AABB queries/tick in both single and atomic-batch modes; full fixed-tick/build/query mean/p95 and
+candidates/duplicates/cells/entries/capacity plus caller-buffer bytes. Output stage04-spatial.tsv.
 Native payload capacity bytes are explicitly a lower bound excluding hash buckets/metadata; Profiler native deltas are
 process-wide. GC.Alloc sample counts include a same-recorder positive control; invalid control is labelled. The owner
-is managed SystemBase/native containers; membership validation is O(N) per read and included in query cost. Dense-case
+is managed SystemBase/native containers; membership validation is O(N) once per atomic batch (once per query in single
+mode) and included in query cost. Dense-case
 candidates can approach N. No actual CPU/GC/native/GPU measurements yet; Unity and runtime/device are unavailable.
 [Full method, lifetime and limits](STAGE04_SPATIAL_INDEX.md). No previous Stage 03 measurement is a 04.1 PASS.
 

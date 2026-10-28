@@ -427,6 +427,7 @@ namespace MLFLegends.Tests.EditMode
                 Pair("GC byte counter works", GcByteCounterWorks().ToString()),
                 Pair("Simulation rate", $"{SimulationTiming.TickRateHz} Hz"),
                 Pair("Runtime scope", "Stage 04.1 (#58): clock + lifecycle + commands + CombatActionSystem + CombatFacingSystem + CombatMovementSystem + CombatSpatialIndexSystem + CombatHitSystem; not the historical Stage 01 baseline"),
+                Pair("CombatBody bytes per actor", UnsafeUtility.SizeOf<CombatBody>().ToString(CultureInfo.InvariantCulture)),
                 Pair("CombatMotion bytes per actor", UnsafeUtility.SizeOf<CombatMotion>().ToString(CultureInfo.InvariantCulture)),
             };
         }

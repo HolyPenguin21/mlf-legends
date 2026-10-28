@@ -11,7 +11,9 @@ where they say Stage 03 awaits acceptance or Stage 04 has not started; their ori
 State: Action → Facing → Movement → **CombatSpatialIndexSystem** → Hit. CombatBody is three unmanaged floats,
 spawned by the existing lifecycle; the managed World-owned index reads current ECS into reusable native storage and
 writes no gameplay data. Hit still performs its existing full scan; no physical response is added. Public reads reject
-stale tick/epoch/membership, including paused End/Restart/Despawn. Settings: CombatBodyTuning and CombatSpatialTuning.
+stale tick/epoch/membership, including paused End/Restart/Despawn. Atomic AABB batches validate live membership once,
+returning caller-owned ranges without a second index or escaping view. Lifecycle includes whole-entity Disabled cleanup.
+Settings: CombatBodyTuning and CombatSpatialTuning.
 
 ## Current #56 — image pivot and target-owned Inspector cache
 

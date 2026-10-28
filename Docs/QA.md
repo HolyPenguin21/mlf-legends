@@ -10,9 +10,12 @@ where they say Stage 03 awaits acceptance or Stage 04 has not started; their ori
 
 04.1 executed **SOURCE / PYTHON MODEL PASS**: 91 C# syntax trees; 208 unique Unity GUIDs; 4,608 deterministic
 model AABB queries versus an independent bounds scan; 12,048 model source-body pair queries across reversed insertion
-orders; 177 protected base files byte-unchanged. [Reproducible report](Evidence/58/static-checks.json).
+orders; 4,608 batch ranges against the reference, four Python-model negative controls; 177 protected base files byte-unchanged. [Reproducible report](Evidence/58/static-checks.json).
 **Unity compile/import/Entities codegen/Burst/EditMode/PlayMode/GPU/GC/native leaks/performance: NOT RUN** — no Unity
 Editor/runtime/device here. C# correctness tests and sparse/dense 2/100/400 benchmark are authored, not executed.
+[Bottom-up review](STAGE04_BOTTOM_UP_REVIEW.md) fixes partial-World membership, whole-entity Disabled cleanup and
+repeated per-query membership cost via atomic batches, and the missing Body entry in the existing strict baseline
+archetype guard; adds boundary/failure/ownership regressions and benchmark modes.
 No 04.1 CPU/memory measurements or runtime PASS claimed. Historical Stage 03 logs are not 04.1 evidence.
 
 ## Current #56 validation boundary — pivot/Inspector correction (2026-10-28)

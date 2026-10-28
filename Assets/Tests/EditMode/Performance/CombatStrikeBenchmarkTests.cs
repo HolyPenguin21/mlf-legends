@@ -130,7 +130,7 @@ namespace MLFLegends.Tests.EditMode
             var directory = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "TestResults", "performance"));
             Directory.CreateDirectory(directory);
             var text = new StringBuilder();
-            text.Append("# Stage 05.1 strike benchmark: full fixed tick (clock, lifecycle, commands, strike, facing, movement, hit)\n");
+            text.Append("# Stage 05.1 strike benchmark on Stage 04.1 runtime: full fixed tick (clock, lifecycle, commands, strike, facing, movement, spatial index, hit)\n");
             text.Append("# Unity ").Append(Application.unityVersion).Append(", ").Append(SystemInfo.processorType).Append(", Burst ")
                 .Append(Unity.Burst.BurstCompiler.IsEnabled ? "on" : "off").Append('\n');
             text.Append("scenario\tcombatants\tticks\tmean_us\tmedian_us\tp95_us\tmax_us\tmanagedGcBytes\n");

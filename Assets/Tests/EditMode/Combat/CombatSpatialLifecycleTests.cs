@@ -214,5 +214,113 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(indexed.RawLog, Is.EqualTo(control.RawLog), "Position, motion, HP, strike, facing, commands and body replay are identical.");
             Assert.That(indexed.Records.SelectMany(r => r.Combatants).All(c => c.Body.Equals(CombatBodyTuning.Default)), Is.True);
         }
+
+        [TestCase(0)]
+        [TestCase(1)]
+        [TestCase(2)]
+        public void PartialFighterMissingAnySpatialComponentCannotPublishACompleteSnapshot(int missing)
+        {
+            using var world = CombatSpatialIndexTests.DataWorld(out var index);
+            var actor = CombatSpatialIndexTests.Add(world.EntityManager, 1, float3.zero);
+            if (missing == 0) world.EntityManager.RemoveComponent<CombatBody>(actor);
+            if (missing == 1) world.EntityManager.RemoveComponent<CombatPosition>(actor);
+            if (missing == 2) world.EntityManager.RemoveComponent<CombatTeam>(actor);
+            index.Update();
+            Assert.That(index.TryGetSnapshotInfo(out _), Is.False);
+            using var results = new NativeList<CombatSpatialBody>(Allocator.Temp);
+            using var ranges = new NativeList<int2>(Allocator.Temp);
+            using var queryStorage = new NativeArray<CombatSpatialBounds>(1, Allocator.Temp);
+            var queries = queryStorage; // Writable alias; the using local owns disposal.
+            queries[0] = CombatSpatialIndexTests.Everywhere;
+            Assert.That(index.TryQueryAabbBatch(queries, results, ranges), Is.False);
+        }
+
+        [TestCase(BattleRequestKind.End)]
+        [TestCase(BattleRequestKind.Restart)]
+        [TestCase(BattleRequestKind.Despawn)]
+        public void LifecycleDestroysWholeEntityDisabledFightersAtPausedBoundary(BattleRequestKind operation)
+        {
+            using var replay = new ReplayWorld("whole-entity disabled lifecycle");
+            var setup = BattleSetup.Default;
+            setup.HumanAllies = setup.AiAllies = 1;
+            replay.Request(BattleRequest.Start(setup));
+            replay.Step();
+            using var results = new NativeList<CombatSpatialBody>(Allocator.Temp);
+            Assert.That(Index(replay).TryQueryAabb(CombatSpatialIndexTests.Everywhere, results), Is.True);
+            var old = results.AsArray().ToArray();
+            var human = Find(replay, replay.Session.HumanCombatant);
+            replay.Manager.SetEnabled(human, false); // Unity Disabled tag, distinct from an InCombat enable bit.
+            Assert.That(Index(replay).TryGetSnapshotInfo(out _), Is.False);
+            var tick = replay.Tick;
+            var request = operation == BattleRequestKind.End ? BattleRequest.End()
+                : operation == BattleRequestKind.Restart ? BattleRequest.Restart(setup)
+                : BattleRequest.Despawn(replay.Session.HumanCombatant);
+            replay.Request(request);
+            Initialization(replay);
+            Assert.That(replay.Tick, Is.EqualTo(tick));
+            Assert.That(replay.Manager.Exists(human), Is.False, "Lifecycle must find disabled entities, not only enabled-query members.");
+            Assert.That(Index(replay).TryGetSnapshotInfo(out _), Is.False);
+            if (operation != BattleRequestKind.Despawn)
+                foreach (var row in old)
+                    Assert.That(replay.Manager.Exists(row.Entity), Is.False);
+            Assert.That(replay.CountWith<CombatBody>(), Is.EqualTo(operation == BattleRequestKind.End ? 0
+                : operation == BattleRequestKind.Restart ? setup.CombatantCount : setup.CombatantCount - 1));
+        }
+
+        [Test]
+        public void ASecondSpatialOwnerIsRejectedWithoutDamagingTheFirst()
+        {
+            using var world = CombatSpatialIndexTests.DataWorld(out var index);
+            CombatSpatialIndexTests.Add(world.EntityManager, 1, float3.zero);
+            index.Update();
+            Assert.Throws<InvalidOperationException>(() => world.CreateSystemManaged<CombatSpatialIndexSystem>());
+            // Creating/destroying a failed system can conservatively invalidate EntityOrderVersion; rebuild next tick.
+            using var clock = world.EntityManager.CreateEntityQuery(typeof(SimulationClock));
+            world.EntityManager.SetComponentData(clock.GetSingletonEntity(), SimulationClock.AtTick(2));
+            index.Update();
+            Assert.That(index.TryGetSnapshotInfo(out _), Is.True);
+            Assert.That(world.GetExistingSystemManaged<CombatSpatialIndexSystem>(), Is.SameAs(index));
+        }
+
+        [Test]
+        public void EnablingAPartialFighterInvalidatesReadEvenWithoutAnotherIndexUpdate()
+        {
+            using var world = CombatSpatialIndexTests.DataWorld(out var index);
+            CombatSpatialIndexTests.Add(world.EntityManager, 1, float3.zero);
+            var partial = CombatSpatialIndexTests.Add(world.EntityManager, 2, float3.zero);
+            world.EntityManager.SetComponentEnabled<InCombat>(partial, false);
+            world.EntityManager.RemoveComponent<CombatBody>(partial);
+            index.Update();
+            Assert.That(index.TryGetSnapshotInfo(out _), Is.True);
+            world.EntityManager.SetComponentEnabled<InCombat>(partial, true); // No structural version change here.
+            Assert.That(index.TryGetSnapshotInfo(out _), Is.False, "Expected membership and complete-body membership must both match.");
+            using var results = new NativeList<CombatSpatialBody>(Allocator.Temp);
+            Assert.That(index.TryQueryAabb(CombatSpatialIndexTests.Everywhere, results), Is.False);
+        }
+
+        [TestCase(false, false)]
+        [TestCase(false, true)]
+        [TestCase(true, false)]
+        [TestCase(true, true)]
+        public void SessionAndClockAreRequiredIndependentlyAndAreNeverCreatedByTheIndex(bool sessionPresent, bool clockPresent)
+        {
+            using var world = new World("independent partial prerequisites");
+            if (sessionPresent)
+            {
+                var session = new BattleSession();
+                session.Begin(0, 0, new CombatantId { Value = 1 }, new CombatantId { Value = 2 });
+                world.EntityManager.CreateSingleton(session);
+            }
+            if (clockPresent)
+                world.EntityManager.CreateSingleton(SimulationClock.AtTick(1));
+            CombatSpatialIndexTests.Add(world.EntityManager, 1, float3.zero);
+            var index = world.CreateSystemManaged<CombatSpatialIndexSystem>();
+            index.Update();
+            Assert.That(index.TryGetSnapshotInfo(out _), Is.EqualTo(sessionPresent && clockPresent));
+            using var sessions = world.EntityManager.CreateEntityQuery(typeof(BattleSession));
+            using var clocks = world.EntityManager.CreateEntityQuery(typeof(SimulationClock));
+            Assert.That(sessions.CalculateEntityCount(), Is.EqualTo(sessionPresent ? 1 : 0));
+            Assert.That(clocks.CalculateEntityCount(), Is.EqualTo(clockPresent ? 1 : 0));
+        }
     }
 }
