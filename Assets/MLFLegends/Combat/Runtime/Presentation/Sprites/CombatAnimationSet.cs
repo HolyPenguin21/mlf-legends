@@ -10,7 +10,7 @@ namespace MLFLegends.Combat
     /// never feeds anything back into the simulation.
     /// </summary>
     /// <remarks>
-    /// Priority: strike → airborne jump → run → landing → idle. Loops (idle, run) use the config cycle (range/T/curve).
+    /// Priority: strike → airborne jump → landing recovery → run → idle. Loops use the config cycle (range/T/curve).
     /// <list type="bullet">
     /// <item>Strikes: the config splits the clip range into Preparation / Active / Recovery frames; with T and the curve that
     /// gives the phase times, which <see cref="TryCreateStrikeSchedule"/> quantizes into the simulation windows
@@ -19,8 +19,7 @@ namespace MLFLegends.Combat
     /// frames: the drawn phase always equals the simulated one, and a drawn frame never causes a hit.</item>
     /// <item>Jump: <c>rise</c> frames follow ascent progress (1 − vy/JumpImpulse), <c>fall</c> frames descent progress, both
     /// from the movement owner's vertical velocity, so the drawing never changes the trajectory and no landing pose is shown
-    /// in the air. <c>land</c> frames play after touch-down for their config share of T, only if the fighter neither moved
-    /// nor struck since landing. Height comes from CombatPosition only.</item>
+    /// in the air. Landing frames play inside the movement owner's frozen recovery window. Height comes from CombatPosition only.</item>
     /// <item>Run: stride phase = streak distance / (MoveSpeed · T), i.e. T is the cycle at full speed and slower diagonal
     /// motion strides proportionally slower. A stop of at most MoveStreakGraceTicks keeps run (no idle flicker).</item>
     /// <item>Idle restarts at frame 0 when entered (end of strike, landing, run stop).</item>
@@ -61,6 +60,8 @@ namespace MLFLegends.Combat
 
         /// <summary>Ticks the landing frames play after touch-down (config share of the jump clip, ≥ 1).</summary>
         public uint LandingTicks { get; private set; }
+        public int LandingStartFrame => m_Land.First;
+        public int LandingEndFrame => m_Land.End - 1;
 
         /// <summary>Simulation windows derived from this set's strike clips (the table a scene publishes for them).</summary>
         public CombatStrikeSchedule StrikeSchedule { get; private set; }
@@ -112,15 +113,25 @@ namespace MLFLegends.Combat
             {
                 var jumpPath = path + "." + JumpClip;
                 var n = set.Jump.FrameCount;
+                var firstLanding = settingsFor(JumpClip).LandingStartFrame;
                 var ok = TrySegment(jumpClip, "rise", n, jumpPath, errors, out set.m_Rise)
-                    & TrySegment(jumpClip, "fall", n, jumpPath, errors, out set.m_Fall)
-                    & TrySegment(jumpClip, "land", n, jumpPath, errors, out set.m_Land);
+                    & TrySegment(jumpClip, "fall", n, jumpPath, errors, out set.m_Fall);
+                if (firstLanding == -1)
+                    ok &= TrySegment(jumpClip, "land", n, jumpPath, errors, out set.m_Land);
+                else if (firstLanding < 0 || firstLanding >= n)
+                {
+                    errors.Add(jumpPath + ".LandingStartFrame: must be -1 (manifest land marker) or inside StartFrame..EndFrame");
+                    ok = false;
+                }
+                else
+                    set.m_Land = new Segment { First = firstLanding, End = n };
                 if (ok && !(set.m_Rise.End <= set.m_Fall.First && set.m_Fall.End <= set.m_Land.First))
                     errors.Add(jumpPath + ".markers: rise, fall and land must be disjoint and in this order");
                 else if (ok)
                 {
                     var seconds = End(set.Jump, set.m_Land) - set.Jump.FrameStartSeconds(set.m_Land.First);
-                    set.LandingTicks = (uint)Math.Max(1, Math.Round(seconds * SimulationTiming.TickRateHz));
+                    // Round up to a complete tick, never finish recovery before the configured frames have played.
+                    set.LandingTicks = (uint)Math.Max(1, Math.Ceiling(seconds * SimulationTiming.TickRateHz - 1e-9));
                     for (var f = 0; f < n; f++)
                     {
                         if (!Covers(set.m_Rise, f) && !Covers(set.m_Fall, f) && !Covers(set.m_Land, f))
@@ -130,7 +141,10 @@ namespace MLFLegends.Combat
             }
 
             if (TryStrikes(definition, settingsFor, path, errors, warnings, set.m_Attacks, out var schedule))
+            {
+                schedule.LandingRecoveryTicks = set.LandingTicks;
                 set.StrikeSchedule = schedule;
+            }
             return errors.Count == before ? set : null;
         }
 
@@ -278,21 +292,21 @@ namespace MLFLegends.Combat
                 return v > 0f ? Fit(Jump, m_Rise, 1 - v) : Fit(Jump, m_Fall, -v);
             }
 
+            if (motion.IsLandingRecovery(tick))
+                return Fit(Jump, m_Land, (tick - motion.LandTick) / (double)motion.LandingRecoveryTicks);
+
             const uint grace = CombatMovementTuning.MoveStreakGraceTicks;
             if (motion.MoveStreakStartTick != SimulationClock.NoTick && tick - motion.LastMoveTick <= grace)
                 return Run.FrameAt(motion.MoveStreakDistance / CombatMovementTuning.MoveSpeed);
 
             var landing = motion.LandTick != SimulationClock.NoTick && motion.LastMoveTick < motion.LandTick
                 && attack.EndTick <= motion.LandTick;
-            if (landing && tick - motion.LandTick < LandingTicks)
-                return Fit(Jump, m_Land, (tick - motion.LandTick) / (double)LandingTicks);
-
             long idleSince = (long)battleStartTick + 1;
             idleSince = Math.Max(idleSince, attack.EndTick);
             if (motion.LastMoveTick != SimulationClock.NoTick)
                 idleSince = Math.Max(idleSince, (long)motion.LastMoveTick + grace + 1);
             if (landing)
-                idleSince = Math.Max(idleSince, (long)motion.LandTick + LandingTicks);
+                idleSince = Math.Max(idleSince, (long)motion.LandTick + motion.LandingRecoveryTicks);
             return Idle.FrameAt(Seconds(tick - idleSince));
         }
     }

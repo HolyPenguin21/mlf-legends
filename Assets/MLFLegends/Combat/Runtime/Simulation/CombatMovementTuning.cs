@@ -6,6 +6,22 @@ namespace MLFLegends.Combat
         /// <summary>Horizontal world units per simulated second, including while airborne.</summary>
         public const float MoveSpeed = 4f;
 
+        // Applied once to planar displacement, from CombatAttackState.Timing's authoritative phase.
+        public const float PreparationMoveMultiplier = 0.5f;
+        public const float ActiveMoveMultiplier = 0.25f;
+        public const float RecoveryMoveMultiplier = 0.25f;
+
+        public static float AttackMoveMultiplier(CombatAttackPhase phase)
+        {
+            switch (phase)
+            {
+                case CombatAttackPhase.Windup: return PreparationMoveMultiplier;
+                case CombatAttackPhase.Active: return ActiveMoveMultiplier;
+                case CombatAttackPhase.Recovery: return RecoveryMoveMultiplier;
+                default: return 1f;
+            }
+        }
+
         /// <summary>Upward world units per simulated second assigned by a grounded Jump Pressed.</summary>
         public const float JumpImpulse = 8f;
 

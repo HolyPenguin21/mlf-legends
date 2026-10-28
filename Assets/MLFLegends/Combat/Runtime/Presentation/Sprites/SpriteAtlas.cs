@@ -57,6 +57,9 @@ namespace MLFLegends.Combat
         /// <summary>Deepest card y below the pivot over all frames (pixels, ≥ 0).</summary>
         public float MaxBelowPx { get; }
 
+        /// <summary>Union of sampled card rectangles, before the character's artistic offset. Built only at atlas load.</summary>
+        public float4 CardBoundsPx { get; }
+
         /// <summary>Uncompressed page memory: Σ width × height × 4 bytes (mip 0 only; mipmaps are rejected/warned).</summary>
         public long PageBytes { get; }
 
@@ -65,7 +68,7 @@ namespace MLFLegends.Combat
 
         public bool IsDisposed { get; private set; }
 
-        SpriteAtlas(SpriteAtlasDefinition definition, Texture2D[] pages)
+        SpriteAtlas(SpriteAtlasDefinition definition, Texture2D[] pages, SpriteAtlasCatalog.FrameStorage storage)
         {
             Definition = definition;
             m_Pages = pages;
@@ -73,12 +76,18 @@ namespace MLFLegends.Combat
             m_Frames = new NativeArray<SpriteFrameGpu>(frames.Count, Allocator.Persistent);
             m_FramePages = new NativeArray<int>(frames.Count, Allocator.Persistent);
             float halfWidth = 0f, top = 0f, below = 0f;
+            var bounds = new float4(float.PositiveInfinity, float.PositiveInfinity, float.NegativeInfinity, float.NegativeInfinity);
             for (var i = 0; i < frames.Count; i++)
             {
                 var frame = frames[i];
-                var card = SpriteCardMath.FrameCardRect(frame.Rect, frame.TrimOffset, definition.Pivot);
-                m_Frames[i] = new SpriteFrameGpu { Uv = SpriteCardMath.FrameUv(frame.Rect, definition.Pages[frame.Page].Size), CardRect = card };
+                SpriteAtlasCatalog.TryFrameRegion(definition, frame, storage, out var rect, out var trim, out _);
+                // Equivalent to placing the image at WorldSupport - legacy Pivot on the fixed virtual canvas.
+                // Retaining this baseline preserves old [96,160] exports without rewriting their JSON.
+                var alignment = definition.LegacyPivotOffsetCard;
+                var card = SpriteCardMath.FrameCardRect(rect, trim, definition.WorldSupport) + new float4(alignment, alignment);
+                m_Frames[i] = new SpriteFrameGpu { Uv = SpriteCardMath.FrameUv(rect, definition.Pages[frame.Page].Size), CardRect = card };
                 m_FramePages[i] = frame.Page;
+                bounds = new float4(math.min(bounds.xy, card.xy), math.max(bounds.zw, card.zw));
                 halfWidth = math.max(halfWidth, math.max(math.abs(card.x), math.abs(card.z)));
                 top = math.max(top, card.w);
                 below = math.max(below, -card.y);
@@ -87,6 +96,7 @@ namespace MLFLegends.Combat
             MaxHalfWidthPx = halfWidth;
             MaxTopPx = top;
             MaxBelowPx = below;
+            CardBoundsPx = bounds;
             long bytes = 0;
             foreach (var page in definition.Pages)
                 bytes += (long)page.Size.x * page.Size.y * 4;
@@ -102,14 +112,15 @@ namespace MLFLegends.Combat
                 return null;
             }
 
-            return Load(catalog.Manifest.text, catalog.Pages, errors, warnings);
+            return Load(catalog.Manifest.text, catalog.Pages, errors, warnings, catalog.Storage);
         }
 
         /// <summary>
         /// Parses <paramref name="json"/> and binds every manifest page to exactly one texture of the same file name and size.
         /// Returns null (and allocates nothing) on any error.
         /// </summary>
-        public static SpriteAtlas Load(string json, IReadOnlyList<SpriteAtlasPageBinding> bindings, List<string> errors, List<string> warnings)
+        public static SpriteAtlas Load(string json, IReadOnlyList<SpriteAtlasPageBinding> bindings, List<string> errors, List<string> warnings,
+            SpriteAtlasCatalog.FrameStorage storage = SpriteAtlasCatalog.FrameStorage.TrimmedRects)
         {
             if (errors == null)
                 throw new ArgumentNullException(nameof(errors));
@@ -119,6 +130,31 @@ namespace MLFLegends.Combat
 
             var pages = new Texture2D[definition.Pages.Count];
             var ok = true;
+            // A full-canvas page is explicit, never inferred from nominal body dimensions or opaque bounds.
+            // Validate every cell and its independence from neighbours before allocating native/GPU tables.
+            for (var f = 0; f < definition.Frames.Count; f++)
+            {
+                var frame = definition.Frames[f];
+                if (!SpriteAtlasCatalog.TryFrameRegion(definition, frame, storage, out var rect, out _, out var error))
+                {
+                    errors.Add(error);
+                    ok = false;
+                    continue;
+                }
+                if (storage != SpriteAtlasCatalog.FrameStorage.SourceCanvasCells) continue;
+                for (var previous = 0; previous < f; previous++)
+                {
+                    var other = definition.Frames[previous];
+                    if (other.Page != frame.Page) continue;
+                    SpriteAtlasCatalog.TryFrameRegion(definition, other, storage, out var otherRect, out _, out _);
+                    if (rect.x < otherRect.x + otherRect.z && otherRect.x < rect.x + rect.z
+                        && rect.y < otherRect.y + otherRect.w && otherRect.y < rect.y + rect.w)
+                    {
+                        errors.Add($"frames.{frame.Id}: full source canvas overlaps {other.Id}; use TrimmedRects for packed pages");
+                        ok = false;
+                    }
+                }
+            }
             bindings ??= Array.Empty<SpriteAtlasPageBinding>();
             for (var b = 0; b < bindings.Count; b++)
             {
@@ -183,7 +219,7 @@ namespace MLFLegends.Combat
                 ok = false;
             }
 
-            return ok ? new SpriteAtlas(definition, pages) : null;
+            return ok ? new SpriteAtlas(definition, pages, storage) : null;
         }
 
         public Texture2D GetPage(int page) => m_Pages[page];

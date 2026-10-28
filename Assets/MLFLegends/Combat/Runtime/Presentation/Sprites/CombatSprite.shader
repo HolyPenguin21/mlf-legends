@@ -43,6 +43,7 @@ Shader "MLF Legends/Combat Sprite"
         float4 _CardView;
         float _PixelWorldSize;
         float _DepthBias;
+        float4 _ImageOffsetCard; // artistic translation in authored card pixels; mirror X with the image
 
         TEXTURE2D(_MainTex);
 
@@ -67,7 +68,7 @@ Shader "MLF Legends/Combat Sprite"
         {
             SpriteInstance instance = _SpriteInstances[_InstanceOffset + (int)input.instanceID];
             SpriteFrame frame = _SpriteFrames[instance.frame];
-            float4 card = frame.cardRect;
+            float4 card = frame.cardRect + _ImageOffsetCard.xyxy;
 
             // The pivot line splits the trimmed rect; a quad collapses when the rect lies entirely on one side.
             float pivotLine = clamp(0.0, card.y, card.w);

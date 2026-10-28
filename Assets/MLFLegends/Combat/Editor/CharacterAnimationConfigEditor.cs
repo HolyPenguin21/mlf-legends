@@ -10,6 +10,10 @@ namespace MLFLegends.Editor
     [CustomEditor(typeof(CharacterAnimationConfig))]
     public sealed class CharacterAnimationConfigEditor : UnityEditor.Editor
     {
+        int m_PreviewClip;
+        int m_PreviewFrame;
+        bool m_PreviewLeft;
+
         public override void OnInspectorGUI()
         {
             DrawDefaultInspector();
@@ -19,6 +23,10 @@ namespace MLFLegends.Editor
                 "Preparation / Active / Recovery: with T and the curve they ARE the simulated strike windows (60 Hz ticks; " +
                 "CombatSmokeBootstrap publishes them, new strikes use them, a running strike keeps its own). " +
                 "Runtime edits use Config.Set() or this Inspector.", MessageType.Info);
+            EditorGUILayout.HelpBox("World support is fixed for every clip: source_size × [0.5, 0.85], i.e. [96, 163.2] for 192×192. " +
+                "JSON pivot is legacy ART alignment. Image Offset Pixels adds an artistic translation (+X right, +Y down); " +
+                "it and hand/effect anchors mirror together. Neither setting moves the ECS fighter or hit boxes. " +
+                "Keep the same character entry/catalog across clips. Random drawing shifts require artistic alignment.", MessageType.Info);
             var config = (CharacterAnimationConfig)target;
             var characters = serializedObject.FindProperty("m_Characters");
             for (var c = 0; c < config.Characters.Count; c++)
@@ -71,6 +79,7 @@ namespace MLFLegends.Editor
 
                 if (definition == null)
                     continue;
+                DrawFramePreview(character, definition);
                 // The same all-or-nothing set the renderer builds: missing clips/markers/phases and short phases are listed here.
                 var setErrors = new List<string>();
                 var setWarnings = new List<string>();
@@ -79,12 +88,100 @@ namespace MLFLegends.Editor
                     character.CharacterId, setErrors, setWarnings);
                 if (set != null)
                 {
-                    EditorGUILayout.LabelField("Combat set", $"valid, landing frames play {set.LandingTicks} ticks");
+                    EditorGUILayout.LabelField("Landing recovery", $"jump {set.LandingStartFrame}..{set.LandingEndFrame}: {set.LandingTicks} ticks = {set.LandingTicks / (double)SimulationTiming.TickRateHz:0.######} s (movement/new actions locked)", EditorStyles.wordWrappedLabel);
                     EditorGUILayout.LabelField("Strike windows (ticks)", CombatSmokeBootstrap.Describe(set.StrikeSchedule), EditorStyles.wordWrappedLabel);
                 }
                 foreach (var message in setErrors) EditorGUILayout.HelpBox(message, MessageType.Error);
                 foreach (var message in setWarnings) EditorGUILayout.HelpBox(message, MessageType.Warning);
             }
+        }
+
+        void DrawFramePreview(CharacterAnimationEntry character, SpriteAtlasDefinition definition)
+        {
+            EditorGUILayout.LabelField("Full source canvas preview", EditorStyles.boldLabel);
+            var names = new string[definition.Clips.Count];
+            for (var i = 0; i < names.Length; i++) names[i] = definition.Clips[i].Id;
+            m_PreviewClip = Mathf.Clamp(m_PreviewClip, 0, names.Length - 1);
+            m_PreviewClip = EditorGUILayout.Popup("Preview clip", m_PreviewClip, names);
+            var clip = definition.Clips[m_PreviewClip];
+            m_PreviewFrame = EditorGUILayout.IntSlider("Local frame", m_PreviewFrame, 0, clip.Frames.Count - 1);
+            m_PreviewLeft = EditorGUILayout.Toggle("Facing left", m_PreviewLeft);
+            var frame = definition.Frames[clip.Frames[m_PreviewFrame]];
+            var catalog = character.AtlasCatalog;
+            if (!SpriteAtlasCatalog.TryFrameRegion(definition, frame, catalog.Storage, out var rect, out var trim, out var error))
+            {
+                EditorGUILayout.HelpBox(error, MessageType.Error);
+                return;
+            }
+            Texture2D texture = null;
+            foreach (var binding in catalog.Pages)
+                if (binding.File == definition.Pages[frame.Page].File) texture = binding.Texture;
+
+            var size = new Vector2(definition.SourceSize.x, definition.SourceSize.y);
+            var support = new Vector2(definition.WorldSupport.x, definition.WorldSupport.y);
+            var pivot = new Vector2(definition.Pivot.x, definition.Pivot.y);
+            var shift = support - pivot + character.ImageOffsetPixels;
+            if (!float.IsFinite(shift.x) || !float.IsFinite(shift.y))
+            {
+                EditorGUILayout.HelpBox("Image Offset Pixels must be finite", MessageType.Error);
+                return;
+            }
+            var panel = GUILayoutUtility.GetRect(64f, 300f, GUILayout.ExpandWidth(true));
+            EditorGUI.DrawRect(panel, new Color(0.12f, 0.12f, 0.12f));
+            // Stable full-canvas fitting, including the alignment offset in BOTH facings; no pose/bbox auto-centering.
+            var minimum = new Vector2(-Mathf.Abs(shift.x), Mathf.Min(0f, shift.y));
+            var maximum = new Vector2(size.x + Mathf.Abs(shift.x), size.y + Mathf.Max(0f, shift.y));
+            var span = maximum - minimum;
+            var scale = Mathf.Min((panel.width - 24f) / span.x, (panel.height - 24f) / span.y);
+            var origin = panel.center - span * (scale * 0.5f);
+            Vector2 Point(Vector2 p) => origin + (p - minimum) * scale;
+            Vector2 ImagePoint(float x, float y)
+            {
+                var p = new Vector2(x, y) + shift;
+                if (m_PreviewLeft) p.x = 2f * support.x - p.x;
+                return Point(p);
+            }
+            Rect ImageRect(float x, float y, float width, float height)
+            {
+                var a = ImagePoint(x, y);
+                var b = ImagePoint(x + width, y + height);
+                return Rect.MinMaxRect(Mathf.Min(a.x, b.x), a.y, Mathf.Max(a.x, b.x), b.y);
+            }
+
+            var canvas = new Rect(Point(Vector2.zero), size * scale);
+            EditorGUI.DrawRect(canvas, new Color(0.22f, 0.22f, 0.22f));
+            if (texture != null)
+            {
+                var uv = SpriteCardMath.FrameUv(rect, definition.Pages[frame.Page].Size);
+                GUI.DrawTextureWithTexCoords(ImageRect(trim.x, trim.y, rect.z, rect.w), texture,
+                    new Rect(m_PreviewLeft ? uv.z : uv.x, uv.y, m_PreviewLeft ? uv.x - uv.z : uv.z - uv.x, uv.w - uv.y), true);
+            }
+            Outline(canvas, Color.cyan);
+            Outline(ImageRect(0f, 0f, size.x, size.y), new Color(1f, 0.7f, 0.2f));
+            Cross(ImagePoint(frame.HandLeft.Position.x, frame.HandLeft.Position.y), new Color(0.3f, 0.6f, 1f), 3f);
+            Cross(ImagePoint(frame.HandRight.Position.x, frame.HandRight.Position.y), Color.magenta, 3f);
+            if (frame.HasCastOrigin)
+                Cross(ImagePoint(frame.CastOrigin.Position.x, frame.CastOrigin.Position.y), Color.green, 3f);
+            Cross(Point(support), Color.white, 7f);
+            EditorGUILayout.LabelField("World support (white +)", $"[{support.x:0.######}, {support.y:0.######}] px — fixed");
+            EditorGUILayout.LabelField("Legacy art pivot", $"[{pivot.x}, {pivot.y}] px; image translation [{shift.x:0.######}, {shift.y:0.######}] px");
+            EditorGUILayout.LabelField("Cyan: fixed canvas; amber: aligned source image; blue/magenta: hands; green: effect.", EditorStyles.wordWrappedMiniLabel);
+            if (texture == null)
+                EditorGUILayout.HelpBox("Preview PNG missing: " + definition.Pages[frame.Page].File + ". Place the external page at its existing asset path, preserving .meta.", MessageType.Warning);
+        }
+
+        static void Outline(Rect rect, Color color)
+        {
+            EditorGUI.DrawRect(new Rect(rect.x, rect.y, rect.width, 1f), color);
+            EditorGUI.DrawRect(new Rect(rect.x, rect.yMax - 1f, rect.width, 1f), color);
+            EditorGUI.DrawRect(new Rect(rect.x, rect.y, 1f, rect.height), color);
+            EditorGUI.DrawRect(new Rect(rect.xMax - 1f, rect.y, 1f, rect.height), color);
+        }
+
+        static void Cross(Vector2 point, Color color, float radius)
+        {
+            EditorGUI.DrawRect(new Rect(point.x - radius, point.y, radius * 2f + 1f, 1f), color);
+            EditorGUI.DrawRect(new Rect(point.x, point.y - radius, 1f, radius * 2f + 1f), color);
         }
 
         /// <summary>Phase frames → clip seconds → simulated ticks, exactly as the published schedule derives them.</summary>

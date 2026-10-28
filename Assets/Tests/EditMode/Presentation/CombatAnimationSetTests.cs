@@ -64,7 +64,7 @@ namespace MLFLegends.Tests.EditMode
         static CharacterAnimationSettings Copy(CharacterAnimationSettings s) => new CharacterAnimationSettings
         {
             ClipId = s.ClipId, EndFrame = s.EndFrame, TotalDurationSeconds = s.TotalDurationSeconds, SpeedCurve = new AnimationCurve(s.SpeedCurve.keys),
-            PreparationEndFrame = s.PreparationEndFrame, ActiveEndFrame = s.ActiveEndFrame,
+            PreparationEndFrame = s.PreparationEndFrame, ActiveEndFrame = s.ActiveEndFrame, LandingStartFrame = s.LandingStartFrame,
         };
 
         [Test]
@@ -181,8 +181,14 @@ namespace MLFLegends.Tests.EditMode
         [Test]
         public void JumpFramesFollowTheMotionOwnersPhysicsAndLandingPlaysOnlyOnTheGround()
         {
-            var set = Real(out var definition);
+            var definition = Parse(Json);
+            var jump = Copy(Project("jump"));
+            jump.TotalDurationSeconds = 0.8;
+            jump.SpeedCurve = AnimationCurve.Linear(0, 1, 1, 1);
+            var set = Build(definition, clip => clip == "jump" ? jump : Project(clip), out var errors, out _);
+            Assert.That(set, Is.Not.Null, string.Join("\n", errors));
             using var w = new ReplayWorld("jump frames");
+            CombatStrikeSchedule.Publish(w.Manager, set.StrikeSchedule);
             w.Script = new ReplayScript().Player(1, 1, ReplayRole.Human, pressed: CommandButtons.Jump);
             w.Request(BattleRequest.Start(BattleSetup.Default));
             w.Step(90);
@@ -213,23 +219,38 @@ namespace MLFLegends.Tests.EditMode
         }
 
         [Test]
-        public void LandingWhileMovingRunsAtOnceAndRunPhaseFollowsDistanceNotTime()
+        public void LandingWhileMovingRecoversBeforeRunAndRunPhaseFollowsDistanceNotTime()
         {
-            var set = Real(out var definition);
+            var definition = Parse(Json);
+            var jump = Copy(Project("jump"));
+            jump.TotalDurationSeconds = 0.8;
+            jump.SpeedCurve = AnimationCurve.Linear(0, 1, 1, 1);
+            var set = Build(definition, clip => clip == "jump" ? jump : Project(clip), out var errors, out _);
+            Assert.That(set, Is.Not.Null, string.Join("\n", errors));
             using var w = new ReplayWorld("run frames");
             var script = new ReplayScript().Player(1, 1, ReplayRole.Human, moveX: 1, pressed: CommandButtons.Jump);
             for (uint r = 2; r <= 120; r++)
                 script.Player(r, r, ReplayRole.Human, moveX: 1, moveZ: (sbyte)(r > 80 ? 1 : 0));
+            CombatStrikeSchedule.Publish(w.Manager, set.StrikeSchedule);
             w.Script = script;
             w.Request(BattleRequest.Start(BattleSetup.Default));
             w.Step(120);
             var records = w.BattleRecords(1);
             var landing = System.Array.FindIndex(records, r => r.Combatant(r.HumanId).Motion.Grounded);
             var land = records[landing].Combatant(records[landing].HumanId);
-            Assert.That(land.Motion.MoveStreakStartTick, Is.EqualTo(records[landing].Tick), "Landing restarts the movement streak.");
-            Assert.That(Id(definition, set.FrameFor(records[landing].Tick, 0, land.Motion, land.Attack)), Is.EqualTo("run_000"),
-                "Landing with movement: run from its first frame, no landing pose.");
-            for (var i = landing; i < records.Length; i++)
+            Assert.That(land.Motion.MoveStreakStartTick, Is.EqualTo(SimulationClock.NoTick), "Contact clears the run streak.");
+            Assert.That(Id(definition, set.FrameFor(records[landing].Tick, 0, land.Motion, land.Attack)), Is.EqualTo("jump_004"));
+            for (var i = landing; i < landing + set.LandingTicks; i++)
+            {
+                var c = records[i].Combatant(records[i].HumanId);
+                Assert.That(c.Position.x, Is.EqualTo(land.Position.x), "Held movement cannot slide during landing recovery.");
+                Assert.That(Id(definition, set.FrameFor(records[i].Tick, 0, c.Motion, c.Attack)), Does.StartWith("jump_"));
+            }
+            var firstRun = landing + (int)set.LandingTicks;
+            var resumed = records[firstRun].Combatant(records[firstRun].HumanId);
+            Assert.That(resumed.Motion.MoveStreakStartTick, Is.EqualTo(records[firstRun].Tick));
+            Assert.That(Id(definition, set.FrameFor(records[firstRun].Tick, 0, resumed.Motion, resumed.Attack)), Is.EqualTo("run_000"));
+            for (var i = firstRun; i < records.Length; i++)
             {
                 var c = records[i].Combatant(records[i].HumanId);
                 var frame = set.FrameFor(records[i].Tick, 0, c.Motion, c.Attack);

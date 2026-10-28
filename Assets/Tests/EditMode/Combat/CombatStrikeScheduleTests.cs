@@ -129,7 +129,7 @@ namespace MLFLegends.Tests.EditMode
         }
 
         [Test]
-        public void PreparationMovementFollowsTheNormalRulesAndTheStrikeKeepsDrawingInsteadOfRun()
+        public void MovementUsesTheAuthoritativePhaseSpeedAndTheStrikeKeepsDrawingInsteadOfRun()
         {
             using var w = new ReplayWorld("preparation move");
             CombatStrikeSchedule.Publish(w.Manager, WithPunch(10, 3, 5));
@@ -145,8 +145,9 @@ namespace MLFLegends.Tests.EditMode
             for (var e = 0; e < 18; e++)
             {
                 var c = H(records[e]);
-                var moved = Math.Min(e + 1, 10);
-                Assert.That(c.Position.z, Is.EqualTo(moved * step).Within(1e-4f), $"tick {e}: Z moves only in Preparation");
+                var preparation = Math.Min(e + 1, 10);
+                var slowedSteps = preparation * 0.5f + (e + 1 - preparation) * 0.25f;
+                Assert.That(c.Position.z, Is.EqualTo(slowedSteps * step).Within(1e-4f), $"tick {e}: phase movement multiplier");
                 Assert.That(c.Attack.Kind, Is.EqualTo(CombatAttackKind.PunchLeft), $"tick {e}: moving never cancels the strike");
                 Assert.That(c.Motion.Grounded, Is.True, "No takeoff during the strike.");
                 Assert.That(c.Facing, Is.EqualTo(FacingDirection.Right), "Facing stays locked after the first tick (backpedal, no turn).");
@@ -157,8 +158,8 @@ namespace MLFLegends.Tests.EditMode
                 Assert.That(frame, Is.EqualTo(expected), $"tick {e} ({phase}): the strike clip plays, not run");
             }
 
-            Assert.That(H(records[0]).Position.x, Is.EqualTo(step).Within(1e-4f), "The first tick moves with its own command.");
-            Assert.That(H(records[9]).Position.x, Is.EqualTo(-8 * step).Within(1e-4f), "Backpedalling in Preparation.");
+            Assert.That(H(records[0]).Position.x, Is.EqualTo(step * 0.5f).Within(1e-4f), "The first tick moves at Preparation speed with its own command.");
+            Assert.That(H(records[9]).Position.x, Is.EqualTo(-4 * step).Within(1e-4f), "Backpedalling at 50% in Preparation.");
         }
 
         [Test]

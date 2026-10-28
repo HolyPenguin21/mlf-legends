@@ -32,6 +32,9 @@ namespace MLFLegends.Combat
         [Tooltip("Strike clips only: last Active frame, inclusive (local index). Active = PreparationEndFrame+1..this: hits resolve. Recovery = this+1..EndFrame.")]
         public int ActiveEndFrame;
 
+        [Tooltip("Jump only: first landing frame (inclusive), ending at EndFrame. -1 uses the manifest's land marker. Its share of duration/curve sets the ECS landing lock; no separate delay.")]
+        public int LandingStartFrame = -1;
+
         // Migration only: the legacy "FrameCount = first N frames" value (before the Stage 03 range settings), moved into EndFrame = N - 1 on load and then 0.
         // Never read otherwise; the frame count is always derived from StartFrame/EndFrame.
         [SerializeField, HideInInspector, FormerlySerializedAs("FrameCount")] int m_LegacyFrameCount;
@@ -65,6 +68,7 @@ namespace MLFLegends.Combat
             ClipId = ClipId, EndFrame = EndFrame, TotalDurationSeconds = TotalDurationSeconds,
             SpeedCurve = SpeedCurve == null ? null : new AnimationCurve(SpeedCurve.keys),
             PreparationEndFrame = PreparationEndFrame, ActiveEndFrame = ActiveEndFrame,
+            LandingStartFrame = LandingStartFrame,
         };
     }
 
@@ -73,11 +77,13 @@ namespace MLFLegends.Combat
     {
         public string CharacterId = "";
         public SpriteAtlasCatalog AtlasCatalog;
+        [Tooltip("Art alignment only, in source pixels (+X right, +Y down), mirrored with facing. Added to the legacy JSON pivot alignment. World support stays at source_size * [0.5, 0.85]; physics and hit boxes never move.")]
+        public Vector2 ImageOffsetPixels;
         public CharacterAnimationSettings[] Animations = Array.Empty<CharacterAnimationSettings>();
 
         internal CharacterAnimationEntry Copy()
         {
-            var copy = new CharacterAnimationEntry { CharacterId = CharacterId, AtlasCatalog = AtlasCatalog };
+            var copy = new CharacterAnimationEntry { CharacterId = CharacterId, AtlasCatalog = AtlasCatalog, ImageOffsetPixels = ImageOffsetPixels };
             copy.Animations = new CharacterAnimationSettings[Animations?.Length ?? 0];
             for (var i = 0; i < copy.Animations.Length; i++)
                 copy.Animations[i] = Animations[i]?.Copy();
@@ -104,6 +110,15 @@ namespace MLFLegends.Combat
         }
 
         void OnValidate() => Version++;
+
+        /// <summary>Called only while resolving a changed character config, never per fighter.</summary>
+        public Vector2 ImageOffsetFor(string characterId)
+        {
+            foreach (var character in Characters)
+                if (character != null && character.CharacterId == characterId)
+                    return character.ImageOffsetPixels;
+            return Vector2.zero;
+        }
 
         /// <summary>Validates only the requested character/clip: unrelated invalid records cannot block this character.</summary>
         public bool TryResolve(string characterId, string clipId, out SpriteAtlasCatalog catalog,

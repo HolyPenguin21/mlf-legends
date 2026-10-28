@@ -1,3 +1,9 @@
+## Stage 03 final polish — implementation handoff (2026-10-28)
+
+Current task: branch `fix/stage03-final-polish`, one PR to main, **implementing agent must not merge**.
+[Settings, compatibility, source review and manual checks](STAGE03_FINAL_POLISH.md). Stage 03 remains pending owner
+confirmation; Stage 04 has not started. No new automatic tests required; no PNG/art sources in the delivery.
+
 # Agent workflow — MLF Legends
 
 ## Stage 03 tuning — Inspector settings before Stage 03 acceptance (2026-10-28)
