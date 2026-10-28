@@ -14,31 +14,31 @@
   "pages": [
     {
       "file": "mage_female_01_00.png",
-      "width": 1152,
-      "height": 384
+      "width": 1728,
+      "height": 1536
     }
   ],
   "frames": {
     "idle_combat_000": {
       "page": 0,
       "rect": [
-        28,
-        28,
-        136,
-        136
+        49,
+        35,
+        98,
+        127
       ],
       "trim_offset": [
-        28,
-        28
+        49,
+        35
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            87.53,
-            76.76
+            89.5,
+            75.5
           ],
           "direction": [
-            0.3,
+            0.5,
             -1
           ],
           "layer": "front",
@@ -46,12 +46,12 @@
         },
         "hand_right": {
           "position": [
-            131.35,
-            95.86
+            132.5,
+            94.5
           ],
           "direction": [
             1,
-            0.2
+            0.5
           ],
           "layer": "back",
           "visible": true
@@ -62,23 +62,23 @@
     "idle_combat_001": {
       "page": 0,
       "rect": [
-        220,
-        28,
-        136,
-        136
+        241,
+        36,
+        96,
+        127
       ],
       "trim_offset": [
-        28,
-        28
+        49,
+        36
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            86.96,
-            73.05
+            90.5,
+            76.5
           ],
           "direction": [
-            0.3,
+            0.5,
             -1
           ],
           "layer": "front",
@@ -86,12 +86,12 @@
         },
         "hand_right": {
           "position": [
-            130.78,
-            92.72
+            132.5,
+            97.5
           ],
           "direction": [
             1,
-            0.2
+            0.5
           ],
           "layer": "back",
           "visible": true
@@ -102,23 +102,23 @@
     "idle_combat_002": {
       "page": 0,
       "rect": [
-        412,
-        28,
-        136,
-        136
+        433,
+        34,
+        95,
+        128
       ],
       "trim_offset": [
-        28,
-        28
+        49,
+        34
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            86.96,
-            73.62
+            90.5,
+            73.5
           ],
           "direction": [
-            0.3,
+            0.5,
             -1
           ],
           "layer": "front",
@@ -126,12 +126,12 @@
         },
         "hand_right": {
           "position": [
-            130.78,
-            92.72
+            130.5,
+            94.5
           ],
           "direction": [
             1,
-            0.2
+            0.5
           ],
           "layer": "back",
           "visible": true
@@ -142,23 +142,23 @@
     "idle_combat_003": {
       "page": 0,
       "rect": [
-        604,
-        28,
-        136,
-        136
+        625,
+        42,
+        92,
+        120
       ],
       "trim_offset": [
-        28,
-        28
+        49,
+        42
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            86.96,
-            77.61
+            86.5,
+            82.5
           ],
           "direction": [
-            0.3,
+            0.5,
             -1
           ],
           "layer": "front",
@@ -166,12 +166,12 @@
         },
         "hand_right": {
           "position": [
-            130.78,
-            97
+            128.5,
+            99.5
           ],
           "direction": [
             1,
-            0.2
+            0.5
           ],
           "layer": "back",
           "visible": true
@@ -182,23 +182,23 @@
     "idle_combat_004": {
       "page": 0,
       "rect": [
-        796,
-        28,
-        136,
-        136
+        816,
+        46,
+        95,
+        117
       ],
       "trim_offset": [
-        28,
-        28
+        48,
+        46
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            86.96,
-            81.03
+            87.5,
+            88.5
           ],
           "direction": [
-            0.3,
+            0.5,
             -1
           ],
           "layer": "front",
@@ -206,12 +206,12 @@
         },
         "hand_right": {
           "position": [
-            130.78,
-            100.42
+            128.5,
+            103.5
           ],
           "direction": [
             1,
-            0.2
+            0.5
           ],
           "layer": "back",
           "visible": true
@@ -222,23 +222,23 @@
     "idle_combat_005": {
       "page": 0,
       "rect": [
-        988,
-        28,
-        136,
-        136
+        1009,
+        41,
+        92,
+        121
       ],
       "trim_offset": [
-        28,
-        28
+        49,
+        41
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            86.96,
-            77.61
+            87.5,
+            83.5
           ],
           "direction": [
-            0.3,
+            0.5,
             -1
           ],
           "layer": "front",
@@ -246,12 +246,12 @@
         },
         "hand_right": {
           "position": [
-            130.78,
-            97
+            128.5,
+            99.5
           ],
           "direction": [
             1,
-            0.2
+            0.5
           ],
           "layer": "back",
           "visible": true
@@ -262,38 +262,38 @@
     "run_000": {
       "page": 0,
       "rect": [
-        20,
-        212,
-        152,
-        152
+        32,
+        225,
+        112,
+        131
       ],
       "trim_offset": [
-        20,
-        20
+        32,
+        33
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            120,
-            86
+            128.5,
+            86.5
           ],
           "direction": [
-            1,
-            -0.2
+            0.8,
+            -0.6
           ],
-          "layer": "back",
+          "layer": "front",
           "visible": true
         },
         "hand_right": {
           "position": [
-            77,
-            107
+            85.5,
+            106.5
           ],
           "direction": [
-            -0.5,
-            0.8
+            -0.1,
+            1
           ],
-          "layer": "front",
+          "layer": "back",
           "visible": true
         },
         "cast_origin": null
@@ -302,38 +302,38 @@
     "run_001": {
       "page": 0,
       "rect": [
-        212,
-        212,
-        152,
-        152
+        234,
+        226,
+        99,
+        120
       ],
       "trim_offset": [
-        20,
-        20
+        42,
+        34
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            119,
-            87
+            124.5,
+            85.5
           ],
           "direction": [
-            1,
-            -0.2
+            0.7,
+            -0.7
           ],
-          "layer": "back",
+          "layer": "front",
           "visible": true
         },
         "hand_right": {
           "position": [
-            85,
-            108
+            94.5,
+            104.5
           ],
           "direction": [
-            -0.5,
-            0.8
+            0.3,
+            1
           ],
-          "layer": "front",
+          "layer": "back",
           "visible": true
         },
         "cast_origin": null
@@ -342,38 +342,38 @@
     "run_002": {
       "page": 0,
       "rect": [
-        404,
-        212,
-        152,
-        152
+        427,
+        227,
+        89,
+        110
       ],
       "trim_offset": [
-        20,
-        20
+        43,
+        35
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            122,
-            86
+            119.5,
+            84.5
           ],
           "direction": [
             1,
-            -0.2
+            0
           ],
-          "layer": "back",
+          "layer": "front",
           "visible": true
         },
         "hand_right": {
           "position": [
-            83,
-            101
+            99.5,
+            91.5
           ],
           "direction": [
-            -0.5,
+            0.4,
             0.8
           ],
-          "layer": "front",
+          "layer": "back",
           "visible": true
         },
         "cast_origin": null
@@ -382,32 +382,32 @@
     "run_003": {
       "page": 0,
       "rect": [
-        596,
-        212,
-        152,
-        152
+        614,
+        227,
+        107,
+        118
       ],
       "trim_offset": [
-        20,
-        20
+        38,
+        35
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            54,
-            99
+            69.5,
+            86.5
           ],
           "direction": [
-            -0.5,
-            0.8
+            -1,
+            0.1
           ],
           "layer": "back",
           "visible": true
         },
         "hand_right": {
           "position": [
-            132,
-            87
+            131.5,
+            86.5
           ],
           "direction": [
             1,
@@ -422,38 +422,1598 @@
     "run_004": {
       "page": 0,
       "rect": [
-        788,
-        212,
-        152,
-        152
+        813,
+        228,
+        84,
+        113
       ],
       "trim_offset": [
-        20,
-        20
+        45,
+        36
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            118,
-            86
+            121.5,
+            85.5
+          ],
+          "direction": [
+            0.7,
+            -0.7
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            86.5,
+            99.5
+          ],
+          "direction": [
+            0,
+            1
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "punch_left_000": {
+      "page": 0,
+      "rect": [
+        50,
+        425,
+        96,
+        121
+      ],
+      "trim_offset": [
+        50,
+        41
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            96.5,
+            84.5
           ],
           "direction": [
             1,
             -0.2
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            130.5,
+            99.5
+          ],
+          "direction": [
+            1,
+            0.5
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "punch_left_001": {
+      "page": 0,
+      "rect": [
+        239,
+        426,
+        101,
+        120
+      ],
+      "trim_offset": [
+        47,
+        42
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            93.5,
+            80.5
+          ],
+          "direction": [
+            1,
+            -0.2
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            117.5,
+            83.5
+          ],
+          "direction": [
+            -0.3,
+            -1
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "punch_left_002": {
+      "page": 0,
+      "rect": [
+        431,
+        420,
+        108,
+        128
+      ],
+      "trim_offset": [
+        47,
+        36
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            113.5,
+            77.5
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            129.5,
+            77.5
+          ],
+          "direction": [
+            -0.3,
+            -1
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "punch_left_003": {
+      "page": 0,
+      "rect": [
+        612,
+        426,
+        122,
+        120
+      ],
+      "trim_offset": [
+        36,
+        42
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            151.5,
+            78.5
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            89.5,
+            89.5
+          ],
+          "direction": [
+            -0.5,
+            -0.4
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "punch_left_004": {
+      "page": 0,
+      "rect": [
+        817,
+        427,
+        94,
+        119
+      ],
+      "trim_offset": [
+        49,
+        43
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            104.5,
+            88.5
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            119.5,
+            87.5
+          ],
+          "direction": [
+            0,
+            -1
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "punch_left_005": {
+      "page": 0,
+      "rect": [
+        1010,
+        425,
+        92,
+        121
+      ],
+      "trim_offset": [
+        50,
+        41
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            104.5,
+            82.5
+          ],
+          "direction": [
+            1,
+            -0.2
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            126.5,
+            100.5
+          ],
+          "direction": [
+            1,
+            0.5
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "punch_right_000": {
+      "page": 0,
+      "rect": [
+        45,
+        614,
+        98,
+        124
+      ],
+      "trim_offset": [
+        45,
+        38
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            90.5,
+            78.5
+          ],
+          "direction": [
+            0.7,
+            -0.7
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            129.5,
+            101.5
+          ],
+          "direction": [
+            1,
+            0.5
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "punch_right_001": {
+      "page": 0,
+      "rect": [
+        239,
+        617,
+        99,
+        121
+      ],
+      "trim_offset": [
+        47,
+        41
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            93.5,
+            79.5
+          ],
+          "direction": [
+            0.5,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            133.5,
+            98.5
+          ],
+          "direction": [
+            1,
+            0.4
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "punch_right_002": {
+      "page": 0,
+      "rect": [
+        430,
+        616,
+        109,
+        122
+      ],
+      "trim_offset": [
+        46,
+        40
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            100.5,
+            74.5
+          ],
+          "direction": [
+            0.4,
+            -1
           ],
           "layer": "back",
           "visible": true
         },
         "hand_right": {
           "position": [
-            87,
-            108
+            149.5,
+            76.5
           ],
           "direction": [
-            -0.5,
-            0.8
+            1,
+            0
           ],
           "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "punch_right_003": {
+      "page": 0,
+      "rect": [
+        617,
+        617,
+        123,
+        121
+      ],
+      "trim_offset": [
+        41,
+        41
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            95.5,
+            79.5
+          ],
+          "direction": [
+            0.5,
+            -1
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            152.5,
+            75.5
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "punch_right_004": {
+      "page": 0,
+      "rect": [
+        819,
+        615,
+        93,
+        122
+      ],
+      "trim_offset": [
+        51,
+        39
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            104.5,
+            81.5
+          ],
+          "direction": [
+            0.5,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            129.5,
+            88.5
+          ],
+          "direction": [
+            1,
+            0.1
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "punch_right_005": {
+      "page": 0,
+      "rect": [
+        1010,
+        614,
+        98,
+        123
+      ],
+      "trim_offset": [
+        50,
+        38
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            91.5,
+            78.5
+          ],
+          "direction": [
+            0.5,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            130.5,
+            97.5
+          ],
+          "direction": [
+            1,
+            0.3
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "jump_000": {
+      "page": 0,
+      "rect": [
+        47,
+        831,
+        100,
+        98
+      ],
+      "trim_offset": [
+        47,
+        63
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            71.5,
+            111.5
+          ],
+          "direction": [
+            -0.6,
+            0.7
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            120.5,
+            115.5
+          ],
+          "direction": [
+            0.8,
+            0.5
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "jump_001": {
+      "page": 0,
+      "rect": [
+        245,
+        799,
+        91,
+        131
+      ],
+      "trim_offset": [
+        53,
+        31
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            96.5,
+            65.5
+          ],
+          "direction": [
+            0.5,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            130.5,
+            63.5
+          ],
+          "direction": [
+            -0.3,
+            -1
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "jump_002": {
+      "page": 0,
+      "rect": [
+        422,
+        794,
+        99,
+        111
+      ],
+      "trim_offset": [
+        38,
+        26
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            101.5,
+            66.5
+          ],
+          "direction": [
+            0.5,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            131.5,
+            71.5
+          ],
+          "direction": [
+            -0.3,
+            -1
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "jump_003": {
+      "page": 0,
+      "rect": [
+        620,
+        798,
+        105,
+        122
+      ],
+      "trim_offset": [
+        44,
+        30
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            93.5,
+            71.5
+          ],
+          "direction": [
+            0.8,
+            -0.6
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            141.5,
+            82.5
+          ],
+          "direction": [
+            1,
+            0.3
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "jump_004": {
+      "page": 0,
+      "rect": [
+        813,
+        812,
+        113,
+        118
+      ],
+      "trim_offset": [
+        45,
+        44
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            101.5,
+            126.5
+          ],
+          "direction": [
+            0.3,
+            1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            148.5,
+            118.5
+          ],
+          "direction": [
+            0.7,
+            0.7
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "jump_005": {
+      "page": 0,
+      "rect": [
+        1013,
+        803,
+        99,
+        127
+      ],
+      "trim_offset": [
+        53,
+        35
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            94.5,
+            70.5
+          ],
+          "direction": [
+            0,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            139.5,
+            94.5
+          ],
+          "direction": [
+            1,
+            0.4
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "kick_left_000": {
+      "page": 0,
+      "rect": [
+        42,
+        1003,
+        90,
+        119
+      ],
+      "trim_offset": [
+        42,
+        43
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            83.5,
+            78.5
+          ],
+          "direction": [
+            0.5,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            110.5,
+            83.5
+          ],
+          "direction": [
+            -0.3,
+            -1
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "kick_left_001": {
+      "page": 0,
+      "rect": [
+        216,
+        998,
+        102,
+        124
+      ],
+      "trim_offset": [
+        24,
+        38
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            80.5,
+            72.5
+          ],
+          "direction": [
+            0.5,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            104.5,
+            71.5
+          ],
+          "direction": [
+            -0.3,
+            -1
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "kick_left_002": {
+      "page": 0,
+      "rect": [
+        437,
+        998,
+        126,
+        125
+      ],
+      "trim_offset": [
+        53,
+        38
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            93.5,
+            69.5
+          ],
+          "direction": [
+            0.5,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            114.5,
+            72.5
+          ],
+          "direction": [
+            -0.3,
+            -1
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "kick_left_003": {
+      "page": 0,
+      "rect": [
+        608,
+        992,
+        91,
+        131
+      ],
+      "trim_offset": [
+        32,
+        32
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            77.5,
+            70.5
+          ],
+          "direction": [
+            0.5,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            101.5,
+            70.5
+          ],
+          "direction": [
+            -0.3,
+            -1
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "kick_left_004": {
+      "page": 0,
+      "rect": [
+        809,
+        1001,
+        102,
+        121
+      ],
+      "trim_offset": [
+        41,
+        41
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            85.5,
+            76.5
+          ],
+          "direction": [
+            0.5,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            114.5,
+            83.5
+          ],
+          "direction": [
+            -0.3,
+            -1
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "kick_left_005": {
+      "page": 0,
+      "rect": [
+        1009,
+        995,
+        98,
+        127
+      ],
+      "trim_offset": [
+        49,
+        35
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            89.5,
+            75.5
+          ],
+          "direction": [
+            0.5,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            132.5,
+            94.5
+          ],
+          "direction": [
+            1,
+            0.5
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "kick_right_000": {
+      "page": 0,
+      "rect": [
+        41,
+        1182,
+        101,
+        132
+      ],
+      "trim_offset": [
+        41,
+        30
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            90.5,
+            70.5
+          ],
+          "direction": [
+            0.7,
+            -0.7
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            134.5,
+            89.5
+          ],
+          "direction": [
+            1,
+            0.4
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "kick_right_001": {
+      "page": 0,
+      "rect": [
+        253,
+        1194,
+        79,
+        120
+      ],
+      "trim_offset": [
+        61,
+        42
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            76.5,
+            101.5
+          ],
+          "direction": [
+            -0.3,
+            1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            119.5,
+            77.5
+          ],
+          "direction": [
+            -0.2,
+            -1
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "kick_right_002": {
+      "page": 0,
+      "rect": [
+        449,
+        1194,
+        119,
+        121
+      ],
+      "trim_offset": [
+        65,
+        42
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            72.5,
+            99.5
+          ],
+          "direction": [
+            -0.6,
+            0.6
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            121.5,
+            75.5
+          ],
+          "direction": [
+            -0.2,
+            -1
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "kick_right_003": {
+      "page": 0,
+      "rect": [
+        632,
+        1196,
+        87,
+        118
+      ],
+      "trim_offset": [
+        56,
+        44
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            92.5,
+            77.5
+          ],
+          "direction": [
+            0.3,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            135.5,
+            93.5
+          ],
+          "direction": [
+            1,
+            0.3
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "kick_right_004": {
+      "page": 0,
+      "rect": [
+        822,
+        1183,
+        83,
+        131
+      ],
+      "trim_offset": [
+        54,
+        31
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            93.5,
+            70.5
+          ],
+          "direction": [
+            0.5,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            131.5,
+            82.5
+          ],
+          "direction": [
+            1,
+            0.3
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "kick_right_005": {
+      "page": 0,
+      "rect": [
+        1009,
+        1187,
+        98,
+        127
+      ],
+      "trim_offset": [
+        49,
+        35
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            89.5,
+            75.5
+          ],
+          "direction": [
+            0.5,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            132.5,
+            94.5
+          ],
+          "direction": [
+            1,
+            0.5
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "kick_spin_000": {
+      "page": 0,
+      "rect": [
+        39,
+        1375,
+        90,
+        131
+      ],
+      "trim_offset": [
+        39,
+        31
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            79.5,
+            75.5
+          ],
+          "direction": [
+            0.5,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            99.5,
+            85.5
+          ],
+          "direction": [
+            -1,
+            0.2
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "kick_spin_001": {
+      "page": 0,
+      "rect": [
+        262,
+        1388,
+        88,
+        118
+      ],
+      "trim_offset": [
+        70,
+        44
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            129.5,
+            80.5
+          ],
+          "direction": [
+            -0.3,
+            -1
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            117.5,
+            83.5
+          ],
+          "direction": [
+            1,
+            -0.5
+          ],
+          "layer": "front",
+          "visible": false
+        },
+        "cast_origin": null
+      }
+    },
+    "kick_spin_002": {
+      "page": 0,
+      "rect": [
+        461,
+        1378,
+        96,
+        130
+      ],
+      "trim_offset": [
+        77,
+        34
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            120.5,
+            79.5
+          ],
+          "direction": [
+            0.3,
+            -1
+          ],
+          "layer": "back",
+          "visible": false
+        },
+        "hand_right": {
+          "position": [
+            146.5,
+            76.5
+          ],
+          "direction": [
+            -0.4,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "kick_spin_003": {
+      "page": 0,
+      "rect": [
+        649,
+        1386,
+        81,
+        120
+      ],
+      "trim_offset": [
+        73,
+        42
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            118.5,
+            87.5
+          ],
+          "direction": [
+            0.6,
+            -0.8
+          ],
+          "layer": "back",
+          "visible": false
+        },
+        "hand_right": {
+          "position": [
+            139.5,
+            81.5
+          ],
+          "direction": [
+            -0.3,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "kick_spin_004": {
+      "page": 0,
+      "rect": [
+        828,
+        1388,
+        128,
+        118
+      ],
+      "trim_offset": [
+        60,
+        44
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            89.5,
+            100.5
+          ],
+          "direction": [
+            0,
+            1
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            125.5,
+            75.5
+          ],
+          "direction": [
+            -0.3,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "kick_spin_005": {
+      "page": 0,
+      "rect": [
+        1030,
+        1390,
+        86,
+        116
+      ],
+      "trim_offset": [
+        70,
+        46
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            117.5,
+            87.5
+          ],
+          "direction": [
+            0.3,
+            -1
+          ],
+          "layer": "back",
+          "visible": false
+        },
+        "hand_right": {
+          "position": [
+            135.5,
+            82.5
+          ],
+          "direction": [
+            -0.3,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "kick_spin_006": {
+      "page": 0,
+      "rect": [
+        1186,
+        1380,
+        94,
+        126
+      ],
+      "trim_offset": [
+        34,
+        36
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            83.5,
+            71.5
+          ],
+          "direction": [
+            0.5,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            116.5,
+            77.5
+          ],
+          "direction": [
+            -0.3,
+            -1
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "kick_spin_007": {
+      "page": 0,
+      "rect": [
+        1390,
+        1376,
+        93,
+        130
+      ],
+      "trim_offset": [
+        46,
+        32
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            87.5,
+            66.5
+          ],
+          "direction": [
+            0.3,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            130.5,
+            87.5
+          ],
+          "direction": [
+            1,
+            0.4
+          ],
+          "layer": "back",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "kick_spin_008": {
+      "page": 0,
+      "rect": [
+        1585,
+        1379,
+        98,
+        127
+      ],
+      "trim_offset": [
+        49,
+        35
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            89.5,
+            75.5
+          ],
+          "direction": [
+            0.5,
+            -1
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            132.5,
+            94.5
+          ],
+          "direction": [
+            1,
+            0.5
+          ],
+          "layer": "back",
           "visible": true
         },
         "cast_origin": null
@@ -518,30 +2078,361 @@
       "loop": true,
       "hold_last": false,
       "markers": {}
+    },
+    "punch_left": {
+      "frames": [
+        {
+          "id": "punch_left_000",
+          "duration_ms": 80
+        },
+        {
+          "id": "punch_left_001",
+          "duration_ms": 70
+        },
+        {
+          "id": "punch_left_002",
+          "duration_ms": 70
+        },
+        {
+          "id": "punch_left_003",
+          "duration_ms": 80
+        },
+        {
+          "id": "punch_left_004",
+          "duration_ms": 80
+        },
+        {
+          "id": "punch_left_005",
+          "duration_ms": 100
+        }
+      ],
+      "loop": false,
+      "hold_last": false,
+      "markers": {
+        "entry": [
+          0
+        ],
+        "strike_pose": [
+          3
+        ],
+        "chain_exit": [
+          4
+        ],
+        "return": [
+          5
+        ]
+      }
+    },
+    "punch_right": {
+      "frames": [
+        {
+          "id": "punch_right_000",
+          "duration_ms": 80
+        },
+        {
+          "id": "punch_right_001",
+          "duration_ms": 70
+        },
+        {
+          "id": "punch_right_002",
+          "duration_ms": 70
+        },
+        {
+          "id": "punch_right_003",
+          "duration_ms": 80
+        },
+        {
+          "id": "punch_right_004",
+          "duration_ms": 80
+        },
+        {
+          "id": "punch_right_005",
+          "duration_ms": 100
+        }
+      ],
+      "loop": false,
+      "hold_last": false,
+      "markers": {
+        "entry": [
+          0
+        ],
+        "strike_pose": [
+          2,
+          3
+        ],
+        "chain_exit": [
+          4
+        ],
+        "return": [
+          5
+        ]
+      }
+    },
+    "jump": {
+      "frames": [
+        {
+          "id": "jump_000",
+          "duration_ms": 130
+        },
+        {
+          "id": "jump_001",
+          "duration_ms": 100
+        },
+        {
+          "id": "jump_002",
+          "duration_ms": 180
+        },
+        {
+          "id": "jump_003",
+          "duration_ms": 110
+        },
+        {
+          "id": "jump_004",
+          "duration_ms": 140
+        },
+        {
+          "id": "jump_005",
+          "duration_ms": 140
+        }
+      ],
+      "loop": false,
+      "hold_last": false,
+      "markers": {
+        "entry": [
+          0
+        ],
+        "return": [
+          5
+        ]
+      }
+    },
+    "kick_left": {
+      "frames": [
+        {
+          "id": "kick_left_000",
+          "duration_ms": 100
+        },
+        {
+          "id": "kick_left_001",
+          "duration_ms": 90
+        },
+        {
+          "id": "kick_left_002",
+          "duration_ms": 80
+        },
+        {
+          "id": "kick_left_003",
+          "duration_ms": 90
+        },
+        {
+          "id": "kick_left_004",
+          "duration_ms": 90
+        },
+        {
+          "id": "kick_left_005",
+          "duration_ms": 110
+        }
+      ],
+      "loop": false,
+      "hold_last": false,
+      "markers": {
+        "entry": [
+          0
+        ],
+        "strike_pose": [
+          2
+        ],
+        "chain_exit": [
+          3
+        ],
+        "return": [
+          5
+        ]
+      }
+    },
+    "kick_right": {
+      "frames": [
+        {
+          "id": "kick_right_000",
+          "duration_ms": 100
+        },
+        {
+          "id": "kick_right_001",
+          "duration_ms": 90
+        },
+        {
+          "id": "kick_right_002",
+          "duration_ms": 80
+        },
+        {
+          "id": "kick_right_003",
+          "duration_ms": 90
+        },
+        {
+          "id": "kick_right_004",
+          "duration_ms": 90
+        },
+        {
+          "id": "kick_right_005",
+          "duration_ms": 110
+        }
+      ],
+      "loop": false,
+      "hold_last": false,
+      "markers": {
+        "entry": [
+          0
+        ],
+        "strike_pose": [
+          2
+        ],
+        "chain_exit": [
+          3
+        ],
+        "return": [
+          5
+        ]
+      }
+    },
+    "kick_spin": {
+      "frames": [
+        {
+          "id": "kick_spin_000",
+          "duration_ms": 100
+        },
+        {
+          "id": "kick_spin_001",
+          "duration_ms": 80
+        },
+        {
+          "id": "kick_spin_002",
+          "duration_ms": 70
+        },
+        {
+          "id": "kick_spin_003",
+          "duration_ms": 70
+        },
+        {
+          "id": "kick_spin_004",
+          "duration_ms": 90
+        },
+        {
+          "id": "kick_spin_005",
+          "duration_ms": 70
+        },
+        {
+          "id": "kick_spin_006",
+          "duration_ms": 80
+        },
+        {
+          "id": "kick_spin_007",
+          "duration_ms": 80
+        },
+        {
+          "id": "kick_spin_008",
+          "duration_ms": 110
+        }
+      ],
+      "loop": false,
+      "hold_last": false,
+      "markers": {
+        "entry": [
+          0
+        ],
+        "strike_pose": [
+          4
+        ],
+        "chain_exit": [
+          5
+        ],
+        "return": [
+          8
+        ]
+      }
     }
   },
-  "compatible_transitions": [],
+  "compatible_transitions": [
+    {
+      "from_clip": "kick_left",
+      "exit_frame": 5,
+      "to_clip": "idle_combat",
+      "entry_frame": 0
+    },
+    {
+      "from_clip": "kick_right",
+      "exit_frame": 5,
+      "to_clip": "idle_combat",
+      "entry_frame": 0
+    },
+    {
+      "from_clip": "kick_spin",
+      "exit_frame": 8,
+      "to_clip": "idle_combat",
+      "entry_frame": 0
+    }
+  ],
   "meta": {
-    "status": "intermediate_two_clips",
-    "revision": 3,
+    "status": "eight_approved_art_clips",
+    "page_png_sha256": "0dde20a9ced880592198c4883b320f3ac1b3433fce5a8f8ac3d1801022ea65fc",
+    "body_alpha": "binary",
     "cell_size": [
       192,
       192
     ],
-    "body_limit": [
-      128,
-      128
+    "layout": [
+      {
+        "clip": "idle_combat",
+        "row": 0,
+        "y": 0,
+        "frames": 6
+      },
+      {
+        "clip": "run",
+        "row": 1,
+        "y": 192,
+        "frames": 5
+      },
+      {
+        "clip": "punch_left",
+        "row": 2,
+        "y": 384,
+        "frames": 6
+      },
+      {
+        "clip": "punch_right",
+        "row": 3,
+        "y": 576,
+        "frames": 6
+      },
+      {
+        "clip": "jump",
+        "row": 4,
+        "y": 768,
+        "frames": 6
+      },
+      {
+        "clip": "kick_left",
+        "row": 5,
+        "y": 960,
+        "frames": 6
+      },
+      {
+        "clip": "kick_right",
+        "row": 6,
+        "y": 1152,
+        "frames": 6
+      },
+      {
+        "clip": "kick_spin",
+        "row": 7,
+        "y": 1344,
+        "frames": 9
+      }
     ],
-    "layout": {
-      "row_0": "idle_combat",
-      "row_1": "run; sixth cell empty"
-    },
-    "duration_ms": {
-      "idle_combat": 1200,
-      "run": 500
-    },
-    "anchors_status": "hand-position estimates; visual debug preview included",
-    "art_review": "visual consistency checked at final pixel size; not a Unity playback check",
-    "extension": "Preserve current frame IDs, page indices and rects; append new 192px rows or pages."
+    "trim": "Opaque bounds plus 2 transparent pixels inside useful rect. Additional 2px extrusion repeats transparent RGBA edge; verified against existing unchanged PNG.",
+    "anchors_status": "Hand centres and forearm directions manually estimated from final raster frames and visually debugged; not skeletal/layered source. L/R convention follows repository example and named punch clips. Dashed anchors are hidden hands.",
+    "timing": "idle_combat 1200ms / run 500ms retained from repository export metadata. Punches 480ms each match existing combined preview; jump 800ms; kicks 560/560/750ms. Runtime CharacterAnimationConfig timing takes precedence and is unchanged.",
+    "transitions": "Only pixel-identical kick recovery to idle_combat_000 is declared.",
+    "unity_smoke_import": "NOT RUN"
   }
 }
