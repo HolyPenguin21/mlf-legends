@@ -1,5 +1,18 @@
 # Agent workflow — MLF Legends
 
+## Stage 03 tuning — Inspector settings before Stage 03 acceptance (2026-10-28)
+
+Branch `feature/stage03-inspector-tuning`, one PR, **not merged by the implementing agent**. **Stage 03 is not declared
+accepted: the owner performs the final check. Stage 04 has not started.**
+- Roster size per team on the existing *Combat Bootstrap* (`CombatSmokeBootstrap`, `Assets/Scenes/CombatSmoke.unity`), total
+  shown, applied on start/restart through the one lifecycle path.
+- `CharacterAnimationConfig` clips: read-only `StartFrame`, editable `EndFrame`, derived `FrameCount` (local 0-based clip
+  indices); strike clips: Preparation / Active / Recovery inclusive frame ranges.
+- Those phases with duration and curve are the authoritative strike windows (`CombatStrikeSchedule` → per-strike frozen
+  `CombatAttackState.Timing`); movement allowed in Preparation. Setup, example, migration and Play Mode rules:
+  `Assets/MLFLegends/Combat/Runtime/Presentation/Sprites/ANIMATION.md`; decisions T1–T10 in `DECISIONS.md`; evidence in
+  `Docs/Evidence/stage03-tuning/README.md`.
+
 ## Stage 05.1 + 03.3c / PR #48 — five strikes and state-driven combat animation (2026-10-28)
 
 Base main `00310c3`. One branch `feature/stage05-strikes-combat-animation`, one PR; **MERGED on the owner's instruction as `b828ccb`** (2026-10-28). Proposed rules P1–P12 still await approval.

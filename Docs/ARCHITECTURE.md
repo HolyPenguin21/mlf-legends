@@ -1,5 +1,16 @@
 # MLF Legends — Combat architecture
 
+## Stage 03 tuning — strike windows from animation phases (2026-10-28)
+
+Supersedes the two claims below that strike timing lives in `CombatAttackTuning` and that strike frames are fitted to it.
+Data flow: `CharacterAnimationConfig` strike clip (EndFrame, Preparation/Active/Recovery frames, T, curve) →
+`SpriteAnimationTiming` (frame start times, once per config revision) → `CombatStrikeTiming.TryFromSeconds` (ticks) →
+`CombatStrikeSchedule` singleton (published on the main thread by `CombatSmokeBootstrap`, outside fixed steps) →
+`CombatActionSystem` copies it into `CombatAttackState.Timing` on each strike start → `CombatHitSystem` (hits),
+`CombatMovementSystem` (Preparation movement) and `CombatAnimationSet` (drawn phase) all read that frozen copy. The renderer
+never triggers hits; render rate never changes the simulation. Reach/damage/chain delays/series stay in `CombatAttackTuning`,
+whose windows are only the default table. Writers: table — `Publish` only; attack state — `CombatActionSystem` only.
+
 ## Stage 05.1 + 03.3c / PR #48 — five strikes and state-driven combat animation (2026-10-28)
 
 Base main `00310c3`. One branch `feature/stage05-strikes-combat-animation`, one PR; **MERGED on the owner's instruction as `b828ccb`** (2026-10-28). Proposed rules P1–P12 still await approval.

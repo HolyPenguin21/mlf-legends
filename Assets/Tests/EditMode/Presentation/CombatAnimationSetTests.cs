@@ -52,11 +52,26 @@ namespace MLFLegends.Tests.EditMode
 
         static CombatMotion Grounded() => new CombatMotion { Grounded = true };
 
-        static CombatAttackState Striking(CombatAttackKind kind) => new CombatAttackState { Kind = kind, StartTick = Start, SeriesLength = 1 };
+        /// <summary>A strike started on <see cref="Start"/> with the windows <paramref name="set"/> derives (what the scene publishes).</summary>
+        static CombatAttackState Striking(CombatAnimationSet set, CombatAttackKind kind) =>
+            new CombatAttackState { Kind = kind, StartTick = Start, SeriesLength = 1, Timing = set.StrikeSchedule.Get(kind) };
+
+        /// <summary>Phase a config local frame belongs to.</summary>
+        static CombatAttackPhase PhaseOf(CharacterAnimationSettings settings, int local) =>
+            local <= settings.PreparationEndFrame ? CombatAttackPhase.Windup
+            : local <= settings.ActiveEndFrame ? CombatAttackPhase.Active : CombatAttackPhase.Recovery;
+
+        static CharacterAnimationSettings Copy(CharacterAnimationSettings s) => new CharacterAnimationSettings
+        {
+            ClipId = s.ClipId, EndFrame = s.EndFrame, TotalDurationSeconds = s.TotalDurationSeconds, SpeedCurve = new AnimationCurve(s.SpeedCurve.keys),
+            PreparationEndFrame = s.PreparationEndFrame, ActiveEndFrame = s.ActiveEndFrame,
+        };
 
         [Test]
         public void ProjectConfigBindsAllEightClipsAndKeepsTheOwnersIdleAndRunSettings()
         {
+            Assert.That(Project("idle_combat").StartFrame, Is.Zero);
+            Assert.That(Project("idle_combat").EndFrame, Is.EqualTo(5));
             Assert.That(Project("idle_combat").FrameCount, Is.EqualTo(6));
             Assert.That(Project("idle_combat").TotalDurationSeconds, Is.EqualTo(1.0));
             Assert.That(Project("run").FrameCount, Is.EqualTo(5));
@@ -70,60 +85,97 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(warnings, Is.EqualTo(new[]
             {
                 "mage_female_01.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)",
-            }), "Config T equals every authoritative strike; only the explicit unused-anticipation note remains.");
+            }), "Migrated phases equal the strike_pose markers and no phase is shorter than a tick: only the unused-anticipation note remains.");
             Assert.That(set.LandingTicks, Is.EqualTo(16u), "land = 2 of 6 equal shares of 0.8 s.");
         }
 
-        [TestCase(CombatAttackKind.PunchLeft)]
-        [TestCase(CombatAttackKind.PunchRight)]
-        [TestCase(CombatAttackKind.KickLeft)]
-        [TestCase(CombatAttackKind.KickRight)]
-        [TestCase(CombatAttackKind.KickSpin)]
-        public void StrikePoseFramesCoverExactlyTheActiveTicksAndEveryFrameShowsInOrder(CombatAttackKind kind)
+        [TestCase(CombatAttackKind.PunchLeft, 14, 6, 9, 24)]
+        [TestCase(CombatAttackKind.PunchRight, 9, 11, 9, 24)]
+        [TestCase(CombatAttackKind.KickLeft, 11, 6, 16, 23)]
+        [TestCase(CombatAttackKind.KickRight, 11, 6, 16, 23)]
+        [TestCase(CombatAttackKind.KickSpin, 20, 5, 20, 65535)] // finisher: CombatStrikeTiming.NoChain
+        public void ConfigPhasesAreTheSimulatedWindowsAndEveryTickDrawsAFrameOfItsPhase(CombatAttackKind kind, int windup, int active,
+            int recovery, int chainPoint)
         {
+            // Migrated project config (flat curves, durations 29/29/33/33/45 ticks): each tick e simulates clip time
+            // [e, e + 1) / 60; Active ticks are those overlapping the Active frames' time.
             var set = Real(out var definition);
-            definition.TryGetClipIndex(CombatAnimationSet.AttackClip(kind), out var clipIndex);
+            var settings = Project(CombatAnimationSet.AttackClip(kind));
+            var timing = set.StrikeSchedule.Get(kind);
+            Assert.That((timing.WindupTicks, timing.ActiveTicks, timing.RecoveryTicks, (int)timing.ChainPoint),
+                Is.EqualTo((windup, active, recovery, chainPoint)));
+            definition.TryGetClipIndex(settings.ClipId, out var clipIndex);
             var clip = definition.Clips[clipIndex];
-            var pose = clip.Markers["strike_pose"];
-            var strike = CombatAttackTuning.Get(kind);
             var locals = new List<int>();
-            for (uint e = 0; e < strike.TotalTicks; e++)
+            for (uint e = 0; e < timing.End; e++)
             {
-                var frame = set.FrameFor(Start + e, 0, Grounded(), Striking(kind));
+                var frame = set.FrameFor(Start + e, 0, Grounded(), Striking(set, kind));
                 var local = clip.Frames.ToList().IndexOf((int)frame);
                 locals.Add(local);
-                var active = CombatAttackTuning.PhaseAt(strike, e) == CombatAttackPhase.Active;
-                Assert.That(pose.Contains(local), Is.EqualTo(active), $"tick {e}: {Id(definition, frame)}");
+                Assert.That(PhaseOf(settings, local), Is.EqualTo(timing.PhaseAt(e)), $"tick {e}: {Id(definition, frame)}");
             }
 
             Assert.That(locals, Is.Ordered, "Never steps back a frame.");
-            Assert.That(locals.Distinct(), Is.EqualTo(Enumerable.Range(0, clip.Frames.Count)), "Every authored frame shows at least one tick.");
+            Assert.That(locals.Distinct(), Is.EqualTo(Enumerable.Range(0, clip.Frames.Count)), "Every configured frame shows at least one tick.");
         }
 
         [Test]
-        public void CurveAndDurationChangeFrameSharesButNeverTheActiveWindow()
+        public void DurationCurveAndRangeMoveTheSimulatedWindowsAndTheDrawingFollowsThemAtAnyRenderRate()
         {
             var definition = Parse(Json);
             var flat = Real(out _);
-            var steep = new CharacterAnimationSettings
-            {
-                ClipId = "punch_left", FrameCount = 6, TotalDurationSeconds = 1.0, SpeedCurve = AnimationCurve.Linear(0, 0.2f, 1, 3f),
-            };
-            var edited = Build(definition, c => c == "punch_left" ? steep : Project(c), out var errors, out var warnings);
+            var steep = Copy(Project("punch_left"));
+            steep.TotalDurationSeconds = 1.0;
+            steep.SpeedCurve = AnimationCurve.Linear(0, 0.2f, 1, 3f);
+            var edited = Build(definition, c => c == "punch_left" ? steep : Project(c), out var errors, out _);
             Assert.That(edited, Is.Not.Null, string.Join("\n", errors));
-            Assert.That(warnings.Any(w => w.Contains("punch_left.TotalDurationSeconds") && w.Contains("29 ticks")), Is.True,
-                "A T that differs from the authoritative strike is reported, not silently ignored.");
-            var strike = CombatAttackTuning.Get(CombatAttackKind.PunchLeft);
-            var differs = false;
-            for (uint e = 0; e < strike.TotalTicks; e++)
+            var a = flat.StrikeSchedule.PunchLeft;
+            var b = edited.StrikeSchedule.PunchLeft;
+            Assert.That(b.End, Is.EqualTo(60), "T = 1 s is 60 ticks: the strike itself is longer.");
+            var timing = edited.Attack(CombatAttackKind.PunchLeft);
+            Assert.That(b.ActiveStart, Is.EqualTo((int)System.Math.Floor(timing.ActiveStartSeconds * 60 + 1e-6)));
+            Assert.That(b.RecoveryStart, Is.EqualTo((int)System.Math.Ceiling(timing.RecoveryStartSeconds * 60 - 1e-6)));
+            Assert.That(timing.ActiveStartSeconds, Is.GreaterThan(0.5), "Slow start: the first half of the frames takes more than half of T.");
+            Assert.That(b.ActiveStart, Is.Not.EqualTo(a.ActiveStart));
+            // Rendering samples the authoritative tick only: repeated samples (any render rate) of one tick are identical,
+            // and the drawn phase equals the simulated one on every tick.
+            for (uint e = 0; e < b.End; e++)
             {
-                var a = Id(definition, flat.FrameFor(Start + e, 0, Grounded(), Striking(CombatAttackKind.PunchLeft)));
-                var b = Id(definition, edited.FrameFor(Start + e, 0, Grounded(), Striking(CombatAttackKind.PunchLeft)));
-                Assert.That(b == "punch_left_003", Is.EqualTo(a == "punch_left_003"), $"tick {e}: the strike pose stays on the Active ticks");
-                differs |= a != b;
+                var state = Striking(edited, CombatAttackKind.PunchLeft);
+                var frame = edited.FrameFor(Start + e, 0, Grounded(), state);
+                Assert.That(edited.FrameFor(Start + e, 0, Grounded(), state), Is.EqualTo(frame));
+                var local = definition.Clips[definition.Clips.ToList().FindIndex(c => c.Id == "punch_left")].Frames.ToList().IndexOf((int)frame);
+                Assert.That(PhaseOf(steep, local), Is.EqualTo(b.PhaseAt(e)), $"tick {e}");
             }
 
-            Assert.That(differs, Is.True, "The curve redistributes windup/recovery frames.");
+            // A shorter range (EndFrame 4: frame 5 excluded) plays only frames 0..4 over the same T and curve.
+            var shortened = Copy(Project("punch_left"));
+            shortened.EndFrame = 4;
+            var cut = Build(definition, c => c == "punch_left" ? shortened : Project(c), out errors, out _);
+            Assert.That(cut, Is.Not.Null, string.Join("\n", errors));
+            Assert.That(cut.Attack(CombatAttackKind.PunchLeft).FrameCount, Is.EqualTo(5));
+            Assert.That(cut.Attack(CombatAttackKind.PunchLeft).DurationSeconds, Is.EqualTo(Project("punch_left").TotalDurationSeconds));
+            for (uint e = 0; e < cut.StrikeSchedule.PunchLeft.End; e++)
+                Assert.That(Id(definition, cut.FrameFor(Start + e, 0, Grounded(), Striking(cut, CombatAttackKind.PunchLeft))), Is.Not.EqualTo("punch_left_005"));
+        }
+
+        [Test]
+        public void ARunningStrikeKeepsItsTimingWhenTheConfigChangesAndStillDrawsItsOwnPhase()
+        {
+            var definition = Parse(Json);
+            var flat = Real(out _);
+            var started = Striking(flat, CombatAttackKind.PunchLeft); // windows fixed when the strike started
+            var longer = Copy(Project("punch_left"));
+            longer.TotalDurationSeconds = 2.0;
+            var edited = Build(definition, c => c == "punch_left" ? longer : Project(c), out var errors, out _);
+            Assert.That(edited, Is.Not.Null, string.Join("\n", errors));
+            Assert.That(edited.StrikeSchedule.PunchLeft.End, Is.EqualTo(120));
+            for (uint e = 0; e < started.Timing.End; e++)
+            {
+                var local = definition.Clips[definition.Clips.ToList().FindIndex(c => c.Id == "punch_left")].Frames.ToList()
+                    .IndexOf((int)edited.FrameFor(Start + e, 0, Grounded(), started));
+                Assert.That(PhaseOf(longer, local), Is.EqualTo(started.Timing.PhaseAt(e)), $"tick {e}: drawn phase = the strike's own phase");
+            }
         }
 
         [Test]
@@ -213,9 +265,8 @@ namespace MLFLegends.Tests.EditMode
             var set = Real(out var definition);
             foreach (var kind in new[] { CombatAttackKind.KickLeft, CombatAttackKind.KickRight, CombatAttackKind.KickSpin })
             {
-                var strike = CombatAttackTuning.Get(kind);
-                var last = Start + (uint)strike.TotalTicks - 1;
-                Assert.That(Id(definition, set.FrameFor(last, 0, Grounded(), Striking(kind))), Does.EndWith(kind == CombatAttackKind.KickSpin ? "_008" : "_005"));
+                var last = Start + (uint)set.StrikeSchedule.Get(kind).End - 1;
+                Assert.That(Id(definition, set.FrameFor(last, 0, Grounded(), Striking(set, kind))), Does.EndWith(kind == CombatAttackKind.KickSpin ? "_008" : "_005"));
                 var free = new CombatAttackState { EndTick = last + 1 };
                 Assert.That(Id(definition, set.FrameFor(last + 1, 0, Grounded(), free)), Is.EqualTo("idle_combat_000"));
             }
@@ -227,15 +278,46 @@ namespace MLFLegends.Tests.EditMode
         [TestCase(CombatAttackKind.KickRight)]
         public void TheChainPointShowsAFrameTheArtMarksAsChainable(CombatAttackKind kind)
         {
-            // The follow-up cuts the strike at Windup + Active + ChainDelay: the art's chain_exit frame must already show.
+            // The follow-up cuts the strike at its chain point (Recovery start + ChainDelay): the art's chain_exit frame must already show.
             var set = Real(out var definition);
             definition.TryGetClipIndex(CombatAnimationSet.AttackClip(kind), out var clipIndex);
             var clip = definition.Clips[clipIndex];
-            var strike = CombatAttackTuning.Get(kind);
-            var chainTick = Start + (uint)(strike.WindupTicks + strike.ActiveTicks + strike.ChainDelayTicks);
-            var local = clip.Frames.ToList().IndexOf((int)set.FrameFor(chainTick - 1, 0, Grounded(), Striking(kind)));
+            var chainTick = Start + (uint)set.StrikeSchedule.Get(kind).ChainPoint;
+            var local = clip.Frames.ToList().IndexOf((int)set.FrameFor(chainTick - 1, 0, Grounded(), Striking(set, kind)));
             Assert.That(local, Is.GreaterThanOrEqualTo(clip.Markers["chain_exit"][0]),
                 "The last frame before the follow-up is at or after chain_exit (no visual skip of the recovery start).");
+        }
+
+        [Test]
+        public void TheStrikeScheduleNeedsOnlyTheStrikeClipsAndReportsShortPhasesAndMarkerDifferences()
+        {
+            var definition = Parse(Json);
+            var errors = new List<string>();
+            var warnings = new List<string>();
+            // Jump settings missing: the visual set is rejected, the simulation schedule is not affected.
+            Assert.That(CombatAnimationSet.TryCreateStrikeSchedule(definition, c => c == "jump" ? null : Project(c), Character, errors, warnings,
+                out var schedule), Is.True, string.Join("\n", errors));
+            Assert.That(schedule.IsValid, Is.True);
+            Assert.That(schedule.PunchLeft.End, Is.EqualTo(29));
+            Assert.That(warnings, Is.Empty);
+
+            // T = 1/60 s over 6 frames: Preparation [0, 0.5) tick, Active [0.5, 0.667), Recovery [0.667, 1): one Active tick,
+            // no Preparation and no Recovery tick (warned), never a skipped Active phase.
+            var tiny = Copy(Project("punch_left"));
+            tiny.TotalDurationSeconds = 1 / 60.0;
+            errors.Clear();
+            Assert.That(CombatAnimationSet.TryCreateStrikeSchedule(definition, c => c == "punch_left" ? tiny : Project(c), Character, errors, warnings,
+                out schedule), Is.True, string.Join("\n", errors));
+            Assert.That(((int)schedule.PunchLeft.ActiveStart, (int)schedule.PunchLeft.RecoveryStart, (int)schedule.PunchLeft.End), Is.EqualTo((0, 1, 1)));
+            Assert.That(warnings.Any(w => w.Contains("punch_left: Preparation lasts")), Is.True, string.Join("\n", warnings));
+            Assert.That(warnings.Any(w => w.Contains("punch_left: Recovery lasts")), Is.True, string.Join("\n", warnings));
+
+            var moved = Copy(Project("punch_right"));
+            moved.PreparationEndFrame = 2;
+            warnings.Clear();
+            Assert.That(CombatAnimationSet.TryCreateStrikeSchedule(definition, c => c == "punch_right" ? moved : Project(c), Character, errors, warnings,
+                out _), Is.True);
+            Assert.That(warnings, Has.Some.Contains("punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)"));
         }
 
         static string Without(string json, string clip, string marker, string replacement)
@@ -256,14 +338,33 @@ namespace MLFLegends.Tests.EditMode
                 Assert.That(errors.Any(e => e.Contains(expected)), Is.True, $"Expected '{expected}' in:\n{string.Join("\n", errors)}");
             }
 
-            Rejected(Without(Json, "kick_left", "strike_pose", "\"strike_posed\": [2]"), Project, "mage_female_01.kick_left.markers.strike_pose: missing");
             Rejected(Without(Json, "jump", "land", "\"landing\": [4, 5]"), Project, "mage_female_01.jump.markers.land: missing");
-            Rejected(Without(Json, "punch_right", "strike_pose", "\"strike_pose\": [1, 3]"), Project, "punch_right.markers.strike_pose: frames must be consecutive");
             Rejected(Without(Json, "jump", "fall", "\"fall\": [1]"), Project, "jump.markers: rise, fall and land must be disjoint and in this order");
-            var truncated = new CharacterAnimationSettings { ClipId = "punch_left", FrameCount = 4, TotalDurationSeconds = 29 / 60.0 };
-            Rejected(Json, c => c == "punch_left" ? truncated : Project(c), "punch_left: strike_pose [3..3] needs at least one windup frame before it and one recovery frame");
             Rejected(Json, c => c == "kick_spin" ? null : Project(c), "mage_female_01.kick_spin: animation settings missing");
-            var looping = new CharacterAnimationSettings { ClipId = "idle_combat", FrameCount = 6, TotalDurationSeconds = 1 };
+            CharacterAnimationSettings Punch(int end, int preparationEnd, int activeEnd)
+            {
+                var punch = Copy(Project("punch_left"));
+                punch.EndFrame = end;
+                punch.PreparationEndFrame = preparationEnd;
+                punch.ActiveEndFrame = activeEnd;
+                return punch;
+            }
+
+            // EndFrame shortened below the phases: Recovery would be empty. Reported, never silently moved.
+            Rejected(Json, c => c == "punch_left" ? Punch(3, 2, 3) : Project(c), "punch_left.ActiveEndFrame: 3; Recovery 4..3 must hold at least one frame (EndFrame 3)");
+            Rejected(Json, c => c == "punch_left" ? Punch(5, -1, 3) : Project(c), "punch_left.PreparationEndFrame: -1; Preparation 0..-1 must hold at least one frame");
+            Rejected(Json, c => c == "punch_left" ? Punch(5, 5, 5) : Project(c), "punch_left.PreparationEndFrame: 5");
+            Rejected(Json, c => c == "punch_left" ? Punch(5, 2, 2) : Project(c), "punch_left.ActiveEndFrame: 2; Active 3..2 must hold at least one frame");
+            Rejected(Json, c => c == "punch_left" ? Punch(1, 0, 1) : Project(c), "punch_left: a strike needs at least 3 frames (Preparation, Active, Recovery), StartFrame 0..EndFrame 1 has 2");
+            Rejected(Json, c => c == "punch_left" ? Punch(0, 0, 0) : Project(c), "a strike needs at least 3 frames");
+            // Legacy (unmarked) phases are rejected rather than guessed.
+            var legacy = new CharacterAnimationSettings { ClipId = "kick_left", EndFrame = 5, TotalDurationSeconds = 0.55 };
+            Rejected(Json, c => c == "kick_left" ? legacy : Project(c), "kick_left.ActiveEndFrame: 0; Active 1..0 must hold at least one frame");
+            // After an atlas update that shortens a clip, a stale EndFrame names the field and the clip's current range.
+            var spin = Copy(Project("kick_spin"));
+            spin.EndFrame = 12;
+            Rejected(Json, c => c == "kick_spin" ? spin : Project(c), "kick_spin.EndFrame: 12 is outside the clip's local frames 0..8 (0-based clip indices; was the atlas clip shortened?)");
+            var looping = new CharacterAnimationSettings { ClipId = "idle_combat", EndFrame = 5, TotalDurationSeconds = 1 };
             var renamed = Json.Replace("\"idle_combat\": {", "\"idle_renamed\": {").Replace("\"to_clip\": \"idle_combat\"", "\"to_clip\": \"idle_renamed\"");
             Rejected(renamed, c => c == "idle_combat" ? looping : Project(c), "mage_female_01.idle_combat: clip missing from manifest");
         }

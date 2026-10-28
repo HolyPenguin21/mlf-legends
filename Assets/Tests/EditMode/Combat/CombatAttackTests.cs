@@ -156,9 +156,10 @@ namespace MLFLegends.Tests.EditMode
         public void TheBoxFollowsFacingAndTurningIsAllowedOnlyOnAStrikesFirstTick()
         {
             var script = new ReplayScript();
-            // r1: Attack while holding left: turn, then strike to the left. r2..: holding right never turns mid-strike.
+            // r1: Attack while holding left: turn, then strike to the left. From Active on, holding right never turns
+            // mid-strike (Preparation movement, which would carry the fighter out of reach, is covered separately).
             Press(script, 1, A, moveX: -1);
-            for (uint r = 2; r <= 40; r++)
+            for (uint r = 1u + Def(CombatAttackKind.PunchLeft).WindupTicks; r <= 40; r++)
                 script.Player(r, r, ReplayRole.Human, moveX: 1);
             var records = Play(Duel(new float3(-0.8f, 0f, 0f)), script, 40);
             var end = 1 + Def(CombatAttackKind.PunchLeft).TotalTicks;
@@ -169,20 +170,25 @@ namespace MLFLegends.Tests.EditMode
         }
 
         [Test]
-        public void StrikesBlockMovementAndJumpWhileAirbornePressesStartNothing()
+        public void StrikesMoveOnlyInPreparationNeverJumpAndAirbornePressesStartNothing()
         {
             var script = new ReplayScript();
             Press(script, 1, A, moveX: 1);
             for (uint r = 2; r <= 50; r++)
                 script.Player(r, r, ReplayRole.Human, moveX: 1, pressed: r == 5 ? CommandButtons.Jump : CommandButtons.None);
             var records = Play(Duel(new float3(5f, 0f, 0f)), script, 50);
-            var end = 1 + Def(CombatAttackKind.PunchLeft).TotalTicks;
+            var punch = Def(CombatAttackKind.PunchLeft);
+            var end = 1 + punch.TotalTicks;
+            var step = CombatMovementTuning.MoveSpeed * SimulationTiming.TickDuration;
             for (var t = 1; t < end; t++)
             {
-                Assert.That(H(records[t - 1]).Position, Is.EqualTo(float3.zero), $"r{t}: no planar move, no takeoff during the strike");
-                Assert.That(H(records[t - 1]).Motion.Grounded, Is.True);
+                // Strike tick t - 1: Preparation ticks (incl. the first) move normally, Active/Recovery hold the position.
+                var moved = System.Math.Min(t, punch.WindupTicks);
+                Assert.That(H(records[t - 1]).Position.x, Is.EqualTo(moved * step).Within(1e-4f), $"r{t}: planar move only in Preparation");
+                Assert.That(H(records[t - 1]).Motion.Grounded, Is.True, $"r{t}: no takeoff during the strike, Preparation included");
+                Assert.That(H(records[t - 1]).Attack.Kind, Is.EqualTo(CombatAttackKind.PunchLeft), $"r{t}: moving never cancels the strike");
             }
-            Assert.That(H(records[end - 1]).Position.x, Is.GreaterThan(0f), "Movement resumes on the first free tick.");
+            Assert.That(H(records[end - 1]).Position.x, Is.GreaterThan(punch.WindupTicks * step + step / 2), "Movement resumes on the first free tick.");
 
             script = new ReplayScript().Player(1, 1, ReplayRole.Human, pressed: CommandButtons.Jump).Player(5, 5, ReplayRole.Human, pressed: A);
             records = Play(Duel(new float3(0.5f, 0f, 0f)), script, 80);
@@ -339,8 +345,10 @@ namespace MLFLegends.Tests.EditMode
 
         static ReplayScript BusyScript()
         {
-            var script = new ReplayScript();
-            for (uint r = 1; r <= 150; r++)
+            // r1..20: both stand still and strike (moving in Preparation could carry them apart before any Active tick),
+            // so hits certainly land; then busy movement, strikes and jumps.
+            var script = new ReplayScript().Player(1, 1, ReplayRole.Human, pressed: A);
+            for (uint r = 21; r <= 150; r++)
             {
                 script.Player(r, r, ReplayRole.Human, moveX: (sbyte)(r % 40 < 20 ? 1 : -1),
                     pressed: r % 13 == 0 ? A : r % 17 == 0 ? K : r % 47 == 0 ? CommandButtons.Jump : CommandButtons.None);

@@ -1,5 +1,26 @@
 # MLF Legends — Decision log
 
+## Stage 03 tuning — Inspector roster size, frame ranges and strike phases (2026-10-28)
+
+Owner instruction before Stage 03 acceptance (Stage 04 not started; Stage 03 is NOT declared accepted). One branch
+`feature/stage03-inspector-tuning`, one PR, no implementing-agent merge.
+
+| # | Decision | Where |
+|---|---|---|
+| T1 | Team sizes on the existing `CombatSmokeBootstrap` (leader included, 1..200 each, total shown); applied only by its owned Restart (enable / explicit *Restart battle*); invalid sizes rejected, never clamped | `CombatSmokeBootstrap`, `BattleSetup.HumanAllies/AiAllies` |
+| T2 | `FrameCount` replaced by read-only `StartFrame` (0) / editable `EndFrame` (inclusive) / derived `FrameCount`; local 0-based clip indices | `CharacterAnimationSettings` |
+| T3 | Strike phases stored as two inclusive ends (`PreparationEndFrame`, `ActiveEndFrame`); all other bounds derived, so no gaps/overlaps; each phase ≥ 1 frame | `CharacterAnimationSettings`, `SpriteAnimationTiming` |
+| T4 | Phases + T + curve are the simulated windows (supersedes P10 "frames fitted to fixed tuning windows"); `CombatAttackTuning` windows remain only the default table of worlds that publish nothing | `CombatStrikeSchedule`, `CombatSmokeBootstrap` |
+| T5 | Quantization: a tick is Active when its clip interval `[e, e+1)/60` overlaps the Active time (never skipped); Preparation = earlier ticks (floor); end = `ceil(T·60)`; 0-tick Preparation/Recovery only warned | `CombatStrikeTiming.TryFromSeconds` |
+| T6 | Timing copied into `CombatAttackState.Timing` at every strike start; table changes affect new strikes only | `CombatActionSystem` |
+| T7 | Planar movement allowed in Preparation (supersedes the Preparation part of P5); jump still locked; facing rule unchanged | `CombatMovementSystem` |
+| T8 | Chain point = `min(RecoveryStart + ChainDelay, End)` so a short configured Recovery keeps the series (P4 otherwise unchanged) | `CombatStrikeTiming.FromTicks` |
+| T9 | The bootstrap restores the table it replaced on disable unless someone published after it (no leak across scenes/tests) | `CombatSmokeBootstrap` |
+| T10 | Migration: legacy `FrameCount = N` → `EndFrame = N − 1` on load (hidden slot, then 0); project phases initialised from `strike_pose`; unmarked phases are an error with an explicit Inspector button, never guessed | `CharacterAnimationSettings`, config editor |
+
+Known limits: one strike table per World (the roster uses one character type until #46); the table is World state outside
+the command stream (replays must publish the same table); manual Game-view tuning by the owner is still required.
+
 ## Stage 05.1 + 03.3c / PR #48 — five strikes and state-driven combat animation (2026-10-28)
 
 Base main `00310c3`. One branch `feature/stage05-strikes-combat-animation`, one PR; **MERGED on the owner's instruction as `b828ccb`** (2026-10-28). Proposed rules P1–P12 still await approval.
@@ -25,12 +46,12 @@ implemented. Evidence (Unity EditMode/PlayMode/GPU runs, raw XML/logs/TSV, stati
 | P2 | Series: first strike left, sides alternate, Kick after kick_right = kick_spin finisher, max 4 strikes | `CombatAttackTuning.Select`, `MaxSeriesLength` | other order/length; directional variants |
 | P3 | One buffered follow-up press (latest wins) accepted from Active to end of Recovery; Windup presses dropped | `CombatActionSystem` | buffer during Windup; first press wins |
 | P4 | Follow-up starts at Windup+Active+ChainDelay (cuts the rest of Recovery); finisher/4th strike never chains | `CombatAttackTuning` | longer delays; per-pair cancel tables |
-| P5 | No planar movement and no jump during a strike; turning only on a strike's first tick | Facing/Movement owners | slow walk during windup; turn anytime |
+| P5 | No planar movement and no jump during a strike; turning only on a strike's first tick (**Preparation movement now allowed, T7**) | Facing/Movement owners | slow walk during windup; turn anytime |
 | P6 | Strikes only from the ground; airborne presses dropped (no jump-attack clip) — the spec's "jump attacks enabled" is deferred | `CombatActionSystem` | air strike with a dedicated clip |
 | P7 | Jump + strike pressed on one grounded tick: jump wins, strike dropped | `CombatActionSystem` | strike wins |
 | P8 | Box: forward 0…reach along facing, abs(ΔZ) ≤ 0.4, abs(ΔY) ≤ 0.9; all enemies inside hit (no cap); allies never | `CombatAttackTuning`, `CombatHitSystem` | target cap; body radius when Stage 04 adds bodies |
 | P9 | 100 HP, damage 4/4/7/7/12, clamp at 0, no defeat yet | `CombatAttackTuning` | defeat owner in Stage 08 |
-| P10 | Strike/jump clips fitted to simulation windows; config T of a strike only sets frame shares (mismatch = warning) | `CombatAnimationSet` | reject mismatching T |
+| P10 | Strike/jump clips fitted to simulation windows; config T of a strike only sets frame shares (mismatch = warning) (**strike part superseded by T4**; jump unchanged) | `CombatAnimationSet` | reject mismatching T |
 | P11 | Jump phase markers rise [1,2] / fall [3] / land [4,5]; jump_000 unused | manifest `meta.jump_phase_markers` | artist re-marks or re-exports |
 | P12 | Run stride by distance; ≤ 6-tick stops keep run | `CombatMovementTuning.MoveStreakGraceTicks` | time-based phase; other grace |
 

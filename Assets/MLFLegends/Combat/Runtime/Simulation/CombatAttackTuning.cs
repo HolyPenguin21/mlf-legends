@@ -1,6 +1,13 @@
 namespace MLFLegends.Combat
 {
-    /// <summary>Timing, reach and damage of one strike. Ticks are fixed simulation ticks (<see cref="SimulationTiming"/>).</summary>
+    /// <summary>
+    /// Reach, damage, series rule and default timing of one strike. Ticks are fixed simulation ticks (<see cref="SimulationTiming"/>).
+    /// </summary>
+    /// <remarks>
+    /// The Windup/Active/Recovery ticks are only the <see cref="CombatStrikeSchedule.Default"/> windows of a World that publishes
+    /// no table (tests, benchmarks). A scene publishes the windows derived from the animation phases; a running strike reads
+    /// its own <see cref="CombatAttackState.Timing"/>, never these fields.
+    /// </remarks>
     public struct CombatAttackDefinition
     {
         public byte WindupTicks;
@@ -29,14 +36,18 @@ namespace MLFLegends.Combat
         public int TotalTicks => WindupTicks + ActiveTicks + RecoveryTicks;
 
         public bool CanChain => ChainDelayTicks != CombatAttackTuning.NoChain;
+
+        /// <summary>The default windows as a strike timing (chain point = Windup + Active + ChainDelay).</summary>
+        public CombatStrikeTiming DefaultTiming => CombatStrikeTiming.FromTicks(WindupTicks, ActiveTicks, RecoveryTicks, ChainDelayTicks);
     }
 
     /// <summary>
-    /// Provisional Stage 05.1 strike data and series rules: the single authoritative source of strike timing. Animation
-    /// timing is fitted to these windows (CombatAnimationSet); it never moves a hit. Not approved balance values.
+    /// Provisional Stage 05.1 strike data and series rules: reach, damage, chain delays, series length and the default
+    /// windows of worlds without a published <see cref="CombatStrikeSchedule"/>. In a scene the windows come from the
+    /// strike clips' Preparation/Active/Recovery frames (CharacterAnimationConfig). Not approved balance values.
     /// </summary>
     /// <remarks>
-    /// Initial windows follow the delivered art's frame proportions (punch 29, kick 33, spin 45 ticks at 60 Hz). Reach
+    /// Default windows follow the delivered art's frame proportions (punch 29, kick 33, spin 45 ticks at 60 Hz). Reach
     /// matches the drawn fist/foot (2 world units per 128 px nominal height).
     /// </remarks>
     public static class CombatAttackTuning
@@ -74,15 +85,8 @@ namespace MLFLegends.Combat
                 Damage = damage, ReachMin = 0f, ReachMax = reach, DepthHalfWidth = 0.4f, HeightTolerance = 0.9f,
             };
 
-        /// <summary>Phase on the tick <paramref name="elapsed"/> ticks after the strike's first tick; None once it ended.</summary>
-        public static CombatAttackPhase PhaseAt(in CombatAttackDefinition strike, uint elapsed)
-        {
-            if (elapsed < strike.WindupTicks)
-                return CombatAttackPhase.Windup;
-            if (elapsed < (uint)(strike.WindupTicks + strike.ActiveTicks))
-                return CombatAttackPhase.Active;
-            return elapsed < (uint)strike.TotalTicks ? CombatAttackPhase.Recovery : CombatAttackPhase.None;
-        }
+        /// <summary>Phase of the default windows on the tick <paramref name="elapsed"/> ticks after the strike's first tick; None once it ended.</summary>
+        public static CombatAttackPhase PhaseAt(in CombatAttackDefinition strike, uint elapsed) => strike.DefaultTiming.PhaseAt(elapsed);
 
         /// <summary>The strike button of a tick's Pressed: Attack (hand) wins over Kick; None without either.</summary>
         public static CommandButtons StrikeButton(CommandButtons pressed) =>

@@ -10,13 +10,13 @@ namespace MLFLegends.Combat
     /// never feeds anything back into the simulation.
     /// </summary>
     /// <remarks>
-    /// Priority: strike → airborne jump → run → landing → idle. Loops (idle, run) use the config cycle (N/T/curve). Play-once
-    /// clips are <em>fitted</em> to simulation windows: the config N/T/curve fixes each frame's share of the clip, and every
-    /// segment of frames is stretched over its authoritative window, so a visual edit can never move a hit.
+    /// Priority: strike → airborne jump → run → landing → idle. Loops (idle, run) use the config cycle (range/T/curve).
     /// <list type="bullet">
-    /// <item>Strikes: frames before <c>strike_pose</c> span Windup, the <c>strike_pose</c> frames span exactly the Active
-    /// ticks (when damage resolves), the rest span Recovery (<see cref="CombatAttackTuning"/>). The config T should equal
-    /// the strike's total; a mismatch is reported (it cannot change timing).</item>
+    /// <item>Strikes: the config splits the clip range into Preparation / Active / Recovery frames; with T and the curve that
+    /// gives the phase times, which <see cref="TryCreateStrikeSchedule"/> quantizes into the simulation windows
+    /// (<see cref="CombatStrikeSchedule"/>, published by the scene). Drawing reads the window phase fixed in the fighter's
+    /// <see cref="CombatAttackState.Timing"/> and shows the frame at the strike's elapsed time, kept inside that phase's
+    /// frames: the drawn phase always equals the simulated one, and a drawn frame never causes a hit.</item>
     /// <item>Jump: <c>rise</c> frames follow ascent progress (1 − vy/JumpImpulse), <c>fall</c> frames descent progress, both
     /// from the movement owner's vertical velocity, so the drawing never changes the trajectory and no landing pose is shown
     /// in the air. <c>land</c> frames play after touch-down for their config share of T, only if the fighter neither moved
@@ -51,7 +51,6 @@ namespace MLFLegends.Combat
         }
 
         readonly SpriteAnimationTiming[] m_Attacks = new SpriteAnimationTiming[s_Attacks.Length + 1];
-        readonly Segment[] m_Strikes = new Segment[s_Attacks.Length + 1];
         Segment m_Rise;
         Segment m_Fall;
         Segment m_Land;
@@ -62,6 +61,9 @@ namespace MLFLegends.Combat
 
         /// <summary>Ticks the landing frames play after touch-down (config share of the jump clip, ≥ 1).</summary>
         public uint LandingTicks { get; private set; }
+
+        /// <summary>Simulation windows derived from this set's strike clips (the table a scene publishes for them).</summary>
+        public CombatStrikeSchedule StrikeSchedule { get; private set; }
 
         CombatAnimationSet()
         {
@@ -80,20 +82,32 @@ namespace MLFLegends.Combat
             }
         }
 
+        /// <summary>True for the five strike clips: only they have Preparation / Active / Recovery phases.</summary>
+        public static bool IsAttackClip(string clipId)
+        {
+            foreach (var kind in s_Attacks)
+            {
+                if (AttackClip(kind) == clipId)
+                    return true;
+            }
+
+            return false;
+        }
+
         public SpriteAnimationTiming Attack(CombatAttackKind kind) => kind > 0 && (int)kind < m_Attacks.Length ? m_Attacks[(int)kind] : null;
 
         /// <summary>
         /// Builds the set from the atlas definition and the per-clip config settings (<paramref name="settingsFor"/> returns
-        /// null when a clip has none). All-or-nothing: any missing/invalid clip, marker or count adds an error and returns null.
+        /// null when a clip has none). All-or-nothing: any missing/invalid clip, phase, marker or range adds an error and returns null.
         /// </summary>
         public static CombatAnimationSet Create(SpriteAtlasDefinition definition, Func<string, CharacterAnimationSettings> settingsFor,
             string path, List<string> errors, List<string> warnings = null)
         {
             var before = errors.Count;
             var set = new CombatAnimationSet();
-            set.Idle = Timing(definition, settingsFor, path, IdleClip, true, errors, warnings, out _);
-            set.Run = Timing(definition, settingsFor, path, RunClip, true, errors, warnings, out _);
-            set.Jump = Timing(definition, settingsFor, path, JumpClip, false, errors, warnings, out var jumpClip);
+            set.Idle = Timing(definition, settingsFor, path, IdleClip, true, false, errors, warnings, out _);
+            set.Run = Timing(definition, settingsFor, path, RunClip, true, false, errors, warnings, out _);
+            set.Jump = Timing(definition, settingsFor, path, JumpClip, false, false, errors, warnings, out var jumpClip);
             if (set.Jump != null)
             {
                 var jumpPath = path + "." + JumpClip;
@@ -115,31 +129,54 @@ namespace MLFLegends.Combat
                 }
             }
 
+            if (TryStrikes(definition, settingsFor, path, errors, warnings, set.m_Attacks, out var schedule))
+                set.StrikeSchedule = schedule;
+            return errors.Count == before ? set : null;
+        }
+
+        /// <summary>
+        /// Simulation windows of the five strikes from their clip phases, duration and curve only (idle/run/jump are not
+        /// needed). The same derivation <see cref="Create"/> uses, so the published table and the drawn phases agree.
+        /// </summary>
+        public static bool TryCreateStrikeSchedule(SpriteAtlasDefinition definition, Func<string, CharacterAnimationSettings> settingsFor,
+            string path, List<string> errors, List<string> warnings, out CombatStrikeSchedule schedule) =>
+            TryStrikes(definition, settingsFor, path, errors, warnings, new SpriteAnimationTiming[s_Attacks.Length + 1], out schedule);
+
+        static bool TryStrikes(SpriteAtlasDefinition definition, Func<string, CharacterAnimationSettings> settingsFor, string path,
+            List<string> errors, List<string> warnings, SpriteAnimationTiming[] timings, out CombatStrikeSchedule schedule)
+        {
+            var before = errors.Count;
+            schedule = default;
             foreach (var kind in s_Attacks)
             {
                 var clipId = AttackClip(kind);
                 var clipPath = path + "." + clipId;
-                var timing = Timing(definition, settingsFor, path, clipId, false, errors, warnings, out var clip);
-                if (timing == null || !TrySegment(clip, "strike_pose", timing.FrameCount, clipPath, errors, out var strike))
+                var timing = Timing(definition, settingsFor, path, clipId, false, true, errors, warnings, out var clip);
+                if (timing == null)
                     continue;
-                if (strike.First < 1 || strike.End >= timing.FrameCount)
+                if (!timing.TryStrikeTiming(CombatAttackTuning.Get(kind).ChainDelayTicks, out var strike, out var error))
                 {
-                    errors.Add(clipPath + $": strike_pose [{strike.First}..{strike.End - 1}] needs at least one windup frame before it and one recovery frame after it within FrameCount {timing.FrameCount}");
+                    errors.Add(clipPath + ": " + error);
                     continue;
                 }
 
-                var total = CombatAttackTuning.Get(kind).TotalTicks / (double)SimulationTiming.TickRateHz;
-                if (Math.Abs(timing.DurationSeconds - total) > 0.5 / SimulationTiming.TickRateHz)
-                    warnings?.Add(clipPath + $".TotalDurationSeconds: {timing.DurationSeconds:0.####} s differs from the authoritative strike {total:0.####} s ({CombatAttackTuning.Get(kind).TotalTicks} ticks); frames are fitted to the combat windows, so T only sets frame shares");
-                set.m_Attacks[(int)kind] = timing;
-                set.m_Strikes[(int)kind] = strike;
+                const double hz = SimulationTiming.TickRateHz;
+                if (strike.WindupTicks == 0)
+                    warnings?.Add(clipPath + $": Preparation lasts {timing.ActiveStartSeconds:0.####} s, less than one {hz} Hz tick: hits can resolve on the strike's first tick and no Preparation tick is simulated or drawn");
+                if (strike.RecoveryTicks == 0)
+                    warnings?.Add(clipPath + $": Recovery lasts {timing.DurationSeconds - timing.RecoveryStartSeconds:0.####} s and ends inside the last Active tick: no Recovery tick is simulated or drawn");
+                if (clip.Markers.TryGetValue("strike_pose", out var pose) && pose.Length > 0
+                    && (pose[0] != timing.PreparationEnd + 1 || pose[pose.Length - 1] != timing.ActiveEnd))
+                    warnings?.Add(clipPath + $": Active frames {timing.PreparationEnd + 1}..{timing.ActiveEnd} differ from the manifest's strike_pose {pose[0]}..{pose[pose.Length - 1]} (the config decides)");
+                timings[(int)kind] = timing;
+                schedule.Set(kind, strike);
             }
 
-            return errors.Count == before ? set : null;
+            return errors.Count == before;
         }
 
         static SpriteAnimationTiming Timing(SpriteAtlasDefinition definition, Func<string, CharacterAnimationSettings> settingsFor,
-            string path, string clipId, bool looping, List<string> errors, List<string> warnings, out SpriteAtlasClip clip)
+            string path, string clipId, bool looping, bool phases, List<string> errors, List<string> warnings, out SpriteAtlasClip clip)
         {
             clip = null;
             var clipPath = path + "." + clipId;
@@ -157,7 +194,7 @@ namespace MLFLegends.Combat
                 return null;
             }
 
-            return SpriteAnimationTiming.Create(clip, settings, clipPath, errors, warnings, looping);
+            return SpriteAnimationTiming.Create(clip, settings, clipPath, errors, warnings, looping, phases);
         }
 
         /// <summary>A marker as one ascending run of consecutive local frames inside the first <paramref name="frameCount"/>.</summary>
@@ -181,7 +218,7 @@ namespace MLFLegends.Combat
 
             if (frames[frames.Length - 1] >= frameCount)
             {
-                errors.Add(path + $".markers.{marker}: frame {frames[frames.Length - 1]} is outside FrameCount {frameCount}");
+                errors.Add(path + $".markers.{marker}: frame {frames[frames.Length - 1]} is outside EndFrame {frameCount - 1}");
                 return false;
             }
 
@@ -205,6 +242,24 @@ namespace MLFLegends.Combat
 
         static double Seconds(long ticks) => ticks / (double)SimulationTiming.TickRateHz;
 
+        /// <summary>
+        /// Local strike frame on the tick <paramref name="elapsed"/> ticks after the strike's first tick: the frame at clip time
+        /// <c>elapsed / TickRateHz</c>, kept inside the frames of the phase <paramref name="strike"/> has on that tick.
+        /// </summary>
+        public static int StrikeLocalFrame(SpriteAnimationTiming timing, in CombatStrikeTiming strike, uint elapsed)
+        {
+            var local = timing.LocalFrameAt(Seconds(elapsed));
+            switch (strike.PhaseAt(elapsed))
+            {
+                case CombatAttackPhase.Windup:
+                    return Math.Min(local, timing.PreparationEnd);
+                case CombatAttackPhase.Active:
+                    return Math.Max(timing.PreparationEnd + 1, Math.Min(local, timing.ActiveEnd));
+                default:
+                    return Math.Max(timing.ActiveEnd + 1, local);
+            }
+        }
+
         /// <summary>Atlas frame of a fighter without motion/attack state (manual worlds): idle from the battle's first tick.</summary>
         public uint IdleFrame(uint tick, uint battleStartTick) => Idle.FrameAt(Seconds((long)tick - battleStartTick - 1));
 
@@ -214,16 +269,7 @@ namespace MLFLegends.Combat
             if (attack.IsAttacking)
             {
                 var timing = m_Attacks[(int)attack.Kind];
-                var strike = CombatAttackTuning.Get(attack.Kind);
-                var segment = m_Strikes[(int)attack.Kind];
-                var elapsed = (double)(tick - attack.StartTick);
-                if (elapsed < strike.WindupTicks)
-                    return Fit(timing, new Segment { First = 0, End = segment.First }, elapsed / strike.WindupTicks);
-                elapsed -= strike.WindupTicks;
-                if (elapsed < strike.ActiveTicks)
-                    return Fit(timing, segment, elapsed / strike.ActiveTicks);
-                elapsed -= strike.ActiveTicks;
-                return Fit(timing, new Segment { First = segment.End, End = timing.FrameCount }, elapsed / strike.RecoveryTicks);
+                return timing.Frame(StrikeLocalFrame(timing, attack.Timing, tick - attack.StartTick));
             }
 
             if (!motion.Grounded)

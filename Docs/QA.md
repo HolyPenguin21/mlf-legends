@@ -1,5 +1,20 @@
 # MLF Legends — Quality assurance and evidence
 
+## Stage 03 tuning — Inspector roster size, frame ranges and strike phases (2026-10-28)
+
+Branch `feature/stage03-inspector-tuning`, tested commit `3c9dffa`, clean worktree, Unity 6000.5.4f1, RTX 2060 SUPER D3D12,
+each series twice. Details and requirement → test map: `Docs/Evidence/stage03-tuning/README.md`.
+
+| Check | Status |
+|---|---|
+| EditMode (424 incl. new strike-schedule, migration, phase, Performance) | **PASS** 424/424 ×2 |
+| PlayMode headless (incl. new roster 2/100/400 and strike-window publish tests) | **PASS** 44/44 executed ×2; 22 GPU tests skipped = `NOT RUN` here, covered next |
+| PlayMode GPU Graphics + Performance | **PASS** 22/22 ×2 |
+| Static: no PNG/art, GUIDs unique, asset T/curves unchanged by migration | **PASS** |
+| Owner Inspector / Game-view tuning, real keyboard play, Domain Reload off, player build | **NOT RUN** — owner's final Stage 03 check |
+
+Stage 03 is **not** declared accepted; Stage 04 not started.
+
 ## Stage 05.1 + 03.3c / PR #48 — strikes and combat animation (2026-10-28)
 
 Merged to main as `b828ccb` on the owner's instruction. Tested commit `a7e09df` (code identical in the merge), clean worktree, Unity 6000.5.4f1, RTX 2060 SUPER D3D12, each series twice (raw XML/logs/TSV in

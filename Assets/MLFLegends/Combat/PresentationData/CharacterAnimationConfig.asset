@@ -17,7 +17,7 @@ MonoBehaviour:
     AtlasCatalog: {fileID: 11400000, guid: 134c5535ff90542f8fcdfb0aa1562436, type: 2}
     Animations:
     - ClipId: idle_combat
-      FrameCount: 6
+      EndFrame: 5
       TotalDurationSeconds: 1
       SpeedCurve:
         serializedVersion: 2
@@ -43,8 +43,11 @@ MonoBehaviour:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
+      PreparationEndFrame: 0
+      ActiveEndFrame: 0
+      m_LegacyFrameCount: 0
     - ClipId: run
-      FrameCount: 5
+      EndFrame: 4
       TotalDurationSeconds: 0.5
       SpeedCurve:
         serializedVersion: 2
@@ -70,8 +73,11 @@ MonoBehaviour:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
+      PreparationEndFrame: 0
+      ActiveEndFrame: 0
+      m_LegacyFrameCount: 0
     - ClipId: jump
-      FrameCount: 6
+      EndFrame: 5
       TotalDurationSeconds: 0.8
       SpeedCurve:
         serializedVersion: 2
@@ -81,24 +87,27 @@ MonoBehaviour:
           value: 1
           inSlope: 0
           outSlope: 0
-          tangentMode: 34
+          tangentMode: 0
           weightedMode: 0
           inWeight: 0
           outWeight: 0
         - serializedVersion: 3
           time: 1
-          value: 1
-          inSlope: 0
-          outSlope: 0
-          tangentMode: 34
+          value: 0
+          inSlope: -1.1821046
+          outSlope: -1.1821046
+          tangentMode: 0
           weightedMode: 0
-          inWeight: 0
+          inWeight: 0.100901365
           outWeight: 0
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
+      PreparationEndFrame: 0
+      ActiveEndFrame: 0
+      m_LegacyFrameCount: 0
     - ClipId: punch_left
-      FrameCount: 6
+      EndFrame: 5
       TotalDurationSeconds: 0.48333333333333334
       SpeedCurve:
         serializedVersion: 2
@@ -124,8 +133,11 @@ MonoBehaviour:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
+      PreparationEndFrame: 2
+      ActiveEndFrame: 3
+      m_LegacyFrameCount: 0
     - ClipId: punch_right
-      FrameCount: 6
+      EndFrame: 5
       TotalDurationSeconds: 0.48333333333333334
       SpeedCurve:
         serializedVersion: 2
@@ -151,9 +163,12 @@ MonoBehaviour:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
+      PreparationEndFrame: 2
+      ActiveEndFrame: 3
+      m_LegacyFrameCount: 0
     - ClipId: kick_left
-      FrameCount: 6
-      TotalDurationSeconds: 0.55
+      EndFrame: 5
+      TotalDurationSeconds: 1
       SpeedCurve:
         serializedVersion: 2
         m_Curve:
@@ -178,9 +193,12 @@ MonoBehaviour:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
+      PreparationEndFrame: 1
+      ActiveEndFrame: 2
+      m_LegacyFrameCount: 0
     - ClipId: kick_right
-      FrameCount: 6
-      TotalDurationSeconds: 0.55
+      EndFrame: 5
+      TotalDurationSeconds: 1
       SpeedCurve:
         serializedVersion: 2
         m_Curve:
@@ -205,9 +223,12 @@ MonoBehaviour:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
+      PreparationEndFrame: 1
+      ActiveEndFrame: 2
+      m_LegacyFrameCount: 0
     - ClipId: kick_spin
-      FrameCount: 9
-      TotalDurationSeconds: 0.75
+      EndFrame: 8
+      TotalDurationSeconds: 2
       SpeedCurve:
         serializedVersion: 2
         m_Curve:
@@ -232,3 +253,6 @@ MonoBehaviour:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
+      PreparationEndFrame: 3
+      ActiveEndFrame: 4
+      m_LegacyFrameCount: 0

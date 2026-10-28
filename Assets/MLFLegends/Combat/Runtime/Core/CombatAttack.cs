@@ -13,7 +13,10 @@ namespace MLFLegends.Combat
         KickSpin = 5,
     }
 
-    /// <summary>Phase of a strike on one fixed tick: Windup → Active (hits resolve) → Recovery.</summary>
+    /// <summary>
+    /// Phase of a strike on one fixed tick: Windup (Preparation: no hits, planar movement allowed) → Active (hits resolve) →
+    /// Recovery (return to stance, no hits).
+    /// </summary>
     public enum CombatAttackPhase : byte
     {
         None = 0,
@@ -23,9 +26,10 @@ namespace MLFLegends.Combat
     }
 
     /// <summary>
-    /// Authoritative strike state of a combatant: the current strike of a series, the one buffered follow-up press and
-    /// when the last series ended. Phase timing is derived from <see cref="StartTick"/> and
-    /// <see cref="CombatAttackTuning"/>, never from animation.
+    /// Authoritative strike state of a combatant: the current strike of a series, its fixed phase timing, the one buffered
+    /// follow-up press and when the last series ended. The phase of a tick is <c>Timing.PhaseAt(tick - StartTick)</c>; the
+    /// timing is copied from the World's <see cref="CombatStrikeSchedule"/> when the strike starts and never changes while it
+    /// runs, so neither a config edit nor the drawn frame can move a hit.
     /// </summary>
     /// <remarks>
     /// Initialised (free) by BattleLifecycleSystem.Spawn, afterwards written only by CombatActionSystem on the fixed tick.
@@ -45,6 +49,9 @@ namespace MLFLegends.Combat
 
         /// <summary>First (windup) tick of the current strike.</summary>
         public uint StartTick;
+
+        /// <summary>Phase boundaries of the current strike, fixed at its start; default when free.</summary>
+        public CombatStrikeTiming Timing;
 
         /// <summary>First free tick after the last series ended; 0 = no series ended in this battle yet.</summary>
         public uint EndTick;

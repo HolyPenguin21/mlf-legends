@@ -206,3 +206,27 @@ mode remains for tests. See Presentation/Sprites/ANIMATION.md. Unity art smoke a
 `Spawn` additionally gives every combatant (human, AI, allies alike) a free `CombatAttackState`, `CombatHealth`
 100/100 and an empty `CombatHitRecord` buffer in the same archetype. They are destroyed with the entity on
 End/Restart/Despawn, so no strike, buffered press or ledger survives into another battle. No new lifecycle step.
+
+## Stage 03 tuning: team sizes and strike windows in the Inspector
+
+**Where.** `Assets/Scenes/CombatSmoke.unity` → GameObject *Combat Bootstrap* → `CombatSmokeBootstrap`:
+**Human Team Size** and **Ai Team Size** (fighters per team, leader included, `1..200` each, default 1 = the duel) and the
+read-only **Total fighters** below them. Sizes map to `BattleSetup.HumanAllies = HumanTeamSize − 1` /
+`AiAllies = AiTeamSize − 1` of the same owned `Restart` request: same lifecycle `Start`, same `Spawn`, same ID reservation
+(human, AI, human allies, AI allies), same formation (`AllyOf`) and team values. There is no second spawn path.
+
+- **When applied:** only when the bootstrap requests a (re)start — on enable (entering Play Mode, re-enabling) or with the
+  Inspector button / context menu **Restart battle (apply team sizes)** in Play Mode. Editing a size never rebuilds a running
+  battle by itself. A restart destroys every fighter of the previous run and spawns the new roster with fresh IDs.
+- **Validation:** a size outside `1..200` (also 0 or negative) is shown as an Inspector error and logged; enable requests no
+  battle and *Restart* keeps the running one. Values are never clamped or rewritten.
+- 2 / 100 / 400 fighters = sizes 1+1 / 50+50 (or any split) / 200+200.
+
+**Strike windows.** **Animation Config** (`CharacterAnimationConfig.asset`) and **Strike Character Id** (`mage_female_01`)
+select the strike clips whose Preparation/Active/Recovery frames, duration and curve define the simulated windows
+(`Presentation/Sprites/ANIMATION.md`). On enable, before its Restart, and whenever the config or its atlas catalog `Version`
+changes (one compare per frame, derivation only on change), the bootstrap publishes `CombatStrikeSchedule` (main thread,
+outside fixed steps) and logs the table. New strikes use it; running strikes keep theirs. An invalid config logs one error
+per change and keeps the previous table. No config = the World keeps its table (defaults). On disable it restores the table it
+replaced unless someone published after it, so a scene's windows never leak into the next scene or test. The renderer
+still has its own config reference; keep both on the same asset (the scene does).

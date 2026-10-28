@@ -41,6 +41,14 @@ A canonical attack has Windup → Active → Recovery, attack shapes, interrupt/
 
 ### Implemented minimal strike set (Stage 05.1, PR #48; rules PROPOSED, numbers provisional — owner approval pending)
 
+> **Stage 03 tuning update (owner instruction).** Strike windows are no longer fixed numbers: each strike clip's
+> Preparation (= Windup) / Active / Recovery frame ranges in `CharacterAnimationConfig`, with its duration and speed curve,
+> define them (quantized to 60 Hz ticks, Active never shorter than one tick; see `Presentation/Sprites/ANIMATION.md`). The
+> current project values are punch_left 14/6/9, punch_right 9/11/9, kicks 11/6/16, kick_spin 20/5/20 ticks; the table
+> below is the headless default only. **During Preparation the fighter may move** (normal movement rules; the strike keeps
+> playing, no jump); Active/Recovery keep the lock below. A strike keeps the windows it started with. The chain point is
+> Recovery start + the chain delay below, capped at the strike's end.
+
 The spec leaves the heavy/combination mapping, series, air strikes and movement during attacks open. Stage 05.1
 implements the smallest coherent set below; every item marked *proposed* is a decision for the owner to confirm or change
 (all numbers live in `Simulation/CombatAttackTuning.cs`, one authoritative source).
@@ -50,7 +58,7 @@ implements the smallest coherent set below; every item marked *proposed* is a de
 - **Strikes:** `punch_left`, `punch_right`, `kick_left`, `kick_right`, `kick_spin`. Each has Windup → Active → Recovery in
   fixed ticks (60 Hz). Hits resolve only on Active ticks, in the fixed simulation tick, never from animation or markers.
 
-| Strike | Windup | Active | Recovery | Chain after recovery tick | Damage | Reach (forward) |
+| Strike | Windup (default) | Active (default) | Recovery (default) | Chain after recovery tick | Damage | Reach (forward) |
 |---|---|---|---|---|---|---|
 | punch_left | 13 | 5 | 11 | 4 | 4 | 0 … 1.0 |
 | punch_right | 9 | 9 | 11 | 4 | 4 | 0 … 1.0 |
@@ -69,8 +77,9 @@ implements the smallest coherent set below; every item marked *proposed* is a de
   chain delay), cutting the rest of Recovery; without a buffered press Recovery runs out and the fighter is free on the next
   tick. `kick_spin` and the 4th strike of a series cannot chain: they always play the full Recovery and drop the buffer.
   Examples: J J J J = L R L R; U U U = kick L, kick R, spin; J U U = punch L, kick R, spin; U J J = kick L, punch R, punch L.
-- **During a strike (proposed):** no planar movement and no jump; facing is locked except on the first tick of each strike
-  (series start or follow-up), where that tick's MoveX may still turn the fighter, before the hit box is tested.
+- **During a strike (proposed; Preparation movement by owner instruction):** planar movement only during Preparation
+  (Windup) ticks, never a jump; facing is locked except on the first tick of each strike (series start or follow-up), where
+  that tick's MoveX may still turn the fighter, before the hit box is tested. Moving never cancels the strike.
 - **Targets:** every in-combat combatant of another team inside the box (forward along the attacker's `CombatFacing`).
   Allies and self are never hit. Several targets per strike are allowed (spec: "individual attacks can strike several
   enemies"). Each target is hit at most once per strike (per-strike ledger), however many Active ticks overlap it; the
