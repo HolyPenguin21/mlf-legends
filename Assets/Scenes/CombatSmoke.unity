@@ -156,7 +156,7 @@ MonoBehaviour:
   m_AiPosition: {x: 2, y: 0, z: 0}
   m_AiFacing: -1
   m_AiTeamSize: 2
-  m_AnimationConfig: {fileID: 0}
+  m_AnimationConfig: {fileID: 11400000, guid: d8e48ba01625508b897c0650c6fcc813, type: 2}
   m_StrikeCharacterId: mage_female_01
 --- !u!4 &233848544
 Transform:
