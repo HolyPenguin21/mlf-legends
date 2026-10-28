@@ -1,4 +1,86 @@
-# Character animation — Stage 05.1 / PR #48 (current)
+# Character animation — Stage 03 tuning: frame ranges and strike phases (current)
+
+**Where.** `Assets/MLFLegends/Combat/PresentationData/CharacterAnimationConfig.asset` → *Characters* → `mage_female_01` →
+*Animations* → one entry per clip. The scene object *Combat Bootstrap* (`Assets/Scenes/CombatSmoke.unity`,
+`CombatSmokeBootstrap`) references the same asset in **Animation Config** and the character in **Strike Character Id**: it
+turns the strike phases into the simulated strike windows. The renderer (*Main Camera*, `CombatSpriteRenderer`) reads the
+same asset for drawing.
+
+**Frame numbers are LOCAL clip indices from 0** (the clip's first frame in the manifest is 0), never page cells or global
+atlas frame numbers. The Inspector says so above every entry.
+
+| Field | Stored | Meaning |
+|---|---|---|
+| `StartFrame` | no, read-only | first played frame = the source clip's first frame, always 0 |
+| `EndFrame` | **yes, editable** | last played frame, inclusive; must be inside the clip (`0..clip frames − 1`) |
+| `FrameCount` | no, read-only | `EndFrame − StartFrame + 1` |
+| `TotalDurationSeconds` | yes | playback time of exactly `StartFrame..EndFrame` |
+| `SpeedCurve` | yes | X = normalized time 0..1 of that range, Y = relative speed ≥ 0; distributes only the played frames |
+| `PreparationEndFrame` | yes (strike clips only) | Preparation = `StartFrame..PreparationEndFrame` |
+| (Active start) | no | `PreparationEndFrame + 1` |
+| `ActiveEndFrame` | yes (strike clips only) | Active = `PreparationEndFrame + 1..ActiveEndFrame` |
+| (Recovery) | no | `ActiveEndFrame + 1..EndFrame` |
+
+Only `EndFrame`, `PreparationEndFrame` and `ActiveEndFrame` are stored: every other boundary is derived, so phases are
+always consecutive, without gaps or overlaps, and cover the played range. Each phase needs ≥ 1 frame (a strike needs ≥ 3).
+Nothing is clamped: an out-of-range `EndFrame`, an empty phase or a too-short clip is an error with the field path
+(e.g. `mage_female_01.punch_left.ActiveEndFrame: 5; Recovery 6..5 must hold at least one frame (EndFrame 5)`), the whole
+set is rejected (nothing drawn) and the bootstrap keeps the previous strike windows. Changing `EndFrame` re-validates the
+phases. After an atlas update that shortens a clip the error names the clip's current range ("was the atlas clip
+shortened?"). Phase fields are drawn only for the five strike clips. JSON and PNG are never modified.
+
+**One timing source.** Range + T + curve give each frame's start time (`SpriteAnimationTiming`, computed once per config
+revision). For a strike, Active starts at the start time of `PreparationEndFrame + 1` and Recovery at the start time of
+`ActiveEndFrame + 1`; the clip ends at T. `CombatStrikeTiming.TryFromSeconds` quantizes this to fixed 60 Hz ticks: tick `e`
+of a strike simulates clip time `[e, e + 1) / 60`; a tick is **Active when it overlaps the Active time**, so an Active phase
+shorter than a tick, or several boundaries crossed inside one tick, still give at least one Active tick (never skipped).
+Preparation = ticks before it (`floor`), Recovery = ticks from `ceil(RecoveryStart · 60)` to `ceil(T · 60)`. A Preparation or
+Recovery shorter than a tick may get 0 ticks: reported as a warning. The five timings form `CombatStrikeSchedule`, published
+into ECS by the bootstrap; the follow-up chain point is Recovery start + `CombatAttackTuning` chain delay (capped at the
+strike's end, so a short Recovery never removes a series). Reach, damage, chain delays and series rules stay in
+`CombatAttackTuning`.
+
+**Drawing follows the simulation.** A strike copies its timing into `CombatAttackState.Timing` when it starts. Drawing
+reads that frozen phase for the tick and shows the frame at clip time `elapsed / 60`, kept inside that phase's frames; the
+drawn phase always equals the simulated one, at any render rate, while paused or after catch-up ticks. Hits are resolved
+only by `CombatHitSystem` from the frozen timing — never from the renderer or a drawn frame. Moving during Preparation
+keeps the strike clip (strike has drawing priority over run).
+
+**Example — `punch_left` (migrated project values).** Range `0..5` (6 frames), T = 0.48333 s (29 ticks), flat curve
+(each frame 0.08056 s):
+
+| Phase | Frames | Clip time | Ticks |
+|---|---|---|---|
+| Preparation | 0..2 | 0 – 0.2417 s | 0..13 (14) — no hits, the fighter may move |
+| Active | 3..3 | 0.2417 – 0.3222 s | 14..19 (6) — hits resolve, each target at most once |
+| Recovery | 4..5 | 0.3222 – 0.4833 s | 20..28 (9) — no hits; a buffered follow-up starts at tick 24 |
+
+Resulting project windows (Preparation/Active/Recovery ticks): punch_left 14/6/9, punch_right 9/11/9, kick_left and
+kick_right 11/6/16, kick_spin 20/5/20. The previous fixed `CombatAttackTuning` windows (13/5/11, 9/9/11, 11/5/17, 19/6/20)
+remain only as the default table of worlds that publish nothing (tests, benchmarks). The config Inspector lists each
+strike's phase frames, seconds and ticks and the whole table; the bootstrap logs every published table.
+
+**Migration.** Old entries stored `FrameCount = N` ("first N frames"). On load the hidden migration slot moves it to
+`EndFrame = N − 1` (StartFrame 0), so the played range, `TotalDurationSeconds` and `SpeedCurve` are unchanged; the slot is 0
+afterwards and never read again. The project asset was migrated in Git: every clip keeps its range/T/curve; strike phases
+were initialised from the manifest `strike_pose` markers (punch_left 0..2/3/4..5, punch_right 0..1/2..3/4..5, kicks
+0..1/2/3..5, kick_spin 0..3/4/5..8). An old asset elsewhere gets phases 0/0, which is reported as an error (never guessed);
+the Inspector offers the explicit button *Set Preparation/Active from manifest strike_pose*. A config Active range that
+differs from `strike_pose` is only a warning: the config decides.
+
+**Play Mode edits.**
+- Range, T, curve, phases: Inspector edits bump the config `Version`; the renderer rebuilds its frames on the next frame and
+  the bootstrap re-derives and publishes the strike table on its next `Update`. **Strikes started afterwards** use it; a strike
+  already running keeps the timing it started with to its end (no mid-strike change). An invalid edit logs one error and keeps
+  the previous table (and draws nothing until fixed).
+- The atlas catalog `Version` (re-import) also triggers re-validation.
+- Team sizes on the bootstrap apply only on the next start/restart (enable, or *Restart battle* in its Inspector).
+- Disabling the bootstrap restores the table it replaced (unless someone published after it).
+
+The section below (Stage 05.1 / PR #48) is historical where it contradicts this one: N is now `EndFrame`, and strike
+frames are no longer "fitted" to fixed `CombatAttackTuning` windows — the config phases define those windows.
+
+# Character animation — Stage 05.1 / PR #48
 
 Eight clips of `mage_female_01` are bound to authoritative ECS state through the existing renderer and the one shared
 `CharacterAnimationConfig`: `idle_combat`, `run`, `jump`, `punch_left`, `punch_right`, `kick_left`, `kick_right`,

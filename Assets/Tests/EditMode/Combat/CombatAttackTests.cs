@@ -345,8 +345,10 @@ namespace MLFLegends.Tests.EditMode
 
         static ReplayScript BusyScript()
         {
-            var script = new ReplayScript();
-            for (uint r = 1; r <= 150; r++)
+            // r1..20: both stand still and strike (moving in Preparation could carry them apart before any Active tick),
+            // so hits certainly land; then busy movement, strikes and jumps.
+            var script = new ReplayScript().Player(1, 1, ReplayRole.Human, pressed: A);
+            for (uint r = 21; r <= 150; r++)
             {
                 script.Player(r, r, ReplayRole.Human, moveX: (sbyte)(r % 40 < 20 ? 1 : -1),
                     pressed: r % 13 == 0 ? A : r % 17 == 0 ? K : r % 47 == 0 ? CommandButtons.Jump : CommandButtons.None);

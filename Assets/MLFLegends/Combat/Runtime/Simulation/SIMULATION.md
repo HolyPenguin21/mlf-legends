@@ -192,3 +192,24 @@ CombatStateUpdateSystemGroup
   actors) are never locked, so earlier writer-separation tests keep their meaning.
 - Lifecycle: the spawn archetype carries `CombatAttackState` (free), `CombatHealth` (100/100) and an empty
   `CombatHitRecord` buffer; End/Restart/Despawn destroy them with the entity. Pause runs no tick, so phases freeze.
+
+## Stage 03 tuning: strike windows from the animation phases
+
+`CombatStrikeSchedule` (singleton, created and destroyed by `CombatActionSystem`) holds one `CombatStrikeTiming` per strike:
+`ActiveStart`, `RecoveryStart`, `End` and `ChainPoint` in ticks since the strike's first tick. It starts as `Default`
+(the `CombatAttackTuning` windows: what tests, benchmarks and worlds without a publisher use). A scene replaces it with
+`CombatStrikeSchedule.Publish(EntityManager, table)` (main thread, outside a fixed step; validated, `Revision + 1`):
+`CombatSmokeBootstrap` derives it from the strike clips' Preparation/Active/Recovery frames, duration and curve.
+
+- `CombatActionSystem` copies `schedule.Get(kind)` into `CombatAttackState.Timing` on every strike start (series start or
+  follow-up). Buffering from `ActiveStart`, chaining at `ChainPoint`, ending at `End` read only that copy. `CombatHitSystem`
+  resolves hits on ticks where `Timing.PhaseAt(tick − StartTick) == Active`; the per-strike ledger still allows one hit per
+  target. `CombatMovementSystem` applies planar Move normally (diagonal scaling, same position owner) on **Preparation (Windup)
+  ticks**, ignores Move in Active/Recovery and Jump during the whole strike; moving never cancels the strike. Facing is unchanged
+  (turn only on a strike's first tick).
+- A published table therefore changes **new** strikes only; nothing is recomputed per fighter or per tick (one singleton read
+  per tick, a struct copy per strike start). Quantization (seconds → ticks, `CombatStrikeTiming.TryFromSeconds`): Active =
+  ticks overlapping the Active time, so it always has ≥ 1 tick; Preparation/Recovery may have 0 ticks when shorter than one
+  tick. `ChainPoint = min(RecoveryStart + ChainDelay, End)`.
+- The table is World state outside the command stream: a replay must publish the same table before its first strike
+  (the replay tests do). Pause freezes strikes with the clock; restart/despawn destroy the attack state with the fighter.
