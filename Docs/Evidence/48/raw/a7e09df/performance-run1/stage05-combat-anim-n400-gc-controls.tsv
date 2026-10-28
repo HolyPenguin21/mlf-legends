@@ -1,0 +1,2 @@
+device	positive_bytes	empty_bytes	byte_counter_valid	positive_samples	empty_samples	sample_counter_valid
+Direct3D12	0	0	False	1	0	True

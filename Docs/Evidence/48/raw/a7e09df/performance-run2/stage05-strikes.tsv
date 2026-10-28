@@ -1,0 +1,9 @@
+# Stage 05.1 strike benchmark: full fixed tick (clock, lifecycle, commands, strike, facing, movement, hit)
+# Unity 6000.5.4f1, AMD Ryzen 5 3600 6-Core Processor , Burst on
+scenario	combatants	ticks	mean_us	median_us	p95_us	max_us	managedGcBytes
+idle	2	600	12.3	12.2	12.7	22.7	0
+strikes	2	600	15.1	14.4	17.0	26.1	0
+idle	100	600	17.3	17.2	17.7	33.4	0
+strikes	100	600	45.8	34.4	73.9	183.8	0
+idle	400	600	37.1	37.9	40.8	144.3	0
+strikes	400	600	235.0	117.1	531.7	660.3	0
