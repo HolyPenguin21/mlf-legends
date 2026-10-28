@@ -77,7 +77,7 @@ namespace MLFLegends.Combat
     {
         public string CharacterId = "";
         public SpriteAtlasCatalog AtlasCatalog;
-        [Tooltip("Art alignment only, in source pixels (+X right, +Y down), mirrored with facing. Added to the legacy JSON pivot alignment. World support stays at source_size * [0.5, 0.85]; physics and hit boxes never move.")]
+        [Tooltip("Additional art translation, in source pixels (+X right, +Y down), mirrored with facing. Added ONCE after the imported image pivot (JSON pivot only for legacy fallback). Physics and hit boxes never move.")]
         public Vector2 ImageOffsetPixels;
         public CharacterAnimationSettings[] Animations = Array.Empty<CharacterAnimationSettings>();
 

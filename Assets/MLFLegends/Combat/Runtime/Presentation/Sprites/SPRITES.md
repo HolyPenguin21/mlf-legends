@@ -1,12 +1,20 @@
+## Current #56 pivot contract
+
+See [effective pivot, migration and invalidation](../../../../../../Docs/STAGE03_PIVOT_CORRECTION.md).
+GPU CardRect and anchors use the same cached per-frame pivot (imported Sprite; absent binding → JSON). Bounds and
+footprints derive from those CardRects. Additional ImageOffsetPixels is applied once and mirrored with the whole image.
+No Sprite lookup or table rebuild per fighter/frame. Sprite references survive into player builds; Editor import code is
+outside the runtime assembly. Full source cells, scale, culling and ECS position remain under their existing owners.
+
 # Stage 03 final polish — complete canvas and art alignment (2026-10-28)
 
 See [settings, clipping diagnosis, compatibility and validation](../../../../../../Docs/STAGE03_FINAL_POLISH.md).
 The mage catalog explicitly uses SourceCanvasCells: full 192×192 source regions reconstructed at rect.xy - trim_offset,
 so repainting beyond an old useful rect no longer clips limbs. Default TrimmedRects remains valid for packed atlases.
-Nominal height 128 is scale calibration only. Fixed support = source_size × [0.5,0.85] = [96,163.2]. Legacy JSON pivot is
-preserved as art alignment, with CharacterAnimationConfig → Characters → ImageOffsetPixels for extra translation.
-Shader, anchors, footprints and cached-union culling bounds use the same alignment once. Full-canvas Inspector preview and
-Scene gizmos distinguish fixed support/canvas from aligned image. No per-fighter render resources or disabled batch culling.
+Nominal height 128 is scale calibration only. Reference support = source_size × [0.5,0.85] = [96,163.2]. Imported Sprite
+pivot positions each image; JSON is fallback only. CharacterAnimationConfig → Characters → ImageOffsetPixels adds translation.
+Shader, anchors, footprints and cached-union culling bounds use the same alignment once. Raster Inspector preview is removed (#56). Optional Scene gizmos
+distinguish the fixed reference canvas from the image aligned by the current frame’s effective pivot. No per-fighter render resources or disabled batch culling.
 These rules supersede earlier descriptions equating the JSON pivot with world support. Unity visual acceptance NOT RUN.
 
 # Combat sprites (Stage 03.1 + 03.2, Issue #38)

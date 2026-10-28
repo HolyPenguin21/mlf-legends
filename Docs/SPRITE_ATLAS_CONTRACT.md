@@ -1,7 +1,9 @@
-## Current runtime interpretation after #50/#51 (used by #52)
+## Current runtime interpretation — #56 pivot correction
 
 The JSON v1 schema remains unchanged. Fixed world support is source_size × [0.5,0.85] ([96,163.2] for 192×192);
-JSON pivot is an artistic export baseline, preserved through an image translation. The mage catalog explicitly samples
+The effective image pivot comes from the catalog’s explicit frame_id → imported Sprite binding, or JSON pivot ONLY
+when no binding exists. Sprite Editor Apply invalidates the catalog/frame table; Center is valid data.
+[Binding, conversion, fallback and validation](STAGE03_PIVOT_CORRECTION.md). The mage catalog explicitly samples
 SourceCanvasCells; truly packed atlases restore their useful rect at trim_offset. No silhouette normalization.
 Strike phases/T/curve in CharacterAnimationConfig define gameplay windows; strike_pose is a graphic diagnostic.
 Jump rise/fall markers choose air poses; LandingStartFrame..EndFrame sets landing recovery, with -1 falling back to land.
@@ -44,7 +46,7 @@ GPU data; the battle keeps simulating and nothing is drawn.
 - Pages may have different sizes. Not every clip needs its own page; a page may hold frames of several clips.
 - PNGs and large art sources are delivered outside Git. Suggested import folder:
   `Assets/MLFLegends/Art/Characters/MageFemale01/` (content only, no code).
-- Unity import settings for pages: Texture Type Default, sRGB on, Alpha Is Transparency off (not needed), Filter **Point**,
+- Unity import settings for pages: Texture Type Sprite (Multiple) for editable frame pivots, or Default for legacy JSON-only catalogs, sRGB on, Alpha Is Transparency off (not needed), Filter **Point**,
   Wrap **Clamp**, Generate Mipmaps **off**, Compression **None**, Max Size ≥ the page size (no resize). The loader rejects
   a page whose size differs from the manifest or whose format is GPU-compressed, and warns about mipmaps/linear data.
   The shader samples with its own point/clamp sampler at mip 0, so a wrong filter/wrap import cannot blur or wrap pixels.
@@ -55,8 +57,13 @@ GPU data; the battle keeps simulating and nothing is drawn.
   (start: 192 × 192). This is the drawing's frame, not the body size.
 - Origin is the **top-left** corner of the canvas (and of each page), **X right, Y down**, in pixels.
 - Coordinates are continuous: pixel `(i, j)` covers `[i, i+1) × [j, j+1)`. Pixel edges are integers, centres are `+0.5`.
-- **pivot:** the artistic export baseline (legacy `[96,160]`), which may be fractional. Runtime world support is fixed
-  at source_size × [0.5,0.85]; image translation = WorldSupport − pivot + ImageOffsetPixels. The ECS position is unchanged.
+- **effective pivot P:** imported Sprite pivot from the catalog’s frame_id binding. Convert rect-local Y-up pixels to full
+  source-canvas Y-down pixels once at load: `O = (sprite.rect.x, page.height - sprite.rect.yMax) - (frame.rect.xy - trim_offset)`,
+  `P = O + (sprite.pivot.x, sprite.rect.height - sprite.pivot.y)`. No rounding. Sprite rect must match either the useful
+  frame rect or its full source canvas on the same page. Center is valid; neither silhouette nor load order is used.
+- **JSON pivot:** explicit legacy fallback for frames WITHOUT a Sprite binding, preserving the old placement exactly.
+  A present broken/duplicate/wrong-page binding rejects loading instead of silently falling back. Never add JSON alignment
+  on top of imported P. Reference world support is source_size × [0.5,0.85]; the ECS position stays authoritative.
 - **nominal_height_px:** height of the calm standing figure (current mage 128), not of every bent pose. The runtime scale maps it
   to a configurable world height (start 2 world units); no other size is derived from it.
 - **authored_facing:** `"right"` (the only accepted v1 value). Facing left mirrors the whole drawing and its anchors
@@ -169,10 +176,10 @@ the shader); never cut hair/limbs or shrink single frames to fit the old canvas.
 ## 9. How the runtime places a frame (for reference)
 
 With `s` = world height / `nominal_height_px` world units per pixel (current mage 2/128) and facing `f` = +1 right / −1 left,
-a canvas point `(x, y)` lands at, relative to the pivot:
+a canvas point `(x, y)` with effective image pivot `P` and additional ImageOffsetPixels `A` lands at:
 
-- horizontal screen offset `f · (x − pivot.x) · s` (along the camera's right axis);
-- vertical screen offset `(pivot.y − y) · s` (up).
+- horizontal screen offset `f · (x − P.x + A.x) · s` (along the camera's right axis);
+- vertical screen offset `(P.y − y − A.y) · s` (up).
 
 The trimmed rect covers `x ∈ [trim.x, trim.x + w]`, `y ∈ [trim.y, trim.y + h]`, so changing frames or rect sizes never
 moves the support point. Anchors use the same function. Depth/geometry details: `Presentation/Sprites/SPRITES.md`.
