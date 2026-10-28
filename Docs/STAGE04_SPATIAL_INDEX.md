@@ -3,6 +3,15 @@
 Date: 2026-10-28. Base: `a6e96295c0a1e008327e28e8ff89205caf0a4f77` (fresh main, PR #57 already merged).
 Branch: `feature/58-combat-spatial-index`. One PR to main; implementing agent does not merge.
 
+#60 validation correction starts from merged main `180b4121792e68931f27c109b78cd0d24c21a4d4`.
+The original base above remains the comparison base. PR #59 also included tuning commit
+`68c43cbb51ff863ec5b7a5bac82e5f39b60c4db1`: atlas sprite pivots in
+`Assets/MLFLegends/Art/Characters/MageFemale01/Atlas/mage_female_01_00.png.meta` and animation settings in
+`Assets/MLFLegends/Combat/PresentationData/CharacterAnimationConfig.asset`. Git records HolyPenguin21 as author and
+a Claude co-author trailer; this alone is not evidence of a separate owner approval. #60 explicitly preserves both assets.
+The verifier pins their exact blobs (`2a531fc30a6cf9f402001841981b6915e96dc0b5` and
+`c22eaf52b5213ecbc249aa878b700aa445b6b7e1`) rather than exempting Art/config directories.
+
 **Stage 03: OWNER-ACCEPTED** from the owner's direct message recorded in #58: «Stage 03 закрыли. Идем дальше».
 Its exact manual-test SHA/protocol was not supplied. This acceptance does not certify all historical Unity/GPU suites.
 Stage 04 is IN PROGRESS; 04.1 is delivered for review, Unity-unverified. #46/#53 and QA #17/#25/#30 stay separate.
@@ -71,7 +80,9 @@ single Id comparison above, not by the cell iteration order. Bounds queries are 
 
 State order is **Action → Facing → Movement → SpatialIndex → Hit**. Attributes order the same systems in the default
 World, ReplayWorld.RuntimeSystems and the benchmark. Hit retains its existing brute-force algorithm byte-for-byte.
-Movement, Action, Facing, attack/movement tuning, packages, art/config/renderer/Inspector and scenes are byte-unchanged.
+Movement, Action, Facing, Hit, default attack/movement tuning, input/commands, packages, renderer/Inspector and scenes
+are byte-unchanged from the original base. Art/config differ by the two pinned tuning assets above; no further production
+code, asset or metadata change is introduced by #60. Documentation and test corrections are reported separately.
 
 One successful build per actual SimulationClock.Tick and BattleSession.BattleNumber, after final integration. The guard
 also prevents a second manually requested update from rebuilding the same tick. The existing clock and fixed-step rate
@@ -108,7 +119,7 @@ switch to finalized candidates (04.5) remain outside this PR.
 
 Executed SOURCE / PYTHON MODEL checks are in `Docs/Evidence/58/static-checks.json`; rerun with
 `python Tools/Verify-Stage04Spatial.py` (Python packages tree-sitter and tree-sitter-c-sharp). They syntax-parse all C#,
-validate GUIDs/metadata and protected-source identity, and compare a deterministic independent Python bounds scan with a
+validate GUIDs/metadata and protected production-source identity (including the two exact tuning blobs), and compare a deterministic independent Python bounds scan with a
 grid model under reversed insertion orders/unique-pair enumeration. It also checks 4,608 flat batch ranges, four deliberately
 broken Python model variants, membership/cleanup counterexamples and extreme cell-count guards. These do not execute or
 mutate the C# implementation. [Bottom-up review and corrections](STAGE04_BOTTOM_UP_REVIEW.md).

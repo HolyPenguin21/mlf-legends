@@ -13,7 +13,9 @@ where they say Stage 03 awaits acceptance or Stage 04 has not started; their ori
 floor on negative coordinates, Id-sorted unique AABB candidates, explicit huge-query full scan and build-range diagnostics.
 One managed SystemBase owns reusable native containers; exact membership validation is O(N) once per atomic AABB batch
 (or per convenience single query). No borrowed view escapes. Cleanup includes whole-entity Disabled fighters; partial
-World checks require all enabled IDs to have Body/Position/Team, including newly enabled incomplete entities. No contacts/impulses/Hit migration or gameplay/tuning changes in this PR; 04.2–04.5 remain separate.
+World checks require all enabled IDs to have Body/Position/Team, including newly enabled incomplete entities. No contacts/impulses/Hit migration;
+04.2–04.5 remain separate. The merged PR also includes pivot/config tuning commit 68c43c; #60 preserves its two exact
+assets and corrects tests/evidence. The earlier claim of no tuning changes was inaccurate; see STAGE04_SPATIAL_INDEX.
 
 ## Owner correction #56 — working Sprite Editor pivot, no embedded raster preview
 

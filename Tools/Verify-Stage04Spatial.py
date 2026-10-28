@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Reproducible SOURCE / PYTHON MODEL checks, never a Unity/C# execution claim."""
+import argparse
 import hashlib
 import json
 import math
@@ -11,6 +12,28 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE = 'a6e96295c0a1e008327e28e8ff89205caf0a4f77'
+CORRECTION_BASE = '180b4121792e68931f27c109b78cd0d24c21a4d4'
+TUNING_COMMIT = '68c43cbb51ff863ec5b7a5bac82e5f39b60c4db1'
+# Exact git blob IDs, not a directory exemption. These are the ONLY included art/config changes.
+TUNING_BLOBS = {
+    'Assets/MLFLegends/Art/Characters/MageFemale01/Atlas/mage_female_01_00.png.meta':
+        '2a531fc30a6cf9f402001841981b6915e96dc0b5',
+    'Assets/MLFLegends/Combat/PresentationData/CharacterAnimationConfig.asset':
+        'c22eaf52b5213ecbc249aa878b700aa445b6b7e1',
+}
+
+def git(*args):
+    return subprocess.check_output(['git', *args], cwd=ROOT, text=True).strip()
+
+args = argparse.ArgumentParser(description=__doc__)
+args.add_argument('--output', type=Path, default=ROOT / 'Docs/Evidence/58/static-checks.json',
+                  help='Use an outside-repository path to verify a final head without changing its worktree.')
+options = args.parse_args()
+assert not git('status', '--porcelain', '--untracked-files=all'), 'Verify a clean committed head, not an uncommitted approximation.'
+TESTED_SHA = git('rev-parse', 'HEAD')
+TESTED_TREE = git('rev-parse', 'HEAD^{tree}')
+for ancestor in (BASE, CORRECTION_BASE, TUNING_COMMIT):
+    subprocess.run(['git', 'merge-base', '--is-ancestor', ancestor, TESTED_SHA], cwd=ROOT, check=True)
 
 def f32(value):
     try:
@@ -184,21 +207,53 @@ assert allowed_types(baseline) == archetype_types(lifecycle) | {'AppliedCombatCo
 reviewed_baseline = subprocess.check_output(['git', 'show', 'c73897d:' + baseline_path], cwd=ROOT, text=True)
 old_missing_types = sorted(archetype_types(lifecycle) - allowed_types(reviewed_baseline))
 assert old_missing_types == ['CombatBody'], 'Reproduce the reviewed-head baseline contract omission as SOURCE evidence.'
-changed = subprocess.check_output(['git', 'diff', '--name-only', BASE], cwd=ROOT, text=True).splitlines()
+changed = git('diff', '--name-only', BASE, TESTED_SHA).splitlines()
+assert set(git('diff-tree', '--no-commit-id', '--name-only', '-r', TUNING_COMMIT).splitlines()) == set(TUNING_BLOBS)
+included_tuning = {}
+for name, expected in TUNING_BLOBS.items():
+    assert git('rev-parse', TUNING_COMMIT + ':' + name) == expected, name
+    assert git('hash-object', '--no-filters', name) == expected, 'Tuning blob changed: ' + name
+    assert git('rev-parse', TESTED_SHA + ':' + name) == expected, name
+    assert name in changed, 'Included tuning must remain visible against the original base: ' + name
+    included_tuning[name] = {'commit': TUNING_COMMIT, 'expected_git_blob': expected,
+                             'tested_git_blob': expected, 'original_base_git_blob': git('rev-parse', BASE + ':' + name)}
+
 protected = []
-for name in subprocess.check_output(['git', 'ls-tree', '-r', '--name-only', BASE], cwd=ROOT, text=True).splitlines():
-    if (name.startswith(('Packages/', 'ProjectSettings/', 'Assets/Scenes/', 'Assets/MLFLegends/Art/'))
-        or '/Presentation/' in name or '/Editor/' in name
-        or name.startswith('Assets/MLFLegends/Combat/Runtime/Simulation/') and name.endswith('.cs')
-        or name.endswith('/BattleSession.cs')):
-        # New files are not in base; existing Movement/Hit/Action/tunings and all presentation remain byte-identical.
-        assert name not in changed, name
+production_prefixes = ('Packages/', 'ProjectSettings/', 'Assets/Scenes/', 'Assets/MLFLegends/Art/',
+                       'Assets/MLFLegends/Combat/PresentationData/', 'Assets/MLFLegends/Combat/Editor/',
+                       'Assets/MLFLegends/Combat/Runtime/Presentation/')
+gameplay_prefixes = tuple('Assets/MLFLegends/Combat/Runtime/' + layer + '/' for layer in
+                          ('Core', 'Simulation', 'Input', 'Commands'))
+
+def protected_path(name):
+    return not name.endswith('.md') and (name.startswith(production_prefixes)
+            or name.startswith(gameplay_prefixes) and name.endswith(('.cs', '.meta'))
+            or name.endswith('/BattleSession.cs') or name == 'Assets/InputSystem_Actions.inputactions')
+
+for name in git('ls-tree', '-r', '--name-only', BASE).splitlines():
+    if protected_path(name) and name not in TUNING_BLOBS:
+        assert name not in changed, 'Protected production file changed: ' + name
         protected.append(name)
+# Newly added production art/config cannot escape the base-file loop either.
+for name in changed:
+    if name.startswith(production_prefixes) and not name.endswith('.md'):
+        assert name in TUNING_BLOBS, 'Unlisted production asset/presentation change: ' + name
+# #60 changes tests/verifier/docs only: also pin ALL production files to the merged 04.1 head,
+# including its new Body/index files and lifecycle changes that intentionally differ from the original BASE.
+correction_changes = git('diff', '--name-only', CORRECTION_BASE, TESTED_SHA).splitlines()
+for name in correction_changes:
+    assert name.endswith('.md') or not name.startswith(('Assets/MLFLegends/', 'Assets/Scenes/', 'Packages/', 'ProjectSettings/'))
+    assert name != 'Assets/InputSystem_Actions.inputactions'
 subprocess.run(['git', 'diff', '--check'], cwd=ROOT, check=True)
 source_hashes = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
-                 for p in cs if 'Spatial' in p.name or 'CombatBody' in p.name or p.name in {'BattleLifecycleSystem.cs', 'CombatReplayDriver.cs', 'CombatBaselineTests.cs', 'CombatBenchmarkHarness.cs', 'CombatStrikeBenchmarkTests.cs'}}
+                 for p in cs if 'Spatial' in p.name or 'CombatBody' in p.name or p.name in {'BattleLifecycleSystem.cs', 'CombatReplayDriver.cs', 'CombatBaselineTests.cs', 'CombatBenchmarkHarness.cs', 'CombatStrikeBenchmarkTests.cs', 'CombatAnimationSetTests.cs', 'BootstrapRosterAndStrikeWindowTests.cs', 'CombatSpriteRendererPlayModeTests.cs'}}
 report = {
     'base': BASE,
+    'correction_base': CORRECTION_BASE,
+    'tested_sha': TESTED_SHA, 'tested_tree': TESTED_TREE, 'worktree_clean_at_start': True,
+    'included_tuning_assets': included_tuning,
+    'changed_paths_from_original_base': changed,
+    'correction_changed_paths': correction_changes,
     'scope': 'SOURCE / PYTHON MODEL ONLY; not C#, Unity, Entities codegen, Burst or performance execution',
     'csharp_syntax_files': len(cs), 'guid_count_unique': len(guids),
     'csharp_readonly_using_nativearray_assignment_scan': 'PASS (source pattern, not compilation)',
@@ -212,11 +267,16 @@ report = {
     'reviewed_head_baseline_missing_components_source_only': old_missing_types,
     'insertion_orders_per_scene': 2,
     'protected_base_files_byte_unchanged': len(protected),
+    'protected_base_files_with_pinned_tuning': len(TUNING_BLOBS),
+    'all_production_non_document_files_byte_unchanged_from_correction_base': 'PASS',
     'source_hashes_sha256': source_hashes,
     'status': 'PASS',
+    'results': {'source': 'PASS', 'python_model': 'PASS', 'observed_failures': [],
+                'csharp_suites': 'NOT RUN', 'unity_compile_import_entities_burst': 'NOT RUN',
+                'unity_gpu_allocations_leaks_performance': 'NOT RUN'},
     'unity_compile_editmode_playmode_burst_gpu_leaks_performance': 'NOT RUN',
 }
-out = ROOT / 'Docs/Evidence/58/static-checks.json'
+out = options.output.resolve()
 out.parent.mkdir(parents=True, exist_ok=True)
 out.write_text(json.dumps(report, indent=2) + '\n')
 print(json.dumps({k: v for k, v in report.items() if k != 'source_hashes_sha256'}, indent=2))

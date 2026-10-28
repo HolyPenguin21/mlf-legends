@@ -8,9 +8,37 @@ One branch `feature/58-combat-spatial-index`, one PR to main; merge requires a s
 #46/#53 and QA #17/#25/#30 remain separate. Older dated status/evidence entries below are historical and superseded
 where they say Stage 03 awaits acceptance or Stage 04 has not started; their original test results/SHA remain unchanged.
 
-04.1 executed **SOURCE / PYTHON MODEL PASS**: 91 C# syntax trees; 208 unique Unity GUIDs; 4,608 deterministic
-model AABB queries versus an independent bounds scan; 12,048 model source-body pair queries across reversed insertion
-orders; 4,608 batch ranges against the reference, four Python-model negative controls; 177 protected base files byte-unchanged. [Reproducible report](Evidence/58/static-checks.json).
+**#60 validation correction (base main `180b4121792e68931f27c109b78cd0d24c21a4d4`, branch
+`fix/60-animation-checks-evidence`):** the old claim of 177 byte-identical protected files is withdrawn for the merged
+delivery. Commit `68c43cbb51ff863ec5b7a5bac82e5f39b60c4db1` changed the atlas pivot `.meta` and
+CharacterAnimationConfig, so the old verifier cannot PASS that main. Exact paths/blobs and factual provenance are in
+[STAGE04_SPATIAL_INDEX](STAGE04_SPATIAL_INDEX.md). Neither asset is changed by #60.
+
+| Check / scope | Result and evidence boundary |
+|---|---|
+| Original `python Tools/Verify-Stage04Spatial.py` on clean main `180b4121792e68931f27c109b78cd0d24c21a4d4` | **FAIL**, reproduced: assertion on `Assets/MLFLegends/Art/Characters/MageFemale01/Atlas/mage_female_01_00.png.meta`. This is a Python/source verifier failure, not Unity. |
+| Corrected verifier, syntax/GUID/source ownership and pinned tuning | **PASS** at the exact `tested_sha` / `tested_tree` in the [replacement source report](Evidence/58/static-checks.json). Original base retained; strict production code/metadata protection, two exact tuning blobs and a separate all-production identity check against #60 base. Markdown and edited tests are reporting/validation changes. |
+| Independent Python spatial models | **PASS**, 4,608 AABB queries; 12,048 pair-source queries; 4,608 batch ranges; four model negative controls. Does not execute C# grid. |
+| Unity compile/import/Entities codegen/Burst, C# EditMode/PlayMode, GPU, allocations/leaks/performance | **NOT RUN**. Unity/compilers are unavailable in this container; historical Stage 03 logs do not certify this head. |
+
+Project-config assertions now require idle 0.75s; jump 0..4 at 1s, landing frame 4 for 12 ticks; flat kick_left/right
+0..4 at 0.5s → 12/6/12, chain point 24; spin 0..5 at 0.5s → 20/5/5, no chain. Punches remain 14/6/9, chain point 24.
+All configured frames must show in order and no excluded manifest frame may appear. Existing phase/damage/ledger/chain/
+landing assertions remain; no Ignore or gameplay changes. Synthetic punch/jump timing inputs are explicit, including
+EndFrame, phase/landing bounds, T and curve. The two-frame jump fixture remains 16 ticks (eight each for frames 4/5).
+Related bootstrap log/publication and real-art smoke expectations were corrected; other PlayMode/timing/migration tests
+use explicit independent fixtures or asset-derived values. No PNG is required by the EditMode config tests; GPU smoke
+still requires the existing external PNG.
+
+Reproduce from a **clean committed head** with Python `tree-sitter` and `tree-sitter-c-sharp`:
+`python Tools/Verify-Stage04Spatial.py --output /tmp/stage04-spatial-head.json`.
+The verifier rejects dirty trees and records exact SHA/tree, both bases, complete changed-path lists, tuning commit/blobs,
+source hashes and PASS/NOT RUN scopes. Without `--output`, it replaces the tracked report after checking the clean head.
+That report names the tested code commit; an evidence-only commit can then store it. Rerun the final PR head to an
+outside-repository path and state that SHA/result in the PR, avoiding a self-referential report-commit hash. The stored
+report is superseded by the final-head run only for commit/tree and changed-path bookkeeping, not silently relabelled.
+Stage 04.2 waits for manager verification of #60 and a fresh main containing the correction; merge needs the owner's command.
+
 **Unity compile/import/Entities codegen/Burst/EditMode/PlayMode/GPU/GC/native leaks/performance: NOT RUN** — no Unity
 Editor/runtime/device here. C# correctness tests and sparse/dense 2/100/400 benchmark are authored, not executed.
 [Bottom-up review](STAGE04_BOTTOM_UP_REVIEW.md) fixes partial-World membership, whole-entity Disabled cleanup and

@@ -4,6 +4,13 @@
 `a6e96295c0a1e008327e28e8ff89205caf0a4f77`. Corrections stay in the same branch/PR; no merge.
 This is the implementing agent's second source review, not an independent manager review or Unity execution.
 
+**#60 correction, 2026-10-28:** the historical review above concerns `c73897d`; the merged delivery also includes
+`68c43cbb51ff863ec5b7a5bac82e5f39b60c4db1`. Its exact two tuning assets/blobs are listed in
+[the spatial contract](STAGE04_SPATIAL_INDEX.md). The former blanket art/config identity claim and 177 unchanged-file
+report do not certify merged main `180b4121792e68931f27c109b78cd0d24c21a4d4`: the old verifier actually fails on its
+atlas `.meta`. Project-config test mismatches were source findings, not executed Unity failures. #60 preserves tuning,
+corrects the existing tests and pins both tuning blobs. [Current evidence/reproduction](QA.md).
+
 ## Findings and corrections
 
 | Finding | Trigger and effect in the reviewed version | Correction and authored regression |
@@ -30,7 +37,7 @@ Aggregate entry/duplicate diagnostics use long so a large batch cannot overflow 
 | Availability / lifecycle | Tick/BattleNumber/active session checked live, then structural order and complete enabled membership. Disabled-tag fix closes lifecycle cleanup gap. Paused Initialization cannot expose old entities; invalidation keeps capacity separate from availability. |
 | Writers / phase graph | Action → Facing → Movement → SpatialIndex → Hit remains acyclic. Only existing lifecycle initializes Body; index writes no gameplay component. Existing Movement, Facing, Action, Hit and tuning files remain byte-identical to base. |
 | Default / replay / benchmark | Same RuntimeSystems registration; unique-owner/order assertions retained. Replay body values included, previous-state control comparison retained. Default-world jump test reads post-Movement position; paused Restart/End rejection remains covered. |
-| Presentation / scene / config | No renderer/Inspector/pivot/art/config/scene/package changes. Scene exit uses the same lifecycle/session invalidation. No new clock, spawn path, cleanup system or character registry. |
+| Presentation / scene / config | Renderer/Inspector/scene/packages unchanged. The merged delivery includes pivot `.meta` and CharacterAnimationConfig changes from 68c43c (two pinned blobs), preserved by #60. Scene exit uses the same lifecycle/session invalidation. No new clock, spawn path, cleanup system or character registry. |
 | Future stages | No contact resolution, proposed-position index, impulses or Hit migration. Atomic batches supply the same conservative final-position AABB API for future consumers; 04.2–04.5 remain separate work. |
 
 ## Executed evidence and limits
@@ -40,7 +47,10 @@ queries and 12,048 source-body pair queries against an independent bounds scan; 
 broken **Python model** variants (lost upper cells, duplicates, ordering, stamp reuse); membership/cleanup predicate
 counterexamples; extreme cell-count guards; exact Spawn/baseline allowed-archetype agreement (with the old-head omission
 reproduced); protected-source identity and whitespace. Report with final source SHA256:
-`Docs/Evidence/58/static-checks.json`. Models do not execute or mutate the C# implementation.
+`Docs/Evidence/58/static-checks.json`. The corrected report records its tested SHA/tree, clean starting state, original
+base, #60 base, full changed-path lists and exact tuning exceptions. Production protection covers Core/Simulation/Input/
+Commands and assets/metadata; edited test sources and Markdown reporting are not claimed byte-unchanged.
+Models do not execute or mutate the C# implementation.
 
 Unity compilation, Entities sourcegen/Burst, C# EditMode/PlayMode suites, GPU, native leaks, actual allocations and benchmark
 runs remain **NOT RUN**. A source-pattern check also rejects direct indexer writes on readonly using NativeArray locals;

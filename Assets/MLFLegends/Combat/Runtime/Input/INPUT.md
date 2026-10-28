@@ -117,7 +117,7 @@ bootstrap's published timing revision alongside the Game view.
 1. Y/U/H/J/K always choose their named strike; K starts spin from free grounded stance. I alternates hands, L follows
    the existing foot series. Holding never repeats; simultaneous keys follow the documented priority, Space wins when free.
 2. Hold direction through jump/landing: frames 4 then 5 play on the ground before run/idle, no sliding. Strike/Space taps
-   during recovery do not execute later. Startup log shows the configured landing duration (currently 27 ticks).
+   during recovery do not execute later. Startup log shows the configured landing duration (currently 12 ticks after 68c43c).
 3. Verify pause, focus/device reset, disable/re-enable, restart/despawn and World replacement drop stale presses; live
    holds resume without a synthetic press. Repeat with Domain/Scene reload disabled.
 4. Camera controls still follow/pan/zoom/recenter; UI bindings work. Enter/mouse/gamepad buttons do not start combat actions.
