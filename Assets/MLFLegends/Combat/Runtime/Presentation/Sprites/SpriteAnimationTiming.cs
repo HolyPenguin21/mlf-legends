@@ -4,8 +4,11 @@ using UnityEngine;
 
 namespace MLFLegends.Combat
 {
-    /// <summary>Immutable shared clip timing. Integrates unweighted cubic Hermite speed analytically at load;
-    /// finds frame boundaries once by bisection. Runtime is modulo + binary search, no curve evaluation/allocation.</summary>
+    /// <summary>Immutable shared clip timing of the configured range StartFrame..EndFrame. Integrates unweighted cubic
+    /// Hermite speed analytically at load; finds frame boundaries once by bisection. Runtime is modulo + binary search,
+    /// no curve evaluation/allocation. Local frame <c>f</c> here is clip frame <c>StartFrame + f</c>.</summary>
+    /// <remarks>A strike clip (<c>phases: true</c>) also carries its validated Preparation / Active / Recovery frame ranges
+    /// and their start times, from which <see cref="TryStrikeTiming"/> derives the simulation windows.</remarks>
     public sealed class SpriteAnimationTiming
     {
         readonly int[] m_Frames;
@@ -16,18 +19,53 @@ namespace MLFLegends.Combat
         /// <summary>True for a looping cycle (idle, run); false for a play-once clip fitted to state windows.</summary>
         public bool Looping { get; }
 
+        /// <summary>True when created with phases (strike clips): the three phase ranges below are valid.</summary>
+        public bool HasPhases { get; }
+
+        /// <summary>Last Preparation local frame (Preparation = 0..this).</summary>
+        public int PreparationEnd { get; }
+
+        /// <summary>Last Active local frame (Active = PreparationEnd + 1..this; Recovery = this + 1..FrameCount - 1).</summary>
+        public int ActiveEnd { get; }
+
+        /// <summary>Clip time at which Active begins (start of local frame PreparationEnd + 1).</summary>
+        public double ActiveStartSeconds => m_StartSeconds[PreparationEnd + 1];
+
+        /// <summary>Clip time at which Recovery begins (start of local frame ActiveEnd + 1).</summary>
+        public double RecoveryStartSeconds => m_StartSeconds[ActiveEnd + 1];
+
         /// <summary>Atlas frame index of local frame <paramref name="localFrame"/>.</summary>
         public uint Frame(int localFrame) => (uint)m_Frames[localFrame];
         public double FrameStartSeconds(int localFrame) => m_StartSeconds[localFrame];
         public double FrameDurationSeconds(int localFrame) =>
             (localFrame + 1 < FrameCount ? m_StartSeconds[localFrame + 1] : DurationSeconds) - m_StartSeconds[localFrame];
 
-        SpriteAnimationTiming(int[] frames, double[] starts, double duration, bool looping)
+        SpriteAnimationTiming(int[] frames, double[] starts, double duration, bool looping, bool phases, int preparationEnd, int activeEnd)
         {
             m_Frames = frames;
             m_StartSeconds = starts;
             DurationSeconds = duration;
             Looping = looping;
+            HasPhases = phases;
+            PreparationEnd = preparationEnd;
+            ActiveEnd = activeEnd;
+        }
+
+        /// <summary>
+        /// Simulation windows of this strike clip: its Active/Recovery start times and duration quantized to fixed ticks
+        /// (<see cref="CombatStrikeTiming.TryFromSeconds"/>). False without phases or when quantization fails.
+        /// </summary>
+        public bool TryStrikeTiming(byte chainDelay, out CombatStrikeTiming timing, out string error)
+        {
+            timing = default;
+            error = null;
+            if (!HasPhases)
+            {
+                error = "no Preparation/Active/Recovery phases";
+                return false;
+            }
+
+            return CombatStrikeTiming.TryFromSeconds(ActiveStartSeconds, RecoveryStartSeconds, DurationSeconds, chainDelay, out timing, out error);
         }
 
         /// <summary>Atlas frame at <paramref name="elapsedSeconds"/> of the repeating cycle.</summary>
@@ -66,8 +104,9 @@ namespace MLFLegends.Combat
 
         /// <param name="looping">True for a cycle (needs loop=true, hold_last=false); false for a play-once clip
         /// (needs loop=false) whose frames are fitted to simulation windows by <see cref="CombatAnimationSet"/>.</param>
+        /// <param name="phases">True for a strike clip: validates and keeps its Preparation / Active / Recovery ranges.</param>
         public static SpriteAnimationTiming Create(SpriteAtlasClip clip, CharacterAnimationSettings settings,
-            string path, List<string> errors, List<string> warnings = null, bool looping = true)
+            string path, List<string> errors, List<string> warnings = null, bool looping = true, bool phases = false)
         {
             var before = errors.Count;
             if (clip == null || settings == null)
@@ -79,10 +118,24 @@ namespace MLFLegends.Combat
                 errors.Add(path + ": looping playback requires loop=true and hold_last=false");
             if (!looping && clip.Loop)
                 errors.Add(path + ": state-fitted playback requires loop=false");
+            var first = settings.StartFrame;
             var n = settings.FrameCount;
             var duration = settings.TotalDurationSeconds;
-            if (n < 1 || n > clip.Frames.Count)
-                errors.Add(path + $".FrameCount: {n}, available 1..{clip.Frames.Count}");
+            if (settings.EndFrame < first || settings.EndFrame >= clip.Frames.Count)
+                errors.Add(path + $".EndFrame: {settings.EndFrame} is outside the clip's local frames {first}..{clip.Frames.Count - 1} " +
+                    "(0-based clip indices; was the atlas clip shortened?)");
+            else if (phases)
+            {
+                var range = $"StartFrame {first}..EndFrame {settings.EndFrame}";
+                if (n < 3)
+                    errors.Add(path + $": a strike needs at least 3 frames (Preparation, Active, Recovery), {range} has {n}");
+                else if (settings.PreparationEndFrame < first || settings.PreparationEndFrame >= settings.EndFrame)
+                    errors.Add(path + $".PreparationEndFrame: {settings.PreparationEndFrame}; Preparation {first}..{settings.PreparationEndFrame} must hold at least one frame inside {range}");
+                else if (settings.ActiveEndFrame < settings.ActiveStartFrame)
+                    errors.Add(path + $".ActiveEndFrame: {settings.ActiveEndFrame}; Active {settings.ActiveStartFrame}..{settings.ActiveEndFrame} must hold at least one frame");
+                else if (settings.ActiveEndFrame >= settings.EndFrame)
+                    errors.Add(path + $".ActiveEndFrame: {settings.ActiveEndFrame}; Recovery {settings.RecoveryStartFrame}..{settings.EndFrame} must hold at least one frame (EndFrame {settings.EndFrame})");
+            }
             // Bound the domain so 80 binary subdivision steps and double arithmetic resolve <0.1ms.
             if (!Finite(duration) || duration <= 0 || duration > 86400)
                 errors.Add(path + ".TotalDurationSeconds: must be finite, >0 and <=86400 (one day)");
@@ -164,7 +217,7 @@ namespace MLFLegends.Combat
             var starts = new double[n];
             for (var f = 0; f < n; f++)
             {
-                frames[f] = clip.Frames[f];
+                frames[f] = clip.Frames[first + f];
                 if (f == 0) continue;
                 var target = total * ((double)f / n);
                 // Lower-bound integral: a zero-speed plateau on a frame boundary belongs to the next frame.
@@ -185,8 +238,15 @@ namespace MLFLegends.Combat
                     else lo = middle;
                 }
                 starts[f] = hi * duration;
+                // Mathematically impossible for a valid curve (frame areas are equal and >0); guards numeric collapse,
+                // which would make frame order and phase boundaries ambiguous.
+                if (!(starts[f] > starts[f - 1]))
+                    errors.Add(path + $".SpeedCurve: local frame {f - 1} has zero duration; frames and phases would be ambiguous");
             }
-            return new SpriteAnimationTiming(frames, starts, duration, looping);
+            if (errors.Count != before)
+                return null;
+            return new SpriteAnimationTiming(frames, starts, duration, looping, phases,
+                phases ? settings.PreparationEndFrame - first : 0, phases ? settings.ActiveEndFrame - first : 0);
         }
     }
 }

@@ -62,17 +62,17 @@ namespace MLFLegends.Tests.PlayMode
             go.SetActive(true);
         }
 
-        /// <summary>Every combat clip: idle N/T as given, run 2 frames / 0.3 s, jump 6 / 0.5 s, strikes at their authoritative total.</summary>
+        /// <summary>Every combat clip: idle N/T as given, run 2 frames / 0.3 s, jump 6 / 0.5 s, strikes 3 frames (one per phase) at the default windows' total.</summary>
         static CharacterAnimationSettings[] Clips(int idleCount, double idleDuration, CharacterAnimationSettings run = null)
         {
             var clips = new List<CharacterAnimationSettings>
             {
-                new CharacterAnimationSettings { FrameCount = idleCount, TotalDurationSeconds = idleDuration },
-                run ?? new CharacterAnimationSettings { ClipId = "run", FrameCount = 2, TotalDurationSeconds = 0.3 },
-                new CharacterAnimationSettings { ClipId = "jump", FrameCount = 6, TotalDurationSeconds = 0.5 },
+                new CharacterAnimationSettings { EndFrame = idleCount - 1, TotalDurationSeconds = idleDuration },
+                run ?? new CharacterAnimationSettings { ClipId = "run", EndFrame = 1, TotalDurationSeconds = 0.3 },
+                new CharacterAnimationSettings { ClipId = "jump", EndFrame = 5, TotalDurationSeconds = 0.5 },
             };
             for (var kind = CombatAttackKind.PunchLeft; kind <= CombatAttackKind.KickSpin; kind++)
-                clips.Add(new CharacterAnimationSettings { ClipId = CombatAnimationSet.AttackClip(kind), FrameCount = 3,
+                clips.Add(new CharacterAnimationSettings { ClipId = CombatAnimationSet.AttackClip(kind), EndFrame = 2, PreparationEndFrame = 0, ActiveEndFrame = 1,
                     TotalDurationSeconds = CombatAttackTuning.Get(kind).TotalTicks / (double)SimulationTiming.TickRateHz });
             return clips.ToArray();
         }
@@ -186,7 +186,7 @@ namespace MLFLegends.Tests.PlayMode
             AssertMixed(count);
             var atlas = m_Renderer.Atlas;
             SetTiming(2, 1.2, new CharacterAnimationSettings
-                { ClipId = "run", FrameCount = 1, TotalDurationSeconds = 0.9, SpeedCurve = AnimationCurve.Linear(0, 0.5f, 1, 1.5f) });
+                { ClipId = "run", EndFrame = 0, TotalDurationSeconds = 0.9, SpeedCurve = AnimationCurve.Linear(0, 0.5f, 1, 1.5f) });
             // Loop speed discontinuity is intentional for this edit and is only a warning.
             LogAssert.Expect(LogType.Warning, new Regex("run.*speed differs"));
             m_Renderer.Refresh();
@@ -353,8 +353,8 @@ namespace MLFLegends.Tests.PlayMode
             page0.Apply(false, true);
             m_Owned.AddRange(new Object[] { manifest, secondCatalog, page0 });
             secondCatalog.Set(manifest, new[] { new SpriteAtlasPageBinding(TechnicalAtlasFixture.Page0File, page0) });
-            var second = Clips(1, 2.5, new CharacterAnimationSettings { ClipId = "run", FrameCount = 1, TotalDurationSeconds = 0.7 });
-            second[2].FrameCount = 3;
+            var second = Clips(1, 2.5, new CharacterAnimationSettings { ClipId = "run", EndFrame = 0, TotalDurationSeconds = 0.7 });
+            second[2].EndFrame = 2;
             m_Config.Set(original, new CharacterAnimationEntry { CharacterId = "second_character", AtlasCatalog = secondCatalog, Animations = second },
                 new CharacterAnimationEntry { CharacterId = "unconfigured_other" });
             m_Producer = SpriteRunTestProducer.Install(DefaultWorld);
@@ -406,7 +406,7 @@ namespace MLFLegends.Tests.PlayMode
             Assert.That(m_Renderer.TimingBuilds, Is.EqualTo(builds + 1));
             foreach (var instance in m_Renderer.Extraction.Instances) Assert.That(instance.Frame, Is.Zero);
             SetTiming(3, 1.2);
-            LogAssert.Expect(LogType.Error, new Regex("(?s)animation rejected.*idle_combat.FrameCount"));
+            LogAssert.Expect(LogType.Error, new Regex("(?s)animation rejected.*idle_combat.EndFrame"));
             m_Renderer.Refresh();
             m_Renderer.Refresh();
             Assert.That(m_Renderer.Stats.Instances, Is.Zero);

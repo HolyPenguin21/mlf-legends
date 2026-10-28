@@ -1,23 +1,70 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace MLFLegends.Combat
 {
+    /// <summary>
+    /// Playback of one clip. Frame numbers are LOCAL indices of the source clip, from 0 (its first frame in the manifest),
+    /// never page cells or global atlas frame numbers. The clip plays <see cref="StartFrame"/>..<see cref="EndFrame"/>
+    /// inclusive over <see cref="TotalDurationSeconds"/>, distributed by <see cref="SpeedCurve"/>; frames after EndFrame
+    /// are never read. Strike clips also split that range into Preparation / Active / Recovery, which become the
+    /// authoritative simulation windows of the strike (see ANIMATION.md).
+    /// </summary>
     [Serializable]
-    public sealed class CharacterAnimationSettings
+    public sealed class CharacterAnimationSettings : ISerializationCallbackReceiver
     {
         public string ClipId = "idle_combat";
-        [Min(1)] public int FrameCount = 1;
-        [Tooltip("Full cycle duration in seconds; independent of JSON duration_ms. Strike/jump clips are fitted to simulation windows: there T and the curve set frame shares only (see ANIMATION.md).")]
+
+        [Tooltip("Last played frame, inclusive. Local clip frame index from 0 (not a page cell or atlas frame number).")]
+        public int EndFrame;
+
+        [Tooltip("Full playback duration of StartFrame..EndFrame in seconds; independent of JSON duration_ms. For a strike it is also the strike's simulated length.")]
         public double TotalDurationSeconds = 1;
-        [Tooltip("X: normalized cycle time 0..1. Y: relative speed >=0. Constant 1 = uniform. Finite unweighted tangents only.")]
+
+        [Tooltip("X: normalized playback time 0..1 over StartFrame..EndFrame. Y: relative speed >=0. Constant 1 = uniform. Finite unweighted tangents only.")]
         public AnimationCurve SpeedCurve = AnimationCurve.Linear(0, 1, 1, 1);
+
+        [Tooltip("Strike clips only: last Preparation frame, inclusive (local index). Preparation = StartFrame..this; no hits, the fighter may move.")]
+        public int PreparationEndFrame;
+
+        [Tooltip("Strike clips only: last Active frame, inclusive (local index). Active = PreparationEndFrame+1..this: hits resolve. Recovery = this+1..EndFrame.")]
+        public int ActiveEndFrame;
+
+        // Migration only: the legacy "FrameCount = first N frames" value (before the Stage 03 range settings), moved into EndFrame = N - 1 on load and then 0.
+        // Never read otherwise; the frame count is always derived from StartFrame/EndFrame.
+        [SerializeField, HideInInspector, FormerlySerializedAs("FrameCount")] int m_LegacyFrameCount;
+
+        /// <summary>First played frame: the source clip's first frame, local index 0. Not editable.</summary>
+        public int StartFrame => 0;
+
+        /// <summary>Played frames, <c>EndFrame - StartFrame + 1</c>. Not editable.</summary>
+        public int FrameCount => EndFrame - StartFrame + 1;
+
+        /// <summary>First Active frame (derived from <see cref="PreparationEndFrame"/>).</summary>
+        public int ActiveStartFrame => PreparationEndFrame + 1;
+
+        /// <summary>First Recovery frame (derived from <see cref="ActiveEndFrame"/>); Recovery ends at <see cref="EndFrame"/>.</summary>
+        public int RecoveryStartFrame => ActiveEndFrame + 1;
+
+        void ISerializationCallbackReceiver.OnBeforeSerialize()
+        {
+        }
+
+        void ISerializationCallbackReceiver.OnAfterDeserialize()
+        {
+            if (m_LegacyFrameCount <= 0)
+                return;
+            EndFrame = StartFrame + m_LegacyFrameCount - 1;
+            m_LegacyFrameCount = 0;
+        }
 
         internal CharacterAnimationSettings Copy() => new CharacterAnimationSettings
         {
-            ClipId = ClipId, FrameCount = FrameCount, TotalDurationSeconds = TotalDurationSeconds,
+            ClipId = ClipId, EndFrame = EndFrame, TotalDurationSeconds = TotalDurationSeconds,
             SpeedCurve = SpeedCurve == null ? null : new AnimationCurve(SpeedCurve.keys),
+            PreparationEndFrame = PreparationEndFrame, ActiveEndFrame = ActiveEndFrame,
         };
     }
 

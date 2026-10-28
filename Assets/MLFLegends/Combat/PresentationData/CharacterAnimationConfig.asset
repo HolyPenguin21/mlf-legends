@@ -17,7 +17,7 @@ MonoBehaviour:
     AtlasCatalog: {fileID: 11400000, guid: 134c5535ff90542f8fcdfb0aa1562436, type: 2}
     Animations:
     - ClipId: idle_combat
-      FrameCount: 6
+      EndFrame: 5
       TotalDurationSeconds: 1
       SpeedCurve:
         serializedVersion: 2
@@ -43,8 +43,11 @@ MonoBehaviour:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
+      PreparationEndFrame: 0
+      ActiveEndFrame: 0
+      m_LegacyFrameCount: 0
     - ClipId: run
-      FrameCount: 5
+      EndFrame: 4
       TotalDurationSeconds: 0.5
       SpeedCurve:
         serializedVersion: 2
@@ -70,8 +73,11 @@ MonoBehaviour:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
+      PreparationEndFrame: 0
+      ActiveEndFrame: 0
+      m_LegacyFrameCount: 0
     - ClipId: jump
-      FrameCount: 6
+      EndFrame: 5
       TotalDurationSeconds: 0.8
       SpeedCurve:
         serializedVersion: 2
@@ -97,8 +103,11 @@ MonoBehaviour:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
+      PreparationEndFrame: 0
+      ActiveEndFrame: 0
+      m_LegacyFrameCount: 0
     - ClipId: punch_left
-      FrameCount: 6
+      EndFrame: 5
       TotalDurationSeconds: 0.48333333333333334
       SpeedCurve:
         serializedVersion: 2
@@ -124,8 +133,11 @@ MonoBehaviour:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
+      PreparationEndFrame: 2
+      ActiveEndFrame: 3
+      m_LegacyFrameCount: 0
     - ClipId: punch_right
-      FrameCount: 6
+      EndFrame: 5
       TotalDurationSeconds: 0.48333333333333334
       SpeedCurve:
         serializedVersion: 2
@@ -151,8 +163,11 @@ MonoBehaviour:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
+      PreparationEndFrame: 1
+      ActiveEndFrame: 3
+      m_LegacyFrameCount: 0
     - ClipId: kick_left
-      FrameCount: 6
+      EndFrame: 5
       TotalDurationSeconds: 0.55
       SpeedCurve:
         serializedVersion: 2
@@ -178,8 +193,11 @@ MonoBehaviour:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
+      PreparationEndFrame: 1
+      ActiveEndFrame: 2
+      m_LegacyFrameCount: 0
     - ClipId: kick_right
-      FrameCount: 6
+      EndFrame: 5
       TotalDurationSeconds: 0.55
       SpeedCurve:
         serializedVersion: 2
@@ -205,8 +223,11 @@ MonoBehaviour:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
+      PreparationEndFrame: 1
+      ActiveEndFrame: 2
+      m_LegacyFrameCount: 0
     - ClipId: kick_spin
-      FrameCount: 9
+      EndFrame: 8
       TotalDurationSeconds: 0.75
       SpeedCurve:
         serializedVersion: 2
@@ -232,3 +253,6 @@ MonoBehaviour:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
+      PreparationEndFrame: 3
+      ActiveEndFrame: 4
+      m_LegacyFrameCount: 0

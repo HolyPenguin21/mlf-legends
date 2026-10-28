@@ -24,7 +24,7 @@ namespace MLFLegends.Tests.EditMode
             return definition;
         }
 
-        /// <summary>Settings for every clip: all frames, strikes at their authoritative total, others 0.5 s (idle: <paramref name="idleSeconds"/>).</summary>
+        /// <summary>Settings for every clip: all frames, strikes at the default windows' total with one frame per phase, others 0.5 s (idle: <paramref name="idleSeconds"/>).</summary>
         public static CharacterAnimationSettings Settings(SpriteAtlasDefinition definition, string clipId, double idleSeconds = 0.5)
         {
             if (!definition.TryGetClipIndex(clipId, out var index))
@@ -33,7 +33,12 @@ namespace MLFLegends.Tests.EditMode
             for (var kind = CombatAttackKind.PunchLeft; kind <= CombatAttackKind.KickSpin; kind++)
                 if (CombatAnimationSet.AttackClip(kind) == clipId)
                     seconds = CombatAttackTuning.Get(kind).TotalTicks / (double)SimulationTiming.TickRateHz;
-            return new CharacterAnimationSettings { ClipId = clipId, FrameCount = definition.Clips[index].Frames.Count, TotalDurationSeconds = seconds };
+            // Strikes: tech_a = Preparation, tech_c = Active, tech_b = Recovery (the strike_pose marker [1]).
+            return new CharacterAnimationSettings
+            {
+                ClipId = clipId, EndFrame = definition.Clips[index].Frames.Count - 1, TotalDurationSeconds = seconds,
+                PreparationEndFrame = 0, ActiveEndFrame = 1,
+            };
         }
 
         public static CombatAnimationSet Set(string manifest = null, double idleSeconds = 0.5)

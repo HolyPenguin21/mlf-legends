@@ -7,8 +7,9 @@ namespace MLFLegends.Combat
     /// <remarks>
     /// Collection has already published an accepted command or implicit None for every enabled actor;
     /// CombatActionSystem has already started/ended this tick's strike and CombatFacingSystem has turned the actor.
-    /// While a strike runs (Stage 05.1) the accepted Move and Jump are ignored: no planar movement and no takeoff;
-    /// gravity still integrates. Movement never writes CombatFacing or CombatAttackState.
+    /// While a strike runs (Stage 05.1) the accepted Jump is ignored (no takeoff) and so is Move, except in the strike's
+    /// Preparation (Windup) ticks, where planar movement follows the normal rules; the strike keeps running. Gravity still
+    /// integrates. Movement never writes CombatFacing or CombatAttackState.
     /// Besides kinetics it records what actually happened (landing tick, last planar move, movement streak and its
     /// distance) for presentation; a stop of at most <see cref="CombatMovementTuning.MoveStreakGraceTicks"/> continues
     /// the streak, a landing restarts it.
@@ -38,8 +39,12 @@ namespace MLFLegends.Combat
                 var command = applied.ValueRO.Command;
                 if (attacks.TryGetComponent(entity, out var attack) && attack.IsAttacking)
                 {
-                    command.MoveX = 0;
-                    command.MoveZ = 0;
+                    if (attack.Timing.PhaseAt(tick - attack.StartTick) != CombatAttackPhase.Windup)
+                    {
+                        command.MoveX = 0;
+                        command.MoveZ = 0;
+                    }
+
                     command.Pressed &= ~CommandButtons.Jump;
                 }
 

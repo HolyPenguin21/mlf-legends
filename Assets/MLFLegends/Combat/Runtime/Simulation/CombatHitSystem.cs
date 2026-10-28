@@ -9,7 +9,7 @@ namespace MLFLegends.Combat
     /// <summary>The single fixed-tick hit resolution owner: the only writer of <see cref="CombatHealth"/> and of hit ledgers.</summary>
     /// <remarks>
     /// Runs last in State, after movement, so it tests this tick's final positions. Every in-combat attacker whose strike is
-    /// in its Active phase on this tick hits every in-combat combatant of another team that is not already in the strike's
+    /// in its Active phase on this tick (by the timing fixed in its CombatAttackState when it started) hits every in-combat combatant of another team that is not already in the strike's
     /// ledger and lies inside the strike's box: forward distance along the attacker's facing within [ReachMin, ReachMax],
     /// |ΔZ| ≤ DepthHalfWidth, |ΔY| ≤ HeightTolerance. Each such target loses Damage HP (clamped at 0) once and joins the
     /// ledger, so several Active ticks of one strike never hit it twice; the next strike starts with an empty ledger.
@@ -56,8 +56,7 @@ namespace MLFLegends.Combat
                     .WithAll<InCombat, CombatHitRecord>().WithEntityAccess())
             {
                 var kind = attack.ValueRO.Kind;
-                if (kind == CombatAttackKind.None
-                    || CombatAttackTuning.PhaseAt(CombatAttackTuning.Get(kind), tick - attack.ValueRO.StartTick) != CombatAttackPhase.Active)
+                if (kind == CombatAttackKind.None || attack.ValueRO.Timing.PhaseAt(tick - attack.ValueRO.StartTick) != CombatAttackPhase.Active)
                     continue;
                 attackers.Add(new Fighter
                 {

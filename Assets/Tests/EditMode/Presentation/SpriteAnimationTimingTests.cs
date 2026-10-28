@@ -21,7 +21,7 @@ namespace MLFLegends.Tests.EditMode
         {
             var errors = new List<string>();
             var timing = SpriteAnimationTiming.Create(Clip(), new CharacterAnimationSettings
-                { FrameCount = n, TotalDurationSeconds = duration, SpeedCurve = curve }, "test/idle_combat", errors);
+                { EndFrame = n - 1, TotalDurationSeconds = duration, SpeedCurve = curve }, "test/idle_combat", errors);
             Assert.That(timing, Is.Not.Null, string.Join("\n", errors));
             return timing;
         }
@@ -79,7 +79,7 @@ namespace MLFLegends.Tests.EditMode
             var errors = new List<string>();
             var curve = new AnimationCurve(new Keyframe(0, amplitude, 0, -100 * amplitude), new Keyframe(1, amplitude, -100 * amplitude, 0));
             var timing = SpriteAnimationTiming.Create(Clip(), new CharacterAnimationSettings
-                { FrameCount = 6, TotalDurationSeconds = 1.2, SpeedCurve = curve }, "mage/idle", errors);
+                { EndFrame = 5, TotalDurationSeconds = 1.2, SpeedCurve = curve }, "mage/idle", errors);
             Assert.That(timing, Is.Null);
             Assert.That(string.Join("\n", errors), Does.Contain("negative speed between keys"));
         }
@@ -89,7 +89,7 @@ namespace MLFLegends.Tests.EditMode
         {
             // Used tangents -30 dip to about -1.9 near u = 0.2 (-10 never goes below +0.037, so it hid nothing: the
             // original data could not fail validation; first actual Unity run, Stage 05.1).
-            var settings = new CharacterAnimationSettings { FrameCount = 6, SpeedCurve = new AnimationCurve(
+            var settings = new CharacterAnimationSettings { EndFrame = 5, SpeedCurve = new AnimationCurve(
                 new Keyframe(0, 1, 1e38f, -30), new Keyframe(1, 1, -30, 1e38f)) };
             AssertRejected(settings, "negative speed between keys");
         }
@@ -101,7 +101,7 @@ namespace MLFLegends.Tests.EditMode
             var errors = new List<string>();
             var warnings = new List<string>();
             var timing = SpriteAnimationTiming.Create(Clip(), new CharacterAnimationSettings
-                { FrameCount = 6, SpeedCurve = AnimationCurve.Linear(0, amplitude, 1, 2 * amplitude) }, "loop", errors, warnings);
+                { EndFrame = 5, SpeedCurve = AnimationCurve.Linear(0, amplitude, 1, 2 * amplitude) }, "loop", errors, warnings);
             Assert.That(timing, Is.Not.Null, string.Join("\n", errors));
             Assert.That(warnings.Count, Is.EqualTo(1));
             Assert.That(warnings[0], Does.Contain("discontinuity"));
@@ -110,13 +110,13 @@ namespace MLFLegends.Tests.EditMode
         [Test]
         public void InvalidCountDurationCurveAndNonLoopClipAreRejected()
         {
-            var valid = new CharacterAnimationSettings { FrameCount = 6 };
-            foreach (var n in new[] { 0, -1, 7 })
+            var valid = new CharacterAnimationSettings { EndFrame = 5 };
+            foreach (var end in new[] { -1, -2, 6, 7 })
             {
-                valid.FrameCount = n;
-                AssertRejected(valid, "FrameCount");
+                valid.EndFrame = end;
+                AssertRejected(valid, "EndFrame: " + end + " is outside the clip's local frames 0..5");
             }
-            valid.FrameCount = 6;
+            valid.EndFrame = 5;
             foreach (var t in new[] { 0d, -1, double.NaN, double.PositiveInfinity, 86401 })
             {
                 valid.TotalDurationSeconds = t;
@@ -150,7 +150,7 @@ namespace MLFLegends.Tests.EditMode
         {
             var errors = new List<string>();
             var warnings = new List<string>();
-            var settings = new CharacterAnimationSettings { FrameCount = 6, TotalDurationSeconds = 1.2, SpeedCurve = AnimationCurve.Linear(0, 1, 1, 2) };
+            var settings = new CharacterAnimationSettings { EndFrame = 5, TotalDurationSeconds = 1.2, SpeedCurve = AnimationCurve.Linear(0, 1, 1, 2) };
             var once = SpriteAnimationTiming.Create(Clip(loop: false), settings, "test/punch", errors, warnings, looping: false);
             Assert.That(once, Is.Not.Null, string.Join("\n", errors));
             Assert.That(once.Looping, Is.False);
@@ -170,11 +170,11 @@ namespace MLFLegends.Tests.EditMode
             var catalog = ScriptableObject.CreateInstance<SpriteAtlasCatalog>();
             try
             {
-                var settings = new CharacterAnimationSettings { FrameCount = 6, TotalDurationSeconds = 1.2 };
+                var settings = new CharacterAnimationSettings { EndFrame = 5, TotalDurationSeconds = 1.2 };
                 var entry = new CharacterAnimationEntry { CharacterId = "mage", AtlasCatalog = catalog, Animations = new[] { settings } };
                 config.Set(entry, new CharacterAnimationEntry { CharacterId = "unconfigured" });
                 var version = config.Version;
-                settings.FrameCount = 999;
+                settings.EndFrame = 998;
                 Assert.That(config.TryResolve("mage", "idle_combat", out var bound, out var copy, out _), Is.True);
                 Assert.That(bound, Is.SameAs(catalog));
                 Assert.That(copy.FrameCount, Is.EqualTo(6));
