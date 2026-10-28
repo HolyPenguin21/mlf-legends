@@ -1,3 +1,13 @@
+## Current #58 — Stage 04.1 (2026-10-28)
+
+**Stage 03 OWNER-ACCEPTED**, by the owner's direct message recorded in #58: «Stage 03 закрыли. Идем дальше».
+Exact owner manual-test SHA/protocol was not supplied; this is not a blanket Unity/GPU PASS. **Stage 04 IN PROGRESS**;
+04.1 bodies/spatial snapshot delivered for review from fresh main `a6e96295c0a1e008327e28e8ff89205caf0a4f77`.
+One branch `feature/58-combat-spatial-index`, one PR to main; merge requires a separate owner instruction.
+[Implementation, owners, API, settings, tests and limitations](STAGE04_SPATIAL_INDEX.md).
+#46/#53 and QA #17/#25/#30 remain separate. Older dated status/evidence entries below are historical and superseded
+where they say Stage 03 awaits acceptance or Stage 04 has not started; their original test results/SHA remain unchanged.
+
 ## Current correction #52 — final combat controls (2026-10-28)
 
 Base main `1c96c6f` includes merged PR #50/#51: full canvas/offset, 50%/25%/25% attack movement, ECS landing recovery,
@@ -103,8 +113,8 @@ has independent manager STATIC PASS; runtime acceptance is NOT RUN. Full state-d
 | 00 | GitHub/Unity/URP bootstrap, dependencies, folders, test harness, CI feasibility | Source tracked; editor/packages committed; tests owner-reported PASS; CI and independent evidence deferred | ACCEPTED (OWNER) |
 | 01 | ECS simulation, fixed-step scheduler, entity data, command buffer, replay tests and 2/100/400 ECS baseline | Six main tasks delivered, Bootstrap debt #19 implemented; independent code audit #23 static PASS, owner accepted Stage 02 transition with missing Unity proof tracked in #30 and Windows Unicode/Burst #17 separate. No movement/AI/collisions/renderer yet. | ACCEPTED FOR NEXT STAGE (OWNER) — UNITY QA DEFERRED |
 | 02 | Movement and camera | Deterministic X/Z movement + jump Y, facing/action-state, tick-aligned input, fixed orthographic camera follow/zoom/pan, with one ECS authority | IMPLEMENTATION COMPLETE / MANAGER REVIEW PASS — #31/#33/#35 reviewed; #22 merged via PR #37, fixes and raw 244/244 ×2 + 21/21 ×2 + Performance 7/7 independently inspected; manual/hardware/full-frame QA remains qualified in QA.md |
-| 03 | GPU sprite rendering | Atlas animation, direction/frame selection, stable depth sorting, optional equipment layers, instancing/indirect render assessment | IN PROGRESS — 03.1/03.2 + #41/#42 delivered; #41/#42 GPU depth tests now RUN on main `00310c3` (D3D12 RTX 2060 SUPER, Graphics 15/15 PASS, Evidence/48); #43–#45 idle/run merged; #48 binds all eight combat clips (idle/run/jump/5 strikes) to ECS state; mixed-character #46 open; equipment layers open |
-| 04 | Collisions | Custom actor/world collision, spatial index, masses, allies yield, enemies block, knockback | NOT STARTED |
+| 03 | GPU sprite rendering | Atlas animation, direction/frame selection, stable depth sorting, instancing | OWNER-ACCEPTED — direct owner message in #58; exact manual-test SHA/protocol unknown, no blanket Unity/GPU PASS. #46/#53 remain separate follow-ups; historical per-SHA evidence below is retained. |
+| 04 | Collisions | Custom actor/world collision, spatial index, masses, allies yield, enemies block, knockback | IN PROGRESS — #58 / 04.1 bodies and final-position spatial index delivered for review, Unity NOT RUN. 04.2 arena contacts, 04.3 body contacts, 04.4 impulses and 04.5 Hit migration remain separate. |
 | 05 | Attack resolution | Windup/active/recovery; fast/heavy/jump attacks; shapes, multi-hit rules, damage/impact/stagger | IN PROGRESS — 05.1 (#48, MERGED `b828ccb`, Unity EditMode/PlayMode/GPU PASS): five grounded strikes, W/A/R, box hit tests, multi-target, once-per-strike ledger, HP damage, series/buffer; rules PROPOSED pending owner approval. Open: heavy/light mapping, jump attacks, guard damage, impact/stagger/knockback, defeat |
 | 06 | Defense | Facing guard, stability, timely defense/counter opportunity, guard break; future guard key undecided, dash deferred/unbound | NOT STARTED |
 | 07 | Duel AI | Range, observable windups, bounded reaction time, mistakes, defense/dash/counter via same command rules | NOT STARTED |

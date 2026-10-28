@@ -1,3 +1,20 @@
+## Current #58 — Stage 04.1 (2026-10-28)
+
+**Stage 03 OWNER-ACCEPTED**, by the owner's direct message recorded in #58: «Stage 03 закрыли. Идем дальше».
+Exact owner manual-test SHA/protocol was not supplied; this is not a blanket Unity/GPU PASS. **Stage 04 IN PROGRESS**;
+04.1 bodies/spatial snapshot delivered for review from fresh main `a6e96295c0a1e008327e28e8ff89205caf0a4f77`.
+One branch `feature/58-combat-spatial-index`, one PR to main; merge requires a separate owner instruction.
+[Implementation, owners, API, settings, tests and limitations](STAGE04_SPATIAL_INDEX.md).
+#46/#53 and QA #17/#25/#30 remain separate. Older dated status/evidence entries below are historical and superseded
+where they say Stage 03 awaits acceptance or Stage 04 has not started; their original test results/SHA remain unchanged.
+
+04.1 choices: logical vertical cylinder at CombatPosition's base; single CombatBodyTuning spawn default
+(radius 0.3 / height 2 / mass 1, calibration only); CellSize 1 in CombatSpatialTuning. Closed bounds/closed cell coverage,
+floor on negative coordinates, Id-sorted unique AABB candidates, explicit huge-query full scan and build-range diagnostics.
+One managed SystemBase owns reusable native containers; exact membership validation is O(N) once per atomic AABB batch
+(or per convenience single query). No borrowed view escapes. Cleanup includes whole-entity Disabled fighters; partial
+World checks require all enabled IDs to have Body/Position/Team, including newly enabled incomplete entities. No contacts/impulses/Hit migration or gameplay/tuning changes in this PR; 04.2–04.5 remain separate.
+
 ## Owner correction #56 — working Sprite Editor pivot, no embedded raster preview
 
 Imported per-frame Sprite pivot is the image positioning source; JSON pivot is used only without a binding. Center is

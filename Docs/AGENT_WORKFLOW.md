@@ -1,3 +1,19 @@
+## Current #58 — Stage 04.1 (2026-10-28)
+
+**Stage 03 OWNER-ACCEPTED**, by the owner's direct message recorded in #58: «Stage 03 закрыли. Идем дальше».
+Exact owner manual-test SHA/protocol was not supplied; this is not a blanket Unity/GPU PASS. **Stage 04 IN PROGRESS**;
+04.1 bodies/spatial snapshot delivered for review from fresh main `a6e96295c0a1e008327e28e8ff89205caf0a4f77`.
+One branch `feature/58-combat-spatial-index`, one PR to main; merge requires a separate owner instruction.
+[Implementation, owners, API, settings, tests and limitations](STAGE04_SPATIAL_INDEX.md).
+#46/#53 and QA #17/#25/#30 remain separate. Older dated status/evidence entries below are historical and superseded
+where they say Stage 03 awaits acceptance or Stage 04 has not started; their original test results/SHA remain unchanged.
+
+Current scope is only #58: use existing lifecycle/Movement/Hit, one World-owned index between Movement and Hit,
+no second position writer or clock. Register the same owner in default/replay/benchmark and preserve unique-owner order
+assertions. Actual new component: CombatBody. New system: CombatSpatialIndexSystem (managed native-container owner).
+[Bottom-up review and corrections](STAGE04_BOTTOM_UP_REVIEW.md): atomic AABB batches, complete enabled-ID membership,
+whole-entity Disabled cleanup and new edge/measurement tests. Unity-unavailable checks remain NOT RUN without blocking PR delivery; do not merge or close follow-up issues.
+
 ## Current task #56 — pivot and Inspector corrective delivery
 
 Fresh base main `311c3d7d06b5320b9df701ae6f21f519d07c6af1`. Branch `fix/56-sprite-pivot-inspector`, one PR, no merge.

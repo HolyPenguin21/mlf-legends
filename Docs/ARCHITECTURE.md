@@ -1,3 +1,20 @@
+## Current #58 — Stage 04.1 (2026-10-28)
+
+**Stage 03 OWNER-ACCEPTED**, by the owner's direct message recorded in #58: «Stage 03 закрыли. Идем дальше».
+Exact owner manual-test SHA/protocol was not supplied; this is not a blanket Unity/GPU PASS. **Stage 04 IN PROGRESS**;
+04.1 bodies/spatial snapshot delivered for review from fresh main `a6e96295c0a1e008327e28e8ff89205caf0a4f77`.
+One branch `feature/58-combat-spatial-index`, one PR to main; merge requires a separate owner instruction.
+[Implementation, owners, API, settings, tests and limitations](STAGE04_SPATIAL_INDEX.md).
+#46/#53 and QA #17/#25/#30 remain separate. Older dated status/evidence entries below are historical and superseded
+where they say Stage 03 awaits acceptance or Stage 04 has not started; their original test results/SHA remain unchanged.
+
+State: Action → Facing → Movement → **CombatSpatialIndexSystem** → Hit. CombatBody is three unmanaged floats,
+spawned by the existing lifecycle; the managed World-owned index reads current ECS into reusable native storage and
+writes no gameplay data. Hit still performs its existing full scan; no physical response is added. Public reads reject
+stale tick/epoch/membership, including paused End/Restart/Despawn. Atomic AABB batches validate live membership once,
+returning caller-owned ranges without a second index or escaping view. Lifecycle includes whole-entity Disabled cleanup.
+Settings: CombatBodyTuning and CombatSpatialTuning.
+
 ## Current #56 — image pivot and target-owned Inspector cache
 
 Catalog Image Pivots stores stable frame_id → Sprite subasset references. Atlas load converts imported rect/pivot into

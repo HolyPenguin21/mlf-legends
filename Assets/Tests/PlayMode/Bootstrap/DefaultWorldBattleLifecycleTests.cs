@@ -101,6 +101,9 @@ namespace MLFLegends.Tests.PlayMode
                 var lifecycleType = TypeManager.GetSystemTypeIndex<BattleLifecycleSystem>();
                 Assert.That(all.ToArray().Count(s => DefaultWorld.Unmanaged.GetSystemTypeIndex(s) == lifecycleType), Is.EqualTo(1),
                     "Exactly one lifecycle instance in the default world.");
+                var spatialType = TypeManager.GetSystemTypeIndex<CombatSpatialIndexSystem>();
+                Assert.That(all.ToArray().Count(s => DefaultWorld.Unmanaged.GetSystemTypeIndex(s) == spatialType), Is.EqualTo(1),
+                    "Exactly one spatial-index instance in the default world.");
             }
             using (var sessions = Manager.CreateEntityQuery(typeof(BattleSession)))
                 Assert.That(sessions.CalculateEntityCount(), Is.EqualTo(1));
@@ -111,18 +114,20 @@ namespace MLFLegends.Tests.PlayMode
                 var owners = new[]
                 {
                     TypeManager.GetSystemTypeIndex<CombatActionSystem>(), TypeManager.GetSystemTypeIndex<CombatFacingSystem>(),
-                    TypeManager.GetSystemTypeIndex<CombatMovementSystem>(), TypeManager.GetSystemTypeIndex<CombatHitSystem>(),
+                    TypeManager.GetSystemTypeIndex<CombatMovementSystem>(), TypeManager.GetSystemTypeIndex<CombatSpatialIndexSystem>(),
+                    TypeManager.GetSystemTypeIndex<CombatHitSystem>(),
                 };
                 foreach (var owner in owners)
                     Assert.That(types.Count(t => t == owner), Is.EqualTo(1), "Exactly one auto-created instance of each State owner.");
                 for (var i = 1; i < owners.Length; i++)
                     Assert.That(System.Array.IndexOf(types, owners[i - 1]), Is.LessThan(System.Array.IndexOf(types, owners[i])),
-                        "Default world orders strike → facing → movement → hit, as isolated replay and benchmarks do.");
+                        "Default world orders strike → facing → movement → spatial snapshot → hit, as isolated replay and benchmarks do.");
                 Assert.That(members.AsArray().ToArray(), Is.EqualTo(new[]
                 {
                     DefaultWorld.GetExistingSystem<CombatActionSystem>(), DefaultWorld.GetExistingSystem<CombatFacingSystem>(),
-                    DefaultWorld.GetExistingSystem<CombatMovementSystem>(), DefaultWorld.GetExistingSystem<CombatHitSystem>(),
-                }), "Stage 05.1 State holds exactly the strike, facing, movement and hit owners.");
+                    DefaultWorld.GetExistingSystem<CombatMovementSystem>(), DefaultWorld.GetExistingSystemManaged<CombatSpatialIndexSystem>().SystemHandle,
+                    DefaultWorld.GetExistingSystem<CombatHitSystem>(),
+                }), "Stage 04.1 State holds exactly the strike, facing, movement, spatial and hit owners.");
             }
             foreach (var phase in new[] { DefaultWorld.GetExistingSystemManaged<CombatCommandCollectionSystemGroup>(),
                          (ComponentSystemGroup)DefaultWorld.GetExistingSystemManaged<CombatPublicationSystemGroup>() })
@@ -131,6 +136,7 @@ namespace MLFLegends.Tests.PlayMode
                 Assert.That(members.AsArray().ToArray(), Has.None.EqualTo(DefaultWorld.GetExistingSystem<CombatFacingSystem>())
                     .And.None.EqualTo(DefaultWorld.GetExistingSystem<CombatMovementSystem>())
                     .And.None.EqualTo(DefaultWorld.GetExistingSystem<CombatActionSystem>())
+                    .And.None.EqualTo(DefaultWorld.GetExistingSystemManaged<CombatSpatialIndexSystem>().SystemHandle)
                     .And.None.EqualTo(DefaultWorld.GetExistingSystem<CombatHitSystem>()), $"No State owner in {phase.GetType().Name}.");
             }
             Assert.That(Session.State, Is.EqualTo(BattleState.Idle), "Nothing starts a battle without a request.");
@@ -172,6 +178,20 @@ namespace MLFLegends.Tests.PlayMode
                 Time.timeScale = 1;
                 yield return NextTick();
                 Assert.That(Manager.GetComponentData<CombatMotion>(human).Grounded, Is.False);
+                {
+                    var spatial = DefaultWorld.GetExistingSystemManaged<CombatSpatialIndexSystem>();
+                    Assert.That(spatial.TryGetSnapshotInfo(out var info), Is.True);
+                    Assert.That(info.Tick, Is.EqualTo(Tick));
+                    var query = new CombatSpatialBounds
+                    {
+                        Min = new Unity.Mathematics.float3(-100), Max = new Unity.Mathematics.float3(100),
+                    };
+                    using var candidates = new NativeList<CombatSpatialBody>(Allocator.Temp);
+                    Assert.That(spatial.TryQueryAabb(query, candidates), Is.True);
+                    var row = candidates.AsArray().ToArray().Single(b => b.Entity == human);
+                    Assert.That(row.Position, Is.EqualTo(Manager.GetComponentData<CombatPosition>(human).Value), "Snapshot follows Movement.");
+                    Assert.That(row.Body, Is.EqualTo(CombatBodyTuning.Default));
+                }
                 Assert.That(Manager.GetComponentData<CombatFacing>(human).Value, Is.EqualTo(FacingDirection.Left), "Accepted -X turns on its tick.");
                 Time.timeScale = 0;
                 yield return null; // settle time propagation, then capture the paused boundary
@@ -187,6 +207,8 @@ namespace MLFLegends.Tests.PlayMode
                 BattleRequest.Submit(Manager, BattleRequest.Restart(BattleSetup.Default));
                 yield return Until(() => Session.BattleNumber == number + 2);
                 Assert.That(Manager.Exists(human), Is.False);
+                Assert.That(DefaultWorld.GetExistingSystemManaged<CombatSpatialIndexSystem>().TryGetSnapshotInfo(out _), Is.False,
+                    "Paused Restart invalidates before the next fixed tick.");
                 Assert.That(Tick, Is.EqualTo(tick));
                 using (var actors = Manager.CreateEntityQuery(typeof(CombatMotion)))
                 using (var motions = actors.ToComponentDataArray<CombatMotion>(Allocator.Temp))
@@ -200,6 +222,7 @@ namespace MLFLegends.Tests.PlayMode
                             ? BattleSetup.Default.Human.Facing : BattleSetup.Default.Ai.Facing), "Paused restart spawns setup facing, no turn leaks.");
                 BattleRequest.Submit(Manager, BattleRequest.End());
                 yield return Until(() => !Session.IsActive);
+                Assert.That(DefaultWorld.GetExistingSystemManaged<CombatSpatialIndexSystem>().TryGetSnapshotInfo(out _), Is.False);
                 using (var actors = Manager.CreateEntityQuery(typeof(CombatMotion)))
                     Assert.That(actors.CalculateEntityCount(), Is.Zero);
             }

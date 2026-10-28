@@ -84,6 +84,7 @@ namespace MLFLegends.Tests.EditMode
         public byte Team;
         public Unity.Mathematics.float3 Position;
         public CombatMotion Motion;
+        public CombatBody Body;
         public FacingDirection Facing;
         public bool InCombat;
         public bool HasApplied;
@@ -163,19 +164,21 @@ namespace MLFLegends.Tests.EditMode
             typeof(CombatActionSystem),
             typeof(CombatFacingSystem),
             typeof(CombatMovementSystem),
+            typeof(CombatSpatialIndexSystem),
             typeof(CombatHitSystem),
             typeof(CombatPublicationSystemGroup),
         };
 
-        /// <summary>The State owners in their required order: strikes → facing → movement → hits.</summary>
+        /// <summary>The State owners in their required order: strikes → facing → movement → spatial snapshot → hits.</summary>
         public static SystemHandle[] StateOwners(World world) => new[]
         {
             world.GetExistingSystem<CombatActionSystem>(), world.GetExistingSystem<CombatFacingSystem>(),
-            world.GetExistingSystem<CombatMovementSystem>(), world.GetExistingSystem<CombatHitSystem>(),
+            world.GetExistingSystem<CombatMovementSystem>(), world.GetExistingSystemManaged<CombatSpatialIndexSystem>().SystemHandle,
+            world.GetExistingSystem<CombatHitSystem>(),
         };
 
         /// <summary>
-        /// Exactly one of each State owner (strike, facing, movement, hit; counted by system type, not by the first
+        /// Exactly one of each State owner (strike, facing, movement, spatial snapshot, hit; counted by system type, not by the first
         /// handle), all inside State in that order, none in Collection or Publication. Other State members
         /// (test requesters, future owners) are allowed.
         /// </summary>
@@ -185,6 +188,7 @@ namespace MLFLegends.Tests.EditMode
             var facing = TypeManager.GetSystemTypeIndex<CombatFacingSystem>();
             var movement = TypeManager.GetSystemTypeIndex<CombatMovementSystem>();
             var hit = TypeManager.GetSystemTypeIndex<CombatHitSystem>();
+            var spatial = TypeManager.GetSystemTypeIndex<CombatSpatialIndexSystem>();
             SystemTypeIndex[] Members<T>() where T : ComponentSystemGroup
             {
                 using var systems = world.GetExistingSystemManaged<T>().GetAllSystems(Allocator.Temp);
@@ -195,15 +199,18 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(state.Count(t => t == action), Is.EqualTo(1), "Exactly one strike owner in State.");
             Assert.That(state.Count(t => t == facing), Is.EqualTo(1), "Exactly one facing owner in State.");
             Assert.That(state.Count(t => t == movement), Is.EqualTo(1), "Exactly one movement owner in State.");
+            Assert.That(state.Count(t => t == spatial), Is.EqualTo(1), "Exactly one spatial owner in State.");
             Assert.That(state.Count(t => t == hit), Is.EqualTo(1), "Exactly one hit owner in State.");
             Assert.That(Array.IndexOf(state, action), Is.LessThan(Array.IndexOf(state, facing)),
                 "Strikes start before facing applies its lock.");
             Assert.That(Array.IndexOf(state, facing), Is.LessThan(Array.IndexOf(state, movement)),
                 "Facing turns before movement integrates the same tick.");
-            Assert.That(Array.IndexOf(state, movement), Is.LessThan(Array.IndexOf(state, hit)),
+            Assert.That(Array.IndexOf(state, movement), Is.LessThan(Array.IndexOf(state, spatial)),
+                "Spatial snapshot uses this tick's final positions.");
+            Assert.That(Array.IndexOf(state, spatial), Is.LessThan(Array.IndexOf(state, hit)),
                 "Hits test this tick's final positions.");
             foreach (var other in Members<CombatCommandCollectionSystemGroup>().Concat(Members<CombatPublicationSystemGroup>()))
-                Assert.That(other != action && other != facing && other != movement && other != hit, "State owners run only in State.");
+                Assert.That(other != action && other != facing && other != movement && other != hit && other != spatial, "State owners run only in State.");
         }
 
         /// <summary>A <see cref="CombatantId"/> that no test World ever issues.</summary>
@@ -436,6 +443,7 @@ namespace MLFLegends.Tests.EditMode
                         Team = manager.GetComponentData<CombatTeam>(entity).Value,
                         Position = manager.GetComponentData<CombatPosition>(entity).Value,
                         Motion = manager.GetComponentData<CombatMotion>(entity),
+                        Body = manager.GetComponentData<CombatBody>(entity),
                         Facing = manager.GetComponentData<CombatFacing>(entity).Value,
                         InCombat = manager.IsComponentEnabled<InCombat>(entity),
                         HasApplied = hasApplied,
@@ -488,6 +496,7 @@ namespace MLFLegends.Tests.EditMode
                 var applied = !c.HasApplied ? "none"
                     : Command(c.Applied.Command) + (c.Applied.WasSubmitted ? "" : " implicit");
                 lines.Add($"{who(self)} team{c.Team} pos({Float(c.Position.x)},{Float(c.Position.y)},{Float(c.Position.z)}) "
+                    + $"body({Float(c.Body.Radius)},{Float(c.Body.Height)},{Float(c.Body.Mass)}) "
                     + $"motion(ground:{Float(c.Motion.GroundHeight)},vy:{Float(c.Motion.VerticalVelocity)},grounded:{c.Motion.Grounded},"
                     + $"land:{At(c.Motion.LandTick)},landingTicks:{c.Motion.LandingRecoveryTicks},moved:{At(c.Motion.LastMoveTick)},streak:{At(c.Motion.MoveStreakStartTick)}/{Float(c.Motion.MoveStreakDistance)}) "
                     + $"strike({c.Attack.Kind},start:{(c.Attack.IsAttacking ? At(c.Attack.StartTick) : "-")},series:{c.Attack.SeriesLength},"

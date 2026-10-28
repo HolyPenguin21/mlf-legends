@@ -1,0 +1,35 @@
+{
+  "base": "a6e96295c0a1e008327e28e8ff89205caf0a4f77",
+  "scope": "SOURCE / PYTHON MODEL ONLY; not C#, Unity, Entities codegen, Burst or performance execution",
+  "csharp_syntax_files": 91,
+  "guid_count_unique": 208,
+  "csharp_readonly_using_nativearray_assignment_scan": "PASS (source pattern, not compilation)",
+  "model_queries_against_independent_scan": 4608,
+  "model_pair_source_queries": 12048,
+  "model_batch_ranges_against_independent_scan": 4608,
+  "python_model_negative_controls_detected": 4,
+  "source_membership_counterexamples": 3,
+  "source_disabled_cleanup_counterexamples": 1,
+  "source_lifecycle_baseline_archetype_contract": "PASS",
+  "reviewed_head_baseline_missing_components_source_only": [
+    "CombatBody"
+  ],
+  "insertion_orders_per_scene": 2,
+  "protected_base_files_byte_unchanged": 177,
+  "source_hashes_sha256": {
+    "Assets/MLFLegends/Combat/Runtime/Bootstrap/BattleLifecycleSystem.cs": "f55c5a6225eb8a533fd433bba108261b71643d27615eca877fb03484f0195c41",
+    "Assets/MLFLegends/Combat/Runtime/Core/CombatBody.cs": "f8eb576d5be8d7883ab40c1322a1ced92bfae9beae810f702901f900623b9319",
+    "Assets/MLFLegends/Combat/Runtime/Simulation/CombatBodyTuning.cs": "839075de05ddc4f315a367a53de3f0112e422d1eb2c292299787bbd7013769e2",
+    "Assets/MLFLegends/Combat/Runtime/Simulation/CombatSpatialIndexSystem.cs": "0b6cf69a389fcc0524a825e8f380217dbf2eb2584edfff47be67f1eeaf0ebc2e",
+    "Assets/MLFLegends/Combat/Runtime/Simulation/CombatSpatialTuning.cs": "01296e8b41a3d55441c5ca83d3d0f53367b57f5369dd10904a04a06c2f91a6bc",
+    "Assets/Tests/EditMode/Combat/CombatReplayDriver.cs": "5e16ee2c32317fa1318dff65bb4a233df217009a7379f3cb8f7d1deff2790b0c",
+    "Assets/Tests/EditMode/Combat/CombatSpatialIndexTests.cs": "4b8f7d2ac0315dd8a2b0287b0d5c9539e82d2c6759011752aa5cdaf2c7dffec6",
+    "Assets/Tests/EditMode/Combat/CombatSpatialLifecycleTests.cs": "5d958e368563d07b2ea3954db241076100bc43bf16c9979ad7221f2c097fad4c",
+    "Assets/Tests/EditMode/Performance/CombatBaselineTests.cs": "cd54f594cbcc4d6a2c3edf26aa3c3248b2b8c4b348c0a2f0fd664da8be3ec348",
+    "Assets/Tests/EditMode/Performance/CombatBenchmarkHarness.cs": "98948f6c807f9e9c85da8ad9d2c1ca50a8d899c2a971a18142fec5817c3a9acc",
+    "Assets/Tests/EditMode/Performance/CombatSpatialBenchmarkTests.cs": "566e813b4d947b7ce8d0d81a1261f592a150531c168b11607d60cb33860de74f",
+    "Assets/Tests/EditMode/Performance/CombatStrikeBenchmarkTests.cs": "36765da800bf89f26ebf5be0b46ca9539786e16d8021c41b824a777e94559ab2"
+  },
+  "status": "PASS",
+  "unity_compile_editmode_playmode_burst_gpu_leaks_performance": "NOT RUN"
+}

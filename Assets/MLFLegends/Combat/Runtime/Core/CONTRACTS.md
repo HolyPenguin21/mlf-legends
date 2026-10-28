@@ -1,3 +1,15 @@
+## Stage 04.1 logical body (#58)
+
+`CombatBody` is unmanaged IComponentData (Radius/Height/Mass floats), initialized for every fighter by the existing
+BattleLifecycleSystem archetype/private Spawn. Single spawn table: Simulation/CombatBodyTuning.cs (0.3 / 2 / 1, technical
+calibration). Afterwards the component is authoritative for that actor. Finite and >0; computed bounds must remain finite.
+Vertical cylinder: X/Z radius, Y interval `[CombatPosition.y, CombatPosition.y + Height]`, position at the base. Art,
+pivot/trim/offset/animation never changes the body; inverse mass is derived if needed, not stored. Mass has no physical
+influence until contacts/impulses. Setup edits are read at the next index rebuild; no runtime body modifier owner yet.
+Existing End/Despawn/Restart destroys body with its entity. No second lifecycle or position owner.
+World-owned CombatSpatialIndexSystem reads these values into derivative copies, never writes Core. Main-thread API,
+closed AABB geometry, Id ordering, validity/lifetime and memory ownership: [04.1 contract](../../../../../Docs/STAGE04_SPATIAL_INDEX.md).
+
 ## Current #52 intention contract
 
 CommandButtons uses ushort, preserving Attack=1, Jump=2, Guard=4, Kick=8. Exact PunchLeft/PunchRight/KickLeft/KickRight/
