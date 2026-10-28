@@ -135,12 +135,16 @@ namespace MLFLegends.Tests.EditMode
         public void ActualEcsMotionAndFinalIndexAgreeAtAnyCatchUpPacing(int pacing)
         {
             using var w = new ReplayWorld("arena replay");
+            using var reference = new ReplayWorld("one-tick arena replay");
             Install(w, Floor, Box(0, 0, 0, .05f, 4, 5));
+            Install(reference, Floor, Box(0, 0, 0, .05f, 4, 5));
             var setup = BattleSetup.Default; setup.Human.Position = new float3(-1, 0, 0); setup.Ai.Position = new float3(1, 0, 0);
             var script = new ReplayScript();
             for (uint i = 1; i <= 60; i++) { script.Player(i, i, ReplayRole.Human, moveX: 1); script.Ai(i, i, ReplayRole.Ai, moveX: -1); }
             w.Script = script; w.Request(BattleRequest.Start(setup));
+            reference.Script = script; reference.Request(BattleRequest.Start(setup)); reference.Step(60);
             for (var i = 0; i < 60; i += pacing) w.Frame(Math.Min(pacing, 60 - i));
+            Assert.That(w.RawLog, Is.EqualTo(reference.RawLog), "Every recorded combat field/tick matches one-tick pacing.");
             var last = w.BattleRecords(1).Last();
             var human = last.Combatant(last.HumanId); var ai = last.Combatant(last.AiId);
             Assert.That(human.Position.x, Is.EqualTo(-.35f).Within(.001)); Assert.That(ai.Position.x, Is.EqualTo(.35f).Within(.001));
@@ -152,6 +156,29 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(hits.Length, Is.EqualTo(2));
             // Compare final ECS positions, not predicted solver outputs as reference.
             Assert.That(hits[0].Position, Is.EqualTo(human.Position)); Assert.That(hits[1].Position, Is.EqualTo(ai.Position));
+        }
+        [TestCase(1)] [TestCase(2)] [TestCase(3)] [TestCase(10)]
+        public void PlayerAndAiShareIdenticalCanonicalMovementJumpAndStrikeRules(int pacing)
+        {
+            using var w = new ReplayWorld("arena player AI parity"); Install(w, Floor, Box(0, 0, 0, .05f, 4, 5));
+            var table = CombatStrikeSchedule.Default; table.LandingRecoveryTicks = 12; CombatStrikeSchedule.Publish(w.Manager, table);
+            var setup = BattleSetup.Default; setup.Human.Position = new float3(-1, 0, -2); setup.Ai.Position = new float3(-1, 0, 2);
+            var script = new ReplayScript();
+            for (uint i = 1; i <= 90; i++)
+            {
+                var pressed = i == 1 ? CommandButtons.Jump : i == 65 ? CommandButtons.PunchLeft : CommandButtons.None;
+                script.Player(i, i, ReplayRole.Human, moveX: 1, pressed: pressed);
+                script.Ai(i, i, ReplayRole.Ai, moveX: 1, pressed: pressed);
+            }
+            w.Script = script; w.Request(BattleRequest.Start(setup));
+            for (var i = 0; i < 90; i += pacing) w.Frame(Math.Min(pacing, 90 - i));
+            foreach (var row in w.BattleRecords(1))
+            {
+                var human = row.Combatant(row.HumanId); var ai = row.Combatant(row.AiId);
+                Assert.That(ai.Position.x, Is.EqualTo(human.Position.x)); Assert.That(ai.Position.y, Is.EqualTo(human.Position.y));
+                Assert.That(ai.Motion, Is.EqualTo(human.Motion)); Assert.That(ai.Attack, Is.EqualTo(human.Attack));
+                Assert.That(ai.Facing, Is.EqualTo(human.Facing)); Assert.That(ai.Health.Current, Is.EqualTo(human.Health.Current));
+            }
         }
         [TestCase(2)] [TestCase(100)] [TestCase(400)]
         public void RevisionLeasesRestartAndDisposalBelongToOneWorld(int count)
