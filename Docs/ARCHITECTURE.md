@@ -2,7 +2,7 @@
 
 ## Stage 05.1 + 03.3c / PR #48 — five strikes and state-driven combat animation (2026-10-28)
 
-Base main `00310c3`. One branch `feature/stage05-strikes-combat-animation`, one PR, no implementing-agent merge.
+Base main `00310c3`. One branch `feature/stage05-strikes-combat-animation`, one PR; **MERGED on the owner's instruction as `b828ccb`** (2026-10-28). Proposed rules P1–P12 still await approval.
 **Simulation:** `CombatActionSystem` (sole writer of `CombatAttackState`) → `CombatFacingSystem` → `CombatMovementSystem` →
 `CombatHitSystem` (sole writer of `CombatHealth` and the per-strike `CombatHitRecord` ledger) in State. Five strikes
 (punch_left/right, kick_left/right, kick_spin) with Windup/Active/Recovery, reach/depth/height boxes, damage once per target
@@ -52,7 +52,7 @@ selects idle_combat BEFORE footprints/depth/page grouping, and writes nothing to
 phase, including while moving/jumping and offscreen. Pause/resume/restart require no new clock/state owner.
 Manual fixture APIs are retained in manual sources. No per-fighter object/Animator/material/texture or second render
 path. Scene uses the real external PNG + tracked JSON/catalog/config. Current nominal mage height128px maps to2units.
-Only idle is integrated; state-driven clip selection/transitions remain deferred. Details: Presentation/Sprites/ANIMATION.md.
+Historical #43 state: only idle was integrated; superseded by #48 state-driven selection of all eight clips. Details: Presentation/Sprites/ANIMATION.md.
 PR #42 is merged and manager STATIC PASS; its and #43's new Unity/GPU/performance evidence remain NOT RUN.
 
 
@@ -98,7 +98,7 @@ only by the Stage 02.2 owner below. Integration, provisional units/tunables and 
 Spawn sets `CombatFacing` from `BattleSetup`; afterwards State's `CombatFacingSystem`, ordered
 `[UpdateBefore(CombatMovementSystem)]`, is its only writer: sign of the accepted `AppliedCombatCommand.MoveX`,
 `MoveX == 0` keeps the previous value, same rule for player, AI, grounded and airborne actors. No enemy
-auto-facing and no action locks yet; future attack/guard restrictions belong in this owner. The processor,
+auto-facing; the Stage 05.1 strike lock (turn only on a strike's first tick) lives in this owner; future guard restrictions too. The processor,
 movement and presentation never write facing. Details in `Simulation/SIMULATION.md`.
 
 ## Stage 02.3 + 02.4 input and camera ownership (#22)

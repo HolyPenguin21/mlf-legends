@@ -2,8 +2,9 @@
 
 One fixed simulation tick drives every combat system, for a duel and for 200 vs 200 alike. The tick
 is independent of the render frame rate. Clock and phase groups own tick scheduling and do not
-write Core state; in this folder Stage 02.2 CombatFacingSystem owns facing and Stage 02.1
-CombatMovementSystem owns position/motion integration.
+write Core state; in this folder Stage 02.2 CombatFacingSystem owns facing, Stage 02.1
+CombatMovementSystem owns position/motion integration, and Stage 05.1 CombatActionSystem / CombatHitSystem own strike
+state and HP/hit ledgers.
 
 ## Pieces
 
@@ -44,7 +45,7 @@ SimulationSystemGroup
    ├─ BattleLifecycleSystem                               (#5/#14/#19) battle requests; Tick = last completed tick
    ├─ CombatClockSystem                                   (after Lifecycle) Tick += 1
    ├─ CombatCommandCollectionSystemGroup                  PlayerInputCommandSystem (#22, default world), then #4 processor (OrderLast)
-   ├─ CombatStateUpdateSystemGroup                        CombatFacingSystem (#33) → CombatMovementSystem (#31), then future state owners
+   ├─ CombatStateUpdateSystemGroup                        CombatActionSystem (#48) → CombatFacingSystem (#33) → CombatMovementSystem (#31) → CombatHitSystem (#48)
    ├─ CombatPublicationSystemGroup                        read-only snapshots/events (later)
    └─ EndFixedStepSimulationEntityCommandBufferSystem     (Unity, OrderLast)
 ```

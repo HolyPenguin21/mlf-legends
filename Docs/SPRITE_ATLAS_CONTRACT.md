@@ -8,7 +8,7 @@ no phase markers; `rise [1,2]`, `fall [3]`, `land [4,5]` were added by the code 
 pending artist confirmation); `jump_000` is not shown. A missing required marker rejects the combat set with a field path.
 Relaxed idle/walk/dash/cast stay future ids and are not required.
 
-Current art delivery (#45): ONLY idle_combat (6 frames) and run (5 frames); page1152x384, source192x192, nominal128, pivot[96,160].
+Historical art delivery (#45, superseded by #48 above): ONLY idle_combat (6 frames) and run (5 frames); page1152x384, source192x192, nominal128, pivot[96,160].
 The example now contains both actual clips. The parser remains general v1: future clip names do not imply gameplay permission.
 Config N/T/SpeedCurve is runtime timing; JSON duration_ms stays validated export metadata (idle1200ms/run500ms), whereas
 the owner-configured current idle cycle is1s and run defaults to0.5s. No schema changes or new markers/transitions.
@@ -145,7 +145,7 @@ cooldowns; gameplay timing stays in the ECS simulation.
 kick_right, kick_spin, jump_start, jump_rise, jump_apex, jump_fall, jump_land, dash_start, dash_loop, dash_end,
 cast_windup, cast_charge_loop, cast_release, cast_recover`.
 
-Current delivery is ONLY idle_combat (6 approved frames); the longer compatibility list above is future scope.
+Current delivery (#48): the eight combat clips listed at the top; the rest of the compatibility list above is future scope.
 The runtime schema hard-codes neither frame count nor clip presence.
 Adding a weapon clip or page later keeps all earlier ids and needs no renderer change. Clip availability does not
 authorise gameplay for attacks, dash or magic.

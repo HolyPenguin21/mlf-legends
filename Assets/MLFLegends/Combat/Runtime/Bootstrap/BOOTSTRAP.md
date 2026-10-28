@@ -197,7 +197,7 @@ allies, reusing `Spawn` and the same allocator; the benchmark in `Assets/Tests/E
 
 ## Stage 03.3a scene binding (#43)
 
-CombatSmoke Main Camera now uses CharacterConfig/mage_female_01 and plays only idle_combat. Install the external PNG
+CombatSmoke Main Camera uses CharacterConfig/mage_female_01 (#43: idle only; since #48 all eight combat clips by state). Install the external PNG
 with its tracked meta; JSON/catalog/shared config are committed. No runtime fixture fallback. Manual technical renderer
 mode remains for tests. See Presentation/Sprites/ANIMATION.md. Unity art smoke and GPU checks remain NOT RUN.
 

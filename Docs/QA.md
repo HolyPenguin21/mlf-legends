@@ -2,7 +2,7 @@
 
 ## Stage 05.1 + 03.3c / PR #48 — strikes and combat animation (2026-10-28)
 
-Tested commit `a7e09df`, clean worktree, Unity 6000.5.4f1, RTX 2060 SUPER D3D12, each series twice (raw XML/logs/TSV in
+Merged to main as `b828ccb` on the owner's instruction. Tested commit `a7e09df` (code identical in the merge), clean worktree, Unity 6000.5.4f1, RTX 2060 SUPER D3D12, each series twice (raw XML/logs/TSV in
 `Docs/Evidence/48/raw/`). Runtime results are separated from static checks.
 
 | Check | Status |

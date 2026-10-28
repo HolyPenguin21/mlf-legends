@@ -221,6 +221,23 @@ namespace MLFLegends.Tests.EditMode
             }
         }
 
+        [TestCase(CombatAttackKind.PunchLeft)]
+        [TestCase(CombatAttackKind.PunchRight)]
+        [TestCase(CombatAttackKind.KickLeft)]
+        [TestCase(CombatAttackKind.KickRight)]
+        public void TheChainPointShowsAFrameTheArtMarksAsChainable(CombatAttackKind kind)
+        {
+            // The follow-up cuts the strike at Windup + Active + ChainDelay: the art's chain_exit frame must already show.
+            var set = Real(out var definition);
+            definition.TryGetClipIndex(CombatAnimationSet.AttackClip(kind), out var clipIndex);
+            var clip = definition.Clips[clipIndex];
+            var strike = CombatAttackTuning.Get(kind);
+            var chainTick = Start + (uint)(strike.WindupTicks + strike.ActiveTicks + strike.ChainDelayTicks);
+            var local = clip.Frames.ToList().IndexOf((int)set.FrameFor(chainTick - 1, 0, Grounded(), Striking(kind)));
+            Assert.That(local, Is.GreaterThanOrEqualTo(clip.Markers["chain_exit"][0]),
+                "The last frame before the follow-up is at or after chain_exit (no visual skip of the recovery start).");
+        }
+
         static string Without(string json, string clip, string marker, string replacement)
         {
             var at = json.IndexOf($"\"{clip}\": {{");
