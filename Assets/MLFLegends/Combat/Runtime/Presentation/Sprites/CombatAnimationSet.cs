@@ -303,7 +303,7 @@ namespace MLFLegends.Combat
                 && attack.EndTick <= motion.LandTick;
             long idleSince = (long)battleStartTick + 1;
             idleSince = Math.Max(idleSince, attack.EndTick);
-            if (motion.LastMoveTick != SimulationClock.NoTick)
+            if (motion.LastMoveTick != SimulationClock.NoTick && motion.LastMoveTick >= motion.LandTick)
                 idleSince = Math.Max(idleSince, (long)motion.LastMoveTick + grace + 1);
             if (landing)
                 idleSince = Math.Max(idleSince, (long)motion.LandTick + motion.LandingRecoveryTicks);

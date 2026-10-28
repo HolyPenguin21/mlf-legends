@@ -489,7 +489,7 @@ namespace MLFLegends.Tests.EditMode
                     : Command(c.Applied.Command) + (c.Applied.WasSubmitted ? "" : " implicit");
                 lines.Add($"{who(self)} team{c.Team} pos({Float(c.Position.x)},{Float(c.Position.y)},{Float(c.Position.z)}) "
                     + $"motion(ground:{Float(c.Motion.GroundHeight)},vy:{Float(c.Motion.VerticalVelocity)},grounded:{c.Motion.Grounded},"
-                    + $"land:{At(c.Motion.LandTick)},moved:{At(c.Motion.LastMoveTick)},streak:{At(c.Motion.MoveStreakStartTick)}/{Float(c.Motion.MoveStreakDistance)}) "
+                    + $"land:{At(c.Motion.LandTick)},landingTicks:{c.Motion.LandingRecoveryTicks},moved:{At(c.Motion.LastMoveTick)},streak:{At(c.Motion.MoveStreakStartTick)}/{Float(c.Motion.MoveStreakDistance)}) "
                     + $"strike({c.Attack.Kind},start:{(c.Attack.IsAttacking ? At(c.Attack.StartTick) : "-")},series:{c.Attack.SeriesLength},"
                     + $"timing:{c.Attack.Timing.ActiveStart}/{c.Attack.Timing.RecoveryStart}/{c.Attack.Timing.End}/{c.Attack.Timing.ChainPoint},"
                     + $"buffered:{c.Attack.Buffered},end:{At(c.Attack.EndTick)},hits:[{string.Join(",", c.Hits.Select(Id))}]) hp:{c.Health.Current}/{c.Health.Max} "

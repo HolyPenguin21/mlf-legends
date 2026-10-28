@@ -103,11 +103,12 @@ namespace MLFLegends.Combat
             FacingDirection facing, float pixelWorldSize, float depthOffset = 0f) =>
             CardToWorld(basis, support, CanvasToCard(canvas, pivot, facing), pixelWorldSize, depthOffset);
 
-        /// <summary>World direction of a canvas direction on the upright card (not normalised to unit length if zero).</summary>
-        public static float3 CanvasDirectionToWorld(in SpriteCardBasis basis, float2 direction, FacingDirection facing)
+        /// <summary>Local tangent at the aligned anchor's card height; below support, directions follow the ground quad.</summary>
+        public static float3 CanvasDirectionToWorld(in SpriteCardBasis basis, float2 direction, FacingDirection facing, float cardHeightPx = 0f)
         {
             var card = CanvasDirectionToCard(direction, facing);
-            return math.normalizesafe(basis.Right * card.x + basis.Up * card.y);
+            var vertical = cardHeightPx >= 0f ? basis.Up : -basis.Ground;
+            return math.normalizesafe(basis.Right * card.x + vertical * card.y);
         }
 
         /// <summary>

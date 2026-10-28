@@ -165,7 +165,7 @@ namespace MLFLegends.Tests.PlayMode
             {
                 bootstrap.AnimationConfig = config;
                 bootstrap.StrikeCharacterId = "mage_female_01";
-                LogAssert.Expect(LogType.Log, new Regex("strike windows .*punch_left 14/6/9, punch_right 9/11/9, kick_left 11/6/16, kick_right 11/6/16, kick_spin 20/5/20"));
+                LogAssert.Expect(LogType.Log, new Regex("strike windows .*punch_left 14/6/9, punch_right 14/6/9, kick_left 20/10/30, kick_right 20/10/30, kick_spin 53/14/53"));
                 bootstrap.gameObject.SetActive(true);
                 yield return NextTick();
                 var table = Singleton<CombatStrikeSchedule>();

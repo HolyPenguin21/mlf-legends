@@ -143,6 +143,8 @@ namespace MLFLegends.Combat
         readonly Dictionary<string, CharacterAnimationSettings> m_ClipSettings = new Dictionary<string, CharacterAnimationSettings>();
         bool m_TimingDirty;
         float2 m_ImageOffsetCard;
+        // Manual preview must not erase the cached character offset: the same config may be rebound without Version changing.
+        float2 ImageOffsetCard => UsesCharacterAnimation ? m_ImageOffsetCard : float2.zero;
         CombatAnimationSet m_Animations;
 
         /// <summary>Shared timing of every combat clip of the selected character (null while rejected).</summary>
@@ -153,6 +155,8 @@ namespace MLFLegends.Combat
         public SpriteAnimationTiming RunAnimationTiming => m_Animations?.Run;
         public int TimingBuilds { get; private set; }
         public bool UsesCharacterAnimation => m_Source == AtlasSource.CharacterConfig;
+        public CharacterAnimationConfig AnimationConfig => m_AnimationConfig;
+        public string CharacterId => m_CharacterId;
 
         // World
         World m_ExplicitWorld;
@@ -378,9 +382,9 @@ namespace MLFLegends.Combat
             var facing = instance.Facing < 0f ? FacingDirection.Left : FacingDirection.Right;
             var definition = m_Atlas.Definition;
             var card = SpriteCardMath.AlignedCanvasToCard(anchor.Position, definition.WorldSupport,
-                definition.LegacyPivotOffsetCard + m_ImageOffsetCard, facing);
+                definition.LegacyPivotOffsetCard + ImageOffsetCard, facing);
             position = SpriteCardMath.CardToWorld(m_Basis, instance.Position, card, PixelWorldSize, instance.DepthOffset + m_DepthBias);
-            direction = SpriteCardMath.CanvasDirectionToWorld(m_Basis, anchor.Direction, facing);
+            direction = SpriteCardMath.CanvasDirectionToWorld(m_Basis, anchor.Direction, facing, card.y);
             return true;
         }
 
@@ -403,7 +407,7 @@ namespace MLFLegends.Combat
             if (IsActiveOwner)
                 m_Extraction.Run(camera != null ? ResolveWorld() : null,
                     UsesCharacterAnimation && m_Animations == null ? null : m_Atlas, m_Basis, m_DepthSeparation,
-                    m_DefaultFrame, PixelWorldSize, UsesCharacterAnimation ? m_Animations : null, m_ImageOffsetCard);
+                    m_DefaultFrame, PixelWorldSize, UsesCharacterAnimation ? m_Animations : null, ImageOffsetCard);
             else
                 m_Extraction.Clear();
             m_Stats.ExtractMicroseconds = Microseconds(start);
@@ -428,7 +432,6 @@ namespace MLFLegends.Combat
 
         void EnsureAtlas()
         {
-            if (!UsesCharacterAnimation) m_ImageOffsetCard = float2.zero;
             var catalog = m_Catalog;
             if (UsesCharacterAnimation)
             {
@@ -635,7 +638,8 @@ namespace MLFLegends.Combat
                 block.SetVector(s_CardView, ToVector(m_Basis.ViewDirection));
                 block.SetFloat(s_PixelWorldSize, s);
                 block.SetFloat(s_DepthBias, m_DepthBias);
-                block.SetVector(s_ImageOffsetCard, new Vector4(m_ImageOffsetCard.x, m_ImageOffsetCard.y, 0f, 0f));
+                var offset = ImageOffsetCard;
+                block.SetVector(s_ImageOffsetCard, new Vector4(offset.x, offset.y, 0f, 0f));
 
                 var (supportMin, supportMax) = m_Extraction.PageSupportBounds(p);
                 var min = supportMin + extents.min;
@@ -672,7 +676,8 @@ namespace MLFLegends.Combat
                 max += math.max(a, b);
             }
 
-            var rect = m_Atlas.CardBoundsPx + new float4(m_ImageOffsetCard, m_ImageOffsetCard);
+            var offset = ImageOffsetCard;
+            var rect = m_Atlas.CardBoundsPx + new float4(offset, offset);
             var halfWidth = math.max(math.abs(rect.x), math.abs(rect.z));
             Add(m_Basis.Right, -halfWidth * s, halfWidth * s);
             Add(m_Basis.Up, 0f, math.max(0f, rect.w) * s);
@@ -683,18 +688,18 @@ namespace MLFLegends.Combat
 
         bool EnsureGpu()
         {
-            if (m_Material == null)
+            if (m_Shader == null || !m_Shader.isSupported)
             {
-                if (m_Shader == null || !m_Shader.isSupported)
-                {
-                    if (!m_ShaderErrorLogged)
-                        Debug.LogError($"{nameof(CombatSpriteRenderer)} on '{name}': shader missing or unsupported; nothing is drawn.", this);
-                    m_ShaderErrorLogged = true;
-                    return false;
-                }
-
-                m_Material = new Material(m_Shader) { name = "Combat Sprite (runtime)", hideFlags = HideFlags.DontSave };
+                if (!m_ShaderErrorLogged)
+                    Debug.LogError($"{nameof(CombatSpriteRenderer)} on '{name}': shader missing or unsupported; nothing is drawn.", this);
+                m_ShaderErrorLogged = true;
+                return false;
             }
+            m_ShaderErrorLogged = false;
+            if (m_Material == null)
+                m_Material = new Material(m_Shader) { name = "Combat Sprite (runtime)", hideFlags = HideFlags.DontSave };
+            else if (m_Material.shader != m_Shader)
+                m_Material.shader = m_Shader; // Rebind the one shared material when an existing renderer is reconfigured.
 
             if (m_Mesh == null)
                 m_Mesh = CreateCardMesh();
@@ -759,7 +764,7 @@ namespace MLFLegends.Combat
                 var definition = m_Atlas.Definition;
                 // Cyan is the fixed virtual canvas; amber is the source image after legacy pivot + artistic offset.
                 DrawCanvas(instance, definition.WorldSupport, float2.zero, Color.cyan);
-                DrawCanvas(instance, definition.WorldSupport, definition.LegacyPivotOffsetCard + m_ImageOffsetCard, new Color(1f, 0.7f, 0.2f));
+                DrawCanvas(instance, definition.WorldSupport, definition.LegacyPivotOffsetCard + ImageOffsetCard, new Color(1f, 0.7f, 0.2f));
                 Gizmos.color = Color.white;
                 Gizmos.DrawWireSphere(instance.Position, 0.05f);
                 DrawAnchor(id, AnchorKind.HandLeft, new Color(0.3f, 0.6f, 1f));

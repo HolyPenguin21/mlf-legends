@@ -1,5 +1,28 @@
 # Stage 03 final polish — owner handoff, 2026-10-28
 
+Full follow-up integration review and corrections: [Stage 03 bottom-up review](STAGE03_BOTTOM_UP_REVIEW.md).
+PR #51 now includes the scene binding fix plus the connected renderer/cache, short-landing and bootstrap lifecycle fixes.
+
+## Post-merge correction: landing frames skipped in the saved scene
+
+After PR #50 merged as `72f48ce`, the owner reported a skipped landing pose. Inspection found that
+`Assets/Scenes/CombatSmoke.unity` assigned CharacterAnimationConfig to the renderer but left **Combat Bootstrap →
+Animation Config** empty. Without the bootstrap publisher, the ECS timing table retained its default zero landing
+recovery; the renderer therefore immediately selected run/idle at ground contact. This correction assigns the SAME
+existing config asset to the bootstrap. No timing, art, roster or runtime code is changed.
+
+Frame indices start at zero: Landing Start Frame **4** means `jump_004` (the FIFTH picture), followed by `jump_005`
+when End Frame is 5. With the current curve, the derived window is 27 ticks: frame 4 for 8 ticks (~0.1333s), frame 5 for
+19 ticks (~0.3167s). This is a numerical schedule check, not Unity visual acceptance. In an existing locally edited scene,
+assign `Assets/MLFLegends/Combat/PresentationData/CharacterAnimationConfig.asset` to **Combat Bootstrap → Animation Config**
+as well as the renderer, then start Play Mode again. The bootstrap log should report `Landing recovery 27 ticks`.
+
+Validation of this correction: saved scene bootstrap and renderer config references match the existing asset GUID;
+the scene diff is exactly that one reference; `git diff --check` passes. **NOT RUN:** Unity compilation, PlayMode and
+visual confirmation. Stage 03 remains pending the owner's manual acceptance.
+
+## Original implementation handoff
+
 Base: `main` **31765c658da9df6191ac03ed82f8b7cc3c34eff7**. One branch `fix/stage03-final-polish`, one PR, no merge.
 **Stage 03 remains unaccepted until the owner confirms the Unity check.** No Stage 04 work is included.
 This document supersedes older descriptions of Preparation-only movement and cancellable visual landing.
