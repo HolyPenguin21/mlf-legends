@@ -2,7 +2,7 @@
 
 ## Stage 05.1 + 03.3c / PR #48 — five strikes and state-driven combat animation (2026-10-28)
 
-Base main `00310c3`. One branch `feature/stage05-strikes-combat-animation`, one PR, no implementing-agent merge.
+Base main `00310c3`. One branch `feature/stage05-strikes-combat-animation`, one PR; **MERGED on the owner's instruction as `b828ccb`** (2026-10-28). Proposed rules P1–P12 still await approval.
 **Simulation:** `CombatActionSystem` (sole writer of `CombatAttackState`) → `CombatFacingSystem` → `CombatMovementSystem` →
 `CombatHitSystem` (sole writer of `CombatHealth` and the per-strike `CombatHitRecord` ledger) in State. Five strikes
 (punch_left/right, kick_left/right, kick_spin) with Windup/Active/Recovery, reach/depth/height boxes, damage once per target
@@ -82,7 +82,7 @@ has independent manager STATIC PASS; runtime acceptance is NOT RUN. Full state-d
 | 02 | Movement and camera | Deterministic X/Z movement + jump Y, facing/action-state, tick-aligned input, fixed orthographic camera follow/zoom/pan, with one ECS authority | IMPLEMENTATION COMPLETE / MANAGER REVIEW PASS — #31/#33/#35 reviewed; #22 merged via PR #37, fixes and raw 244/244 ×2 + 21/21 ×2 + Performance 7/7 independently inspected; manual/hardware/full-frame QA remains qualified in QA.md |
 | 03 | GPU sprite rendering | Atlas animation, direction/frame selection, stable depth sorting, optional equipment layers, instancing/indirect render assessment | IN PROGRESS — 03.1/03.2 + #41/#42 delivered; #41/#42 GPU depth tests now RUN on main `00310c3` (D3D12 RTX 2060 SUPER, Graphics 15/15 PASS, Evidence/48); #43–#45 idle/run merged; #48 binds all eight combat clips (idle/run/jump/5 strikes) to ECS state; mixed-character #46 open; equipment layers open |
 | 04 | Collisions | Custom actor/world collision, spatial index, masses, allies yield, enemies block, knockback | NOT STARTED |
-| 05 | Attack resolution | Windup/active/recovery; fast/heavy/jump attacks; shapes, multi-hit rules, damage/impact/stagger | IN PROGRESS — 05.1 (#48): five grounded strikes, W/A/R, box hit tests, multi-target, once-per-strike ledger, HP damage, series/buffer; rules PROPOSED pending owner approval. Open: heavy/light mapping, jump attacks, guard damage, impact/stagger/knockback, defeat |
+| 05 | Attack resolution | Windup/active/recovery; fast/heavy/jump attacks; shapes, multi-hit rules, damage/impact/stagger | IN PROGRESS — 05.1 (#48, MERGED `b828ccb`, Unity EditMode/PlayMode/GPU PASS): five grounded strikes, W/A/R, box hit tests, multi-target, once-per-strike ledger, HP damage, series/buffer; rules PROPOSED pending owner approval. Open: heavy/light mapping, jump attacks, guard damage, impact/stagger/knockback, defeat |
 | 06 | Defense | Facing guard, stability, timely defense/counter opportunity, guard break, dash L+direction | NOT STARTED |
 | 07 | Duel AI | Range, observable windups, bounded reaction time, mistakes, defense/dash/counter via same command rules | NOT STARTED |
 | 08 | Physiology | SPECIAL, body regions, injury and broken limbs, eye loss, bleeding, death, capability filtering | NOT STARTED |

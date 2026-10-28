@@ -1,5 +1,28 @@
 # MLF Legends — Stage 01 ECS performance baseline (Issue #7)
 
+## Stage 05.1 + 03.3c / #48 — strikes and combat animation (2026-10-28, measured)
+
+Commit `a7e09df` (merged as `b828ccb`), Unity 6000.5.4f1, AMD Ryzen 5 3600, RTX 2060 SUPER D3D12, Burst on, two runs.
+Raw TSVs: `Docs/Evidence/48/raw/a7e09df/performance-run{1,2}/`.
+
+Full fixed tick (clock, lifecycle, commands, strike, facing, movement, hit), 600 measured ticks, `stage05-strikes.tsv`;
+"strikes" = every fighter presses Attack/Kick every 3 ticks in packed facing rows (2–3 enemies per box, worst case for
+the brute-force hit scan). Managed GC bytes: 0 in every row.
+
+| Fighters | idle mean µs (run1 / run2) | strikes mean / median / p95 µs (run1 / run2) |
+|---|---|---|
+| 2 | 14.6 / 12.3 | 19.4 / 14.4 / 17.6 — 15.1 / 14.4 / 17.0 |
+| 100 | 18.3 / 17.3 | 45.2 / 33.6 / 73.4 — 45.8 / 34.4 / 73.9 |
+| 400 | 33.4 / 37.1 | 220.5 / 111.6 / 535.2 — 235.0 / 117.1 / 531.7 |
+
+Renderer with real art + combat animation load (`stage05-combat-anim-n*.tsv`, run 2): Refresh median 41 / 148 / 604 µs
+(extraction 21 / 128 / 584 µs, submission ≈ 17.5 µs) at 2 / 100 / 400; one page submission, one instance buffer, no buffer
+re-creation, GC.Alloc samples 0 with a valid positive control (byte counter NOT MEASURED). The technical non-animated
+series measures 627 µs extraction at 400: state-driven frame selection adds no measurable cost; the #41 depth policy
+dominates. The hit scan is O(active attackers × fighters) until the Stage 04 spatial index; its p95 at 400 is the item to
+watch for 200v200. Not measured: Burst off, other hardware, full-frame GPU time.
+
+
 ## Stage 03.3b / #45 — idle + run (2026-10-27)
 
 Base main `97b8c188` includes owner Unity import/scene/package changes and the owner's idle duration 1s; these are preserved.

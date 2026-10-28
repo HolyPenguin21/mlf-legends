@@ -32,7 +32,9 @@ tuck, 3 descent, 4 landing crouch, 5 recovery) and are flagged in `meta.jump_pha
 confirmation. Frame `jump_000` (ground anticipation) is in no marker and is never shown, because ECS takeoff is immediate;
 the renderer reports this once per revision. Frame `jump_002` is drawn 23 px above the pivot (tucked legs); world height
 still comes only from `CombatPosition`. Kick recoveries end on the frame declared compatible with `idle_combat_000`, and
-idle restarts at frame 0 on the next tick.
+idle restarts at frame 0 on the next tick. `entry`, `return`, `chain_exit` and `compatible_transitions` are not read at runtime; a test
+checks that each strike's chain point (Windup + Active + ChainDelay) is reached only after its `chain_exit` frame shows.
+The art marks `kick_spin` with `chain_exit [5]`, but by the proposed rule P4 the spin is a finisher and never chains.
 
 **Config.** The owner's `idle_combat` (6 / 1 s) and `run` (5 / 0.5 s) entries are unchanged. Added: `jump` 6 / 0.8 s,
 punches 6 / 29⁄60 s, kicks 6 / 33⁄60 s, `kick_spin` 9 / 0.75 s, all flat curves. All eight are required; a missing or

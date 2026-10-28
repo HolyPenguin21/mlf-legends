@@ -423,6 +423,47 @@ namespace MLFLegends.Tests.EditMode
             }
         }
 
+        [Test]
+        public void AnOutOfCombatTargetIsNeverHitAndAnOutOfCombatAttackerNeverStrikes()
+        {
+            var punch = Def(CombatAttackKind.PunchLeft);
+            using (var w = new ReplayWorld("disabled target"))
+            {
+                w.Script = new ReplayScript().Player(1, 1, ReplayRole.Human, pressed: A);
+                w.Request(BattleRequest.Start(Duel(new float3(0.9f, 0f, 0f))));
+                w.Step(punch.WindupTicks - 1);
+                SetInCombat(w, w.Session.AiCombatant, false);
+                w.Step(punch.TotalTicks);
+                SetInCombat(w, w.Session.AiCombatant, true);
+                w.Step();
+                Assert.That(Ai(w.Records.Last()).Health.Current, Is.EqualTo(CombatAttackTuning.MaxHealth), "Disabled InCombat is not a valid target.");
+                Assert.That(w.Records.All(r => H(r).Hits.Length == 0), Is.True);
+            }
+
+            using (var w = new ReplayWorld("disabled attacker"))
+            {
+                w.Script = new ReplayScript().Player(2, 2, ReplayRole.Human, pressed: A);
+                w.Request(BattleRequest.Start(Duel(new float3(0.9f, 0f, 0f))));
+                w.Step();
+                SetInCombat(w, w.Session.HumanCombatant, false);
+                w.Step(punch.TotalTicks);
+                Assert.That(Ai(w.Records.Last()).Health.Current, Is.EqualTo(CombatAttackTuning.MaxHealth), "An out-of-combat fighter starts and lands nothing.");
+                Assert.That(H(w.Records.Last()).Attack.IsAttacking, Is.False);
+            }
+        }
+
+        static void SetInCombat(ReplayWorld w, CombatantId id, bool value)
+        {
+            using var query = w.Manager.CreateEntityQuery(new EntityQueryDesc
+            {
+                All = new ComponentType[] { typeof(CombatantId), typeof(InCombat) }, Options = EntityQueryOptions.IgnoreComponentEnabledState,
+            });
+            using var entities = query.ToEntityArray(Allocator.Temp);
+            foreach (var entity in entities)
+                if (w.Manager.GetComponentData<CombatantId>(entity).Value == id.Value)
+                    w.Manager.SetComponentEnabled<InCombat>(entity, value);
+        }
+
         [TestCase(2)] [TestCase(100)] [TestCase(400)]
         public void EveryRosterActorUsesTheSameStrikeAndHitPath(int count)
         {
