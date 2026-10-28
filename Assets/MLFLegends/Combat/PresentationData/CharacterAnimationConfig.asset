@@ -14,12 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Characters:
   - CharacterId: mage_female_01
-    ImageOffsetPixels: {x: 0, y: 0}
     AtlasCatalog: {fileID: 11400000, guid: 134c5535ff90542f8fcdfb0aa1562436, type: 2}
+    ImageOffsetPixels: {x: 0, y: 0}
     Animations:
     - ClipId: idle_combat
       EndFrame: 5
-      TotalDurationSeconds: 1
+      TotalDurationSeconds: 0.75
       SpeedCurve:
         serializedVersion: 2
         m_Curve:
@@ -46,6 +46,7 @@ MonoBehaviour:
         m_RotationOrder: 4
       PreparationEndFrame: 0
       ActiveEndFrame: 0
+      LandingStartFrame: -1
       m_LegacyFrameCount: 0
     - ClipId: run
       EndFrame: 4
@@ -76,11 +77,11 @@ MonoBehaviour:
         m_RotationOrder: 4
       PreparationEndFrame: 0
       ActiveEndFrame: 0
+      LandingStartFrame: -1
       m_LegacyFrameCount: 0
     - ClipId: jump
-      LandingStartFrame: 4
-      EndFrame: 5
-      TotalDurationSeconds: 0.8
+      EndFrame: 4
+      TotalDurationSeconds: 1
       SpeedCurve:
         serializedVersion: 2
         m_Curve:
@@ -89,24 +90,25 @@ MonoBehaviour:
           value: 1
           inSlope: 0
           outSlope: 0
-          tangentMode: 0
+          tangentMode: 34
           weightedMode: 0
           inWeight: 0
           outWeight: 0
         - serializedVersion: 3
           time: 1
-          value: 0
-          inSlope: -1.1821046
-          outSlope: -1.1821046
-          tangentMode: 0
+          value: 1
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 34
           weightedMode: 0
-          inWeight: 0.100901365
+          inWeight: 0
           outWeight: 0
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
       PreparationEndFrame: 0
       ActiveEndFrame: 0
+      LandingStartFrame: 4
       m_LegacyFrameCount: 0
     - ClipId: punch_left
       EndFrame: 5
@@ -137,6 +139,7 @@ MonoBehaviour:
         m_RotationOrder: 4
       PreparationEndFrame: 2
       ActiveEndFrame: 3
+      LandingStartFrame: -1
       m_LegacyFrameCount: 0
     - ClipId: punch_right
       EndFrame: 5
@@ -167,10 +170,11 @@ MonoBehaviour:
         m_RotationOrder: 4
       PreparationEndFrame: 2
       ActiveEndFrame: 3
+      LandingStartFrame: -1
       m_LegacyFrameCount: 0
     - ClipId: kick_left
-      EndFrame: 5
-      TotalDurationSeconds: 1
+      EndFrame: 4
+      TotalDurationSeconds: 0.5
       SpeedCurve:
         serializedVersion: 2
         m_Curve:
@@ -197,10 +201,11 @@ MonoBehaviour:
         m_RotationOrder: 4
       PreparationEndFrame: 1
       ActiveEndFrame: 2
+      LandingStartFrame: -1
       m_LegacyFrameCount: 0
     - ClipId: kick_right
-      EndFrame: 5
-      TotalDurationSeconds: 1
+      EndFrame: 4
+      TotalDurationSeconds: 0.5
       SpeedCurve:
         serializedVersion: 2
         m_Curve:
@@ -227,10 +232,11 @@ MonoBehaviour:
         m_RotationOrder: 4
       PreparationEndFrame: 1
       ActiveEndFrame: 2
+      LandingStartFrame: -1
       m_LegacyFrameCount: 0
     - ClipId: kick_spin
-      EndFrame: 8
-      TotalDurationSeconds: 2
+      EndFrame: 5
+      TotalDurationSeconds: 0.5
       SpeedCurve:
         serializedVersion: 2
         m_Curve:
@@ -257,4 +263,5 @@ MonoBehaviour:
         m_RotationOrder: 4
       PreparationEndFrame: 3
       ActiveEndFrame: 4
+      LandingStartFrame: -1
       m_LegacyFrameCount: 0
