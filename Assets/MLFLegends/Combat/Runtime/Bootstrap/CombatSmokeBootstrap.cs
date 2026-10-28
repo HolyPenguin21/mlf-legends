@@ -54,6 +54,9 @@ namespace MLFLegends.Combat
         // Owner token per enable; only needs to differ between bootstraps that are alive at the same time.
         static uint s_LastOwner;
         uint m_Owner;
+        World m_BattleWorld;
+        BattleSetup m_PendingSetup;
+        bool m_StartPending;
 
         // What the last publish attempt was derived from (and into which World); any change triggers one new derivation.
         World m_ScheduleWorld;
@@ -63,6 +66,7 @@ namespace MLFLegends.Combat
         SpriteAtlasCatalog m_ScheduleCatalog;
         int m_ScheduleCatalogVersion;
         bool m_ScheduleAttempted;
+        bool m_WaitingForActionSystem;
 
         // The table in place before this bootstrap's first publish since enable, restored on disable.
         CombatStrikeSchedule m_ReplacedSchedule;
@@ -145,40 +149,81 @@ namespace MLFLegends.Combat
                 m_Owner = ++s_LastOwner; // 0 means "no owner"
 
             m_ScheduleAttempted = false;
-            if (TryGetEntityManager(out var entityManager))
-            {
-                PublishSchedule(entityManager);
-                BattleRequest.Submit(entityManager, BattleRequest.Restart(setup, m_Owner));
-            }
+            m_PendingSetup = setup;
+            m_StartPending = true;
+            Update(); // A scene enabled before its World/session exists retries this same request later.
         }
 
         void Update()
         {
-            if (m_Owner == 0 || !ScheduleSourceChanged())
+            if (m_Owner == 0 || (!m_StartPending && !ScheduleSourceChanged()))
                 return;
             if (TryGetEntityManager(out var entityManager))
-                PublishSchedule(entityManager);
+            {
+                if (ScheduleSourceChanged())
+                    PublishSchedule(entityManager);
+                if (m_StartPending)
+                    RequestStart(entityManager, m_PendingSetup);
+            }
         }
 
         void OnDisable()
         {
             // On Play Mode exit the default world may already be disposed; it takes its combatants with it.
             // Nothing to end if this bootstrap never requested a battle (invalid setup).
-            if (m_Owner != 0 && TryGetEntityManager(out var entityManager))
-            {
-                BattleRequest.Submit(entityManager, BattleRequest.End(m_Owner));
-                RestoreSchedule(entityManager);
-            }
+            EndOwnedBattle();
+            RestoreSchedule(); // Restore in the World where THIS bootstrap published, even if DefaultWorld changed.
             m_Owner = 0;
+            m_StartPending = false;
+            m_WaitingForActionSystem = false;
+            m_BattleWorld = null;
+            m_ScheduleWorld = null;
+        }
+
+        void RestoreSchedule()
+        {
+            if (m_HasReplacedSchedule && m_ScheduleWorld != null && m_ScheduleWorld.IsCreated)
+            {
+                var entityManager = m_ScheduleWorld.EntityManager;
+                var others = FindObjectsByType<CombatSmokeBootstrap>(FindObjectsInactive.Include);
+                if (TryGetSchedule(entityManager, out var current) && current.Revision == PublishedScheduleRevision)
+                {
+                    var restoredRevision = CombatStrikeSchedule.Publish(entityManager, m_ReplacedSchedule);
+                    // Publish increments Revision. Return the lease to the still-live predecessor as well as its values;
+                    // otherwise its later disable would reject its own restored table as a newer publisher's table.
+                    foreach (var other in others)
+                        if (other != this && other.m_ScheduleWorld == m_ScheduleWorld && other.m_HasReplacedSchedule
+                            && other.PublishedScheduleRevision == m_ReplacedSchedule.Revision)
+                            other.PublishedScheduleRevision = restoredRevision;
+                }
+                else
+                {
+                    // A newer scene captured our table as its baseline. If we leave first, forward our baseline so that
+                    // its later disable cannot resurrect settings of this unloaded scene. Lifecycle only, never Update.
+                    foreach (var other in others)
+                        if (other != this && other.m_ScheduleWorld == m_ScheduleWorld && other.m_HasReplacedSchedule
+                            && other.m_ReplacedSchedule.Revision == PublishedScheduleRevision)
+                            other.m_ReplacedSchedule = m_ReplacedSchedule;
+                }
+            }
             m_HasReplacedSchedule = false;
             PublishedScheduleRevision = 0;
         }
 
-        void RestoreSchedule(EntityManager entityManager)
+        void EndOwnedBattle()
         {
-            if (!m_HasReplacedSchedule || !TryGetSchedule(entityManager, out var current) || current.Revision != PublishedScheduleRevision)
-                return;
-            CombatStrikeSchedule.Publish(entityManager, m_ReplacedSchedule);
+            if (m_Owner != 0 && TryGetEntityManager(m_BattleWorld, out var entityManager))
+                BattleRequest.Submit(entityManager, BattleRequest.End(m_Owner));
+        }
+
+        void RequestStart(EntityManager entityManager, in BattleSetup setup)
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (m_BattleWorld != world)
+                EndOwnedBattle();
+            BattleRequest.Submit(entityManager, BattleRequest.Restart(setup, m_Owner));
+            m_BattleWorld = world;
+            m_StartPending = false;
         }
 
         static bool TryGetSchedule(EntityManager entityManager, out CombatStrikeSchedule schedule)
@@ -220,13 +265,24 @@ namespace MLFLegends.Combat
             }
 
             if (TryGetEntityManager(out var entityManager))
-                BattleRequest.Submit(entityManager, BattleRequest.Restart(setup, m_Owner));
+            {
+                if (ScheduleSourceChanged())
+                    PublishSchedule(entityManager);
+                RequestStart(entityManager, setup);
+            }
+            else
+            {
+                m_PendingSetup = setup;
+                m_StartPending = true;
+            }
         }
 
         bool ScheduleSourceChanged() =>
             !m_ScheduleAttempted || m_ScheduleWorld != World.DefaultGameObjectInjectionWorld || m_ScheduleConfig != m_AnimationConfig || m_ScheduleCharacter != m_StrikeCharacterId
             || (m_AnimationConfig != null && m_ScheduleVersion != m_AnimationConfig.Version)
-            || (m_ScheduleCatalog != null && m_ScheduleCatalogVersion != m_ScheduleCatalog.Version);
+            || (m_ScheduleCatalog != null && m_ScheduleCatalogVersion != m_ScheduleCatalog.Version)
+            || (m_WaitingForActionSystem && m_ScheduleWorld != null && m_ScheduleWorld.IsCreated
+                && m_ScheduleWorld.Unmanaged.GetExistingUnmanagedSystem<CombatActionSystem>() != SystemHandle.Null);
 
         /// <summary>
         /// Derives the strike windows from the config (manifest parsed once per change) and publishes them. Errors keep the
@@ -234,22 +290,27 @@ namespace MLFLegends.Combat
         /// </summary>
         void PublishSchedule(EntityManager entityManager)
         {
-            m_ScheduleAttempted = true;
             if (m_ScheduleWorld != World.DefaultGameObjectInjectionWorld)
-                m_HasReplacedSchedule = false; // the table to restore belongs to the World it was taken from
+                RestoreSchedule();
+            m_ScheduleAttempted = true;
             m_ScheduleWorld = World.DefaultGameObjectInjectionWorld;
             m_ScheduleConfig = m_AnimationConfig;
             m_ScheduleCharacter = m_StrikeCharacterId;
             m_ScheduleVersion = m_AnimationConfig != null ? m_AnimationConfig.Version : 0;
             m_ScheduleCatalog = null;
-            var prefix = $"{nameof(CombatSmokeBootstrap)} on '{name}'";
             // A World without CombatActionSystem (e.g. a partial test World) simulates no strikes and has no table.
             if (!TryGetSchedule(entityManager, out _))
+            {
+                m_WaitingForActionSystem = true; // Allocation-free handle check until the table's owner appears.
                 return;
+            }
+            m_WaitingForActionSystem = false;
+            var prefix = $"{nameof(CombatSmokeBootstrap)} on '{name}'";
             if (m_AnimationConfig == null)
             {
                 Debug.LogWarning($"{prefix}: no CharacterAnimationConfig assigned; strikes keep the World's current windows " +
-                    "(CombatAttackTuning defaults unless published elsewhere).", this);
+                    "(CombatAttackTuning defaults unless published elsewhere), and a new World's landing recovery is ZERO. " +
+                    "For character animation assign the same config and CharacterId as the renderer.", this);
                 return;
             }
 
@@ -268,6 +329,8 @@ namespace MLFLegends.Combat
                     errors.Add($"characters.{m_StrikeCharacterId}.AtlasCatalog: manifest missing");
                 if (definition != null)
                 {
+                    if (definition.CharacterId != m_StrikeCharacterId)
+                        errors.Add($"characters.{m_StrikeCharacterId}: catalog character_id is {definition.CharacterId}");
                     var set = CombatAnimationSet.Create(definition, clipId =>
                             m_AnimationConfig.TryResolve(m_StrikeCharacterId, clipId, out _, out var settings, out var resolveError)
                                 ? settings : Missing(errors, resolveError),
@@ -325,10 +388,12 @@ namespace MLFLegends.Combat
             return string.Join(", ", parts);
         }
 
-        static bool TryGetEntityManager(out EntityManager entityManager)
+        static bool TryGetEntityManager(out EntityManager entityManager) =>
+            TryGetEntityManager(World.DefaultGameObjectInjectionWorld, out entityManager);
+
+        static bool TryGetEntityManager(World world, out EntityManager entityManager)
         {
             entityManager = default;
-            var world = World.DefaultGameObjectInjectionWorld;
             if (world == null || !world.IsCreated)
                 return false;
 

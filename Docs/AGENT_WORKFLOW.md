@@ -1,5 +1,9 @@
 ## Stage 03 final polish — implementation handoff (2026-10-28)
 
+Follow-up PR #51, branch `fix/stage03-landing-config-binding`: [bottom-up integration review and corrections](STAGE03_BOTTOM_UP_REVIEW.md).
+Includes the missing scene binding, renderer/storage cache transitions, short-landing idle epoch, and World/scene publish
+ownership/late startup fixes. Implementing agent does not merge; Unity and Stage 03 owner acceptance are still pending.
+
 Current task: branch `fix/stage03-final-polish`, one PR to main, **implementing agent must not merge**.
 [Settings, compatibility, source review and manual checks](STAGE03_FINAL_POLISH.md). Stage 03 remains pending owner
 confirmation; Stage 04 has not started. No new automatic tests required; no PNG/art sources in the delivery.

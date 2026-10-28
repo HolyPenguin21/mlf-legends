@@ -50,7 +50,10 @@ namespace MLFLegends.Combat
         public IReadOnlyList<SpriteAtlasPageBinding> Pages => m_Pages ?? Array.Empty<SpriteAtlasPageBinding>();
 
         /// <summary>Sets the content (tests and tools). Bound renderers reload on their next frame.</summary>
-        public void Set(TextAsset manifest, SpriteAtlasPageBinding[] pages, FrameStorage storage = FrameStorage.TrimmedRects)
+        public void Set(TextAsset manifest, SpriteAtlasPageBinding[] pages) => Set(manifest, pages, m_FrameStorage);
+
+        /// <summary>Explicitly replaces content AND its storage layout. The two-argument overload preserves the layout.</summary>
+        public void Set(TextAsset manifest, SpriteAtlasPageBinding[] pages, FrameStorage storage)
         {
             m_Manifest = manifest;
             m_Pages = pages ?? Array.Empty<SpriteAtlasPageBinding>();

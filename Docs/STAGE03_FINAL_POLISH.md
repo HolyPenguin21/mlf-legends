@@ -1,5 +1,8 @@
 # Stage 03 final polish — owner handoff, 2026-10-28
 
+Full follow-up integration review and corrections: [Stage 03 bottom-up review](STAGE03_BOTTOM_UP_REVIEW.md).
+PR #51 now includes the scene binding fix plus the connected renderer/cache, short-landing and bootstrap lifecycle fixes.
+
 ## Post-merge correction: landing frames skipped in the saved scene
 
 After PR #50 merged as `72f48ce`, the owner reported a skipped landing pose. Inspection found that

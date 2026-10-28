@@ -1,5 +1,9 @@
 ## Stage 03 final polish — current validation boundary (2026-10-28)
 
+Follow-up: [bottom-up source/integration review](STAGE03_BOTTOM_UP_REVIEW.md), corrections in the same PR #51.
+83 C# files syntax-parsed; independent lifecycle (307 scenarios) and anchor tangent (72 combinations) models checked.
+These are not Unity execution. Full compilation/PlayMode/GPU/manual acceptance remain NOT RUN.
+
 [Owner handoff and exact checks](STAGE03_FINAL_POLISH.md). Source/metadata/numerical review performed; Unity compile,
 EditMode/PlayMode, GPU/GC/performance, PNG and manual visual acceptance NOT RUN in this environment. Existing assertions
 for changed movement/landing semantics adjusted; no new test cases. Historical PASS evidence is not a PASS for this PR.

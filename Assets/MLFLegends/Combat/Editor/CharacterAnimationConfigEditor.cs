@@ -99,6 +99,11 @@ namespace MLFLegends.Editor
         void DrawFramePreview(CharacterAnimationEntry character, SpriteAtlasDefinition definition)
         {
             EditorGUILayout.LabelField("Full source canvas preview", EditorStyles.boldLabel);
+            if (definition.Clips.Count == 0)
+            {
+                EditorGUILayout.HelpBox("Manifest has no clips: there is no frame to preview. Combat clip validation errors are listed below.", MessageType.Warning);
+                return;
+            }
             var names = new string[definition.Clips.Count];
             for (var i = 0; i < names.Length; i++) names[i] = definition.Clips[i].Id;
             m_PreviewClip = Mathf.Clamp(m_PreviewClip, 0, names.Length - 1);

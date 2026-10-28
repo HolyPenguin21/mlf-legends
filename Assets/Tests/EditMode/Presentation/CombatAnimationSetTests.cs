@@ -85,19 +85,20 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(warnings, Is.EqualTo(new[]
             {
                 "mage_female_01.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)",
-            }), "Migrated phases equal the strike_pose markers and no phase is shorter than a tick: only the unused-anticipation note remains.");
-            Assert.That(set.LandingTicks, Is.EqualTo(16u), "land = 2 of 6 equal shares of 0.8 s.");
+                "mage_female_01.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)",
+            }), "Current owner config: the unused anticipation and explicitly retuned right punch are reported.");
+            Assert.That(set.LandingTicks, Is.EqualTo(27u), "Current owner's decelerating jump curve: landing holds ~0.4446894 s, quantized to 0.45 s.");
         }
 
         [TestCase(CombatAttackKind.PunchLeft, 14, 6, 9, 24)]
-        [TestCase(CombatAttackKind.PunchRight, 9, 11, 9, 24)]
-        [TestCase(CombatAttackKind.KickLeft, 11, 6, 16, 23)]
-        [TestCase(CombatAttackKind.KickRight, 11, 6, 16, 23)]
-        [TestCase(CombatAttackKind.KickSpin, 20, 5, 20, 65535)] // finisher: CombatStrikeTiming.NoChain
+        [TestCase(CombatAttackKind.PunchRight, 14, 6, 9, 24)]
+        [TestCase(CombatAttackKind.KickLeft, 20, 10, 30, 36)]
+        [TestCase(CombatAttackKind.KickRight, 20, 10, 30, 36)]
+        [TestCase(CombatAttackKind.KickSpin, 53, 14, 53, 65535)] // finisher: CombatStrikeTiming.NoChain
         public void ConfigPhasesAreTheSimulatedWindowsAndEveryTickDrawsAFrameOfItsPhase(CombatAttackKind kind, int windup, int active,
             int recovery, int chainPoint)
         {
-            // Migrated project config (flat curves, durations 29/29/33/33/45 ticks): each tick e simulates clip time
+            // Current owner project config (strike flat curves, durations 29/29/60/60/120 ticks): each tick e simulates clip time
             // [e, e + 1) / 60; Active ticks are those overlapping the Active frames' time.
             var set = Real(out var definition);
             var settings = Project(CombatAnimationSet.AttackClip(kind));
@@ -320,7 +321,8 @@ namespace MLFLegends.Tests.EditMode
                 out var schedule), Is.True, string.Join("\n", errors));
             Assert.That(schedule.IsValid, Is.True);
             Assert.That(schedule.PunchLeft.End, Is.EqualTo(29));
-            Assert.That(warnings, Is.Empty);
+            Assert.That(warnings, Has.Count.EqualTo(1));
+            Assert.That(warnings[0], Does.Contain("punch_right: Active frames 3..3 differ"));
 
             // T = 1/60 s over 6 frames: Preparation [0, 0.5) tick, Active [0.5, 0.667), Recovery [0.667, 1): one Active tick,
             // no Preparation and no Recovery tick (warned), never a skipped Active phase.
@@ -359,7 +361,10 @@ namespace MLFLegends.Tests.EditMode
                 Assert.That(errors.Any(e => e.Contains(expected)), Is.True, $"Expected '{expected}' in:\n{string.Join("\n", errors)}");
             }
 
-            Rejected(Without(Json, "jump", "land", "\"landing\": [4, 5]"), Project, "mage_female_01.jump.markers.land: missing");
+            var legacyJump = Copy(Project("jump"));
+            legacyJump.LandingStartFrame = -1; // Explicit config ranges intentionally do not require the old marker.
+            Rejected(Without(Json, "jump", "land", "\"landing\": [4, 5]"),
+                c => c == "jump" ? legacyJump : Project(c), "mage_female_01.jump.markers.land: missing");
             Rejected(Without(Json, "jump", "fall", "\"fall\": [1]"), Project, "jump.markers: rise, fall and land must be disjoint and in this order");
             Rejected(Json, c => c == "kick_spin" ? null : Project(c), "mage_female_01.kick_spin: animation settings missing");
             CharacterAnimationSettings Punch(int end, int preparationEnd, int activeEnd)
