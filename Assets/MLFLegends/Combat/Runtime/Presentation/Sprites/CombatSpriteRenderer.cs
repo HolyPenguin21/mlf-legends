@@ -40,7 +40,7 @@ namespace MLFLegends.Combat
             /// <summary><see cref="TechnicalAtlasFixture"/> generated at load (no art needed).</summary>
             TechnicalFixture = 1,
 
-            /// <summary>One character and idle_combat timing from the shared config.</summary>
+            /// <summary>One character and its combat clips (CombatAnimationSet) from the shared config.</summary>
             CharacterConfig = 2,
         }
 
@@ -139,15 +139,16 @@ namespace MLFLegends.Combat
         bool m_ConfigAttempted;
         bool m_ConfigValid;
         SpriteAtlasCatalog m_CharacterCatalog;
-        CharacterAnimationSettings m_AnimationSettings;
-        CharacterAnimationSettings m_RunSettings;
+        readonly Dictionary<string, CharacterAnimationSettings> m_ClipSettings = new Dictionary<string, CharacterAnimationSettings>();
         bool m_TimingDirty;
-        SpriteAnimationTiming m_Timing;
-        SpriteAnimationTiming m_RunTiming;
+        CombatAnimationSet m_Animations;
+
+        /// <summary>Shared timing of every combat clip of the selected character (null while rejected).</summary>
+        public CombatAnimationSet Animations => m_Animations;
 
         /// <summary>Shared idle_combat timing (not the current per-combatant clip).</summary>
-        public SpriteAnimationTiming AnimationTiming => m_Timing;
-        public SpriteAnimationTiming RunAnimationTiming => m_RunTiming;
+        public SpriteAnimationTiming AnimationTiming => m_Animations?.Idle;
+        public SpriteAnimationTiming RunAnimationTiming => m_Animations?.Run;
         public int TimingBuilds { get; private set; }
         public bool UsesCharacterAnimation => m_Source == AtlasSource.CharacterConfig;
 
@@ -284,7 +285,7 @@ namespace MLFLegends.Combat
             m_Catalog = catalog;
         }
 
-        /// <summary>Uses idle_combat/run from a shared character config; manual selections are disabled in this mode.</summary>
+        /// <summary>Uses the combat clips of a shared character config; manual selections are disabled in this mode.</summary>
         public void ConfigureAnimation(Shader shader, Camera targetCamera, CharacterAnimationConfig config, string characterId)
         {
             m_Shader = shader;
@@ -397,8 +398,8 @@ namespace MLFLegends.Combat
             // A superseded renderer neither reads ECS nor draws (its World binding and selections are kept).
             if (IsActiveOwner)
                 m_Extraction.Run(camera != null ? ResolveWorld() : null,
-                    UsesCharacterAnimation && (m_Timing == null || m_RunTiming == null) ? null : m_Atlas, m_Basis, m_DepthSeparation,
-                    m_DefaultFrame, PixelWorldSize, UsesCharacterAnimation ? m_Timing : null, UsesCharacterAnimation ? m_RunTiming : null);
+                    UsesCharacterAnimation && m_Animations == null ? null : m_Atlas, m_Basis, m_DepthSeparation,
+                    m_DefaultFrame, PixelWorldSize, UsesCharacterAnimation ? m_Animations : null);
             else
                 m_Extraction.Clear();
             m_Stats.ExtractMicroseconds = Microseconds(start);
@@ -482,20 +483,35 @@ namespace MLFLegends.Combat
             m_ResolvedConfig = m_AnimationConfig;
             m_ConfigVersion = version;
             m_ResolvedCharacter = m_CharacterId;
-            m_Timing = null;
-            m_RunTiming = null;
+            m_Animations = null;
             m_TimingDirty = true;
             m_ConfigValid = false;
             m_CharacterCatalog = null;
-            m_AnimationSettings = null;
-            m_RunSettings = null;
-            string error = "no CharacterAnimationConfig assigned";
-            if (m_AnimationConfig != null && m_AnimationConfig.TryResolve(m_CharacterId, "idle_combat",
-                out m_CharacterCatalog, out m_AnimationSettings, out error) &&
-                m_AnimationConfig.TryResolve(m_CharacterId, "run", out _, out m_RunSettings, out error))
-                m_ConfigValid = true;
+            m_ClipSettings.Clear();
+            var errors = new List<string>();
+            if (m_AnimationConfig == null)
+                errors.Add("no CharacterAnimationConfig assigned");
             else
-                Debug.LogError($"{nameof(CombatSpriteRenderer)} on '{name}': animation rejected, nothing is drawn. {error}", this);
+            {
+                // Every required clip is resolved (and every failure reported) before anything is accepted.
+                foreach (var clipId in CombatAnimationSet.ClipIds)
+                {
+                    if (m_AnimationConfig.TryResolve(m_CharacterId, clipId, out var catalog, out var settings, out var error))
+                    {
+                        m_CharacterCatalog = catalog;
+                        m_ClipSettings[clipId] = settings;
+                    }
+                    else
+                        errors.Add(error);
+                }
+            }
+            m_ConfigValid = errors.Count == 0;
+            if (!m_ConfigValid)
+            {
+                m_CharacterCatalog = null;
+                m_ClipSettings.Clear();
+                Debug.LogError($"{nameof(CombatSpriteRenderer)} on '{name}': animation rejected, nothing is drawn.\n  " + string.Join("\n  ", errors), this);
+            }
             return m_ConfigValid;
         }
 
@@ -504,8 +520,7 @@ namespace MLFLegends.Combat
             if (!m_TimingDirty || m_Atlas == null)
                 return;
             m_TimingDirty = false;
-            m_Timing = null;
-            m_RunTiming = null;
+            m_Animations = null;
             m_Extraction?.ClearSelections();
             var errors = new List<string>();
             var warnings = new List<string>();
@@ -518,26 +533,15 @@ namespace MLFLegends.Combat
             if (errors.Count == 0)
             {
                 TimingBuilds++;
-                var idle = PrepareClip("idle_combat", m_AnimationSettings, errors, warnings);
-                var run = PrepareClip("run", m_RunSettings, errors, warnings);
-                // Atomic pair: an invalid clip cannot retain either old table or silently substitute idle.
-                if (errors.Count == 0) { m_Timing = idle; m_RunTiming = run; }
+                // Atomic set: an invalid clip cannot retain an old table or silently substitute another clip.
+                m_Animations = CombatAnimationSet.Create(definition,
+                    clipId => m_ClipSettings.TryGetValue(clipId, out var settings) ? settings : null,
+                    $"characters.{m_CharacterId}.animations", errors, warnings);
             }
             foreach (var warning in warnings)
                 Debug.LogWarning($"{nameof(CombatSpriteRenderer)} on '{name}': {warning}", this);
-            if (m_Timing == null || m_RunTiming == null)
+            if (m_Animations == null)
                 Debug.LogError($"{nameof(CombatSpriteRenderer)} on '{name}': animation rejected, nothing is drawn.\n  " + string.Join("\n  ", errors), this);
-        }
-
-        SpriteAnimationTiming PrepareClip(string clipId, CharacterAnimationSettings settings, List<string> errors, List<string> warnings)
-        {
-            var path = $"characters.{m_CharacterId}.animations.{clipId}";
-            if (!m_Atlas.Definition.TryGetClipIndex(clipId, out var clip))
-            {
-                errors.Add(path + ": clip missing from manifest");
-                return null;
-            }
-            return SpriteAnimationTiming.Create(m_Atlas.Definition.Clips[clip], settings, path, errors, warnings);
         }
 
         void ResolveDefaultFrame()
@@ -563,8 +567,7 @@ namespace MLFLegends.Combat
             foreach (var block in m_PageBlocks) block?.Clear();
             m_Atlas?.Dispose();
             m_Atlas = null;
-            m_Timing = null;
-            m_RunTiming = null;
+            m_Animations = null;
             m_TimingDirty = true;
             DestroyFixturePages();
             m_LoadAttempted = false;

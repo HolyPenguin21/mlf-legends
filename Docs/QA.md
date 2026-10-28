@@ -1,5 +1,27 @@
 # MLF Legends — Quality assurance and evidence
 
+## Stage 05.1 + 03.3c / PR #48 — strikes and combat animation (2026-10-28)
+
+Tested commit `a7e09df`, clean worktree, Unity 6000.5.4f1, RTX 2060 SUPER D3D12, each series twice (raw XML/logs/TSV in
+`Docs/Evidence/48/raw/`). Runtime results are separated from static checks.
+
+| Check | Status |
+|---|---|
+| EditMode (402 incl. strike, animation-set, extraction, replay, input, Performance) | **PASS** 402/402 ×2 |
+| PlayMode headless | **PASS** 41/41 executed ×2; 22 GPU tests skipped as `NOT RUN` (no device) |
+| PlayMode GPU Graphics + Performance (incl. #41/#42 depth/wall/400-layer, new idle/run/strike readbacks) | **PASS** 22/22 ×2 |
+| #41/#42 GPU depth tests on clean main `00310c3` | **PASS** 15/15 (first actual run; were NOT RUN) |
+| Strike simulation cost 2/100/400 (Burst on) | MEASURED: worst-case 400 mean ≈ 0.22–0.24 ms, p95 ≈ 0.53 ms per tick; managed GC 0 |
+| Renderer cost with combat animation 2/100/400 | MEASURED: Refresh median 41/148/604 µs; GC.Alloc samples 0 (valid control); bytes NOT MEASURED |
+| Static art validation of the tested PNG (bounds, extrusion bleed, binary alpha, markers) | **PASS** (static, Python/PIL) |
+| Working-copy PNG changed by the owner during the task | **FAIL as input** (diagnostic only, not used): kick_right_002 exceeds its rect, 18 non-binary alpha px, stale hash |
+| Pre-existing test-data defect `UnusedEndpointTangentsCannotHideNegativeOvershoot` | was FAIL (curve never negative) → fixed data → **PASS** |
+| Manual Game view, Frame Debugger, player build, Domain Reload off, real keyboard play | **NOT RUN** |
+| Legacy-depth mutation negative control, Burst-off series | **NOT RUN** |
+
+Gameplay rules not fixed by the spec are implemented as **proposals** (DECISIONS.md P1–P12) awaiting owner approval;
+air strikes, guard, stagger/knockback, defeat and combo bonuses are not implemented. Details: `Docs/Evidence/48/README.md`.
+
 ## Stage 03.3b / #45 — idle + run (2026-10-27)
 
 Base main `97b8c188` includes owner Unity import/scene/package changes and the owner's idle duration 1s; these are preserved.

@@ -89,6 +89,33 @@ namespace MLFLegends.Combat
 }";
 
         /// <summary>Colour of local pixel (x, y) (top-left origin) of a fixture frame; <see cref="Clear"/> = transparent.</summary>
+        /// <summary>
+        /// The same three frames with the eight Stage 05.1 combat clips (<see cref="CombatAnimationSet.ClipIds"/>), for tests of
+        /// state-driven selection: idle and run loop over the given frame ids (comma-separated, 100 ms each), every jump frame is
+        /// tech_b (markers rise [1,2], fall [3], land [4,5]), every strike is windup tech_a / strike_pose tech_c / recovery tech_b.
+        /// </summary>
+        public static string CombatManifestJson(string idleFrames = "tech_a", string runFrames = "tech_c")
+        {
+            string Frames(string ids)
+            {
+                var list = ids.Split(',');
+                for (var i = 0; i < list.Length; i++)
+                    list[i] = "{ \"id\": \"" + list[i].Trim() + "\", \"duration_ms\": 100 }";
+                return string.Join(", ", list);
+            }
+
+            var strike = "{ \"frames\": [ " + Frames("tech_a,tech_c,tech_b") + " ], \"loop\": false, \"hold_last\": false, \"markers\": { \"strike_pose\": [1] } }";
+            var clips = "\"clips\": {\n" +
+                "    \"idle_combat\": { \"frames\": [ " + Frames(idleFrames) + " ], \"loop\": true, \"hold_last\": false, \"markers\": {} },\n" +
+                "    \"run\": { \"frames\": [ " + Frames(runFrames) + " ], \"loop\": true, \"hold_last\": false, \"markers\": {} },\n" +
+                "    \"jump\": { \"frames\": [ " + Frames("tech_b,tech_b,tech_b,tech_b,tech_b,tech_b") + " ], \"loop\": false, \"hold_last\": false,\n" +
+                "      \"markers\": { \"rise\": [1, 2], \"fall\": [3], \"land\": [4, 5] } },\n" +
+                "    \"punch_left\": " + strike + ", \"punch_right\": " + strike + ", \"kick_left\": " + strike + ",\n" +
+                "    \"kick_right\": " + strike + ", \"kick_spin\": " + strike + "\n" +
+                "  },\n  \"compatible_transitions\": []\n}";
+            return ManifestJson.Substring(0, ManifestJson.IndexOf("\"clips\"")) + clips;
+        }
+
         public static Color32 FramePixel(string frameId, int x, int y)
         {
             switch (frameId)

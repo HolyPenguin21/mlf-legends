@@ -204,7 +204,7 @@ namespace MLFLegends.Combat
             return command.Tick - tick > CombatCommandQueue.MaxLeadTicks ? CommandOutcome.TooFarAhead : CommandOutcome.Deferred;
         }
 
-        const CommandButtons AllButtons = CommandButtons.Attack | CommandButtons.Jump | CommandButtons.Guard;
+        const CommandButtons AllButtons = CommandButtons.Attack | CommandButtons.Jump | CommandButtons.Guard | CommandButtons.Kick;
 
         static bool SameCommand(in CombatCommand a, in CombatCommand b) =>
             a.Combatant.Value == b.Combatant.Value && a.Tick == b.Tick && a.MoveX == b.MoveX && a.MoveZ == b.MoveZ

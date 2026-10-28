@@ -1,0 +1,50 @@
+# Date (UTC): 2026-10-28 10:54
+# CPU: AMD Ryzen 5 3600 6-Core Processor, 12 logical, 3593 MHz
+# RAM: 32699 MB
+# GPU (Unity): Null Device (Null)
+# OS: Windows 11  (10.0.26100)
+# Unity: 6000.5.4f1
+# Mode: Editor EditMode test runner, batchmode=True
+# Entities: 6.5.0
+# Collections: 6.5.0
+# Burst: 1.8.29
+# Burst compilation enabled: True
+# Burst code executes (probe job): True
+# Burst safety checks: True
+# Collections checks (ENABLE_UNITY_COLLECTIONS_CHECKS): True
+# Job debugger: True
+# Job worker count: 11
+# Managed code optimization: Release
+# Stopwatch: 10000000 Hz, high resolution True
+# GC byte counter works: False
+# Simulation rate: 60 Hz
+# Runtime scope: Stage 05.1 (#48): clock + lifecycle + commands + CombatActionSystem + CombatFacingSystem + CombatMovementSystem + CombatHitSystem; not the historical Stage 01 baseline
+# CombatMotion bytes per actor: 28
+scenario	combatants	rep	ticksPerFrame	samples	mean_us	median_us	p95_us	min_us	max_us	meanPerTick_us	gcAllocs	nativeDeltaBytes	note
+frame-native-peak:cmd-k1	100	1	1	100	0.0	0.0	0.0	0.0	0.0	0.0	0	0	bytes: max over the ticks of a frame of (total allocated - before the frame); nativeDelta = drift over the series
+frame-native-end:cmd-k1	100	1	1	100	0.0	0.0	0.0	0.0	0.0	0.0	0	0	bytes: total allocated after the frame - before it
+frame-native-peak:cmd-k10	100	1	10	100	655.4	0.0	0.0	0.0	65536.0	655.4	0	0	bytes: max over the ticks of a frame of (total allocated - before the frame); nativeDelta = drift over the series
+frame-native-end:cmd-k10	100	1	10	100	0.0	0.0	0.0	0.0	0.0	0.0	0	0	bytes: total allocated after the frame - before it
+frame-native-peak:cmd-lead32-k1	100	1	1	100	0.0	0.0	0.0	0.0	0.0	0.0	0	0	bytes: max over the ticks of a frame of (total allocated - before the frame); nativeDelta = drift over the series
+frame-native-end:cmd-lead32-k1	100	1	1	100	0.0	0.0	0.0	0.0	0.0	0.0	0	0	bytes: total allocated after the frame - before it
+frame-native-peak:cmd-lead32-k18	100	1	18	100	1310.7	0.0	0.0	0.0	65536.0	1310.7	0	0	bytes: max over the ticks of a frame of (total allocated - before the frame); nativeDelta = drift over the series
+frame-native-end:cmd-lead32-k18	100	1	18	100	0.0	0.0	0.0	0.0	0.0	0.0	0	0	bytes: total allocated after the frame - before it
+no-frame-end:cmd-lead32-k1x100	100	1	1	1	0.0	0.0	0.0	0.0	0.0	0.0	0	0	bytes: growth over 100 ticks run in one editor frame; nativeDelta = the same after the next editor frame
+frame-native-peak:cmd-k1	100	2	1	100	0.0	0.0	0.0	0.0	0.0	0.0	0	0	bytes: max over the ticks of a frame of (total allocated - before the frame); nativeDelta = drift over the series
+frame-native-end:cmd-k1	100	2	1	100	0.0	0.0	0.0	0.0	0.0	0.0	0	0	bytes: total allocated after the frame - before it
+frame-native-peak:cmd-k10	100	2	10	100	0.0	0.0	0.0	0.0	0.0	0.0	0	0	bytes: max over the ticks of a frame of (total allocated - before the frame); nativeDelta = drift over the series
+frame-native-end:cmd-k10	100	2	10	100	0.0	0.0	0.0	0.0	0.0	0.0	0	0	bytes: total allocated after the frame - before it
+frame-native-peak:cmd-lead32-k1	100	2	1	100	0.0	0.0	0.0	0.0	0.0	0.0	0	0	bytes: max over the ticks of a frame of (total allocated - before the frame); nativeDelta = drift over the series
+frame-native-end:cmd-lead32-k1	100	2	1	100	0.0	0.0	0.0	0.0	0.0	0.0	0	0	bytes: total allocated after the frame - before it
+frame-native-peak:cmd-lead32-k18	100	2	18	100	655.4	0.0	0.0	0.0	65536.0	655.4	0	0	bytes: max over the ticks of a frame of (total allocated - before the frame); nativeDelta = drift over the series
+frame-native-end:cmd-lead32-k18	100	2	18	100	0.0	0.0	0.0	0.0	0.0	0.0	0	0	bytes: total allocated after the frame - before it
+no-frame-end:cmd-lead32-k1x100	100	2	1	1	0.0	0.0	0.0	0.0	0.0	0.0	0	0	bytes: growth over 100 ticks run in one editor frame; nativeDelta = the same after the next editor frame
+frame-native-peak:cmd-k1	100	3	1	100	0.0	0.0	0.0	0.0	0.0	0.0	0	0	bytes: max over the ticks of a frame of (total allocated - before the frame); nativeDelta = drift over the series
+frame-native-end:cmd-k1	100	3	1	100	0.0	0.0	0.0	0.0	0.0	0.0	0	0	bytes: total allocated after the frame - before it
+frame-native-peak:cmd-k10	100	3	10	100	655.4	0.0	0.0	0.0	65536.0	655.4	0	0	bytes: max over the ticks of a frame of (total allocated - before the frame); nativeDelta = drift over the series
+frame-native-end:cmd-k10	100	3	10	100	0.0	0.0	0.0	0.0	0.0	0.0	0	0	bytes: total allocated after the frame - before it
+frame-native-peak:cmd-lead32-k1	100	3	1	100	0.0	0.0	0.0	0.0	0.0	0.0	0	0	bytes: max over the ticks of a frame of (total allocated - before the frame); nativeDelta = drift over the series
+frame-native-end:cmd-lead32-k1	100	3	1	100	0.0	0.0	0.0	0.0	0.0	0.0	0	0	bytes: total allocated after the frame - before it
+frame-native-peak:cmd-lead32-k18	100	3	18	100	1966.1	0.0	0.0	0.0	65536.0	1966.1	0	0	bytes: max over the ticks of a frame of (total allocated - before the frame); nativeDelta = drift over the series
+frame-native-end:cmd-lead32-k18	100	3	18	100	0.0	0.0	0.0	0.0	0.0	0.0	0	0	bytes: total allocated after the frame - before it
+no-frame-end:cmd-lead32-k1x100	100	3	1	1	0.0	0.0	0.0	0.0	0.0	0.0	0	0	bytes: growth over 100 ticks run in one editor frame; nativeDelta = the same after the next editor frame

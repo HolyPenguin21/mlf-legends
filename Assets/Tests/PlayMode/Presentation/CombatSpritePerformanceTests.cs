@@ -134,7 +134,7 @@ namespace MLFLegends.Tests.PlayMode
         {
             RequireGraphicsDevice();
             var count = 2 + 2 * allies;
-            var prefix = realArt ? "stage03-idle-run" : "stage03-sprites";
+            var prefix = realArt ? "stage05-combat-anim" : "stage03-sprites";
             CharacterAnimationConfig config = null;
             if (realArt)
             {
@@ -157,6 +157,7 @@ namespace MLFLegends.Tests.PlayMode
                 {
                     renderer.ConfigureAnimation(Shader.Find(ShaderName), camera, config, "mage_female_01");
                     movementProducer = SpriteRunTestProducer.Install(DefaultWorld);
+                    movementProducer.StrikeEvery = 40; // Stage 05.1: ID % 4 == 1 strike, other odd IDs idle, even IDs run
                 }
                 yield return RestartBattle(Duel(new float3(-2f, 0f, 0f), FacingDirection.Right, new float3(2f, 0f, 0f), FacingDirection.Left, allies));
                 Profiler.enabled = true;
@@ -247,7 +248,18 @@ namespace MLFLegends.Tests.PlayMode
                                 foreach (var instance in renderer.Extraction.Instances) seen.Add(instance.Frame);
                                 return Tick - firstTick >= span;
                             }, 30);
-                            Assert.That(seen.Count, Is.EqualTo(11), "Observe all six idle and five run frames across >=3 cycles of each clip.");
+                            var definition = renderer.Atlas.Definition;
+                            var ids = renderer.Extraction.InstanceIds.ToArray();
+                            var expected = new HashSet<uint>();
+                            void Clip(string clip, bool present)
+                            {
+                                for (var f = 0; present && definition.TryGetClipFrame(clip, f, out var index); f++)
+                                    expected.Add((uint)index);
+                            }
+                            Clip("run", ids.Any(id => id % 2 == 0));
+                            Clip("idle_combat", ids.Any(id => id % 4 == 3));
+                            Clip("punch_left", ids.Any(id => id % 4 == 1));
+                            Assert.That(seen, Is.SupersetOf(expected), "Observe every idle, run and punch_left frame of the roles present across >=3 cycles.");
                             Assert.That(renderer.Atlas, Is.SameAs(atlas));
                             Assert.That(renderer.TimingBuilds, Is.EqualTo(timingBuilds));
                             Assert.That(renderer.Stats.InstanceBuffersCreated, Is.EqualTo(buffers));

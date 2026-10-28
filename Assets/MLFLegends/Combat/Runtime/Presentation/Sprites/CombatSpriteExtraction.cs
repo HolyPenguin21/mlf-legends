@@ -30,7 +30,7 @@ namespace MLFLegends.Combat
     /// tie-break, grouped by atlas page. Owned by <see cref="CombatSpriteRenderer"/>; usable without a graphics device.
     /// </summary>
     /// <remarks>
-    /// Three read-only queries per World, created on the first run against it and released on World change/<see cref="Dispose"/> (a
+    /// Four read-only queries per World, created on the first run against it and released on World change/<see cref="Dispose"/> (a
     /// disposed World released them already). Never writes components, adds entities or makes structural changes. Buffers
     /// are reused; after warm-up a run allocates no managed memory (native Temp only). Frame selections are keyed by
     /// <see cref="CombatantId"/> and dropped on a new battle number or World, so no ID history is kept.
@@ -50,6 +50,7 @@ namespace MLFLegends.Combat
         EntityQuery m_Sessions;
         EntityQuery m_Clocks;
         EntityQuery m_Combatants;
+        EntityQuery m_Animated;
         uint m_BoundBattle;
         readonly Dictionary<uint, uint> m_Selections = new Dictionary<uint, uint>();
 
@@ -144,10 +145,11 @@ namespace MLFLegends.Combat
 
         /// <summary>
         /// Rebuilds the instances from <paramref name="world"/> (null or disposed → none). <paramref name="defaultFrame"/> is
-        /// drawn without a selection; selections outside the atlas fall back to it. With idle/run timings, choose
-        /// run only for grounded current-tick accepted movement; otherwise idle. Both use battle-relative time.
+        /// drawn without a selection; selections outside the atlas fall back to it. With <paramref name="animations"/> every
+        /// fighter's frame comes from its authoritative CombatMotion/CombatAttackState and the clock
+        /// (<see cref="CombatAnimationSet.FrameFor"/>); a fighter lacking them (manual worlds) shows idle from battle start.
         /// </summary>
-        public void Run(World world, SpriteAtlas atlas, in SpriteCardBasis basis, float depthSeparation, uint defaultFrame, float pixelWorldSize = 2f / 96f, SpriteAnimationTiming animation = null, SpriteAnimationTiming runAnimation = null)
+        public void Run(World world, SpriteAtlas atlas, in SpriteCardBasis basis, float depthSeparation, uint defaultFrame, float pixelWorldSize = 2f / 96f, CombatAnimationSet animations = null)
         {
             if (m_Disposed)
                 throw new ObjectDisposedException(nameof(CombatSpriteExtraction));
@@ -179,27 +181,31 @@ namespace MLFLegends.Combat
                 return;
 
             uint tick = 0;
-            uint runFrame = defaultFrame;
-            if (animation != null)
+            if (animations != null)
             {
                 if (m_Clocks.CalculateEntityCount() != 1)
                     return; // Invalid/incomplete World: no animation, never a wall-clock fallback.
                 tick = m_Clocks.GetSingleton<SimulationClock>().Tick;
                 if (tick < session.BattleStartTick)
                     return; // Guard unsigned underflow on invalid session data.
-                var elapsed = (tick - session.BattleStartTick) / (double)SimulationTiming.TickRateHz;
-                defaultFrame = animation.FrameAt(elapsed);
-                if (runAnimation != null) runFrame = runAnimation.FrameAt(elapsed);
+                defaultFrame = animations.IdleFrame(tick, session.BattleStartTick);
             }
 
             using var ids = m_Combatants.ToComponentDataArray<CombatantId>(Allocator.Temp);
             using var positions = m_Combatants.ToComponentDataArray<CombatPosition>(Allocator.Temp);
             using var facings = m_Combatants.ToComponentDataArray<CombatFacing>(Allocator.Temp);
-            // Keep the original query/filter for manual/partial Worlds. Entity handles live only in this refresh.
-            using var entities = runAnimation != null ? m_Combatants.ToEntityArray(Allocator.Temp) : default;
             var count = ids.Length;
             if (count == 0)
                 return;
+
+            // State of animated fighters, joined by CombatantId: the core query (and thus manual/partial Worlds) is unchanged.
+            using var animatedIds = animations != null ? m_Animated.ToComponentDataArray<CombatantId>(Allocator.Temp) : default;
+            using var motions = animations != null ? m_Animated.ToComponentDataArray<CombatMotion>(Allocator.Temp) : default;
+            using var attacks = animations != null ? m_Animated.ToComponentDataArray<CombatAttackState>(Allocator.Temp) : default;
+            using var animatedIndex = new NativeHashMap<uint, int>(animations != null ? animatedIds.Length : 0, Allocator.Temp);
+            if (animations != null)
+                for (var i = 0; i < animatedIds.Length; i++)
+                    animatedIndex.TryAdd(animatedIds[i].Value, i);
 
             m_Keys.ResizeUninitialized(count);
             m_SortIds.ResizeUninitialized(count);
@@ -221,19 +227,11 @@ namespace MLFLegends.Combat
             var screenUp = math.normalize(math.cross(basis.ViewDirection, basis.Right));
             for (var i = 0; i < count; i++)
             {
-                var frame = animation == null && m_Selections.TryGetValue(ids[i].Value, out var selected) && selected < frameCount ? selected : fallback;
-                if (animation != null && runAnimation != null)
+                var frame = animations == null && m_Selections.TryGetValue(ids[i].Value, out var selected) && selected < frameCount ? selected : fallback;
+                if (animations != null && animatedIndex.TryGetValue(ids[i].Value, out var state))
                 {
-                    var entity = entities[i];
-                    var manager = world.EntityManager;
-                    if (manager.HasComponent<CombatMotion>(entity) && manager.HasComponent<AppliedCombatCommand>(entity))
-                    {
-                        var motion = manager.GetComponentData<CombatMotion>(entity);
-                        var command = manager.GetComponentData<AppliedCombatCommand>(entity).Command;
-                        if (motion.Grounded && command.Tick == tick && command.Combatant.Value == ids[i].Value &&
-                            (command.MoveX != 0 || command.MoveZ != 0))
-                            frame = runFrame < frameCount ? runFrame : fallback;
-                    }
+                    var animated = animations.FrameFor(tick, session.BattleStartTick, motions[state], attacks[state]);
+                    frame = animated < frameCount ? animated : fallback;
                 }
                 frames[i] = frame;
                 m_PageCounts[framePages[(int)frame]]++;
@@ -380,6 +378,8 @@ namespace MLFLegends.Combat
             m_Clocks = manager.CreateEntityQuery(ComponentType.ReadOnly<SimulationClock>());
             m_Combatants = manager.CreateEntityQuery(ComponentType.ReadOnly<CombatantId>(), ComponentType.ReadOnly<CombatPosition>(),
                 ComponentType.ReadOnly<CombatFacing>(), ComponentType.ReadOnly<InCombat>());
+            m_Animated = manager.CreateEntityQuery(ComponentType.ReadOnly<CombatantId>(), ComponentType.ReadOnly<CombatMotion>(),
+                ComponentType.ReadOnly<CombatAttackState>(), ComponentType.ReadOnly<InCombat>());
         }
 
         void Release(bool clearSelections)
@@ -389,12 +389,14 @@ namespace MLFLegends.Combat
                 m_Sessions.Dispose();
                 m_Clocks.Dispose();
                 m_Combatants.Dispose();
+                m_Animated.Dispose();
             }
 
             m_World = null;
             m_Sessions = default;
             m_Clocks = default;
             m_Combatants = default;
+            m_Animated = default;
             m_BoundBattle = 0;
             if (clearSelections)
                 m_Selections.Clear();

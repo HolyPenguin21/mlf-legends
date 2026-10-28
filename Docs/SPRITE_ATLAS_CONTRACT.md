@@ -1,5 +1,13 @@
 # Sprite atlas contract v1 (Stage 03, Issue #38)
 
+Current art delivery (Stage 05.1, PR #48): eight clips on one 1728x1536 page (idle_combat 6, run 5, jump 6, punch_left 6,
+punch_right 6, kick_left 6, kick_right 6, kick_spin 9; 50 frames), source 192x192, nominal 128, pivot [96,160], schema v1
+unchanged. Markers now drive *presentation fitting only* (never gameplay): `strike_pose` frames are shown exactly on a
+strike's Active ticks; `rise`/`fall`/`land` place jump frames by vertical velocity / touch-down. The delivered jump clip had
+no phase markers; `rise [1,2]`, `fall [3]`, `land [4,5]` were added by the code agent (flagged in `meta.jump_phase_markers`,
+pending artist confirmation); `jump_000` is not shown. A missing required marker rejects the combat set with a field path.
+Relaxed idle/walk/dash/cast stay future ids and are not required.
+
 Current art delivery (#45): ONLY idle_combat (6 frames) and run (5 frames); page1152x384, source192x192, nominal128, pivot[96,160].
 The example now contains both actual clips. The parser remains general v1: future clip names do not imply gameplay permission.
 Config N/T/SpeedCurve is runtime timing; JSON duration_ms stays validated export metadata (idle1200ms/run500ms), whereas

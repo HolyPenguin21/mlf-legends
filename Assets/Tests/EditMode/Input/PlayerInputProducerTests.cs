@@ -587,6 +587,9 @@ namespace MLFLegends.Tests.EditMode
 
             Frame(1, () => Tap(Key.J));
             Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.Attack), "A key not held across the cycle presses.");
+            // Stage 05.1: J now strikes, and a running strike blocks the jump until its recovery ends.
+            for (var i = 0; i < CombatAttackTuning.Get(CombatAttackKind.PunchLeft).TotalTicks; i++)
+                Frame(1);
             Frame(1, () => Up(Key.K));
             Frame(1, () => Down(Key.K));
             Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.Jump), "Release, then a fresh press.");

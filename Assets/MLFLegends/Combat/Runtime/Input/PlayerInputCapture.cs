@@ -30,16 +30,18 @@ namespace MLFLegends.Combat
         // sin(22.5°): an axis counts when it is at least this fraction of the stick's magnitude, i.e. 8 equal sectors.
         const float k_AxisFraction = 0.38268343f;
 
-        static readonly string[] s_Actions = { "Move", "Attack", "Jump", "Guard" };
+        static readonly string[] s_Actions = { "Move", "Attack", "Jump", "Guard", "Kick" };
 
         readonly InputActionMap m_Map;
         readonly InputAction m_Move;
         readonly InputAction m_Attack;
         readonly InputAction m_Jump;
         readonly InputAction m_Guard;
+        readonly InputAction m_Kick;
         readonly Action<InputAction.CallbackContext> m_OnAttack;
         readonly Action<InputAction.CallbackContext> m_OnJump;
         readonly Action<InputAction.CallbackContext> m_OnGuard;
+        readonly Action<InputAction.CallbackContext> m_OnKick;
         readonly Action<InputDevice, InputDeviceChange> m_OnDeviceChange;
         readonly Action m_OnAfterUpdate;
         CommandButtons m_Pressed;
@@ -49,7 +51,7 @@ namespace MLFLegends.Combat
         bool m_Focused = true;
 
         /// <exception cref="ArgumentNullException"><paramref name="actions"/> is null.</exception>
-        /// <exception cref="ArgumentException">The asset has no Player map with Move, Attack, Jump and Guard.</exception>
+        /// <exception cref="ArgumentException">The asset has no Player map with Move, Attack, Jump, Guard and Kick.</exception>
         public PlayerInputCapture(InputActionAsset actions)
         {
             if (actions == null)
@@ -66,15 +68,18 @@ namespace MLFLegends.Combat
             m_Attack = m_Map.FindAction("Attack", throwIfNotFound: true);
             m_Jump = m_Map.FindAction("Jump", throwIfNotFound: true);
             m_Guard = m_Map.FindAction("Guard", throwIfNotFound: true);
+            m_Kick = m_Map.FindAction("Kick", throwIfNotFound: true);
 
             m_OnAttack = _ => OnPressed(CommandButtons.Attack);
             m_OnJump = _ => OnPressed(CommandButtons.Jump);
             m_OnGuard = _ => OnPressed(CommandButtons.Guard);
+            m_OnKick = _ => OnPressed(CommandButtons.Kick);
             m_OnDeviceChange = OnDeviceChange;
             m_OnAfterUpdate = OnAfterUpdate;
             m_Attack.performed += m_OnAttack;
             m_Jump.performed += m_OnJump;
             m_Guard.performed += m_OnGuard;
+            m_Kick.performed += m_OnKick;
             InputSystem.onDeviceChange += m_OnDeviceChange;
             InputSystem.onAfterUpdate += m_OnAfterUpdate;
 
@@ -114,6 +119,8 @@ namespace MLFLegends.Combat
                 held |= CommandButtons.Jump;
             if (IsHeld(m_Guard))
                 held |= CommandButtons.Guard;
+            if (IsHeld(m_Kick))
+                held |= CommandButtons.Kick;
             return held;
         }
 
@@ -191,6 +198,7 @@ namespace MLFLegends.Combat
             m_Attack.performed -= m_OnAttack;
             m_Jump.performed -= m_OnJump;
             m_Guard.performed -= m_OnGuard;
+            m_Kick.performed -= m_OnKick;
             m_Map.Disable();
             m_Map.Dispose();
         }

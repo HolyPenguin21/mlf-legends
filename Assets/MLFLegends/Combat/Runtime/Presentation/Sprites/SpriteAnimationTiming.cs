@@ -12,22 +12,38 @@ namespace MLFLegends.Combat
         readonly double[] m_StartSeconds;
         public int FrameCount => m_Frames.Length;
         public double DurationSeconds { get; }
+
+        /// <summary>True for a looping cycle (idle, run); false for a play-once clip fitted to state windows.</summary>
+        public bool Looping { get; }
+
+        /// <summary>Atlas frame index of local frame <paramref name="localFrame"/>.</summary>
+        public uint Frame(int localFrame) => (uint)m_Frames[localFrame];
         public double FrameStartSeconds(int localFrame) => m_StartSeconds[localFrame];
         public double FrameDurationSeconds(int localFrame) =>
             (localFrame + 1 < FrameCount ? m_StartSeconds[localFrame + 1] : DurationSeconds) - m_StartSeconds[localFrame];
 
-        SpriteAnimationTiming(int[] frames, double[] starts, double duration)
+        SpriteAnimationTiming(int[] frames, double[] starts, double duration, bool looping)
         {
             m_Frames = frames;
             m_StartSeconds = starts;
             DurationSeconds = duration;
+            Looping = looping;
         }
 
+        /// <summary>Atlas frame at <paramref name="elapsedSeconds"/> of the repeating cycle.</summary>
         public uint FrameAt(double elapsedSeconds)
         {
             if (!Finite(elapsedSeconds) || elapsedSeconds <= 0)
                 return (uint)m_Frames[0];
-            var phase = elapsedSeconds % DurationSeconds;
+            return (uint)m_Frames[LocalFrameAt(elapsedSeconds % DurationSeconds)];
+        }
+
+        /// <summary>Local frame shown at <paramref name="seconds"/> of one pass, clamped to the clip (no wrap).</summary>
+        public int LocalFrameAt(double seconds)
+        {
+            if (!Finite(seconds) || seconds <= 0)
+                return 0;
+            var phase = seconds;
             var lo = 0;
             var hi = m_StartSeconds.Length;
             while (lo + 1 < hi)
@@ -36,7 +52,7 @@ namespace MLFLegends.Combat
                 if (phase >= m_StartSeconds[mid]) lo = mid;
                 else hi = mid;
             }
-            return (uint)m_Frames[lo];
+            return lo;
         }
 
         struct Segment
@@ -48,8 +64,10 @@ namespace MLFLegends.Combat
 
         static bool Finite(double n) => !double.IsNaN(n) && !double.IsInfinity(n);
 
+        /// <param name="looping">True for a cycle (needs loop=true, hold_last=false); false for a play-once clip
+        /// (needs loop=false) whose frames are fitted to simulation windows by <see cref="CombatAnimationSet"/>.</param>
         public static SpriteAnimationTiming Create(SpriteAtlasClip clip, CharacterAnimationSettings settings,
-            string path, List<string> errors, List<string> warnings = null)
+            string path, List<string> errors, List<string> warnings = null, bool looping = true)
         {
             var before = errors.Count;
             if (clip == null || settings == null)
@@ -57,8 +75,10 @@ namespace MLFLegends.Combat
                 errors.Add(path + ": clip/settings missing");
                 return null;
             }
-            if (!clip.Loop || clip.HoldLast)
+            if (looping && (!clip.Loop || clip.HoldLast))
                 errors.Add(path + ": looping playback requires loop=true and hold_last=false");
+            if (!looping && clip.Loop)
+                errors.Add(path + ": state-fitted playback requires loop=false");
             var n = settings.FrameCount;
             var duration = settings.TotalDurationSeconds;
             if (n < 1 || n > clip.Frames.Count)
@@ -137,7 +157,7 @@ namespace MLFLegends.Combat
                 errors.Add(path + ".SpeedCurve: integrated speed must be finite and >0");
             if (errors.Count != before)
                 return null;
-            if (Math.Abs((double)keys[0].value - keys[keys.Length - 1].value) >
+            if (looping && Math.Abs((double)keys[0].value - keys[keys.Length - 1].value) >
                 1e-5 * Math.Max(keys[0].value, keys[keys.Length - 1].value))
                 warnings?.Add(path + ".SpeedCurve: speed differs at loop endpoints; the cycle has a speed discontinuity");
             var frames = new int[n];
@@ -166,7 +186,7 @@ namespace MLFLegends.Combat
                 }
                 starts[f] = hi * duration;
             }
-            return new SpriteAnimationTiming(frames, starts, duration);
+            return new SpriteAnimationTiming(frames, starts, duration, looping);
         }
     }
 }

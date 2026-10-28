@@ -42,9 +42,11 @@ namespace MLFLegends.Combat
             state.EntityManager.AddComponentData(m_Session, new CombatantIdAllocator());
             state.EntityManager.AddBuffer<BattleRequest>(m_Session);
 
-            // Human and AI combatants are identical; AppliedCombatCommand is added by the command processor.
+            // Human and AI combatants are identical; AppliedCombatCommand is added by the command processor. Attack state
+            // starts free (default) and the hit ledger empty; both die with the entity, so no strike outlives its battle.
             m_CombatantArchetype = state.EntityManager.CreateArchetype(
-                typeof(CombatantId), typeof(CombatTeam), typeof(CombatPosition), typeof(CombatFacing), typeof(InCombat), typeof(CombatMotion));
+                typeof(CombatantId), typeof(CombatTeam), typeof(CombatPosition), typeof(CombatFacing), typeof(InCombat), typeof(CombatMotion),
+                typeof(CombatAttackState), typeof(CombatHealth), typeof(CombatHitRecord));
             m_Combatants = SystemAPI.QueryBuilder().WithAll<CombatantId>()
                 .WithOptions(EntityQueryOptions.IgnoreComponentEnabledState).Build();
             m_Clock = SystemAPI.QueryBuilder().WithAll<SimulationClock>().Build();
@@ -172,6 +174,7 @@ namespace MLFLegends.Combat
             entityManager.SetComponentData(entity, new CombatPosition { Value = setup.Position });
             entityManager.SetComponentData(entity, new CombatMotion { GroundHeight = setup.Position.y, Grounded = true });
             entityManager.SetComponentData(entity, new CombatFacing { Value = setup.Facing });
+            entityManager.SetComponentData(entity, new CombatHealth { Current = CombatAttackTuning.MaxHealth, Max = CombatAttackTuning.MaxHealth });
 
             if (!diagnosticName.IsEmpty)
                 entityManager.SetName(entity, diagnosticName);

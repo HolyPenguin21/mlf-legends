@@ -1,5 +1,39 @@
 # MLF Legends — Decision log
 
+## Stage 05.1 + 03.3c / PR #48 — five strikes and state-driven combat animation (2026-10-28)
+
+Base main `00310c3`. One branch `feature/stage05-strikes-combat-animation`, one PR, no implementing-agent merge.
+**Simulation:** `CombatActionSystem` (sole writer of `CombatAttackState`) → `CombatFacingSystem` → `CombatMovementSystem` →
+`CombatHitSystem` (sole writer of `CombatHealth` and the per-strike `CombatHitRecord` ledger) in State. Five strikes
+(punch_left/right, kick_left/right, kick_spin) with Windup/Active/Recovery, reach/depth/height boxes, damage once per target
+per strike, series with one buffered follow-up and fixed chain points; timing/reach/damage in `CombatAttackTuning` (single
+source). Player J = Attack, new logical `Kick` = U / gamepad North; AI uses the same queue. Rules not fixed by the spec are
+**proposed** in `COMBAT_SPEC.md` and await owner approval (controls, series, air strikes deferred, movement/facing locks).
+**Presentation:** `CombatAnimationSet` binds all eight clips (idle_combat, run, jump, five strikes) of the existing config to
+authoritative state: strike frames fitted to the combat windows (`strike_pose` = Active ticks), jump rise/fall by vertical
+velocity, landing only on the ground, run stride by distance, idle restarted on entry. N/T/curve keep their meaning as frame
+shares; a strike T that differs from the combat total is reported. Owner idle/run settings preserved. Jump phase markers
+`rise/fall/land` were added to the manifest (flagged, pending artist confirmation). No new renderer, clock, GameObject,
+texture or material per fighter. Defeat at 0 HP, guard, stagger/knockback, combo bonuses, cancels and air strikes are not
+implemented. Evidence (Unity EditMode/PlayMode/GPU runs, raw XML/logs/TSV, static art checks): `Docs/Evidence/48/README.md`.
+
+**Proposed by the implementing agent, PENDING OWNER APPROVAL (implemented provisionally, each one isolated in data/one owner):**
+
+| # | Decision | Where | Alternative if rejected |
+|---|---|---|---|
+| P1 | J = hand strike (Attack), U / gamepad North = foot strike (new `Kick` button) | input asset, `CommandButtons` | single Attack button with a fixed 5-strike string |
+| P2 | Series: first strike left, sides alternate, Kick after kick_right = kick_spin finisher, max 4 strikes | `CombatAttackTuning.Select`, `MaxSeriesLength` | other order/length; directional variants |
+| P3 | One buffered follow-up press (latest wins) accepted from Active to end of Recovery; Windup presses dropped | `CombatActionSystem` | buffer during Windup; first press wins |
+| P4 | Follow-up starts at Windup+Active+ChainDelay (cuts the rest of Recovery); finisher/4th strike never chains | `CombatAttackTuning` | longer delays; per-pair cancel tables |
+| P5 | No planar movement and no jump during a strike; turning only on a strike's first tick | Facing/Movement owners | slow walk during windup; turn anytime |
+| P6 | Strikes only from the ground; airborne presses dropped (no jump-attack clip) — the spec's "jump attacks enabled" is deferred | `CombatActionSystem` | air strike with a dedicated clip |
+| P7 | Jump + strike pressed on one grounded tick: jump wins, strike dropped | `CombatActionSystem` | strike wins |
+| P8 | Box: forward 0…reach along facing, abs(ΔZ) ≤ 0.4, abs(ΔY) ≤ 0.9; all enemies inside hit (no cap); allies never | `CombatAttackTuning`, `CombatHitSystem` | target cap; body radius when Stage 04 adds bodies |
+| P9 | 100 HP, damage 4/4/7/7/12, clamp at 0, no defeat yet | `CombatAttackTuning` | defeat owner in Stage 08 |
+| P10 | Strike/jump clips fitted to simulation windows; config T of a strike only sets frame shares (mismatch = warning) | `CombatAnimationSet` | reject mismatching T |
+| P11 | Jump phase markers rise [1,2] / fall [3] / land [4,5]; jump_000 unused | manifest `meta.jump_phase_markers` | artist re-marks or re-exports |
+| P12 | Run stride by distance; ≤ 6-tick stops keep run | `CombatMovementTuning.MoveStreakGraceTicks` | time-based phase; other grace |
+
 ## Stage 03.3b / #45 — idle + run (2026-10-27)
 
 Base main `97b8c188` includes owner Unity import/scene/package changes and the owner's idle duration 1s; these are preserved.

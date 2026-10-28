@@ -121,7 +121,7 @@ Each enabled `InCombat` with position, motion and applied command is integrated 
 `SimulationTiming.TickDuration`. X/Z = validated axes times speed times dt, with a fixed `1/sqrt(2)` scale
 when both axes are nonzero. No inertia: implicit or explicit None stops X/Z. Air control uses the same
 speed. `Pressed & Jump` applies the impulse only when grounded; Held alone does nothing, including after
-landing. Airborne presses are discarded, not buffered. Attack/Guard are not executed, facing is untouched.
+landing. Airborne presses are discarded, not buffered. Attack/Guard are not executed by movement, facing is untouched (Stage 05.1: a running strike makes movement ignore Move/Jump, see below).
 
 Vertical integration is semi-implicit Euler: impulse if eligible, subtract gravity * dt from velocity,
 then add velocity * dt to Y, then clamp landing and zero velocity. None still integrates gravity.
@@ -159,8 +159,35 @@ Diagonals turn by the sign of X; airborne actors turn as well. The turn is insta
 the same rule for player and AI. Rejected, stale, duplicate, conflicting, unknown and not-yet-due commands never
 reach `AppliedCombatCommand`, so they cannot turn anybody. A disabled `InCombat` keeps its facing.
 
-There are no turn locks yet: Attack/Guard in the command do not block turning. A future attack/guard stage that
+Historical #33 text: there were no turn locks; Stage 05.1 adds the strike lock below (Guard still does not lock). A future attack/guard stage that
 needs a turn restriction must define it explicitly and apply it in this owner, not add a second facing writer.
 There is no "face the enemy" rule. End/Despawn/Restart destroy facing with its entity; a restarted battle spawns
 fresh facing from its own setup. One synchronous Burst pass, O(N), no allocations or structural changes;
 requires `SimulationClockRunning` like its phase. Burst compilation and Unity runtime are tracked in #30/#17.
+
+## Stage 05.1 strikes and hits (PR #48)
+
+State now holds four owners, in this order (attributes, checked by replay/default-world/benchmark tests):
+
+```text
+CombatStateUpdateSystemGroup
+├─ CombatActionSystem    [UpdateBefore(Facing)]   sole writer of CombatAttackState (+ clears the hit ledger on a strike start)
+├─ CombatFacingSystem    [UpdateBefore(Movement)] facing; locked during a strike except on its first tick
+├─ CombatMovementSystem                           position/motion; Move/Jump ignored during a strike; records motion facts
+└─ CombatHitSystem       [UpdateAfter(Movement)]  sole writer of CombatHealth and the hit ledger (CombatHitRecord)
+```
+
+- `CombatActionSystem` reads only `AppliedCombatCommand` + `CombatMotion.Grounded` (state at the start of the tick):
+  series start/chain/end rules in `COMBAT_SPEC.md` ("Implemented minimal strike set"); timing/reach/damage in
+  `CombatAttackTuning` (single authoritative table; presentation reads the same table). One Burst pass, no allocations.
+- `CombatHitSystem` runs after movement, so boxes use this tick's final positions. Attackers in their Active phase are
+  sorted by `CombatantId`, targets too; every enemy inside the box and not in the strike's ledger loses Damage HP (clamped
+  at 0) once. Temp scratch is released in the same tick; brute force O(active attackers × combatants) until Stage 04's
+  spatial index. No events/log are kept, so nothing is pending between ticks: a despawned target is simply absent.
+- `CombatMotion` gains movement facts written only by the movement owner: `LandTick`, `LastMoveTick`,
+  `MoveStreakStartTick`/`MoveStreakDistance` (stops of ≤ `MoveStreakGraceTicks` = 6 continue a streak, landing restarts it).
+  They describe what actually moved (after strike locks), never the raw command, so Stage 04 collisions stay compatible.
+- Facing and movement read `CombatAttackState` through a read-only lookup; entities without it (isolated unit-test
+  actors) are never locked, so earlier writer-separation tests keep their meaning.
+- Lifecycle: the spawn archetype carries `CombatAttackState` (free), `CombatHealth` (100/100) and an empty
+  `CombatHitRecord` buffer; End/Restart/Despawn destroy them with the entity. Pause runs no tick, so phases freeze.

@@ -200,3 +200,9 @@ allies, reusing `Spawn` and the same allocator; the benchmark in `Assets/Tests/E
 CombatSmoke Main Camera now uses CharacterConfig/mage_female_01 and plays only idle_combat. Install the external PNG
 with its tracked meta; JSON/catalog/shared config are committed. No runtime fixture fallback. Manual technical renderer
 mode remains for tests. See Presentation/Sprites/ANIMATION.md. Unity art smoke and GPU checks remain NOT RUN.
+
+## Stage 05.1 spawn data (PR #48)
+
+`Spawn` additionally gives every combatant (human, AI, allies alike) a free `CombatAttackState`, `CombatHealth`
+100/100 and an empty `CombatHitRecord` buffer in the same archetype. They are destroyed with the entity on
+End/Restart/Despawn, so no strike, buffered press or ledger survives into another battle. No new lifecycle step.

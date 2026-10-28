@@ -87,8 +87,10 @@ namespace MLFLegends.Tests.EditMode
         [Test]
         public void UnusedEndpointTangentsCannotHideNegativeOvershoot()
         {
+            // Used tangents -30 dip to about -1.9 near u = 0.2 (-10 never goes below +0.037, so it hid nothing: the
+            // original data could not fail validation; first actual Unity run, Stage 05.1).
             var settings = new CharacterAnimationSettings { FrameCount = 6, SpeedCurve = new AnimationCurve(
-                new Keyframe(0, 1, 1e38f, -10), new Keyframe(1, 1, -10, 1e38f)) };
+                new Keyframe(0, 1, 1e38f, -30), new Keyframe(1, 1, -30, 1e38f)) };
             AssertRejected(settings, "negative speed between keys");
         }
 
@@ -141,6 +143,24 @@ namespace MLFLegends.Tests.EditMode
             var errors = new List<string>();
             Assert.That(SpriteAnimationTiming.Create(Clip(), settings, "character/idle", errors), Is.Null);
             Assert.That(string.Join("\n", errors), Does.Contain(diagnostic));
+        }
+
+        [Test]
+        public void PlayOnceTimingNeedsANonLoopClipClampsInsteadOfWrappingAndSkipsTheLoopSeamWarning()
+        {
+            var errors = new List<string>();
+            var warnings = new List<string>();
+            var settings = new CharacterAnimationSettings { FrameCount = 6, TotalDurationSeconds = 1.2, SpeedCurve = AnimationCurve.Linear(0, 1, 1, 2) };
+            var once = SpriteAnimationTiming.Create(Clip(loop: false), settings, "test/punch", errors, warnings, looping: false);
+            Assert.That(once, Is.Not.Null, string.Join("\n", errors));
+            Assert.That(once.Looping, Is.False);
+            Assert.That(warnings, Is.Empty, "A play-once clip has no loop seam.");
+            Assert.That(once.LocalFrameAt(-1), Is.Zero);
+            Assert.That(once.LocalFrameAt(1.2), Is.EqualTo(5), "Clamped at the end, never wrapped.");
+            Assert.That(once.LocalFrameAt(99), Is.EqualTo(5));
+            Assert.That(once.Frame(5), Is.EqualTo(5u));
+            Assert.That(SpriteAnimationTiming.Create(Clip(loop: true), settings, "test/punch", errors, null, looping: false), Is.Null);
+            Assert.That(errors, Has.Some.Contains("state-fitted playback requires loop=false"));
         }
 
         [Test]

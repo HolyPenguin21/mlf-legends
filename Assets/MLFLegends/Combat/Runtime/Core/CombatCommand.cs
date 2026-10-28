@@ -10,6 +10,9 @@ namespace MLFLegends.Combat
         Attack = 1 << 0,
         Jump = 1 << 1,
         Guard = 1 << 2,
+
+        /// <summary>Foot strike; <see cref="Attack"/> is the hand strike (Stage 05.1).</summary>
+        Kick = 1 << 3,
     }
 
     /// <summary>
