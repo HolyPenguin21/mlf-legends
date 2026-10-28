@@ -292,7 +292,7 @@ namespace MLFLegends.Tests.EditMode
 
             var straight = records[79].Combatant(records[79].HumanId).Motion.MoveStreakDistance - records[78].Combatant(records[78].HumanId).Motion.MoveStreakDistance;
             var diagonal = records[99].Combatant(records[99].HumanId).Motion.MoveStreakDistance - records[98].Combatant(records[98].HumanId).Motion.MoveStreakDistance;
-            Assert.That(diagonal / straight, Is.EqualTo(math.SQRT2 / 2).Within(1e-4f), "Diagonal motion strides proportionally slower.");
+            Assert.That(diagonal / straight, Is.EqualTo(1f).Within(1e-4f), "Normalized diagonals cover the same actual planar distance as straight motion.");
         }
 
         [Test]

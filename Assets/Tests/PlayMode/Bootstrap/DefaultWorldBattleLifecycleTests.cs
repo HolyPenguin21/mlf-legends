@@ -74,6 +74,7 @@ namespace MLFLegends.Tests.PlayMode
                 var order = new[]
                 {
                     members.IndexOf(DefaultWorld.GetExistingSystem<BeginFixedStepSimulationEntityCommandBufferSystem>()),
+                    members.IndexOf(DefaultWorld.GetExistingSystemManaged<CombatArenaSystem>().SystemHandle),
                     members.IndexOf(lifecycle),
                     members.IndexOf(DefaultWorld.GetExistingSystem<CombatClockSystem>()),
                     members.IndexOf(DefaultWorld.GetExistingSystem<CombatCommandCollectionSystemGroup>()),

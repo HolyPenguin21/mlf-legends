@@ -5,8 +5,8 @@ namespace MLFLegends.Combat
     /// <summary>Compact jump/locomotion state; CombatPosition remains the only authoritative position.</summary>
     /// <remarks>
     /// Initialised by BattleLifecycleSystem.Spawn, then written only by CombatMovementSystem.
-    /// GroundHeight is the spawn Y, a temporary flat landing support until Stage 04 ground resolution
-    /// extends the same position owner. Destroyed with the combatant on despawn/end/restart.
+    /// GroundHeight is actual support height in a production arena (last support while airborne);
+    /// bare legacy Worlds without an acquired arena retain flat spawn-Y support inside the same movement owner. Destroyed with the combatant on despawn/end/restart.
     /// The tick fields record what the movement owner actually did (absolute ticks, 0 = never in this battle);
     /// presentation selects run/jump/landing from them instead of keeping its own per-fighter history.
     /// </remarks>

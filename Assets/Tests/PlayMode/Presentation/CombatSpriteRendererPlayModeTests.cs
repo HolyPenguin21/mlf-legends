@@ -300,7 +300,7 @@ namespace MLFLegends.Tests.PlayMode
             Assert.That(renderer.PixelWorldSize, Is.EqualTo(2f / 128f));
             Assert.That(renderer.IsActiveOwner, Is.True);
             AssertMatchesEcs(renderer);
-            Assert.That(renderer.Stats.Instances, Is.EqualTo(2));
+            Assert.That(renderer.Stats.Instances, Is.EqualTo(3), "CombatSmoke retains its authored roster: one human and two AI fighters.");
         }
     }
 }

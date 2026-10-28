@@ -52,9 +52,14 @@ namespace MLFLegends.Combat
         [SerializeField] string m_StrikeCharacterId = "mage_female_01";
 
         // Owner token per enable; only needs to differ between bootstraps that are alive at the same time.
+        [SerializeField] bool m_RequireArena;
+
         static uint s_LastOwner;
         uint m_Owner;
         World m_BattleWorld;
+        World m_MissingArenaWorld;
+        ulong m_MissingArenaLease;
+        bool m_ArenaMissingReported;
         BattleSetup m_PendingSetup;
         bool m_StartPending;
 
@@ -156,6 +161,15 @@ namespace MLFLegends.Combat
 
         void Update()
         {
+            if (m_RequireArena)
+            {
+                var source = GetComponent<CombatArenaAuthoring>();
+                var missing = source == null || !source.isActiveAndEnabled;
+                if (missing && !m_ArenaMissingReported)
+                    Debug.LogError("Required static arena source is missing or disabled; movement remains frozen for this battle.", this);
+                m_ArenaMissingReported = missing;
+            }
+
             if (m_Owner == 0 || (!m_StartPending && !ScheduleSourceChanged()))
                 return;
             if (TryGetEntityManager(out var entityManager))
@@ -172,6 +186,7 @@ namespace MLFLegends.Combat
             // On Play Mode exit the default world may already be disposed; it takes its combatants with it.
             // Nothing to end if this bootstrap never requested a battle (invalid setup).
             EndOwnedBattle();
+            ReleaseMissingArena();
             RestoreSchedule(); // Restore in the World where THIS bootstrap published, even if DefaultWorld changed.
             m_Owner = 0;
             m_StartPending = false;
@@ -218,12 +233,36 @@ namespace MLFLegends.Combat
 
         void RequestStart(EntityManager entityManager, in BattleSetup setup)
         {
+            if (m_RequireArena && World.DefaultGameObjectInjectionWorld.GetExistingSystemManaged<CombatArenaSystem>() == null)
+            {
+                Debug.LogError("CombatSmoke requires CombatArenaSystem; battle start rejected.", this);
+                m_StartPending = false;
+                return;
+            }
+            if (m_RequireArena && (GetComponent<CombatArenaAuthoring>() == null || !GetComponent<CombatArenaAuthoring>().enabled))
+            {
+                ReleaseMissingArena();
+                m_MissingArenaWorld = World.DefaultGameObjectInjectionWorld;
+                m_MissingArenaLease = CombatArenaSystem.Acquire(entityManager);
+                CombatArenaSystem.Stage(entityManager, m_MissingArenaLease, null);
+                m_ArenaMissingReported = true;
+                Debug.LogError("CombatSmoke requires an enabled CombatArenaAuthoring; movement frozen.", this);
+            }
+
             var world = World.DefaultGameObjectInjectionWorld;
             if (m_BattleWorld != world)
                 EndOwnedBattle();
             BattleRequest.Submit(entityManager, BattleRequest.Restart(setup, m_Owner));
             m_BattleWorld = world;
             m_StartPending = false;
+        }
+
+        void ReleaseMissingArena()
+        {
+            if (m_MissingArenaLease != 0 && m_MissingArenaWorld != null && m_MissingArenaWorld.IsCreated
+                && m_MissingArenaWorld.GetExistingSystemManaged<CombatArenaSystem>() != null)
+                CombatArenaSystem.Release(m_MissingArenaWorld.EntityManager, m_MissingArenaLease);
+            m_MissingArenaLease = 0; m_MissingArenaWorld = null;
         }
 
         static bool TryGetSchedule(EntityManager entityManager, out CombatStrikeSchedule schedule)
