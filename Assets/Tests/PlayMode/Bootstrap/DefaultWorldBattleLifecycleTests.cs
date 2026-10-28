@@ -108,23 +108,30 @@ namespace MLFLegends.Tests.PlayMode
             {
                 // Counted by system type so a second instance of either owner fails; other future owners are allowed.
                 var types = members.AsArray().ToArray().Select(DefaultWorld.Unmanaged.GetSystemTypeIndex).ToArray();
-                var facing = TypeManager.GetSystemTypeIndex<CombatFacingSystem>();
-                var movement = TypeManager.GetSystemTypeIndex<CombatMovementSystem>();
-                Assert.That(types.Count(t => t == facing), Is.EqualTo(1), "Exactly one auto-created facing owner in State.");
-                Assert.That(types.Count(t => t == movement), Is.EqualTo(1), "Exactly one auto-created motion owner in State.");
-                Assert.That(System.Array.IndexOf(types, facing), Is.LessThan(System.Array.IndexOf(types, movement)),
-                    "Default world orders facing before movement, as isolated replay and benchmarks do.");
+                var owners = new[]
+                {
+                    TypeManager.GetSystemTypeIndex<CombatActionSystem>(), TypeManager.GetSystemTypeIndex<CombatFacingSystem>(),
+                    TypeManager.GetSystemTypeIndex<CombatMovementSystem>(), TypeManager.GetSystemTypeIndex<CombatHitSystem>(),
+                };
+                foreach (var owner in owners)
+                    Assert.That(types.Count(t => t == owner), Is.EqualTo(1), "Exactly one auto-created instance of each State owner.");
+                for (var i = 1; i < owners.Length; i++)
+                    Assert.That(System.Array.IndexOf(types, owners[i - 1]), Is.LessThan(System.Array.IndexOf(types, owners[i])),
+                        "Default world orders strike → facing → movement → hit, as isolated replay and benchmarks do.");
                 Assert.That(members.AsArray().ToArray(), Is.EqualTo(new[]
                 {
-                    DefaultWorld.GetExistingSystem<CombatFacingSystem>(), DefaultWorld.GetExistingSystem<CombatMovementSystem>(),
-                }), "Stage 02.2 State holds exactly the facing then movement owners.");
+                    DefaultWorld.GetExistingSystem<CombatActionSystem>(), DefaultWorld.GetExistingSystem<CombatFacingSystem>(),
+                    DefaultWorld.GetExistingSystem<CombatMovementSystem>(), DefaultWorld.GetExistingSystem<CombatHitSystem>(),
+                }), "Stage 05.1 State holds exactly the strike, facing, movement and hit owners.");
             }
             foreach (var phase in new[] { DefaultWorld.GetExistingSystemManaged<CombatCommandCollectionSystemGroup>(),
                          (ComponentSystemGroup)DefaultWorld.GetExistingSystemManaged<CombatPublicationSystemGroup>() })
             {
                 using var members = phase.GetAllSystems(Allocator.Temp);
                 Assert.That(members.AsArray().ToArray(), Has.None.EqualTo(DefaultWorld.GetExistingSystem<CombatFacingSystem>())
-                    .And.None.EqualTo(DefaultWorld.GetExistingSystem<CombatMovementSystem>()), $"No State owner in {phase.GetType().Name}.");
+                    .And.None.EqualTo(DefaultWorld.GetExistingSystem<CombatMovementSystem>())
+                    .And.None.EqualTo(DefaultWorld.GetExistingSystem<CombatActionSystem>())
+                    .And.None.EqualTo(DefaultWorld.GetExistingSystem<CombatHitSystem>()), $"No State owner in {phase.GetType().Name}.");
             }
             Assert.That(Session.State, Is.EqualTo(BattleState.Idle), "Nothing starts a battle without a request.");
         }

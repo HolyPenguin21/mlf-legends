@@ -1,5 +1,22 @@
 # MLF Legends — Combat architecture
 
+## Stage 05.1 + 03.3c / PR #48 — five strikes and state-driven combat animation (2026-10-28)
+
+Base main `00310c3`. One branch `feature/stage05-strikes-combat-animation`, one PR, no implementing-agent merge.
+**Simulation:** `CombatActionSystem` (sole writer of `CombatAttackState`) → `CombatFacingSystem` → `CombatMovementSystem` →
+`CombatHitSystem` (sole writer of `CombatHealth` and the per-strike `CombatHitRecord` ledger) in State. Five strikes
+(punch_left/right, kick_left/right, kick_spin) with Windup/Active/Recovery, reach/depth/height boxes, damage once per target
+per strike, series with one buffered follow-up and fixed chain points; timing/reach/damage in `CombatAttackTuning` (single
+source). Player J = Attack, new logical `Kick` = U / gamepad North; AI uses the same queue. Rules not fixed by the spec are
+**proposed** in `COMBAT_SPEC.md` and await owner approval (controls, series, air strikes deferred, movement/facing locks).
+**Presentation:** `CombatAnimationSet` binds all eight clips (idle_combat, run, jump, five strikes) of the existing config to
+authoritative state: strike frames fitted to the combat windows (`strike_pose` = Active ticks), jump rise/fall by vertical
+velocity, landing only on the ground, run stride by distance, idle restarted on entry. N/T/curve keep their meaning as frame
+shares; a strike T that differs from the combat total is reported. Owner idle/run settings preserved. Jump phase markers
+`rise/fall/land` were added to the manifest (flagged, pending artist confirmation). No new renderer, clock, GameObject,
+texture or material per fighter. Defeat at 0 HP, guard, stagger/knockback, combo bonuses, cancels and air strikes are not
+implemented. Evidence (Unity EditMode/PlayMode/GPU runs, raw XML/logs/TSV, static art checks): `Docs/Evidence/48/README.md`.
+
 ## Stage 03.3b / #45 — idle + run (2026-10-27)
 
 Base main `97b8c188` includes owner Unity import/scene/package changes and the owner's idle duration 1s; these are preserved.

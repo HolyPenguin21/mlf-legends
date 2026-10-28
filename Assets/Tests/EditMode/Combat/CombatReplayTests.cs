@@ -205,10 +205,8 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(w.FixedStep.Timestep, Is.EqualTo(SimulationTiming.TickDuration));
             ReplayWorld.AssertStateOwners(w.World);
             using var states = w.World.GetExistingSystemManaged<CombatStateUpdateSystemGroup>().GetAllSystems(Allocator.Temp);
-            Assert.That(states.AsArray().ToArray(), Is.EqualTo(new[]
-            {
-                w.World.GetExistingSystem<CombatFacingSystem>(), w.World.GetExistingSystem<CombatMovementSystem>(),
-            }), "Without test requesters, State holds exactly the runtime facing then movement owners.");
+            Assert.That(states.AsArray().ToArray(), Is.EqualTo(ReplayWorld.StateOwners(w.World)),
+                "Without test requesters, State holds exactly the runtime strike, facing, movement and hit owners in order.");
             Assert.That(w.CountWith<SimulationClock>(), Is.EqualTo(1));
             Assert.That(w.CountWith<CombatCommandQueue>(), Is.EqualTo(1));
             Assert.That(w.CountWith<BattleSession>(), Is.EqualTo(1));

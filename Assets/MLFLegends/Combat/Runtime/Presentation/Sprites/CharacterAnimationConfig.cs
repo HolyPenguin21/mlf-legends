@@ -9,7 +9,7 @@ namespace MLFLegends.Combat
     {
         public string ClipId = "idle_combat";
         [Min(1)] public int FrameCount = 1;
-        [Tooltip("Full cycle duration in seconds; independent of JSON duration_ms.")]
+        [Tooltip("Full cycle duration in seconds; independent of JSON duration_ms. Strike/jump clips are fitted to simulation windows: there T and the curve set frame shares only (see ANIMATION.md).")]
         public double TotalDurationSeconds = 1;
         [Tooltip("X: normalized cycle time 0..1. Y: relative speed >=0. Constant 1 = uniform. Finite unweighted tangents only.")]
         public AnimationCurve SpeedCurve = AnimationCurve.Linear(0, 1, 1, 1);

@@ -2203,6 +2203,17 @@
         ],
         "return": [
           5
+        ],
+        "rise": [
+          1,
+          2
+        ],
+        "fall": [
+          3
+        ],
+        "land": [
+          4,
+          5
         ]
       }
     },
@@ -2429,6 +2440,7 @@
         "frames": 9
       }
     ],
+    "jump_phase_markers": "rise [1,2], fall [3], land [4,5] added by the code agent on 2026-10-28 from visual inspection of the delivered frames (1 push-off, 2 apex tuck, 3 descent, 4 landing crouch, 5 recovery); frame 0 (ground anticipation crouch) is not shown because ECS takeoff is immediate. Pending artist confirmation; frames and timing unchanged.",
     "trim": "Opaque bounds plus 2 transparent pixels inside useful rect. Additional 2px extrusion repeats transparent RGBA edge; verified against existing unchanged PNG.",
     "anchors_status": "Hand centres and forearm directions manually estimated from final raster frames and visually debugged; not skeletal/layered source. L/R convention follows repository example and named punch clips. Dashed anchors are hidden hands.",
     "timing": "idle_combat 1200ms / run 500ms retained from repository export metadata. Punches 480ms each match existing combined preview; jump 800ms; kicks 560/560/750ms. Runtime CharacterAnimationConfig timing takes precedence and is unchanged.",

@@ -275,7 +275,7 @@ namespace MLFLegends.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator TheSmokeSceneDrawsItsBattleWithTheRealIdleRunCatalog()
+        public IEnumerator TheSmokeSceneDrawsItsBattleWithTheRealCombatCatalog()
         {
             if (UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/MLFLegends/Art/Characters/MageFemale01/Atlas/mage_female_01_00.png") == null)
                 Assert.Ignore("NOT RUN: install the external mage PNG with its tracked .meta before real-art smoke.");
@@ -293,6 +293,9 @@ namespace MLFLegends.Tests.PlayMode
             Assert.That(renderer.AnimationTiming.DurationSeconds, Is.EqualTo(idle.TotalDurationSeconds));
             Assert.That(renderer.RunAnimationTiming.FrameCount, Is.EqualTo(5));
             Assert.That(renderer.RunAnimationTiming.DurationSeconds, Is.EqualTo(0.5));
+            Assert.That(renderer.Animations.Jump.FrameCount, Is.EqualTo(6), "Stage 05.1: all eight combat clips are bound.");
+            Assert.That(renderer.Animations.Attack(CombatAttackKind.KickSpin).FrameCount, Is.EqualTo(9));
+            Assert.That(renderer.Animations.Attack(CombatAttackKind.PunchLeft).DurationSeconds, Is.EqualTo(29 / 60.0).Within(1e-9));
             Assert.That(renderer.PixelWorldSize, Is.EqualTo(2f / 128f));
             Assert.That(renderer.IsActiveOwner, Is.True);
             AssertMatchesEcs(renderer);

@@ -139,6 +139,7 @@ namespace MLFLegends.Tests.EditMode
         {
             typeof(CombatantId), typeof(CombatTeam), typeof(CombatPosition), typeof(CombatFacing), typeof(InCombat),
             typeof(AppliedCombatCommand), typeof(CombatMotion),
+            typeof(CombatAttackState), typeof(CombatHealth), typeof(CombatHitRecord), // Stage 05.1 strike state, HP, hit ledger
         };
 
         /// <summary>A combatant is the lifecycle's unmanaged archetype only: no GameObject, MonoBehaviour or physics/animation object.</summary>
@@ -177,7 +178,8 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(bench.World.GetExistingSystem<CombatMovementSystem>(), Is.Not.EqualTo(SystemHandle.Null));
             ReplayWorld.AssertStateOwners(bench.World);
             using var systems = bench.World.GetExistingSystemManaged<CombatStateUpdateSystemGroup>().GetAllSystems(Allocator.Temp);
-            Assert.That(systems.Length, Is.EqualTo(2), "Stage 02.2 State contains exactly the facing and movement owners.");
+            Assert.That(systems.AsArray().ToArray(), Is.EqualTo(ReplayWorld.StateOwners(bench.World)),
+                "Stage 05.1 State contains exactly the strike, facing, movement and hit owners.");
         }
 
         static int[] SceneObjectCounts() => new[]

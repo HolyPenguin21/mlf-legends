@@ -23,7 +23,7 @@ namespace MLFLegends.Combat
     [DisallowMultipleComponent]
     public sealed class PlayerInputAdapter : MonoBehaviour
     {
-        [Tooltip("Asset with a Player map (Move, Attack, Jump, Guard). Bindings are provisional and remappable.")]
+        [Tooltip("Asset with a Player map (Move, Attack, Jump, Guard, Kick). Bindings are provisional and remappable.")]
         [SerializeField] InputActionAsset m_Actions;
 
         static uint s_LastEnable;

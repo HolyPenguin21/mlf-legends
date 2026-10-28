@@ -176,18 +176,29 @@ namespace MLFLegends.Tests.PlayMode
     {
         public bool Move = true;
         public bool AlternateDirection;
+
+        /// <summary>Stage 05.1: when nonzero, fighters with ID % StrikeModulo == 1 press Attack on relative ticks t with t % StrikeEvery == 1.</summary>
+        public uint StrikeEvery;
+        public uint StrikeModulo = 4;
+
         protected override void OnUpdate()
         {
             var session = SystemAPI.GetSingleton<BattleSession>();
-            if (!session.IsActive || !Move) return;
+            if (!session.IsActive) return;
             var tick = SystemAPI.GetSingleton<SimulationClock>().Tick;
             var queue = SystemAPI.GetSingletonEntity<CombatCommandQueue>();
             var submissions = EntityManager.GetBuffer<CombatCommandSubmission>(queue);
+            var strike = StrikeEvery != 0 && session.RelativeTick(tick) % StrikeEvery == 1;
             foreach (var id in SystemAPI.Query<RefRO<CombatantId>>().WithAll<InCombat>())
-                if ((id.ValueRO.Value & 1) == 0)
+                if (Move && (id.ValueRO.Value & 1) == 0)
                     submissions.Add(new CombatCommandSubmission(new CombatCommand
                     {
                         Combatant = id.ValueRO, Tick = tick, MoveZ = (sbyte)(AlternateDirection && (tick & 1) != 0 ? -1 : 1), Source = CommandSource.AI,
+                    }));
+                else if (strike && id.ValueRO.Value % StrikeModulo == 1)
+                    submissions.Add(new CombatCommandSubmission(new CombatCommand
+                    {
+                        Combatant = id.ValueRO, Tick = tick, Pressed = CommandButtons.Attack, Source = CommandSource.AI,
                     }));
         }
 

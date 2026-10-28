@@ -1,0 +1,110 @@
+namespace MLFLegends.Combat
+{
+    /// <summary>Timing, reach and damage of one strike. Ticks are fixed simulation ticks (<see cref="SimulationTiming"/>).</summary>
+    public struct CombatAttackDefinition
+    {
+        public byte WindupTicks;
+        public byte ActiveTicks;
+        public byte RecoveryTicks;
+
+        /// <summary>
+        /// Recovery ticks that always play before a buffered follow-up may start the next strike of the series;
+        /// <see cref="CombatAttackTuning.NoChain"/> for a finisher.
+        /// </summary>
+        public byte ChainDelayTicks;
+
+        /// <summary>HP removed from each valid target, once per strike.</summary>
+        public int Damage;
+
+        /// <summary>Hit box along the attacker's facing, world units from its position (forward distance, inclusive).</summary>
+        public float ReachMin;
+        public float ReachMax;
+
+        /// <summary>Largest |ΔZ| (depth) between attacker and target, world units.</summary>
+        public float DepthHalfWidth;
+
+        /// <summary>Largest |ΔY| (altitude) between attacker and target, world units.</summary>
+        public float HeightTolerance;
+
+        public int TotalTicks => WindupTicks + ActiveTicks + RecoveryTicks;
+
+        public bool CanChain => ChainDelayTicks != CombatAttackTuning.NoChain;
+    }
+
+    /// <summary>
+    /// Provisional Stage 05.1 strike data and series rules: the single authoritative source of strike timing. Animation
+    /// timing is fitted to these windows (CombatAnimationSet); it never moves a hit. Not approved balance values.
+    /// </summary>
+    /// <remarks>
+    /// Initial windows follow the delivered art's frame proportions (punch 29, kick 33, spin 45 ticks at 60 Hz). Reach
+    /// matches the drawn fist/foot (2 world units per 128 px nominal height).
+    /// </remarks>
+    public static class CombatAttackTuning
+    {
+        public const byte NoChain = byte.MaxValue;
+
+        /// <summary>Hit points of every spawned combatant.</summary>
+        public const int MaxHealth = 100;
+
+        /// <summary>Strikes in one series at most; the last one always plays its full recovery.</summary>
+        public const int MaxSeriesLength = 4;
+
+        public static CombatAttackDefinition Get(CombatAttackKind kind)
+        {
+            switch (kind)
+            {
+                case CombatAttackKind.PunchLeft:
+                    return Strike(13, 5, 11, 4, 4, 1.0f);
+                case CombatAttackKind.PunchRight:
+                    return Strike(9, 9, 11, 4, 4, 1.0f);
+                case CombatAttackKind.KickLeft:
+                case CombatAttackKind.KickRight:
+                    return Strike(11, 5, 17, 6, 7, 1.3f);
+                case CombatAttackKind.KickSpin:
+                    return Strike(19, 6, 20, NoChain, 12, 1.45f);
+                default:
+                    return default;
+            }
+        }
+
+        static CombatAttackDefinition Strike(byte windup, byte active, byte recovery, byte chainDelay, int damage, float reach) =>
+            new CombatAttackDefinition
+            {
+                WindupTicks = windup, ActiveTicks = active, RecoveryTicks = recovery, ChainDelayTicks = chainDelay,
+                Damage = damage, ReachMin = 0f, ReachMax = reach, DepthHalfWidth = 0.4f, HeightTolerance = 0.9f,
+            };
+
+        /// <summary>Phase on the tick <paramref name="elapsed"/> ticks after the strike's first tick; None once it ended.</summary>
+        public static CombatAttackPhase PhaseAt(in CombatAttackDefinition strike, uint elapsed)
+        {
+            if (elapsed < strike.WindupTicks)
+                return CombatAttackPhase.Windup;
+            if (elapsed < (uint)(strike.WindupTicks + strike.ActiveTicks))
+                return CombatAttackPhase.Active;
+            return elapsed < (uint)strike.TotalTicks ? CombatAttackPhase.Recovery : CombatAttackPhase.None;
+        }
+
+        /// <summary>The strike button of a tick's Pressed: Attack (hand) wins over Kick; None without either.</summary>
+        public static CommandButtons StrikeButton(CommandButtons pressed) =>
+            (pressed & CommandButtons.Attack) != 0 ? CommandButtons.Attack
+            : (pressed & CommandButtons.Kick) != 0 ? CommandButtons.Kick
+            : CommandButtons.None;
+
+        /// <summary>
+        /// The strike <paramref name="button"/> performs after <paramref name="previous"/> (None = first of a series): the
+        /// first strike is left, each follow-up uses the other side, and a Kick after <see cref="CombatAttackKind.KickRight"/>
+        /// is the <see cref="CombatAttackKind.KickSpin"/> finisher.
+        /// </summary>
+        public static CombatAttackKind Select(CommandButtons button, CombatAttackKind previous)
+        {
+            var left = previous != CombatAttackKind.PunchLeft && previous != CombatAttackKind.KickLeft;
+            if (button == CommandButtons.Attack)
+                return left ? CombatAttackKind.PunchLeft : CombatAttackKind.PunchRight;
+            if (button != CommandButtons.Kick)
+                return CombatAttackKind.None;
+            if (previous == CombatAttackKind.KickRight)
+                return CombatAttackKind.KickSpin;
+            return left ? CombatAttackKind.KickLeft : CombatAttackKind.KickRight;
+        }
+    }
+}

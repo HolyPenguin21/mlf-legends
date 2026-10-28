@@ -14,6 +14,9 @@ using Object = UnityEngine.Object;
 
 namespace MLFLegends.Tests.PlayMode
 {
+    // Stage 03.3 / 05.1: the renderer's CharacterConfig mode in the default World with the technical combat manifest
+    // (TechnicalAtlasFixture.CombatManifestJson): idle tech_a/tech_c, run tech_b/tech_c, strikes windup tech_a /
+    // strike tech_c / recovery tech_b. Expected frames are independent tick-window oracles of the documented rules.
     public class CombatSpriteAnimationPlayModeTests
     {
         readonly List<Object> m_Owned = new List<Object>();
@@ -41,11 +44,7 @@ namespace MLFLegends.Tests.PlayMode
         {
             var pages = TechnicalAtlasFixture.CreatePages();
             m_Owned.AddRange(pages);
-            var json = TechnicalAtlasFixture.ManifestJson.Replace("tech_idle", "idle_combat")
-                .Replace("{ \"id\": \"tech_b\", \"duration_ms\": 62.5 }", "{ \"id\": \"tech_c\", \"duration_ms\": 62.5 }");
-            // Add a real two-page test-only loop (tech_b / tech_c), not a production missing-clip fallback.
-            json = json.Replace("\"tech_cast\": {", "\"run\": { \"frames\": [{\"id\":\"tech_b\",\"duration_ms\":150},{\"id\":\"tech_c\",\"duration_ms\":150}], \"loop\":true,\"hold_last\":false,\"markers\":{} }, \"tech_cast\": {");
-            var manifest = new TextAsset(json);
+            var manifest = new TextAsset(TechnicalAtlasFixture.CombatManifestJson("tech_a,tech_c", "tech_b,tech_c"));
             m_Owned.Add(manifest);
             m_Catalog = ScriptableObject.CreateInstance<SpriteAtlasCatalog>();
             m_Owned.Add(m_Catalog);
@@ -63,20 +62,36 @@ namespace MLFLegends.Tests.PlayMode
             go.SetActive(true);
         }
 
-        void SetTiming(int count, double duration) => m_Config.Set(new CharacterAnimationEntry
+        /// <summary>Every combat clip: idle N/T as given, run 2 frames / 0.3 s, jump 6 / 0.5 s, strikes at their authoritative total.</summary>
+        static CharacterAnimationSettings[] Clips(int idleCount, double idleDuration, CharacterAnimationSettings run = null)
         {
-            CharacterId = TechnicalAtlasFixture.CharacterId, AtlasCatalog = m_Catalog,
-            Animations = new[] { new CharacterAnimationSettings { FrameCount = count, TotalDurationSeconds = duration },
-                new CharacterAnimationSettings { ClipId = "run", FrameCount = 2, TotalDurationSeconds = 0.3 } },
+            var clips = new List<CharacterAnimationSettings>
+            {
+                new CharacterAnimationSettings { FrameCount = idleCount, TotalDurationSeconds = idleDuration },
+                run ?? new CharacterAnimationSettings { ClipId = "run", FrameCount = 2, TotalDurationSeconds = 0.3 },
+                new CharacterAnimationSettings { ClipId = "jump", FrameCount = 6, TotalDurationSeconds = 0.5 },
+            };
+            for (var kind = CombatAttackKind.PunchLeft; kind <= CombatAttackKind.KickSpin; kind++)
+                clips.Add(new CharacterAnimationSettings { ClipId = CombatAnimationSet.AttackClip(kind), FrameCount = 3,
+                    TotalDurationSeconds = CombatAttackTuning.Get(kind).TotalTicks / (double)SimulationTiming.TickRateHz });
+            return clips.ToArray();
+        }
+
+        void SetTiming(int count, double duration, CharacterAnimationSettings run = null) => m_Config.Set(new CharacterAnimationEntry
+        {
+            CharacterId = TechnicalAtlasFixture.CharacterId, AtlasCatalog = m_Catalog, Animations = Clips(count, duration, run),
         });
+
+        /// <summary>Idle of a fighter that never left it: frame 0 from the battle's first tick, T = 1.2 s (36 ticks per frame).</summary>
+        static uint IdleFrame(uint relative) => relative == 0 || (relative - 1) % 72 < 36 ? 0u : 2u;
 
         void AssertCurrentFrame(int count)
         {
             m_Renderer.Refresh();
-            var expected = Session.RelativeTick(Tick) % 72 < 36 ? 0u : 2u;
+            var expected = IdleFrame(Session.RelativeTick(Tick));
             Assert.That(m_Renderer.Stats.Instances, Is.EqualTo(count));
             foreach (var instance in m_Renderer.Extraction.Instances)
-                Assert.That(instance.Frame, Is.EqualTo(expected), "One battle-time phase; visibility/position never changes it.");
+                Assert.That(instance.Frame, Is.EqualTo(expected), "Idle since the battle start; visibility/position never changes it.");
             Assert.That(m_Renderer.Extraction.PageInstances(expected == 0 ? 0 : 1), Is.EqualTo(count));
         }
 
@@ -125,14 +140,27 @@ namespace MLFLegends.Tests.PlayMode
             Assert.That(m_Renderer.Stats.Instances, Is.Zero);
         }
 
+        /// <summary>Even IDs run from the first tick (stride phase = distance), odd IDs stay idle.</summary>
+        void AssertMixed(int count)
+        {
+            m_Renderer.Refresh();
+            var relative = Session.RelativeTick(Tick);
+            var run = relative % 18 < 9 ? 1u : 2u;
+            Assert.That(m_Renderer.Stats.Instances, Is.EqualTo(count));
+            for (var i = 0; i < m_Renderer.Extraction.Count; i++)
+            {
+                var id = m_Renderer.Extraction.InstanceIds[i];
+                Assert.That(m_Renderer.Extraction.Instances[i].Frame, Is.EqualTo((id & 1) == 0 ? run : IdleFrame(relative)));
+            }
+        }
+
         [UnityTest]
-        public IEnumerator MixedIdleRunUsesAcceptedMovementAndKeepsIndependentCachedTiming([Values(0, 49, 199)] int allies)
+        public IEnumerator MixedIdleRunUsesActualMovementAndKeepsIndependentCachedTiming([Values(0, 49, 199)] int allies)
         {
             Create();
             m_Producer = SpriteRunTestProducer.Install(DefaultWorld);
             yield return RestartBattle(Duel(float3.zero, FacingDirection.Right, new float3(3, 0, 0), FacingDirection.Left, allies));
             var count = 2 + 2 * allies;
-            var atlas = m_Renderer.Atlas;
             var idle = m_Renderer.AnimationTiming;
             var run = m_Renderer.RunAnimationTiming;
             var builds = m_Renderer.TimingBuilds;
@@ -156,14 +184,9 @@ namespace MLFLegends.Tests.PlayMode
             m_Renderer.enabled = true;
             m_Camera.transform.position -= Vector3.right * 10000;
             AssertMixed(count);
-            atlas = m_Renderer.Atlas;
-            m_Config.TryResolve(TechnicalAtlasFixture.CharacterId, "idle_combat", out _, out var idleSettings, out _);
-            m_Config.Set(new CharacterAnimationEntry
-            {
-                CharacterId = TechnicalAtlasFixture.CharacterId, AtlasCatalog = m_Catalog,
-                Animations = new[] { idleSettings, new CharacterAnimationSettings
-                    { ClipId = "run", FrameCount = 1, TotalDurationSeconds = 0.9, SpeedCurve = AnimationCurve.Linear(0, 0.5f, 1, 1.5f) } },
-            });
+            var atlas = m_Renderer.Atlas;
+            SetTiming(2, 1.2, new CharacterAnimationSettings
+                { ClipId = "run", FrameCount = 1, TotalDurationSeconds = 0.9, SpeedCurve = AnimationCurve.Linear(0, 0.5f, 1, 1.5f) });
             // Loop speed discontinuity is intentional for this edit and is only a warning.
             LogAssert.Expect(LogType.Warning, new Regex("run.*speed differs"));
             m_Renderer.Refresh();
@@ -173,22 +196,43 @@ namespace MLFLegends.Tests.PlayMode
             Assert.That(m_Renderer.RunAnimationTiming.DurationSeconds, Is.EqualTo(0.9));
             m_Producer.Move = false;
             tick = Tick;
-            yield return Until(() => Tick > tick);
-            AssertCurrentFrame(count); // next processor tick publishes implicit None, no raw-input dependency
+            yield return Until(() => Tick > tick + CombatMovementTuning.MoveStreakGraceTicks + 1);
+            m_Renderer.Refresh();
+            foreach (var instance in m_Renderer.Extraction.Instances.ToArray().Where((_, i) => (m_Renderer.Extraction.InstanceIds[i] & 1) == 0))
+                Assert.That(instance.Frame, Is.Zero, "After the stop grace the former runners enter idle at its first frame (no raw-input dependency).");
         }
 
-        void AssertMixed(int count)
+        [UnityTest]
+        public IEnumerator StrikesShowTheirFramesOnTheSimulationWindowsForEveryRosterSize([Values(0, 49, 199)] int allies)
         {
-            m_Renderer.Refresh();
-            var relative = Session.RelativeTick(Tick);
-            var idle = relative % 72 < 36 ? 0u : 2u;
-            var run = relative % 18 < 9 ? 1u : 2u;
-            Assert.That(m_Renderer.Stats.Instances, Is.EqualTo(count));
-            for (var i = 0; i < m_Renderer.Extraction.Count; i++)
+            Create();
+            m_Producer = SpriteRunTestProducer.Install(DefaultWorld);
+            m_Producer.Move = false;
+            m_Producer.StrikeEvery = 40;
+            m_Producer.StrikeModulo = 2; // odd IDs strike: every roster size has one
+            yield return RestartBattle(Duel(float3.zero, FacingDirection.Right, new float3(3, 0, 0), FacingDirection.Left, allies));
+            var punch = CombatAttackTuning.Get(CombatAttackKind.PunchLeft);
+            var seen = new HashSet<(uint, CombatAttackPhase)>();
+            var start = Tick;
+            yield return Until(() =>
             {
-                var id = m_Renderer.Extraction.InstanceIds[i];
-                Assert.That(m_Renderer.Extraction.Instances[i].Frame, Is.EqualTo((id & 1) == 0 ? run : idle));
-            }
+                m_Renderer.Refresh();
+                var relative = Session.RelativeTick(Tick);
+                var phase = relative == 0 ? CombatAttackPhase.None : CombatAttackTuning.PhaseAt(punch, (relative - 1) % 40);
+                var striker = phase == CombatAttackPhase.Windup ? 0u : phase == CombatAttackPhase.Active ? 2u : phase == CombatAttackPhase.Recovery ? 1u : 0u;
+                for (var i = 0; i < m_Renderer.Extraction.Count; i++)
+                {
+                    var id = m_Renderer.Extraction.InstanceIds[i];
+                    var frame = m_Renderer.Extraction.Instances[i].Frame;
+                    if (id % 2 == 1)
+                    {
+                        Assert.That(frame, Is.EqualTo(striker), $"r{relative} {phase}");
+                        seen.Add((frame, phase));
+                    }
+                }
+                return Tick - start > 90;
+            });
+            Assert.That(seen.Select(s => s.Item2), Is.SupersetOf(new[] { CombatAttackPhase.Windup, CombatAttackPhase.Active, CombatAttackPhase.Recovery }));
         }
 
         [UnityTest, Category("Graphics")]
@@ -212,7 +256,8 @@ namespace MLFLegends.Tests.PlayMode
             foreach (var secondHalf in new[] { false, true })
             {
                 Time.timeScale = m_TimeScale;
-                yield return Until(() => { var t = Session.RelativeTick(Tick) % 12; return secondHalf ? t >= 8 && t <= 10 : t >= 2 && t <= 4; });
+                // Idle T = 0.2 s from the first battle tick: tech_a on (r − 1) % 12 < 6, tech_c otherwise.
+                yield return Until(() => { var t = (Session.RelativeTick(Tick) + 11) % 12; return secondHalf ? t >= 8 && t <= 10 : t >= 2 && t <= 4; });
                 Time.timeScale = 0;
                 var frame = secondHalf ? "tech_c" : "tech_a";
                 reference.SetDefaultFrame(frame);
@@ -225,12 +270,13 @@ namespace MLFLegends.Tests.PlayMode
         }
 
         [UnityTest, Category("Graphics")]
-        public IEnumerator MixedIdleRunMatchesManualFramesAcrossPagesAndDepth([Values(1, 2, 3)] int pixelsPerSourcePixel)
+        public IEnumerator MixedIdleRunStrikeMatchesManualFramesAcrossPagesAndDepth([Values(1, 2, 3)] int pixelsPerSourcePixel)
         {
             RequireGraphicsDevice();
             Create();
             m_Producer = SpriteRunTestProducer.Install(DefaultWorld);
             m_Producer.AlternateDirection = true; // keep the moving actor in view while testing its accepted commands
+            m_Producer.StrikeEvery = 40;
             var target = CreateTarget(256);
             var referenceTarget = CreateTarget(256);
             var readback = new Texture2D(256, 256, TextureFormat.RGBA32, false, false);
@@ -242,27 +288,34 @@ namespace MLFLegends.Tests.PlayMode
             var reference = CreateRenderer(referenceCamera);
             m_Owned.Add(referenceCamera);
             m_Owned.Add(reference);
-            yield return RestartBattle(Duel(new float3(-0.4f, 0, 0), FacingDirection.Left,
-                new float3(0.4f, 0, 0), FacingDirection.Right));
-            foreach (var runOnPage1 in new[] { false, true })
+            // Four fighters: one of them (ID % 4 == 1) strikes, the even ones run, the other one idles.
+            yield return RestartBattle(Duel(new float3(-0.4f, 0, 0), FacingDirection.Left, new float3(0.4f, 0, 0), FacingDirection.Right, 1));
+            var punch = CombatAttackTuning.Get(CombatAttackKind.PunchLeft);
+            foreach (var active in new[] { true, false })
             {
                 Time.timeScale = m_TimeScale;
+                // Strikes repeat every 40 ticks (a slow first frame may skip one window): Active = strike ticks 14..16,
+                // Recovery = strike ticks 20..23. Runner and idle frames follow their own independent tick oracles.
                 yield return Until(() =>
                 {
-                    var relative = Session.RelativeTick(Tick) % 72;
-                    return runOnPage1 ? relative >= 10 && relative <= 12 : relative >= 2 && relative <= 4;
+                    var relative = Session.RelativeTick(Tick);
+                    var e = (relative + 39) % 40;
+                    return relative >= 1 && (active ? e >= 14 && e <= 16 : e >= 20 && e <= 23);
                 });
                 Time.timeScale = 0;
-                var idleFrame = "tech_a"; // both independent tick windows are inside the first idle half
-                var runFrame = runOnPage1 ? "tech_c" : "tech_b";
+                var relativeNow = Session.RelativeTick(Tick);
+                Assert.That(CombatAttackTuning.PhaseAt(punch, (relativeNow - 1) % 40), Is.EqualTo(active ? CombatAttackPhase.Active : CombatAttackPhase.Recovery));
+                var runFrame = relativeNow % 18 < 9 ? "tech_b" : "tech_c";
+                var idleFrame = IdleFrame(relativeNow) == 0 ? "tech_a" : "tech_c";
                 reference.Refresh(); // bind this battle before storing manual selections (new battles clear old selections)
                 foreach (var actor in Combatants())
-                    reference.SetFrame(new CombatantId { Value = actor.id }, (actor.id & 1) == 0 ? runFrame : idleFrame);
+                    reference.SetFrame(new CombatantId { Value = actor.id }, (actor.id & 1) == 0 ? runFrame
+                        : actor.id % 4 == 1 ? (active ? "tech_c" : "tech_b") : idleFrame);
                 yield return null;
                 var actual = RenderAndRead(m_Renderer, m_Camera, readback);
                 var expected = RenderAndRead(reference, referenceCamera, referenceReadback);
                 Assert.That(actual, Is.EqualTo(expected), "Per-combatant selection precedes trim/depth/page grouping and anchor transform.");
-                SaveEvidence(readback, "45-mixed-" + pixelsPerSourcePixel + "px-page" + (runOnPage1 ? "1" : "0"));
+                SaveEvidence(readback, "48-mixed-" + pixelsPerSourcePixel + "px-" + (active ? "active" : "recovery"));
             }
         }
 
@@ -287,9 +340,12 @@ namespace MLFLegends.Tests.PlayMode
             Assert.That(cStart, Is.GreaterThan(bStart));
             json = json.Remove(bStart, cStart - bStart);
             var clipsStart = json.IndexOf("\"clips\":");
+            var once = "{\"frames\":[{\"id\":\"tech_a\",\"duration_ms\":50},{\"id\":\"tech_c\",\"duration_ms\":50},{\"id\":\"tech_a\",\"duration_ms\":50}],\"loop\":false,\"hold_last\":false,\"markers\":{\"strike_pose\":[1]}}";
             json = json.Substring(0, clipsStart) + "\"clips\": {" +
                 "\"idle_combat\":{\"frames\":[{\"id\":\"tech_c\",\"duration_ms\":99}],\"loop\":true,\"hold_last\":false,\"markers\":{}}," +
-                "\"run\":{\"frames\":[{\"id\":\"tech_a\",\"duration_ms\":33}],\"loop\":true,\"hold_last\":false,\"markers\":{}}},\"compatible_transitions\":[]}";
+                "\"run\":{\"frames\":[{\"id\":\"tech_a\",\"duration_ms\":33}],\"loop\":true,\"hold_last\":false,\"markers\":{}}," +
+                "\"jump\":{\"frames\":[{\"id\":\"tech_a\",\"duration_ms\":50},{\"id\":\"tech_c\",\"duration_ms\":50},{\"id\":\"tech_a\",\"duration_ms\":50}],\"loop\":false,\"hold_last\":false,\"markers\":{\"rise\":[0],\"fall\":[1],\"land\":[2]}}," +
+                string.Join(",", CombatAnimationSet.ClipIds.Skip(3).Select(c => $"\"{c}\":{once}")) + "},\"compatible_transitions\":[]}";
             var manifest = new TextAsset(json);
             var secondCatalog = ScriptableObject.CreateInstance<SpriteAtlasCatalog>();
             var page0 = new Texture2D(256, 256, TextureFormat.RGBA32, false, false);
@@ -297,12 +353,10 @@ namespace MLFLegends.Tests.PlayMode
             page0.Apply(false, true);
             m_Owned.AddRange(new Object[] { manifest, secondCatalog, page0 });
             secondCatalog.Set(manifest, new[] { new SpriteAtlasPageBinding(TechnicalAtlasFixture.Page0File, page0) });
-            m_Config.Set(original, new CharacterAnimationEntry
-            {
-                CharacterId = "second_character", AtlasCatalog = secondCatalog,
-                Animations = new[] { new CharacterAnimationSettings { FrameCount = 1, TotalDurationSeconds = 2.5 },
-                    new CharacterAnimationSettings { ClipId = "run", FrameCount = 1, TotalDurationSeconds = 0.7 } },
-            }, new CharacterAnimationEntry { CharacterId = "unconfigured_other" });
+            var second = Clips(1, 2.5, new CharacterAnimationSettings { ClipId = "run", FrameCount = 1, TotalDurationSeconds = 0.7 });
+            second[2].FrameCount = 3;
+            m_Config.Set(original, new CharacterAnimationEntry { CharacterId = "second_character", AtlasCatalog = secondCatalog, Animations = second },
+                new CharacterAnimationEntry { CharacterId = "unconfigured_other" });
             m_Producer = SpriteRunTestProducer.Install(DefaultWorld);
             yield return RestartBattle(BattleSetup.Default);
             m_Renderer.Refresh();
@@ -323,6 +377,7 @@ namespace MLFLegends.Tests.PlayMode
             Assert.That(m_Renderer.PixelWorldSize, Is.EqualTo(2f / 160f));
             Assert.That(m_Renderer.AnimationTiming.DurationSeconds, Is.EqualTo(2.5));
             Assert.That(m_Renderer.RunAnimationTiming.DurationSeconds, Is.EqualTo(0.7));
+            Assert.That(m_Renderer.Animations.Jump.FrameCount, Is.EqualTo(3), "Its own clip table, not the first character's.");
             for (var i = 0; i < m_Renderer.Extraction.Count; i++)
                 Assert.That(m_Renderer.Extraction.Instances[i].Frame,
                     Is.EqualTo((m_Renderer.Extraction.InstanceIds[i] & 1) == 0 ? 0u : 1u));
@@ -351,7 +406,7 @@ namespace MLFLegends.Tests.PlayMode
             Assert.That(m_Renderer.TimingBuilds, Is.EqualTo(builds + 1));
             foreach (var instance in m_Renderer.Extraction.Instances) Assert.That(instance.Frame, Is.Zero);
             SetTiming(3, 1.2);
-            LogAssert.Expect(LogType.Error, new Regex("animation rejected.*\\n.*FrameCount"));
+            LogAssert.Expect(LogType.Error, new Regex("(?s)animation rejected.*idle_combat.FrameCount"));
             m_Renderer.Refresh();
             m_Renderer.Refresh();
             Assert.That(m_Renderer.Stats.Instances, Is.Zero);
@@ -359,36 +414,34 @@ namespace MLFLegends.Tests.PlayMode
             AssertCurrentFrame(2);
             var manifest = m_Catalog.Manifest;
             var bindings = m_Catalog.Pages.ToArray();
-            var missingClip = new TextAsset(manifest.text.Replace("idle_combat", "unavailable_idle"));
-            m_Owned.Add(missingClip);
-            m_Catalog.Set(missingClip, bindings);
-            LogAssert.Expect(LogType.Error, new Regex("animation rejected.*\\n.*clip missing"));
-            m_Renderer.Refresh();
-            m_Renderer.Refresh();
-            Assert.That(m_Renderer.Stats.Instances, Is.Zero, "No first-clip fallback.");
-            m_Catalog.Set(manifest, bindings);
-            AssertCurrentFrame(2);
-            var missingRun = new TextAsset(manifest.text.Replace("\"run\"", "\"unavailable_run\""));
-            m_Owned.Add(missingRun);
-            m_Catalog.Set(missingRun, bindings);
-            LogAssert.Expect(LogType.Error, new Regex("animation rejected.*\\n.*run.*clip missing"));
-            m_Renderer.Refresh();
-            m_Renderer.Refresh();
-            Assert.That(m_Renderer.AnimationTiming, Is.Null, "Missing run cannot retain old idle timing.");
-            Assert.That(m_Renderer.RunAnimationTiming, Is.Null);
-            Assert.That(m_Renderer.Stats.Instances, Is.Zero);
-            m_Catalog.Set(manifest, bindings);
-            AssertCurrentFrame(2);
+            void Rejects(string text, string error)
+            {
+                var broken = new TextAsset(text);
+                m_Owned.Add(broken);
+                m_Catalog.Set(broken, bindings);
+                LogAssert.Expect(LogType.Error, new Regex("(?s)animation rejected.*" + error));
+                m_Renderer.Refresh();
+                m_Renderer.Refresh();
+                Assert.That(m_Renderer.Animations, Is.Null, "An invalid clip cannot retain an old table or substitute another clip.");
+                Assert.That(m_Renderer.Stats.Instances, Is.Zero, "No first-clip fallback.");
+                m_Catalog.Set(manifest, bindings);
+                AssertCurrentFrame(2);
+            }
+
+            Rejects(manifest.text.Replace("\"idle_combat\":", "\"unavailable_idle\":"), "idle_combat: clip missing");
+            Rejects(manifest.text.Replace("\"run\":", "\"unavailable_run\":"), "run: clip missing");
+            Rejects(manifest.text.Replace("\"kick_spin\":", "\"unavailable_spin\":"), "kick_spin: clip missing");
+            Rejects(manifest.text.Replace("\"land\": [4, 5]", "\"landing\": [4, 5]"), "jump.markers.land: missing");
+            Rejects(manifest.text.Replace("\"strike_pose\": [1] } }, \"punch_right\"", "\"pose\": [1] } }, \"punch_right\""), "punch_left.markers.strike_pose: missing");
             m_Config.Set(new CharacterAnimationEntry
             {
                 CharacterId = TechnicalAtlasFixture.CharacterId, AtlasCatalog = m_Catalog,
-                Animations = new[] { new CharacterAnimationSettings { FrameCount = 2, TotalDurationSeconds = 1.2 } },
+                Animations = Clips(2, 1.2).Where(c => c.ClipId != "kick_left").ToArray(),
             });
-            LogAssert.Expect(LogType.Error, new Regex("animation rejected.*run.*settings missing"));
+            LogAssert.Expect(LogType.Error, new Regex("(?s)animation rejected.*kick_left: animation settings missing"));
             m_Renderer.Refresh();
             m_Renderer.Refresh();
             Assert.That(m_Renderer.AnimationTiming, Is.Null);
-            Assert.That(m_Renderer.RunAnimationTiming, Is.Null);
             Assert.That(m_Renderer.Stats.Instances, Is.Zero);
             SetTiming(2, 1.2);
             AssertCurrentFrame(2);

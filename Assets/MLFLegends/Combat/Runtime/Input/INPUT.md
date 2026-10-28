@@ -26,7 +26,7 @@ disables the shared asset or its maps: each capture enables and disposes only it
 | Guard (Button, new) | **L** | right shoulder | `Guard` |
 
 Arrow keys were removed from Move: they pan the camera (`Presentation/CAMERA.md`). Attack and Guard are passed as the
-existing intentions only; attacks, guard and L + direction dash are later stages. Input is never camera-relative.
+existing intentions only (historical #22 text; Stage 05.1 executes Attack/Kick as strikes, see below); guard and L + direction dash are later stages. Input is never camera-relative.
 
 ## Sampling policy (what one command contains)
 
@@ -129,3 +129,10 @@ Since #38 CombatSmoke draws the fighters with the generated technical atlas (not
   (CombatSmoke); the Input System's real focus cycle (test runtime focus, runInBackground on/off) with the device
   re-reporting held K/J/L; an adapter following a default World that appears late or is replaced A → B → A.
 - `Tests/EditMode/Performance/PlayerInputBenchmarkTests`: producer cost, see `Docs/PERFORMANCE_BASELINE.md`.
+
+## Stage 05.1 Kick (PR #48)
+
+The Player map gains a `Kick` Button action (keyboard **U**, gamepad **North**; provisional, remappable). The capture
+treats it exactly like Attack/Jump/Guard (Held = device state, Pressed = one tick, blocked across focus/device resets).
+`Interact` (template action) is also bound to gamepad North; it has no combat meaning and is not read. J now executes a
+strike and U a kick (rules in `Docs/COMBAT_SPEC.md`); during a strike K does not jump.

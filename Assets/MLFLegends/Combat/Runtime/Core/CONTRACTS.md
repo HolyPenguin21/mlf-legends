@@ -99,3 +99,12 @@ Rules (the processor #4 implements them; their outcome must be observable for te
   owns the accepted-command record. Does not write position, facing or `InCombat`.
 - **#5 bootstrap.** Allocates `CombatantId`, sets `CombatTeam`, `CombatPosition`, a valid
   `CombatFacing` and enabled `InCombat`; human and AI combatants carry identical components.
+
+## Stage 05.1 additions (PR #48)
+
+- `CommandButtons.Kick = 1 << 3` (foot strike); `Attack` is the hand strike. The processor accepts it like the others.
+- `CombatAttackState` (`CombatAttack.cs`): current strike kind, start tick, series length, one buffered follow-up press,
+  last series end tick. Spawned free; written only by `CombatActionSystem`.
+- `CombatHealth` (`Current`/`Max`, spawned 100/100) and the `CombatHitRecord` buffer (per-strike ledger): written only by
+  `CombatHitSystem` (the ledger is cleared by `CombatActionSystem` when a strike starts). 0 HP does not defeat yet.
+- `CombatMotion` gains `LandTick`, `LastMoveTick`, `MoveStreakStartTick`, `MoveStreakDistance` (movement owner only).

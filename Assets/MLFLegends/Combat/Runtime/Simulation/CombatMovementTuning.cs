@@ -11,5 +11,11 @@ namespace MLFLegends.Combat
 
         /// <summary>Downward acceleration, world units per simulated second squared.</summary>
         public const float Gravity = 20f;
+
+        /// <summary>
+        /// Ticks without planar movement that still continue a movement streak (Stage 05.1): run keeps its stride phase
+        /// across a direction change or a short release instead of flickering to idle.
+        /// </summary>
+        public const uint MoveStreakGraceTicks = 6;
     }
 }

@@ -114,3 +114,9 @@ Derived edges (rule 7, e.g. "fresh direction press" for dash) are not produced y
 before Stage 02 and the dash rule is not specified. When needed they are added to this processor
 (computed from the previous `AppliedCombatCommand` before it is overwritten), not to a new system.
 Action legality (stamina, locks) belongs to later rule owners.
+
+## Stage 05.1 (PR #48)
+
+`CommandButtons.Kick` (bit 3) is a valid button for every source; values with bits above it stay `InvalidValue`.
+Attack/Kick presses are executed by `CombatActionSystem` from `AppliedCombatCommand` only — the processor still applies
+no gameplay rule, and player and AI strikes share every step after the queue.

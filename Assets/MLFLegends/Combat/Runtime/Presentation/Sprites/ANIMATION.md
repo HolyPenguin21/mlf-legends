@@ -1,3 +1,48 @@
+# Character animation — Stage 05.1 / PR #48 (current)
+
+Eight clips of `mage_female_01` are bound to authoritative ECS state through the existing renderer and the one shared
+`CharacterAnimationConfig`: `idle_combat`, `run`, `jump`, `punch_left`, `punch_right`, `kick_left`, `kick_right`,
+`kick_spin`. Relaxed idle, walk, dash and cast are neither required nor read; their absence never blocks loading.
+`CombatAnimationSet` (one per selected character/config revision, shared by the roster) selects each fighter's frame from
+`CombatAttackState`, `CombatMotion` and the clock only — no per-fighter history, Animator, blending or second clock.
+
+| Priority | State (authoritative source) | Clip | Timing |
+|---|---|---|---|
+| 1 | strike running (`CombatAttackState.Kind`) | that strike | fitted to Windup / Active / Recovery ticks of `CombatAttackTuning` |
+| 2 | airborne (`CombatMotion.Grounded == false`) | `jump` rise / fall frames | ascent progress `1 − vy/JumpImpulse`, descent progress `−vy/JumpImpulse` |
+| 3 | moved within the last `MoveStreakGraceTicks` (6) and the movement streak is alive | `run` | stride phase = streak distance / (MoveSpeed · T) |
+| 4 | landed, no move or strike since, within the landing window | `jump` land frames | config share of `jump` T (16 ticks with N6/T0.8 flat) |
+| 5 | otherwise | `idle_combat` | cycle T from the tick idle was entered (strike end, landing end, run stop, battle start) |
+
+**How N / T / curve interact with simulation windows.** Loops (idle, run) behave as before: N first frames, cycle T, the
+curve distributes the cycle. Run's T is the cycle at full `MoveSpeed`; diagonal motion (0.707 speed) strides slower and a
+stop holds the stride. Play-once clips are *fitted*: the config N/T/curve still fix each frame's share of the clip, and each
+marker segment is stretched over its authoritative window. For strikes the frames before `strike_pose` span Windup, the
+`strike_pose` frames span exactly the Active ticks (when hits resolve), the rest span Recovery; T therefore only sets
+relative shares, and a T different from the strike's total (29/29/33/33/45 ticks) is reported as a warning — it can never
+move a hit. For `jump` the air segments follow the movement owner's velocity, so the drawing never changes the trajectory
+and the landing pose never appears in the air; T and the curve set the landing window and frame shares. N must keep at least
+one windup and one recovery frame around `strike_pose` and must cover every jump marker, otherwise the set is rejected.
+Frames are selected per simulation tick (no interpolation between ticks, no image blending), so the result is identical at
+any render rate.
+
+**Markers.** Strikes use the delivered `strike_pose` markers. The delivered `jump` clip had only `entry`/`return`; the
+phase markers `rise [1,2]`, `fall [3]`, `land [4,5]` were added to the manifest from visual inspection (1 push-off, 2 apex
+tuck, 3 descent, 4 landing crouch, 5 recovery) and are flagged in `meta.jump_phase_markers` as pending artist
+confirmation. Frame `jump_000` (ground anticipation) is in no marker and is never shown, because ECS takeoff is immediate;
+the renderer reports this once per revision. Frame `jump_002` is drawn 23 px above the pivot (tucked legs); world height
+still comes only from `CombatPosition`. Kick recoveries end on the frame declared compatible with `idle_combat_000`, and
+idle restarts at frame 0 on the next tick.
+
+**Config.** The owner's `idle_combat` (6 / 1 s) and `run` (5 / 0.5 s) entries are unchanged. Added: `jump` 6 / 0.8 s,
+punches 6 / 29⁄60 s, kicks 6 / 33⁄60 s, `kick_spin` 9 / 0.75 s, all flat curves. All eight are required; a missing or
+invalid clip, setting or marker rejects the whole set with field-path diagnostics (nothing is drawn, the battle continues).
+The Inspector lists every clip's frame holds, each strike's combat windows and the combined set diagnostics.
+
+**Removed semantics.** The #43/#45 shared battle-relative phase for idle/run and run-by-current-command are replaced by
+the state table above (Stage 04 collisions can now change actual movement without touching presentation).
+The text below documents #43/#45 and is historical where it contradicts this section.
+
 # Character animation — Stage 03.3b / #45
 
 Current #45 scope is one real `mage_female_01`, with `idle_combat` and `run` loops. Grounded current-tick accepted X/Z movement uses run; airborne, implicit None, zero or stale movement uses idle.
