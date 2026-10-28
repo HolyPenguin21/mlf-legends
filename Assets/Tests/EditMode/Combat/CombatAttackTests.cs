@@ -342,6 +342,39 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(Strikes(records, Ai), Is.EqualTo(ai), "Same series, same ticks, other source.");
             Assert.That(Ai(records.Last()).Health.Current, Is.EqualTo(H(records.Last()).Health.Current), "Symmetric damage.");
             Assert.That(H(records.Last()).Health.Current, Is.LessThan(CombatAttackTuning.MaxHealth));
+
+            // Exact intentions must survive the SAME queue and buffer for either source, without alternation.
+            var exact = new[] { CommandButtons.PunchLeft, CommandButtons.PunchRight, CommandButtons.KickLeft,
+                CommandButtons.KickRight, CommandButtons.KickSpin };
+            var kinds = new[] { CombatAttackKind.PunchLeft, CombatAttackKind.PunchRight, CombatAttackKind.KickLeft,
+                CombatAttackKind.KickRight, CombatAttackKind.KickSpin };
+            for (var i = 0; i < exact.Length; i++)
+            {
+                var button = exact[i];
+                var kind = kinds[i];
+                var d = Def(kind);
+                var active = 1u + d.WindupTicks;
+                var chain = active + d.ActiveTicks + d.ChainDelayTicks;
+                script = new ReplayScript().Player(1, 1, ReplayRole.Human, pressed: button)
+                    .Ai(1, 1, ReplayRole.Ai, pressed: button)
+                    .Player(active, active, ReplayRole.Human, pressed: button)
+                    .Ai(active, active, ReplayRole.Ai, pressed: button);
+                records = Play(Duel(new float3(0.9f, 0f, 0f)), script, 140);
+                var expected = kind == CombatAttackKind.KickSpin ? new[] { (1u, kind) } : new[] { (1u, kind), (chain, kind) };
+                Assert.That(Strikes(records, H), Is.EqualTo(expected), "Exact side/spin, including the buffered follow-up.");
+                Assert.That(Strikes(records, Ai), Is.EqualTo(expected), "AI preserves the same exact intention.");
+            }
+
+            // Every nonempty simultaneous strike mask uses the same deterministic priority, independently of callbacks.
+            var priority = exact.Concat(new[] { A, K }).ToArray();
+            for (var mask = 1; mask < 1 << priority.Length; mask++)
+            {
+                var pressed = CommandButtons.None;
+                for (var i = 0; i < priority.Length; i++)
+                    if ((mask & (1 << i)) != 0) pressed |= priority[i];
+                var first = Enumerable.Range(0, priority.Length).First(i => (mask & (1 << i)) != 0);
+                Assert.That(CombatAttackTuning.StrikeButton(pressed), Is.EqualTo(priority[first]));
+            }
         }
 
         static ReplayScript BusyScript()

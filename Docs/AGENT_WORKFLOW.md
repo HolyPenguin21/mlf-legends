@@ -1,3 +1,10 @@
+## Current task #52 — final controls (2026-10-28)
+
+Base main `1c96c6f` already contains #50/#51; do not duplicate their scene/config/preview fixes. Work in
+`feature/52-final-combat-controls`, one PR, no merge without owner instruction. [Current control contract and handoff](STAGE03_CONTROLS.md).
+Exact/general intentions share the existing input/queue/action path. Crouch excluded, Dash/Cast deferred, Guard unbound.
+Owner art/timing/roster and Camera/UI remain unchanged. Stage 03 stays open until manual owner acceptance.
+
 ## Stage 03 final polish — implementation handoff (2026-10-28)
 
 Follow-up PR #51, branch `fix/stage03-landing-config-binding`: [bottom-up integration review and corrections](STAGE03_BOTTOM_UP_REVIEW.md).

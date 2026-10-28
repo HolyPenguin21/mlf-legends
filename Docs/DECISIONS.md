@@ -1,3 +1,13 @@
+## Owner decisions #52 — current controls and command representation (2026-10-28)
+
+[Authoritative keyboard table and validation](STAGE03_CONTROLS.md). Physical Y/U/H/J/K select exact hand L/R, foot L/R/spin;
+I and L retain general hand/foot series; Space jumps. Exact intentions persist through the same one-slot buffer. Priority:
+exact hand L/R → foot L/R/spin → general hand → general foot, identical for player/AI. Jump wins when free/grounded.
+CommandButtons is ushort; existing 1/2/4/8 values retained, exact bits 16..256 added, valid mask 0x1ff. Guard is logically
+reserved but unbound. Crouch is excluded; Dash/Cast deferred, no new bindings. Camera/UI and movement retained.
+Attack speed 50/25/25 and authoritative landing lock from PR #50/#51 remain. These decisions supersede older hotkey,
+Preparation-only movement and cancellable-landing proposals below; dated evidence remains tied to its original SHA.
+
 ## Stage 03 final polish — owner-requested corrections (2026-10-28)
 
 The [final-polish handoff](STAGE03_FINAL_POLISH.md) supersedes older movement/pivot/landing decisions where they conflict:
@@ -50,11 +60,11 @@ implemented. Evidence (Unity EditMode/PlayMode/GPU runs, raw XML/logs/TSV, stati
 
 | # | Decision | Where | Alternative if rejected |
 |---|---|---|---|
-| P1 | J = hand strike (Attack), U / gamepad North = foot strike (new `Kick` button) | input asset, `CommandButtons` | single Attack button with a fixed 5-strike string |
+| P1 | Superseded by owner #52: final Y/U/I/H/J/K/L/Space layout above; no combat aliases | input asset, CommandButtons | historical provisional binding removed |
 | P2 | Series: first strike left, sides alternate, Kick after kick_right = kick_spin finisher, max 4 strikes | `CombatAttackTuning.Select`, `MaxSeriesLength` | other order/length; directional variants |
 | P3 | One buffered follow-up press (latest wins) accepted from Active to end of Recovery; Windup presses dropped | `CombatActionSystem` | buffer during Windup; first press wins |
 | P4 | Follow-up starts at Windup+Active+ChainDelay (cuts the rest of Recovery); finisher/4th strike never chains | `CombatAttackTuning` | longer delays; per-pair cancel tables |
-| P5 | No planar movement and no jump during a strike; turning only on a strike's first tick (**Preparation movement now allowed, T7**) | Facing/Movement owners | slow walk during windup; turn anytime |
+| P5 | Superseded by final polish: planar speed 50%/25%/25%, no jump; turning only on a strike's first tick | Facing/Movement owners | slow walk during windup; turn anytime |
 | P6 | Strikes only from the ground; airborne presses dropped (no jump-attack clip) — the spec's "jump attacks enabled" is deferred | `CombatActionSystem` | air strike with a dedicated clip |
 | P7 | Jump + strike pressed on one grounded tick: jump wins, strike dropped | `CombatActionSystem` | strike wins |
 | P8 | Box: forward 0…reach along facing, abs(ΔZ) ≤ 0.4, abs(ΔY) ≤ 0.9; all enemies inside hit (no cap); allies never | `CombatAttackTuning`, `CombatHitSystem` | target cap; body radius when Stage 04 adds bodies |

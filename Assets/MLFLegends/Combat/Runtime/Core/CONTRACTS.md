@@ -1,3 +1,12 @@
+## Current #52 intention contract
+
+CommandButtons uses ushort, preserving Attack=1, Jump=2, Guard=4, Kick=8. Exact PunchLeft/PunchRight/KickLeft/KickRight/
+KickSpin = 16/32/64/128/256. All fields (Held/Pressed/Buffered, pending commands and replay) retain the complete flags;
+undefined bits >=512 are rejected. Guard has no device binding; it remains reserved numerically for compatibility.
+Player and AI use exactly the same intents. Priority is hand L/R, foot L/R/spin, general hand, general foot. The Action
+owner resolves it; an exact request in the existing buffer stays exact until executed. Free grounded Jump wins.
+[Current input layout](../../../../../Docs/STAGE03_CONTROLS.md); no additional simulation owner or command stream.
+
 # Combat Core contracts (Stage 01.1, Issue #2)
 
 Data-only contracts shared by every combat system. This folder contains no systems and no
@@ -15,7 +24,7 @@ behaviour. All combat simulation code lives in the single assembly `MLFLegends.C
   unmanaged structs; the owning system wraps them in its own ECS storage.
 - Presence flags that change during a battle: `IEnableableComponent`, not add/remove, to avoid
   structural changes for up to 400 combatants. Default `EntityQuery` matching skips disabled ones.
-- Enums declare an explicit `byte`/`sbyte` underlying type.
+- Enums declare an explicit unmanaged underlying type: normally byte/sbyte; CommandButtons uses ushort (#52).
 - No `MonoBehaviour`, `Animator`, `Rigidbody`, `NavMeshAgent` or managed components for combat state.
 
 ## Space
@@ -84,7 +93,7 @@ Rules (the processor #4 implements them; their outcome must be observable for te
    one frame, a press is reported in the first command only (implemented for the player by
    `Input/INPUT.md`, #22: presses are consumed by the first produced tick; pause, focus/device loss and a
    new battle/human binding drop them). Derived edges such as the "fresh
-   direction press" for L + direction dash are computed by the processor from its own previous-tick
+   direction press" for a future separately bound dash are computed by the processor from its own previous-tick
    state, not by producers.
 
 ## Compatibility with dependent issues

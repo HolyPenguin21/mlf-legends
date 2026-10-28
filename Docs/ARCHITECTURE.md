@@ -1,3 +1,11 @@
+## Current controls #52 — shared exact/general intentions (2026-10-28)
+
+[Current controls and handoff](STAGE03_CONTROLS.md): the existing Input System capture emits ushort CommandButtons, through
+one producer/processor into CombatActionSystem. Exact/general selection lives in CombatAttackTuning, not input/presentation.
+The existing Buffered slot retains the full intention until execution. No new state owner, queue or timing/config layer.
+PR #51's scene binding/preview/lifecycle corrections are already in base `1c96c6f`. Stage 03 still awaits owner acceptance.
+Older dated feature notes below are historical where they describe old bindings or superseded movement/landing behaviour.
+
 ## Stage 03 final polish — pending owner acceptance (2026-10-28)
 
 [Current handoff and settings](STAGE03_FINAL_POLISH.md): full source-cell mage rendering (packed trim retained), fixed

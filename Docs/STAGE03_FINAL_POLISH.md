@@ -1,3 +1,10 @@
+# Current follow-up #52 — final controls
+
+[Final keyboard layout, compatibility, verification and manual handoff](STAGE03_CONTROLS.md).
+PR #50 merged as `72f48ce`; PR #51 merged as `1c96c6f`, including scene binding and safe empty preview. #52 builds on them
+and changes remaining input/intent plumbing, not art/owner timing/roster. Stage 03 remains pending owner acceptance.
+The earlier branch/no-merge statements below describe their respective original deliveries, not the current main status.
+
 # Stage 03 final polish — owner handoff, 2026-10-28
 
 Full follow-up integration review and corrections: [Stage 03 bottom-up review](STAGE03_BOTTOM_UP_REVIEW.md).

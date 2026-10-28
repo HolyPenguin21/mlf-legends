@@ -1,3 +1,13 @@
+## Current correction #52 — final combat controls (2026-10-28)
+
+Base main `1c96c6f` includes merged PR #50/#51: full canvas/offset, 50%/25%/25% attack movement, ECS landing recovery,
+scene config binding and safe empty preview are already delivered. Remaining #52 implementation uses one branch
+`feature/52-final-combat-controls`, one PR, no implementing-agent merge. [Current layout and handoff](STAGE03_CONTROLS.md).
+Y/U/H/J/K are exact strikes, I/L general hand/foot series, Space jump. Crouch is excluded; Dash/Cast deferred; Guard has
+no binding and its future key is decided before Stage 06. Five strikes/hits are implemented; Stage 04 body/world collisions
+are not. Stage 03 remains OPEN pending owner acceptance. Earlier dated delivery notes below are historical snapshots,
+including their old key bindings and movement/landing descriptions; they do not override this correction.
+
 # MLF Legends — Combat development roadmap
 
 ## Stage 03 tuning — Inspector settings before Stage 03 acceptance (2026-10-28)
@@ -96,7 +106,7 @@ has independent manager STATIC PASS; runtime acceptance is NOT RUN. Full state-d
 | 03 | GPU sprite rendering | Atlas animation, direction/frame selection, stable depth sorting, optional equipment layers, instancing/indirect render assessment | IN PROGRESS — 03.1/03.2 + #41/#42 delivered; #41/#42 GPU depth tests now RUN on main `00310c3` (D3D12 RTX 2060 SUPER, Graphics 15/15 PASS, Evidence/48); #43–#45 idle/run merged; #48 binds all eight combat clips (idle/run/jump/5 strikes) to ECS state; mixed-character #46 open; equipment layers open |
 | 04 | Collisions | Custom actor/world collision, spatial index, masses, allies yield, enemies block, knockback | NOT STARTED |
 | 05 | Attack resolution | Windup/active/recovery; fast/heavy/jump attacks; shapes, multi-hit rules, damage/impact/stagger | IN PROGRESS — 05.1 (#48, MERGED `b828ccb`, Unity EditMode/PlayMode/GPU PASS): five grounded strikes, W/A/R, box hit tests, multi-target, once-per-strike ledger, HP damage, series/buffer; rules PROPOSED pending owner approval. Open: heavy/light mapping, jump attacks, guard damage, impact/stagger/knockback, defeat |
-| 06 | Defense | Facing guard, stability, timely defense/counter opportunity, guard break, dash L+direction | NOT STARTED |
+| 06 | Defense | Facing guard, stability, timely defense/counter opportunity, guard break; future guard key undecided, dash deferred/unbound | NOT STARTED |
 | 07 | Duel AI | Range, observable windups, bounded reaction time, mistakes, defense/dash/counter via same command rules | NOT STARTED |
 | 08 | Physiology | SPECIAL, body regions, injury and broken limbs, eye loss, bleeding, death, capability filtering | NOT STARTED |
 | 09 | Complete 1v1 prototype | Combat feel/balance, UI, animation feedback, sound, robust regression suite | NOT STARTED |

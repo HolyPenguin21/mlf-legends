@@ -4,7 +4,7 @@ namespace MLFLegends.Combat
 {
     /// <summary>Logical combat buttons. Bindings to physical keys belong to the input layer.</summary>
     [Flags]
-    public enum CommandButtons : byte
+    public enum CommandButtons : ushort
     {
         None = 0,
         Attack = 1 << 0,
@@ -13,6 +13,13 @@ namespace MLFLegends.Combat
 
         /// <summary>Foot strike; <see cref="Attack"/> is the hand strike (Stage 05.1).</summary>
         Kick = 1 << 3,
+
+        // Exact strike intentions. Old values above remain stable; no physical keys belong in the simulation.
+        PunchLeft = 1 << 4,
+        PunchRight = 1 << 5,
+        KickLeft = 1 << 6,
+        KickRight = 1 << 7,
+        KickSpin = 1 << 8,
     }
 
     /// <summary>

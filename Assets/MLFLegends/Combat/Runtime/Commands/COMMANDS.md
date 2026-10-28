@@ -1,3 +1,11 @@
+## Current #52 flag validation
+
+The existing processor validates ushort CommandButtons with mask 0x1ff (old Attack/Jump/Guard/Kick values + five exact
+strikes). Undefined bits 0x200 and above remain InvalidValue, for Player and AI alike. Held/Pressed and pending values
+are copied as typed structs, not narrowed to byte. The processor does not choose a strike; CombatActionSystem does,
+using the deterministic exact-before-general priority. Queue bounds, first-wins command policy and lifecycle unchanged.
+[Current control contract](../../../../../Docs/STAGE03_CONTROLS.md).
+
 # Combat command processor (Stage 01.3, Issue #4)
 
 One queue, one processor, one application point for player and AI commands. This folder implements
@@ -117,6 +125,6 @@ Action legality (stamina, locks) belongs to later rule owners.
 
 ## Stage 05.1 (PR #48)
 
-`CommandButtons.Kick` (bit 3) is a valid button for every source; values with bits above it stay `InvalidValue`.
+`CommandButtons.Kick` (bit 3) remains valid; #52 also accepts the five exact strike bits 4..8. Undefined bits 9..15 stay InvalidValue.
 Attack/Kick presses are executed by `CombatActionSystem` from `AppliedCombatCommand` only — the processor still applies
 no gameplay rule, and player and AI strikes share every step after the queue.

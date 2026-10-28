@@ -1,3 +1,12 @@
+## Current #52 strike intentions
+
+The existing Action owner reads exact/general ushort flags from AppliedCombatCommand. CombatAttackTuning chooses one
+intention (exact hand L/R → foot L/R/spin → general hand → general foot) and resolves it at execution. Buffered stores
+that same flag, so right-side presses never alternate and explicit spin can start from free stance. General Attack/Kick
+retain their existing sequence rules. Jump priority, airborne/landing rejection, phase windows, chain points, finisher/full
+Recovery, max series length, facing lock, hit ledger and 50/25/25 planar movement are unchanged. No new owner or queue.
+[Current controls and validation](../../../../../Docs/STAGE03_CONTROLS.md).
+
 # Stage 03 final polish — movement and landing (2026-10-28)
 
 See [configuration and owner handoff](../../../../../Docs/STAGE03_FINAL_POLISH.md).
