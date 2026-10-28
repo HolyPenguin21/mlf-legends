@@ -50,7 +50,7 @@ namespace MLFLegends.Tests.EditMode
     // scan runs at its worst. Measured: one fixed tick per frame, Stopwatch around FixedStep.Update only; managed GC bytes
     // of the measured loop via GC.GetAllocatedBytesForCurrentThread (main thread). Writes stage05-strikes.tsv; no thresholds.
     [Category("Performance")]
-    public class CombatStrikeBenchmarkTests
+    public partial class CombatStrikeBenchmarkTests
     {
         const int WarmupTicks = 120;
         const int MeasuredTicks = 600;

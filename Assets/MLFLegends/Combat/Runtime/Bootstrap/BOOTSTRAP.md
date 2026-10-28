@@ -1,3 +1,13 @@
+## Stage 04.1 body lifecycle (#58)
+
+Same CreateArchetype/private Spawn adds CombatBody for both leaders/allies at 2/100/400. One default table in
+Simulation/CombatBodyTuning.cs: Radius 0.3, Height 2, Mass 1, technical calibration only. No new setup layer, spawner,
+cleanup system or art dependency. Existing End/Despawn/Restart destroys it with the entity.
+The final-position index belongs to the World, not bootstrap/renderer. Its read API checks live Session/Clock and
+membership; paused Initialization End/Restart/Despawn already rejects the old snapshot before FixedStep resumes.
+Memory capacity may remain for reuse; scene/World teardown never transfers it to another owner.
+[Snapshot/API contract and phase boundary](../../../../../Docs/STAGE04_SPATIAL_INDEX.md).
+
 # Battle bootstrap and lifecycle (Stage 01.4, Issue #5; tick-safe requests and atomic reset, Issue #14; rosters up to 200 vs 200, Issue #7)
 
 One owner creates and destroys combatants, allocates `CombatantId` and records when a battle started.

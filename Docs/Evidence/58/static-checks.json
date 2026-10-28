@@ -1,0 +1,21 @@
+{
+  "base": "a6e96295c0a1e008327e28e8ff89205caf0a4f77",
+  "scope": "SOURCE / PYTHON MODEL ONLY; not C#, Unity, Entities codegen, Burst or performance execution",
+  "csharp_syntax_files": 91,
+  "guid_count_unique": 208,
+  "model_queries_against_independent_scan": 4608,
+  "model_pair_source_queries": 12048,
+  "insertion_orders_per_scene": 2,
+  "protected_base_files_byte_unchanged": 177,
+  "source_hashes_sha256": {
+    "Assets/MLFLegends/Combat/Runtime/Core/CombatBody.cs": "f8eb576d5be8d7883ab40c1322a1ced92bfae9beae810f702901f900623b9319",
+    "Assets/MLFLegends/Combat/Runtime/Simulation/CombatBodyTuning.cs": "839075de05ddc4f315a367a53de3f0112e422d1eb2c292299787bbd7013769e2",
+    "Assets/MLFLegends/Combat/Runtime/Simulation/CombatSpatialIndexSystem.cs": "f7399b6f8a9a4ffcb1b46ae398c9c8559b378c7612038a9d338e02a4eef247ee",
+    "Assets/MLFLegends/Combat/Runtime/Simulation/CombatSpatialTuning.cs": "01296e8b41a3d55441c5ca83d3d0f53367b57f5369dd10904a04a06c2f91a6bc",
+    "Assets/Tests/EditMode/Combat/CombatSpatialIndexTests.cs": "c8188ea3165d49547deaf9b1dc8c3c44e863e3ed616715b7f942dfa59f90b47e",
+    "Assets/Tests/EditMode/Combat/CombatSpatialLifecycleTests.cs": "9b030edc048375058f2fc0ce324593312fe1910e303212614ef096e51ba994d6",
+    "Assets/Tests/EditMode/Performance/CombatSpatialBenchmarkTests.cs": "99e7bfe8f9bba20553f715e20d23da734e8c31b1c7a9526278fdf3cc4590ec1d"
+  },
+  "status": "PASS",
+  "unity_compile_editmode_playmode_burst_gpu_leaks_performance": "NOT RUN"
+}

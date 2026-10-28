@@ -1,3 +1,20 @@
+## Current #58 — Stage 04.1 (2026-10-28)
+
+**Stage 03 OWNER-ACCEPTED**, by the owner's direct message recorded in #58: «Stage 03 закрыли. Идем дальше».
+Exact owner manual-test SHA/protocol was not supplied; this is not a blanket Unity/GPU PASS. **Stage 04 IN PROGRESS**;
+04.1 bodies/spatial snapshot delivered for review from fresh main `a6e96295c0a1e008327e28e8ff89205caf0a4f77`.
+One branch `feature/58-combat-spatial-index`, one PR to main; merge requires a separate owner instruction.
+[Implementation, owners, API, settings, tests and limitations](STAGE04_SPATIAL_INDEX.md).
+#46/#53 and QA #17/#25/#30 remain separate. Older dated status/evidence entries below are historical and superseded
+where they say Stage 03 awaits acceptance or Stage 04 has not started; their original test results/SHA remain unchanged.
+
+04.1 executed **SOURCE / PYTHON MODEL PASS**: 91 C# syntax trees; 208 unique Unity GUIDs; 4,608 deterministic
+model AABB queries versus an independent bounds scan; 12,048 model source-body pair queries across reversed insertion
+orders; 177 protected base files byte-unchanged. [Reproducible report](Evidence/58/static-checks.json).
+**Unity compile/import/Entities codegen/Burst/EditMode/PlayMode/GPU/GC/native leaks/performance: NOT RUN** — no Unity
+Editor/runtime/device here. C# correctness tests and sparse/dense 2/100/400 benchmark are authored, not executed.
+No 04.1 CPU/memory measurements or runtime PASS claimed. Historical Stage 03 logs are not 04.1 evidence.
+
 ## Current #56 validation boundary — pivot/Inspector correction (2026-10-28)
 
 Fresh base `311c3d7d06b5320b9df701ae6f21f519d07c6af1`; [implementation, exact source/model checks and owner checklist](STAGE03_PIVOT_CORRECTION.md).

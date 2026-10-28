@@ -426,7 +426,7 @@ namespace MLFLegends.Tests.EditMode
                 Pair("Stopwatch", $"{Stopwatch.Frequency} Hz, high resolution {Stopwatch.IsHighResolution}"),
                 Pair("GC byte counter works", GcByteCounterWorks().ToString()),
                 Pair("Simulation rate", $"{SimulationTiming.TickRateHz} Hz"),
-                Pair("Runtime scope", "Stage 05.1 (#48): clock + lifecycle + commands + CombatActionSystem + CombatFacingSystem + CombatMovementSystem + CombatHitSystem; not the historical Stage 01 baseline"),
+                Pair("Runtime scope", "Stage 04.1 (#58): clock + lifecycle + commands + CombatActionSystem + CombatFacingSystem + CombatMovementSystem + CombatSpatialIndexSystem + CombatHitSystem; not the historical Stage 01 baseline"),
                 Pair("CombatMotion bytes per actor", UnsafeUtility.SizeOf<CombatMotion>().ToString(CultureInfo.InvariantCulture)),
             };
         }

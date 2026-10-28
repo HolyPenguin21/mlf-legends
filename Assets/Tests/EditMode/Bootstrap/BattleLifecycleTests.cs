@@ -151,6 +151,7 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(Manager.GetComponentData<CombatTeam>(entity).Value, Is.EqualTo(setup.Team));
             Assert.That(Manager.GetComponentData<CombatPosition>(entity).Value, Is.EqualTo(setup.Position));
             Assert.That(Manager.GetComponentData<CombatFacing>(entity).Value, Is.EqualTo(setup.Facing));
+            Assert.That(Manager.GetComponentData<CombatBody>(entity), Is.EqualTo(CombatBodyTuning.Default));
             Assert.That(Manager.HasComponent<InCombat>(entity), Is.True);
             Assert.That(Manager.IsComponentEnabled<InCombat>(entity), Is.True);
         }

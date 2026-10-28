@@ -1,3 +1,18 @@
+## Current Stage 04.1 — final-position spatial snapshot (#58)
+
+State order: **CombatActionSystem → CombatFacingSystem → CombatMovementSystem → CombatSpatialIndexSystem → CombatHitSystem**.
+The index's UpdateAfter(Movement)/UpdateBefore(Hit) attributes are used identically by default World, replay and the
+existing benchmark; replay/default-world tests retain exact order and unique-owner assertions. Hit's full scan is retained.
+One managed SystemBase owns three reusable native containers; current ECS bodies/positions are copied once per real
+clock Tick/BattleNumber, no second accumulator. It writes no authoritative gameplay data.
+`TryGetSnapshotInfo` and `TryQueryAabb(bounds, callerOwnedNativeList)` validate the live session/tick/epoch, structural
+version and enabled membership, including paused End/Restart/Despawn. Empty/partial Worlds gain no hidden state. Results
+are Id-sorted unique value copies; no borrowed native view. Closed X/Y/Z bounds and floor-based closed X/Z cells, one
+CombatSpatialTuning.CellSize=1. Huge queries explicitly scan all snapshot rows; impossible build ranges fail diagnostically.
+Membership checks cost O(N) per public read. [Full API, limits, defaults, memory lifetime and tests](../../../../../Docs/STAGE04_SPATIAL_INDEX.md).
+04.2/04.3 must extend this owner for proposed movement while preserving one Movement position writer; 04.5 moves Hit to
+finalized candidates. Existing historical four-owner/order descriptions below predate 04.1.
+
 ## Current #52 strike intentions
 
 The existing Action owner reads exact/general ushort flags from AppliedCombatCommand. CombatAttackTuning chooses one
