@@ -1,6 +1,15 @@
-## Current #69 — Stage 05.1 (2026-10-29)
+## Current #70 — Stage 05.1a (2026-10-29)
 
-Only this section is current; every older "History" section keeps its own SHA/scope and is superseded where it disagrees (old key layouts, exact-limb intentions, velocity = displacement/dt, series limit 4, stage states).
+Only this section is current; the #69 section below is history. Fresh main `4701397` (PR #71). Branch
+`feature/70-stage05-atlas-migration`, one PR, **no merge by the implementer**. Commit order: #69 review corrections
+(physics) → owner scene arena source → v2 atlas metadata/code/tests → docs/evidence. Contract:
+[STAGE05_1A_ATLAS_MIGRATION.md](STAGE05_1A_ATLAS_MIGRATION.md); results: [Evidence/70](Evidence/70/README.md).
+Art install: `Tools/Install-AtlasPackage.py` (PNG stays outside Git). The owner edits art metadata live in the open Editor:
+stage explicit paths only and re-check the importer .meta before each commit.
+
+## History — #69 — Stage 05.1 (2026-10-29)
+
+Only this section was current; every older "History" section keeps its own SHA/scope and is superseded where it disagrees (old key layouts, exact-limb intentions, velocity = displacement/dt, series limit 4, stage states).
 
 Fresh main `86012a0` (PR #68). Branch `feature/69-stage05-character-series`, one PR, **no merge by the implementer**.
 Commit order: confirmed fixes → per-character data → input/series → checks → docs/evidence. Contract: [STAGE05_1_CHARACTER_SERIES.md](STAGE05_1_CHARACTER_SERIES.md);

@@ -111,7 +111,7 @@ re-reported, loses its first press after regain (the next release unblocks it).
 Use the external art PNG and `Assets/Scenes/CombatSmoke.unity`. Inspect AppliedCombatCommand/CombatAttackState and the
 bootstrap's published timing revision alongside the Game view.
 1. U U U…: punch_left, punch_left, punch_right, punch_left…; I I I…: kick_left, kick_left, kick_right…; O from idle plays
-   the ability (kick_spin) fully and does nothing during a strike. Y/H/J/K/L do nothing. Holding never repeats;
+   the ability (physical_ability, v2 art #70) fully and does nothing during a strike. Y/H/J/K/L do nothing. Holding never repeats;
    simultaneous keys follow U → I → O; Space wins when free.
 2. Hold direction through jump/landing: frames 4 then 5 play on the ground before run/idle, no sliding. Strike/Space taps
    during recovery do not execute later. Startup log shows the configured landing duration (currently 12 ticks after 68c43c).

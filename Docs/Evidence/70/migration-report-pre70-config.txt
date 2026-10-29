@@ -1,0 +1,11 @@
+mage_female_01.Combat.PhysicalAbility.ClipId: kick_spin → physical_ability (renamed by this atlas)
+mage_female_01.animations.physical_ability: from kick_spin — T 0,5 s and curve kept; range 0..5 → 0..7; phases 3/4 → 3/4 (strike_pose)
+mage_female_01.animations.kick_spin: removed (replaced by physical_ability)
+mage_female_01.animations.run: EndFrame 4 leaves local frames 5..5 unplayed (kept)
+mage_female_01.animations.jump: EndFrame 4 leaves local frames 5..5 unplayed (kept)
+mage_female_01.animations.kick_left: EndFrame 4 leaves local frames 5..5 unplayed (kept)
+mage_female_01.animations.kick_right: EndFrame 4 leaves local frames 5..5 unplayed (kept)
+mage_female_01.animations.block: initialized — 0..3, T 0,6 s (JSON duration_ms), flat curve, phases 0/0
+mage_female_01.animations.dash: initialized — 0..5, T 0,42 s (JSON duration_ms), flat curve, phases 0/0
+mage_female_01.animations.skill_light: initialized — 0..5, T 0,6 s (JSON duration_ms), flat curve, phases 0/0
+mage_female_01.animations.skill_complex: initialized — 0..9, T 1,1 s (JSON duration_ms), flat curve, phases 0/0

@@ -1,3 +1,14 @@
+## Current #70 — v2 atlas (12 clips / 76 frames, 192×160)
+
+Required clips: idle_combat, run, jump and the slot clips punch_left, punch_right, kick_left, kick_right,
+**physical_ability** (the v1 `kick_spin` is a declared legacy id: a slot still on it is rejected with the successor named).
+block, dash, skill_light and skill_complex have settings in the config but are not ECS actions. Every settings range covers
+its whole new clip; an EndFrame that leaves frames unplayed is a warning. The jump keeps one clip; T 0.6 keeps the 12-tick
+landing lock with both landing frames 4..5. Kicks 15/5/10, physical_ability 15/4/11 ticks. *Migrate settings to this
+atlas's clips* (config Inspector) is the explicit, idempotent migration with a Console report; it never resets T, curves,
+phases or Combat values. A running strike keeps its windows and is drawn only with frames of its simulated phase.
+Old → new table and policy: [STAGE05_1A_ATLAS_MIGRATION.md](../../../../../../Docs/STAGE05_1A_ATLAS_MIGRATION.md).
+
 ## Current #69 — strike slots and per-character combat data
 
 The five strikes are semantic slots — **Hand1, Hand2, Foot1, Foot2, PhysicalAbility** (stable values 1..5). Each

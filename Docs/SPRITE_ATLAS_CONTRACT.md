@@ -1,3 +1,17 @@
+## Current art — v2 (#70)
+
+`mage_female_01` v2_128: **12 clips / 76 frames** on one **2000×2016** page, **source_size 192×160**, nominal 128,
+pivot [96,136], schema v1 unchanged. Clips: idle_combat 6, run 6, jump 6 (rise [1,2], fall [3], land [4,5] by the artist),
+punch_left/right 6, kick_left/right 6, physical_ability 8 (replaces kick_spin), block 4, dash 6, skill_light 6,
+skill_complex 10. Every rect is the full canvas (trim 0) in a 200×168 slot: canvas at [4,4], 2 px extrusion, 2 px
+separation — Sprite Editor **Grid By Cell Size 192×160, Offset 4×4, Padding 8×8**. Reference world support
+source_size × [0.5,0.85] = **[96,136]**; nothing in code assumes a square canvas or 192×192.
+**Custom image positions:** set them as the Sprite's custom pivot on its exact cell (preferred), or by shifting a Sprite rect
+of the same size by at most half a canvas — the shift moves the pivot, the drawn pixels stay the manifest region (warned).
+Clip availability does not authorise gameplay: block, dash and skills are configurable, not ECS actions.
+Install, verification, pivots and migration: [STAGE05_1A_ATLAS_MIGRATION.md](STAGE05_1A_ATLAS_MIGRATION.md). The 192×192
+statements below describe the v1 art.
+
 ## Current runtime interpretation — #56 pivot correction
 
 The JSON v1 schema remains unchanged. Fixed world support is source_size × [0.5,0.85] ([96,163.2] for 192×192);

@@ -1,14 +1,19 @@
 # MLF Legends — Combat development roadmap
 
-## Current status — single entry point (updated 2026-10-29, #69)
+## Current status — single entry point (updated 2026-10-29, #70)
 
 This section is the only current status. Every dated section under **History** is a snapshot of its own SHA/scope and is
 superseded wherever it disagrees with this section (including its "Current" wording, old key layouts and stage states).
 
-- **main** `86012a006b51f6295a855dbaa9b6bbf1d3d23133` (PR #68 / #66). **Stage 03** OWNER-ACCEPTED. **Stage 04** IN PROGRESS:
+- **main** `47013974c7773d2cdd565e6eabc3441003aeee0e` (PR #71 / #69). **Stage 03** OWNER-ACCEPTED. **Stage 04** IN PROGRESS:
   everything merged, owner manual acceptance open. **Stage 05** IN PROGRESS.
-- **Delivered for review: [#69](https://github.com/HolyPenguin21/mlf-legends/issues/69) — Stage 05.1** on branch
-  `feature/69-stage05-character-series`, one PR, merge only on a separate owner command:
+- **Delivered for review: [#70](https://github.com/HolyPenguin21/mlf-legends/issues/70) — Stage 05.1a** on branch
+  `feature/70-stage05-atlas-migration`, one PR, merge only on a separate owner command:
+  [contract, migration table, pivots/custom positions, policy](STAGE05_1A_ATLAS_MIGRATION.md) ·
+  [exact SHA and PASS/FAIL/NOT RUN](Evidence/70/README.md). First the #69 review corrections (exact wall-cone velocity,
+  guarded velocity-pass budget, the owner's second cube as an arena source), then the v2 atlas: 12 clips / 76 frames,
+  192×160, page 2000×2016, owner custom horizontal positions as pivots, physical_ability for O, explicit config migration.
+- Merged before: **#69 — Stage 05.1** (PR #71):
   [contract, Inspector path, owners/versioning, rules, manual checklist](STAGE05_1_CHARACTER_SERIES.md) ·
   [exact SHA and PASS/FAIL/NOT RUN](Evidence/69/README.md).
   Base fixes (final contact velocity, whole-entity Disabled cleanup, ordered PlayMode isolation and the faults it hid),
@@ -18,10 +23,9 @@ superseded wherever it disagrees with this section (including its "Current" word
 
 ### Queue (owner/manager order from #67)
 
-1. #69 → manager review (no merge by the implementer).
-2. **#70 / Stage 05.1a** — new atlas (owner-reported: 12 animations / 76 frames, figure ≈128 px, source canvas 192×160,
-   page 2000×2016; not verified here). Integration maps its clips through the per-character slot Clip Ids; metadata
-   (source_size/nominal_height/trim/pivots) is read, never hard-coded. Do not start a parallel config migration before #69 is reviewed.
+1. #69 merged (PR #71).
+2. **#70 / Stage 05.1a** — delivered for review (see above; package verified on the installed page). Owner visual
+   acceptance of the new art in the Game view is open.
 3. **05.2** — self impulse of an action (example: 35° above the horizontal for one ability, not a global angle), contact
    attenuation from numeric parameters of the participants, real crowd displacement with multi-target damage, an editable
    Height profile with safe restore under a ceiling, hits along the actual Active path (ledger, impact targets), never

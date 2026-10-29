@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="2" result="Passed" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-29 14:56:17Z" end-time="2026-10-29 14:56:20Z" duration="2,6309923">
+  <test-suite type="TestSuite" id="1000" name="mlf-legends" fullname="mlf-legends" runstate="Runnable" testcasecount="606" result="Passed" start-time="2026-10-29 14:56:17Z" end-time="2026-10-29 14:56:20Z" duration="2.630992" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1717" name="MLFLegends.Tests.EditMode.dll" fullname="D:/Unity/Project/mlf-w66/Library/ScriptAssemblies/MLFLegends.Tests.EditMode.dll" runstate="Runnable" testcasecount="606" result="Passed" start-time="2026-10-29 14:56:17Z" end-time="2026-10-29 14:56:20Z" duration="2.602418" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="21416" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1718" name="MLFLegends" fullname="MLFLegends" runstate="Runnable" testcasecount="606" result="Passed" start-time="2026-10-29 14:56:17Z" end-time="2026-10-29 14:56:20Z" duration="2.590398" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1719" name="Tests" fullname="MLFLegends.Tests" runstate="Runnable" testcasecount="606" result="Passed" start-time="2026-10-29 14:56:17Z" end-time="2026-10-29 14:56:20Z" duration="2.580154" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1720" name="EditMode" fullname="MLFLegends.Tests.EditMode" runstate="Runnable" testcasecount="606" result="Passed" start-time="2026-10-29 14:56:17Z" end-time="2026-10-29 14:56:20Z" duration="2.569606" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1236" name="CombatImpulseTests" fullname="MLFLegends.Tests.EditMode.CombatImpulseTests" classname="MLFLegends.Tests.EditMode.CombatImpulseTests" runstate="Runnable" testcasecount="30" result="Passed" start-time="2026-10-29 14:56:17Z" end-time="2026-10-29 14:56:20Z" duration="2.558079" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="ParameterizedMethod" id="1253" name="RotatedCornersPublishNoVelocityIntoAnyTouchedWallInEitherShapeOrder" fullname="MLFLegends.Tests.EditMode.CombatImpulseTests.RotatedCornersPublishNoVelocityIntoAnyTouchedWallInEitherShapeOrder" classname="MLFLegends.Tests.EditMode.CombatImpulseTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-29 14:56:17Z" end-time="2026-10-29 14:56:20Z" duration="2.551723" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1251" name="RotatedCornersPublishNoVelocityIntoAnyTouchedWallInEitherShapeOrder(False)" fullname="MLFLegends.Tests.EditMode.CombatImpulseTests.RotatedCornersPublishNoVelocityIntoAnyTouchedWallInEitherShapeOrder(False)" methodname="RotatedCornersPublishNoVelocityIntoAnyTouchedWallInEitherShapeOrder" classname="MLFLegends.Tests.EditMode.CombatImpulseTests" runstate="Runnable" seed="977214440" result="Passed" start-time="2026-10-29 14:56:17Z" end-time="2026-10-29 14:56:20Z" duration="2.512779" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1252" name="RotatedCornersPublishNoVelocityIntoAnyTouchedWallInEitherShapeOrder(True)" fullname="MLFLegends.Tests.EditMode.CombatImpulseTests.RotatedCornersPublishNoVelocityIntoAnyTouchedWallInEitherShapeOrder(True)" methodname="RotatedCornersPublishNoVelocityIntoAnyTouchedWallInEitherShapeOrder" classname="MLFLegends.Tests.EditMode.CombatImpulseTests" runstate="Runnable" seed="242714965" result="Passed" start-time="2026-10-29 14:56:20Z" end-time="2026-10-29 14:56:20Z" duration="0.023865" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[Saving results to: C:/Users/Стас/AppData/LocalLow/DefaultCompany/mlf-legends\TestResults.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
