@@ -935,6 +935,10 @@ MonoBehaviour:
     Transform: {fileID: 1500000404}
     Center: {x: 0, y: 0, z: 0}
     Size: {x: 1, y: 1, z: 1}
+  - Kind: 0
+    Transform: {fileID: 2033483573}
+    Center: {x: 0, y: 0, z: 0}
+    Size: {x: 1, y: 1, z: 1}
   DrawGeometry: 1
   RampMaterial: {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
 --- !u!1 &1500000400
