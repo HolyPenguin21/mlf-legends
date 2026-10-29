@@ -23,7 +23,8 @@ namespace MLFLegends.Combat
     /// in-combat attacker whose strike is in its Active phase on this tick (by the timing fixed in its CombatAttackState when
     /// the strike started) hits every in-combat combatant of another team that is not already in the strike's ledger and lies
     /// inside the strike's box: forward distance along the attacker's facing within [ReachMin, ReachMax], |ΔZ| ≤ DepthHalfWidth,
-    /// |ΔY| ≤ HeightTolerance (closed bounds, target point = CombatPosition). Each such target loses Damage HP (clamped at 0)
+    /// |ΔY| ≤ HeightTolerance (closed bounds, target point = CombatPosition), using the damage/box frozen in the attacker's
+    /// CombatAttackState.Strike when the strike started (#69: per-character values). Each such target loses Damage HP (clamped at 0)
     /// once and joins the ledger, so several Active ticks of one strike never hit it twice; the next strike starts with an
     /// empty ledger. Allies and the attacker itself are never valid targets. Attackers and targets are visited in CombatantId
     /// order, so the result never depends on chunk order. No defeat, stagger, knockback or guard yet.
@@ -45,6 +46,7 @@ namespace MLFLegends.Combat
             public byte Team;
             public float3 Position;
             public CombatAttackKind Kind;
+            public CombatStrikeParameters Strike; // Frozen at strike start (CombatAttackState.Strike), never the live table.
             public float Facing;
         }
 
@@ -83,7 +85,15 @@ namespace MLFLegends.Combat
         }
 
         /// <summary>Exact closed strike box around a point target; Hit and its oracles share this rule.</summary>
-        public static bool Inside(in CombatAttackDefinition strike, float3 attacker, float facing, float3 target)
+        public static bool Inside(in CombatAttackDefinition strike, float3 attacker, float facing, float3 target) =>
+            Inside(strike.Parameters, attacker, facing, target);
+
+        /// <summary>Broadphase of the default values of a slot (benchmarks/oracles); Hit uses the frozen execution values.</summary>
+        public static CombatSpatialBounds StrikeQuery(in CombatAttackDefinition strike, float3 attacker, float facing) =>
+            StrikeQuery(strike.Parameters, attacker, facing);
+
+        /// <summary>Exact closed strike box around a point target; Hit and its oracles share this rule.</summary>
+        public static bool Inside(in CombatStrikeParameters strike, float3 attacker, float facing, float3 target)
         {
             var delta = target - attacker;
             var forward = delta.x * facing;
@@ -95,7 +105,7 @@ namespace MLFLegends.Combat
         /// Conservative broadphase of <see cref="Inside"/>: every target point inside the box lies in this AABB, hence in any
         /// body AABB containing that point. Padded by a few float ulps so subtraction rounding in Inside cannot escape it.
         /// </summary>
-        public static CombatSpatialBounds StrikeQuery(in CombatAttackDefinition strike, float3 attacker, float facing)
+        public static CombatSpatialBounds StrikeQuery(in CombatStrikeParameters strike, float3 attacker, float facing)
         {
             var lo = facing > 0 ? attacker.x + strike.ReachMin : attacker.x - strike.ReachMax;
             var hi = facing > 0 ? attacker.x + strike.ReachMax : attacker.x - strike.ReachMin;
@@ -125,6 +135,7 @@ namespace MLFLegends.Combat
                     m_Attackers.Add(new Attacker
                     {
                         Id = id.ValueRO.Value, Entity = entity, Team = team.ValueRO.Value, Position = position.ValueRO.Value, Kind = kind,
+                        Strike = attack.ValueRO.Strike,
                         Facing = facing.ValueRO.Value == FacingDirection.Left ? -1f : 1f,
                     });
                 }
@@ -135,7 +146,7 @@ namespace MLFLegends.Combat
                 for (var i = 0; i < m_Attackers.Length; i++)
                 {
                     var a = m_Attackers[i];
-                    m_Queries.Add(StrikeQuery(CombatAttackTuning.Get(a.Kind), a.Position, a.Facing));
+                    m_Queries.Add(StrikeQuery(a.Strike, a.Position, a.Facing));
                 }
                 var index = state.World.GetExistingSystemManaged<CombatSpatialIndexSystem>();
                 if (index == null || !index.TryQueryAabbBatch(m_Queries.AsArray(), m_Candidates, m_Ranges))
@@ -186,7 +197,7 @@ namespace MLFLegends.Combat
             for (var a = 0; a < Attackers.Length; a++)
             {
                 var attacker = Attackers[a];
-                var strike = CombatAttackTuning.Get(attacker.Kind);
+                var strike = attacker.Strike;
                 var ledger = Ledgers[attacker.Entity];
                 var range = Ranges[a];
                 for (var c = range.x; c < range.x + range.y; c++)

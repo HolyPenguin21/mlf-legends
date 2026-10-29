@@ -27,6 +27,7 @@ namespace MLFLegends.Editor
             public SpriteAnimationTiming Timing;
             public bool Expanded;
             public string[] PhaseLabels;
+            public bool IsStrike; // the clip of at least one strike slot of this character
             public string[] FrameLabels; // materialized only when the owner first expands frame details
             public readonly List<string> Errors = new List<string>();
             public readonly List<string> Warnings = new List<string>();
@@ -80,6 +81,10 @@ namespace MLFLegends.Editor
             EditorGUILayout.HelpBox("Frames are LOCAL clip indices from 0. StartFrame..EndFrame plays over T; the speed curve " +
                 "distributes those frames. Preparation / Active / Recovery and T/curve supply the simulated strike windows. " +
                 "LandingStartFrame supplies the landing lock. Runtime edits use Config.Set() or this Inspector.", MessageType.Info);
+            EditorGUILayout.HelpBox("Combat (per character): Body Radius/Height/Mass (cylinder from CombatPosition, world units) and " +
+                "five strike slots: Clip, Damage, Reach min..max, Depth ±, Height ± (world units, point target). Edits publish on the " +
+                "next frame and act on the next strike; the body applies at the next battle start/restart. Timing stays in the clip " +
+                "settings above. Scene gizmos: Combat Bootstrap → Draw Combat Gizmos.", MessageType.Info);
             EditorGUILayout.HelpBox("Sprite Editor pivot positions each image relative to CombatPosition. Catalog Image Pivots " +
                 "maps frame_id to Sprite; only an absent binding uses the legacy JSON pivot. Image Offset Pixels adds one " +
                 "translation (+X right, +Y down), mirrored with the image and anchors. Reference support for 192×192 is " +
@@ -129,7 +134,7 @@ namespace MLFLegends.Editor
                     }
                     foreach (var message in item.Errors) EditorGUILayout.HelpBox(message, MessageType.Error);
                     foreach (var message in item.Warnings) EditorGUILayout.HelpBox(message, MessageType.Warning);
-                    if (item.Clip != null && CombatAnimationSet.IsAttackClip(item.Settings.ClipId))
+                    if (item.Clip != null && item.IsStrike)
                         DrawMarkerButton(characters, c, a, item.Settings, item.Clip);
                 }
                 if (diagnostics.Landing != null)
@@ -217,20 +222,30 @@ namespace MLFLegends.Editor
             if (definition == null) return result;
             if (definition.CharacterId != character.CharacterId)
                 result.Errors.Add($"Catalog character_id is {definition.CharacterId}, expected {character.CharacterId}");
+            var combat = character.Combat ?? new CharacterCombatSettings();
+            combat.Validate(character.CharacterId + ".Combat", result.Errors);
+            bool IsStrike(string clipId)
+            {
+                for (var k = CombatAttackKind.Hand1; k <= CombatAttackKind.PhysicalAbility; k++)
+                    if (combat.ClipFor(k) == clipId) return true;
+                return false;
+            }
             var set = CombatAnimationSet.Create(definition, clipId =>
             {
                 if (config.TryResolve(character.CharacterId, clipId, out _, out var settings, out var error)) return settings;
                 result.Errors.Add(error);
                 return null;
-            }, character.CharacterId, result.Errors, result.Warnings);
+            }, character.CharacterId, result.Errors, result.Warnings, combat.ClipFor);
             if (set != null)
             {
                 result.Landing = $"jump {set.LandingStartFrame}..{set.LandingEndFrame}: {set.LandingTicks} ticks = {set.LandingTicks / (double)SimulationTiming.TickRateHz:0.######} s (movement/new actions locked)";
-                result.Strikes = CombatSmokeBootstrap.Describe(set.StrikeSchedule);
+                var table = set.StrikeSchedule;
+                combat.ApplyTo(ref table);
+                result.Strikes = CombatSmokeBootstrap.Describe(table, combat.ClipFor);
             }
             foreach (var settings in character.Animations ?? Array.Empty<CharacterAnimationSettings>())
             {
-                var item = new ClipDiagnostics { Settings = settings };
+                var item = new ClipDiagnostics { Settings = settings, IsStrike = settings != null && IsStrike(settings.ClipId) };
                 result.Clips.Add(item);
                 if (settings == null) continue;
                 if (!config.TryResolve(character.CharacterId, settings.ClipId, out _, out _, out var error))
@@ -245,23 +260,23 @@ namespace MLFLegends.Editor
                     else if (settings.ClipId == CombatAnimationSet.RunClip) item.Timing = set.Run;
                     else if (settings.ClipId == CombatAnimationSet.JumpClip) item.Timing = set.Jump;
                     else
-                        for (var kind = CombatAttackKind.PunchLeft; kind <= CombatAttackKind.KickSpin; kind++)
-                            if (CombatAnimationSet.AttackClip(kind) == settings.ClipId) item.Timing = set.Attack(kind);
+                        for (var kind = CombatAttackKind.Hand1; kind <= CombatAttackKind.PhysicalAbility; kind++)
+                            if (combat.ClipFor(kind) == settings.ClipId) item.Timing = set.Attack(kind);
                 }
                 if (item.Timing == null)
                     item.Timing = SpriteAnimationTiming.Create(item.Clip, settings, character.CharacterId + "/" + settings.ClipId,
-                        item.Errors, item.Warnings, item.Clip.Loop, CombatAnimationSet.IsAttackClip(settings.ClipId));
-                if (item.Timing != null && CombatAnimationSet.IsAttackClip(settings.ClipId))
-                    item.PhaseLabels = StrikeLabels(settings.ClipId, item.Timing, item.Errors);
+                        item.Errors, item.Warnings, item.Clip.Loop, item.IsStrike);
+                if (item.Timing != null && item.IsStrike)
+                    item.PhaseLabels = StrikeLabels(settings.ClipId, combat, item.Timing, item.Errors);
             }
             return result;
         }
 
-        static string[] StrikeLabels(string clipId, SpriteAnimationTiming timing, List<string> errors)
+        static string[] StrikeLabels(string clipId, CharacterCombatSettings combat, SpriteAnimationTiming timing, List<string> errors)
         {
             var kind = CombatAttackKind.None;
-            for (var k = CombatAttackKind.PunchLeft; k <= CombatAttackKind.KickSpin; k++)
-                if (CombatAnimationSet.AttackClip(k) == clipId) kind = k;
+            for (var k = CombatAttackKind.Hand1; k <= CombatAttackKind.PhysicalAbility; k++)
+                if (combat.ClipFor(k) == clipId && kind == CombatAttackKind.None) kind = k;
             if (!timing.TryStrikeTiming(CombatAttackTuning.Get(kind).ChainDelayTicks, out var strike, out var error))
             { errors.Add(clipId + ": " + error); return null; }
             return new[]

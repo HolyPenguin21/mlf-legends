@@ -162,7 +162,7 @@ namespace MLFLegends.Tests.EditMode
             Command(w, e[0], -1, CommandButtons.PunchLeft); Push(w, e[0], new float3(6, 0, 0));
             w.Step();
             var strike = w.Manager.GetComponentData<CombatAttackState>(e[0]);
-            Assert.That(strike.Kind, Is.EqualTo(CombatAttackKind.PunchLeft));
+            Assert.That(strike.Kind, Is.EqualTo(CombatAttackKind.Hand1));
             Assert.That(P(w, e[0]).x, Is.EqualTo(6 * Dt - CombatMovementTuning.MoveSpeed * Dt * .5f).Within(.00021),
                 "Full external step plus 50% Windup control in the opposite direction.");
             Assert.That(w.Manager.GetComponentData<CombatFacing>(e[0]).Value, Is.EqualTo(FacingDirection.Left), "Only the command turns.");

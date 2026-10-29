@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -19,8 +20,9 @@ namespace MLFLegends.Combat
     /// <para>Team sizes (leader included) become <see cref="BattleSetup.HumanAllies"/>/<see cref="BattleSetup.AiAllies"/>
     /// of the same Restart request: they are read only when a (re)start is requested (enable, <see cref="RestartBattle"/>),
     /// so editing them never touches a running battle. Out-of-range sizes are rejected with an error, never clamped.</para>
-    /// <para>Strike windows: the five strike clips of <see cref="m_StrikeCharacterId"/> in <see cref="m_AnimationConfig"/>
-    /// give <see cref="CombatStrikeSchedule"/> (phases, duration and curve → ticks), published on enable and again whenever
+    /// <para>Character table (#69): the five strike slots of <see cref="m_StrikeCharacterId"/> in <see cref="m_AnimationConfig"/>
+    /// give <see cref="CombatStrikeSchedule"/>: windows from each slot's clip (phases, duration and curve → ticks) plus the
+    /// slot's damage/hit box and the character's body from its Combat data (validated, never clamped), published on enable and again whenever
     /// the config or its atlas catalog changes (one version compare per frame; derived only on change). Running strikes keep
     /// their timing; an invalid config is reported and the previous table stays. Without a config the World keeps its table
     /// (the <see cref="CombatAttackTuning"/> defaults unless something else published); a World without the table (no
@@ -53,6 +55,10 @@ namespace MLFLegends.Combat
 
         // Owner token per enable; only needs to differ between bootstraps that are alive at the same time.
         [SerializeField] bool m_RequireArena;
+
+        [Tooltip("Play Mode Scene-view gizmos of the simulated shapes (read-only, no art/alpha analysis): body cylinder, " +
+            "facing, support below airborne fighters and the strike box (yellow Preparation, red Active, grey Recovery).")]
+        [SerializeField] bool m_DrawCombatGizmos = true;
 
         static uint s_LastOwner;
         uint m_Owner;
@@ -366,9 +372,19 @@ namespace MLFLegends.Combat
             var warnings = new List<string>();
             var schedule = default(CombatStrikeSchedule);
             var path = $"characters.{m_StrikeCharacterId}.animations";
-            if (!m_AnimationConfig.TryResolve(m_StrikeCharacterId, CombatAnimationSet.AttackClip(CombatAttackKind.PunchLeft), out var catalog, out _, out var error))
-                errors.Add(error);
+            CharacterCombatSettings combat = null;
+            if (!m_AnimationConfig.TryResolveCombat(m_StrikeCharacterId, out combat, out var combatError))
+                errors.Add(combatError);
             else
+                combat.Validate($"characters.{m_StrikeCharacterId}.Combat", errors);
+            SpriteAtlasCatalog catalog = null;
+            var resolved = errors.Count == 0;
+            if (resolved && !m_AnimationConfig.TryResolve(m_StrikeCharacterId, combat.ClipFor(CombatAttackKind.Hand1), out catalog, out _, out var error))
+            {
+                errors.Add(error);
+                resolved = false;
+            }
+            if (resolved)
             {
                 m_ScheduleCatalog = catalog;
                 m_ScheduleCatalogVersion = catalog.Version;
@@ -382,8 +398,12 @@ namespace MLFLegends.Combat
                     var set = CombatAnimationSet.Create(definition, clipId =>
                             m_AnimationConfig.TryResolve(m_StrikeCharacterId, clipId, out _, out var settings, out var resolveError)
                                 ? settings : Missing(errors, resolveError),
-                        path, errors, warnings);
-                    if (set != null) schedule = set.StrikeSchedule;
+                        path, errors, warnings, combat.ClipFor);
+                    if (set != null)
+                    {
+                        schedule = set.StrikeSchedule;
+                        combat.ApplyTo(ref schedule); // Damage/reach per slot and the body: one table with the timing.
+                    }
                 }
             }
 
@@ -391,7 +411,7 @@ namespace MLFLegends.Combat
                 Debug.LogWarning($"{prefix}: {warning}", this);
             if (errors.Count > 0 || !schedule.IsValid)
             {
-                Debug.LogError($"{prefix}: strike windows rejected, strikes keep the previous windows.\n  " + string.Join("\n  ", errors), this);
+                Debug.LogError($"{prefix}: character table rejected, strikes keep the previous windows/values.\n  " + string.Join("\n  ", errors), this);
                 return;
             }
 
@@ -411,8 +431,10 @@ namespace MLFLegends.Combat
                 return;
             }
 
-            Debug.Log($"{prefix}: strike windows (ticks @{SimulationTiming.TickRateHz} Hz, Preparation/Active/Recovery) revision " +
-                $"{PublishedScheduleRevision}: {Describe(schedule)}. Landing recovery {schedule.LandingRecoveryTicks} ticks. New strikes/landings use them; running states keep their duration.", this);
+            Debug.Log($"{prefix}: character table revision {PublishedScheduleRevision} (ticks @{SimulationTiming.TickRateHz} Hz, " +
+                $"Preparation/Active/Recovery, damage, reach): {Describe(schedule, combat.ClipFor)}. Landing recovery {schedule.LandingRecoveryTicks} ticks. " +
+                $"Body r {schedule.Body.Radius} h {schedule.Body.Height} m {schedule.Body.Mass} (next start/restart). " +
+                "New strikes/landings use them; running states keep what they started with.", this);
         }
 
         static CharacterAnimationSettings Missing(List<string> errors, string error)
@@ -423,17 +445,86 @@ namespace MLFLegends.Combat
             return null;
         }
 
-        /// <summary>"punch_left 14/6/9, ..." for logs and the Inspector.</summary>
-        public static string Describe(in CombatStrikeSchedule schedule)
+        /// <summary>"Hand1 punch_left 14/6/9 dmg 4 reach 0-1, ..." for logs and the Inspector.</summary>
+        public static string Describe(in CombatStrikeSchedule schedule, System.Func<CombatAttackKind, string> clipFor = null)
         {
             var parts = new string[5];
-            for (var kind = CombatAttackKind.PunchLeft; kind <= CombatAttackKind.KickSpin; kind++)
+            for (var kind = CombatAttackKind.Hand1; kind <= CombatAttackKind.PhysicalAbility; kind++)
             {
                 var t = schedule.Get(kind);
-                parts[(int)kind - 1] = $"{CombatAnimationSet.AttackClip(kind)} {t.WindupTicks}/{t.ActiveTicks}/{t.RecoveryTicks}";
+                var p = schedule.GetStrike(kind);
+                parts[(int)kind - 1] = $"{kind} {(clipFor ?? CombatAnimationSet.DefaultClip)(kind)} {t.WindupTicks}/{t.ActiveTicks}/{t.RecoveryTicks} " +
+                    $"dmg {p.Damage} reach {p.ReachMin}-{p.ReachMax}";
             }
 
             return string.Join(", ", parts);
+        }
+
+        /// <summary>
+        /// Debug view of what the simulation actually uses (#69): each in-combat fighter's CombatBody cylinder from
+        /// CombatPosition, its facing, a line to its support height while airborne, and the strike box frozen in its
+        /// CombatAttackState (ReachMin..ReachMax along the facing, ±DepthHalfWidth in Z, ±HeightTolerance in Y around the
+        /// point-target rule). Reads ECS only; draws nothing outside Play Mode and never feeds back into the battle.
+        /// </summary>
+        void OnDrawGizmos()
+        {
+            if (!m_DrawCombatGizmos || !Application.isPlaying)
+                return;
+            var world = m_BattleWorld != null && m_BattleWorld.IsCreated ? m_BattleWorld : World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated)
+                return;
+            var entityManager = world.EntityManager;
+            using var clock = entityManager.CreateEntityQuery(ComponentType.ReadOnly<SimulationClock>());
+            var tick = clock.CalculateEntityCount() == 1 ? clock.GetSingleton<SimulationClock>().Tick : 0u;
+            using var fighters = entityManager.CreateEntityQuery(ComponentType.ReadOnly<CombatPosition>(),
+                ComponentType.ReadOnly<CombatBody>(), ComponentType.ReadOnly<InCombat>());
+            using var entities = fighters.ToEntityArray(Allocator.Temp);
+            foreach (var entity in entities)
+            {
+                var p = (Vector3)(float3)entityManager.GetComponentData<CombatPosition>(entity).Value;
+                var body = entityManager.GetComponentData<CombatBody>(entity);
+                var team = entityManager.HasComponent<CombatTeam>(entity) ? entityManager.GetComponentData<CombatTeam>(entity).Value : 0;
+                Gizmos.color = team == m_HumanTeam ? new Color(.2f, .8f, 1f) : new Color(1f, .6f, .2f);
+                DrawCylinder(p, body.Radius, body.Height);
+                var facing = entityManager.HasComponent<CombatFacing>(entity)
+                    && entityManager.GetComponentData<CombatFacing>(entity).Value == FacingDirection.Left ? -1f : 1f;
+                var chest = p + Vector3.up * (body.Height * .5f);
+                Gizmos.DrawLine(chest, chest + Vector3.right * (facing * (body.Radius + .3f)));
+                if (entityManager.HasComponent<CombatMotion>(entity))
+                {
+                    var motion = entityManager.GetComponentData<CombatMotion>(entity);
+                    if (!motion.Grounded)
+                        Gizmos.DrawLine(p, new Vector3(p.x, motion.GroundHeight, p.z));
+                }
+                if (!entityManager.HasComponent<CombatAttackState>(entity))
+                    continue;
+                var attack = entityManager.GetComponentData<CombatAttackState>(entity);
+                if (!attack.IsAttacking)
+                    continue;
+                var phase = attack.Timing.PhaseAt(tick - attack.StartTick);
+                Gizmos.color = phase == CombatAttackPhase.Active ? Color.red
+                    : phase == CombatAttackPhase.Windup ? new Color(1f, .9f, .1f) : new Color(.6f, .6f, .6f);
+                var strike = attack.Strike;
+                var center = p + new Vector3(facing * (strike.ReachMin + strike.ReachMax) * .5f, 0f, 0f);
+                Gizmos.DrawWireCube(center, new Vector3(strike.ReachMax - strike.ReachMin, 2f * strike.HeightTolerance, 2f * strike.DepthHalfWidth));
+            }
+        }
+
+        static void DrawCylinder(Vector3 foot, float radius, float height)
+        {
+            const int segments = 20;
+            var top = Vector3.up * height;
+            for (var i = 0; i < segments; i++)
+            {
+                var a = Mathf.PI * 2f * i / segments;
+                var b = Mathf.PI * 2f * (i + 1) / segments;
+                var pa = foot + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * radius;
+                var pb = foot + new Vector3(Mathf.Cos(b), 0f, Mathf.Sin(b)) * radius;
+                Gizmos.DrawLine(pa, pb);
+                Gizmos.DrawLine(pa + top, pb + top);
+                if (i % 5 == 0)
+                    Gizmos.DrawLine(pa, pa + top);
+            }
         }
 
         static bool TryGetEntityManager(out EntityManager entityManager) =>

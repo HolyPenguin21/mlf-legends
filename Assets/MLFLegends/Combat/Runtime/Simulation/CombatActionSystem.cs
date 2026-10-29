@@ -14,9 +14,10 @@ namespace MLFLegends.Combat
     /// strike of the series on that tick (exact requests keep their side; general requests use the existing series), unless the strike
     /// is a finisher or the series is full. Otherwise Recovery runs out, the buffer is dropped and the actor is free on
     /// the following tick, where a fresh press may start a new series. Every strike start clears the hit ledger.
-    /// Every strike start copies its phase timing from the World's <see cref="CombatStrikeSchedule"/> (created here with
-    /// the default windows; a scene publishes the animation-derived table) into <see cref="CombatAttackState.Timing"/>; the
-    /// rest of the strike reads only that copy, so publishing a new table mid-strike changes the next strike, not this one.
+    /// Every strike start copies its phase timing and its damage/hit box from the World's <see cref="CombatStrikeSchedule"/>
+    /// (created here with the defaults; a scene publishes its character's table) into <see cref="CombatAttackState.Timing"/>
+    /// and <see cref="CombatAttackState.Strike"/>; the rest of the strike reads only that copy, so publishing a new table
+    /// mid-strike changes the next strike, not this one.
     /// One linear, synchronous Burst pass; no allocations or structural changes.
     /// </remarks>
     [BurstCompile]
@@ -100,6 +101,7 @@ namespace MLFLegends.Combat
             state.Kind = kind;
             state.StartTick = tick;
             state.Timing = schedule.Get(kind);
+            state.Strike = schedule.GetStrike(kind);
             state.Buffered = CommandButtons.None;
             hits.Clear();
         }

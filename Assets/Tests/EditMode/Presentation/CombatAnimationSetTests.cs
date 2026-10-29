@@ -113,11 +113,11 @@ namespace MLFLegends.Tests.EditMode
                     Is.EqualTo("jump_004"), $"Project landing tick {e}: only configured frame 4.");
         }
 
-        [TestCase(CombatAttackKind.PunchLeft, 14, 6, 9, 24)]
-        [TestCase(CombatAttackKind.PunchRight, 14, 6, 9, 24)]
-        [TestCase(CombatAttackKind.KickLeft, 12, 6, 12, 24)]
-        [TestCase(CombatAttackKind.KickRight, 12, 6, 12, 24)]
-        [TestCase(CombatAttackKind.KickSpin, 20, 5, 5, 65535)] // finisher: CombatStrikeTiming.NoChain
+        [TestCase(CombatAttackKind.Hand1, 14, 6, 9, 24)]
+        [TestCase(CombatAttackKind.Hand2, 14, 6, 9, 24)]
+        [TestCase(CombatAttackKind.Foot1, 12, 6, 12, 24)]
+        [TestCase(CombatAttackKind.Foot2, 12, 6, 12, 24)]
+        [TestCase(CombatAttackKind.PhysicalAbility, 20, 5, 5, 65535)] // finisher: CombatStrikeTiming.NoChain
         public void ConfigPhasesAreTheSimulatedWindowsAndEveryTickDrawsAFrameOfItsPhase(CombatAttackKind kind, int windup, int active,
             int recovery, int chainPoint)
         {
@@ -125,7 +125,7 @@ namespace MLFLegends.Tests.EditMode
             // kicks 30 / 5 (0..1 / 2 / 3..4), spin 30 / 6 (0..3 / 4 / 5).
             // Independently: Active starts at floor(T*60*(PreparationEnd+1)/N), Recovery at ceil(T*60*(ActiveEnd+1)/N).
             var set = Real(out var definition);
-            var settings = Project(CombatAnimationSet.AttackClip(kind));
+            var settings = Project(CombatAnimationSet.DefaultClip(kind));
             var timing = set.StrikeSchedule.Get(kind);
             Assert.That((timing.WindupTicks, timing.ActiveTicks, timing.RecoveryTicks, (int)timing.ChainPoint),
                 Is.EqualTo((windup, active, recovery, chainPoint)));
@@ -156,10 +156,10 @@ namespace MLFLegends.Tests.EditMode
             steep.SpeedCurve = AnimationCurve.Linear(0, 0.2f, 1, 3f);
             var edited = Build(definition, c => c == "punch_left" ? steep : Project(c), out var errors, out _);
             Assert.That(edited, Is.Not.Null, string.Join("\n", errors));
-            var a = flat.StrikeSchedule.PunchLeft;
-            var b = edited.StrikeSchedule.PunchLeft;
+            var a = flat.StrikeSchedule.Hand1;
+            var b = edited.StrikeSchedule.Hand1;
             Assert.That(b.End, Is.EqualTo(60), "T = 1 s is 60 ticks: the strike itself is longer.");
-            var timing = edited.Attack(CombatAttackKind.PunchLeft);
+            var timing = edited.Attack(CombatAttackKind.Hand1);
             Assert.That(b.ActiveStart, Is.EqualTo((int)System.Math.Floor(timing.ActiveStartSeconds * 60 + 1e-6)));
             Assert.That(b.RecoveryStart, Is.EqualTo((int)System.Math.Ceiling(timing.RecoveryStartSeconds * 60 - 1e-6)));
             Assert.That(timing.ActiveStartSeconds, Is.GreaterThan(0.5), "Slow start: the first half of the frames takes more than half of T.");
@@ -168,7 +168,7 @@ namespace MLFLegends.Tests.EditMode
             // and the drawn phase equals the simulated one on every tick.
             for (uint e = 0; e < b.End; e++)
             {
-                var state = Striking(edited, CombatAttackKind.PunchLeft);
+                var state = Striking(edited, CombatAttackKind.Hand1);
                 var frame = edited.FrameFor(Start + e, 0, Grounded(), state);
                 Assert.That(edited.FrameFor(Start + e, 0, Grounded(), state), Is.EqualTo(frame));
                 var local = definition.Clips[definition.Clips.ToList().FindIndex(c => c.Id == "punch_left")].Frames.ToList().IndexOf((int)frame);
@@ -180,10 +180,10 @@ namespace MLFLegends.Tests.EditMode
             shortened.EndFrame = 4;
             var cut = Build(definition, c => c == "punch_left" ? shortened : Project(c), out errors, out _);
             Assert.That(cut, Is.Not.Null, string.Join("\n", errors));
-            Assert.That(cut.Attack(CombatAttackKind.PunchLeft).FrameCount, Is.EqualTo(5));
-            Assert.That(cut.Attack(CombatAttackKind.PunchLeft).DurationSeconds, Is.EqualTo(fixture.TotalDurationSeconds));
-            for (uint e = 0; e < cut.StrikeSchedule.PunchLeft.End; e++)
-                Assert.That(Id(definition, cut.FrameFor(Start + e, 0, Grounded(), Striking(cut, CombatAttackKind.PunchLeft))), Is.Not.EqualTo("punch_left_005"));
+            Assert.That(cut.Attack(CombatAttackKind.Hand1).FrameCount, Is.EqualTo(5));
+            Assert.That(cut.Attack(CombatAttackKind.Hand1).DurationSeconds, Is.EqualTo(fixture.TotalDurationSeconds));
+            for (uint e = 0; e < cut.StrikeSchedule.Hand1.End; e++)
+                Assert.That(Id(definition, cut.FrameFor(Start + e, 0, Grounded(), Striking(cut, CombatAttackKind.Hand1))), Is.Not.EqualTo("punch_left_005"));
         }
 
         [Test]
@@ -193,12 +193,12 @@ namespace MLFLegends.Tests.EditMode
             var fixture = PunchFixture();
             var flat = Build(definition, c => c == "punch_left" ? fixture : Project(c), out var baselineErrors, out _);
             Assert.That(flat, Is.Not.Null, string.Join("\n", baselineErrors));
-            var started = Striking(flat, CombatAttackKind.PunchLeft); // windows fixed when the strike started
+            var started = Striking(flat, CombatAttackKind.Hand1); // windows fixed when the strike started
             var longer = Copy(fixture);
             longer.TotalDurationSeconds = 2.0;
             var edited = Build(definition, c => c == "punch_left" ? longer : Project(c), out var errors, out _);
             Assert.That(edited, Is.Not.Null, string.Join("\n", errors));
-            Assert.That(edited.StrikeSchedule.PunchLeft.End, Is.EqualTo(120));
+            Assert.That(edited.StrikeSchedule.Hand1.End, Is.EqualTo(120));
             for (uint e = 0; e < started.Timing.End; e++)
             {
                 var local = definition.Clips[definition.Clips.ToList().FindIndex(c => c.Id == "punch_left")].Frames.ToList()
@@ -319,24 +319,24 @@ namespace MLFLegends.Tests.EditMode
         public void ConfiguredKickRecoveryHandsOverToIdleAfterItsLastConfiguredFrame()
         {
             var set = Real(out var definition);
-            foreach (var kind in new[] { CombatAttackKind.KickLeft, CombatAttackKind.KickRight, CombatAttackKind.KickSpin })
+            foreach (var kind in new[] { CombatAttackKind.Foot1, CombatAttackKind.Foot2, CombatAttackKind.PhysicalAbility })
             {
                 var last = Start + (uint)set.StrikeSchedule.Get(kind).End - 1;
-                Assert.That(Id(definition, set.FrameFor(last, 0, Grounded(), Striking(set, kind))), Does.EndWith(kind == CombatAttackKind.KickSpin ? "_005" : "_004"));
+                Assert.That(Id(definition, set.FrameFor(last, 0, Grounded(), Striking(set, kind))), Does.EndWith(kind == CombatAttackKind.PhysicalAbility ? "_005" : "_004"));
                 var free = new CombatAttackState { EndTick = last + 1 };
                 Assert.That(Id(definition, set.FrameFor(last + 1, 0, Grounded(), free)), Is.EqualTo("idle_combat_000"));
             }
         }
 
-        [TestCase(CombatAttackKind.PunchLeft)]
-        [TestCase(CombatAttackKind.PunchRight)]
-        [TestCase(CombatAttackKind.KickLeft)]
-        [TestCase(CombatAttackKind.KickRight)]
+        [TestCase(CombatAttackKind.Hand1)]
+        [TestCase(CombatAttackKind.Hand2)]
+        [TestCase(CombatAttackKind.Foot1)]
+        [TestCase(CombatAttackKind.Foot2)]
         public void TheChainPointShowsAFrameTheArtMarksAsChainable(CombatAttackKind kind)
         {
             // The follow-up cuts the strike at its chain point (Recovery start + ChainDelay): the art's chain_exit frame must already show.
             var set = Real(out var definition);
-            definition.TryGetClipIndex(CombatAnimationSet.AttackClip(kind), out var clipIndex);
+            definition.TryGetClipIndex(CombatAnimationSet.DefaultClip(kind), out var clipIndex);
             var clip = definition.Clips[clipIndex];
             var chainTick = Start + (uint)set.StrikeSchedule.Get(kind).ChainPoint;
             var local = clip.Frames.ToList().IndexOf((int)set.FrameFor(chainTick - 1, 0, Grounded(), Striking(set, kind)));
@@ -354,7 +354,7 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(CombatAnimationSet.TryCreateStrikeSchedule(definition, c => c == "jump" ? null : Project(c), Character, errors, warnings,
                 out var schedule), Is.True, string.Join("\n", errors));
             Assert.That(schedule.IsValid, Is.True);
-            Assert.That(schedule.PunchLeft.End, Is.EqualTo(29));
+            Assert.That(schedule.Hand1.End, Is.EqualTo(29));
             Assert.That(warnings, Has.Count.EqualTo(1));
             Assert.That(warnings[0], Does.Contain("punch_right: Active frames 3..3 differ"));
 
@@ -365,7 +365,7 @@ namespace MLFLegends.Tests.EditMode
             errors.Clear();
             Assert.That(CombatAnimationSet.TryCreateStrikeSchedule(definition, c => c == "punch_left" ? tiny : Project(c), Character, errors, warnings,
                 out schedule), Is.True, string.Join("\n", errors));
-            Assert.That(((int)schedule.PunchLeft.ActiveStart, (int)schedule.PunchLeft.RecoveryStart, (int)schedule.PunchLeft.End), Is.EqualTo((0, 1, 1)));
+            Assert.That(((int)schedule.Hand1.ActiveStart, (int)schedule.Hand1.RecoveryStart, (int)schedule.Hand1.End), Is.EqualTo((0, 1, 1)));
             Assert.That(warnings.Any(w => w.Contains("punch_left: Preparation lasts")), Is.True, string.Join("\n", warnings));
             Assert.That(warnings.Any(w => w.Contains("punch_left: Recovery lasts")), Is.True, string.Join("\n", warnings));
 

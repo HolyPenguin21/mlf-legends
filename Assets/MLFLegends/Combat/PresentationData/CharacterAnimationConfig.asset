@@ -265,3 +265,43 @@ MonoBehaviour:
       ActiveEndFrame: 4
       LandingStartFrame: -1
       m_LegacyFrameCount: 0
+    Combat:
+      BodyRadius: 0.3
+      BodyHeight: 2
+      BodyMass: 1
+      Hand1:
+        ClipId: punch_left
+        Damage: 4
+        ReachMin: 0
+        ReachMax: 1
+        DepthHalfWidth: 0.4
+        HeightTolerance: 0.9
+      Hand2:
+        ClipId: punch_right
+        Damage: 4
+        ReachMin: 0
+        ReachMax: 1
+        DepthHalfWidth: 0.4
+        HeightTolerance: 0.9
+      Foot1:
+        ClipId: kick_left
+        Damage: 7
+        ReachMin: 0
+        ReachMax: 1.3
+        DepthHalfWidth: 0.4
+        HeightTolerance: 0.9
+      Foot2:
+        ClipId: kick_right
+        Damage: 7
+        ReachMin: 0
+        ReachMax: 1.3
+        DepthHalfWidth: 0.4
+        HeightTolerance: 0.9
+      PhysicalAbility:
+        ClipId: kick_spin
+        Damage: 12
+        ReachMin: 0
+        ReachMax: 1.45
+        DepthHalfWidth: 0.4
+        HeightTolerance: 0.9
+      m_Version: 1

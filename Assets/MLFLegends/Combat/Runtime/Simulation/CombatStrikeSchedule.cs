@@ -104,22 +104,35 @@ namespace MLFLegends.Combat
     }
 
     /// <summary>
-    /// The World's combat timing table: strike windows every newly started strike copies and landing recovery copied at contact. Starts with
-    /// <see cref="Default"/> (<see cref="CombatAttackTuning"/> windows, used by worlds that publish nothing: tests and
-    /// benchmarks); a scene publishes the table derived from the character's animation phases (frames, duration, curve).
+    /// The World's character combat table (the one publication table, #69): per strike slot the windows and the damage/hit
+    /// box every newly started strike copies, landing recovery copied at contact and the fighters' body used at spawn. Starts
+    /// with <see cref="Default"/> (<see cref="CombatAttackTuning"/> windows/values and <see cref="CombatBodyTuning"/>, used by
+    /// worlds that publish nothing: tests and benchmarks); a scene publishes the table of its character: windows from the
+    /// slot clips' animation phases (frames, duration, curve), damage/reach/body from the character's combat settings.
     /// </summary>
     /// <remarks>
-    /// Singleton created/destroyed by CombatActionSystem; read there for strike starts and by CombatMovementSystem at landing.
-    /// Written only through <see cref="Publish"/> on the main thread outside fixed steps (e.g. CombatSmokeBootstrap), so a
-    /// change takes effect from the next strike start; a strike already running keeps the timing it started with.
+    /// Singleton created/destroyed by CombatActionSystem; read there for strike starts, by CombatMovementSystem at landing
+    /// and by BattleLifecycleSystem at spawn. Written only through <see cref="Publish"/> on the main thread outside fixed
+    /// steps (e.g. CombatSmokeBootstrap), so a change takes effect from the next strike start (timing AND damage/reach); a
+    /// strike already running keeps what it started with; a new body applies to fighters spawned by the next start/restart.
+    /// The whole roster uses one character type (one table per World).
     /// </remarks>
     public struct CombatStrikeSchedule : IComponentData
     {
-        public CombatStrikeTiming PunchLeft;
-        public CombatStrikeTiming PunchRight;
-        public CombatStrikeTiming KickLeft;
-        public CombatStrikeTiming KickRight;
-        public CombatStrikeTiming KickSpin;
+        public CombatStrikeTiming Hand1;
+        public CombatStrikeTiming Hand2;
+        public CombatStrikeTiming Foot1;
+        public CombatStrikeTiming Foot2;
+        public CombatStrikeTiming PhysicalAbility;
+
+        public CombatStrikeParameters Hand1Strike;
+        public CombatStrikeParameters Hand2Strike;
+        public CombatStrikeParameters Foot1Strike;
+        public CombatStrikeParameters Foot2Strike;
+        public CombatStrikeParameters PhysicalAbilityStrike;
+
+        /// <summary>Body of every fighter spawned while this table is current (vertical cylinder from CombatPosition).</summary>
+        public CombatBody Body;
 
         /// <summary>Jump landing frames' duration quantized to ticks. 0 = no animation config published, no artificial delay.</summary>
         public uint LandingRecoveryTicks;
@@ -129,22 +142,54 @@ namespace MLFLegends.Combat
 
         public static CombatStrikeSchedule Default => new CombatStrikeSchedule
         {
-            PunchLeft = CombatAttackTuning.Get(CombatAttackKind.PunchLeft).DefaultTiming,
-            PunchRight = CombatAttackTuning.Get(CombatAttackKind.PunchRight).DefaultTiming,
-            KickLeft = CombatAttackTuning.Get(CombatAttackKind.KickLeft).DefaultTiming,
-            KickRight = CombatAttackTuning.Get(CombatAttackKind.KickRight).DefaultTiming,
-            KickSpin = CombatAttackTuning.Get(CombatAttackKind.KickSpin).DefaultTiming,
+            Hand1 = CombatAttackTuning.Get(CombatAttackKind.Hand1).DefaultTiming,
+            Hand2 = CombatAttackTuning.Get(CombatAttackKind.Hand2).DefaultTiming,
+            Foot1 = CombatAttackTuning.Get(CombatAttackKind.Foot1).DefaultTiming,
+            Foot2 = CombatAttackTuning.Get(CombatAttackKind.Foot2).DefaultTiming,
+            PhysicalAbility = CombatAttackTuning.Get(CombatAttackKind.PhysicalAbility).DefaultTiming,
+            Hand1Strike = CombatAttackTuning.Get(CombatAttackKind.Hand1).Parameters,
+            Hand2Strike = CombatAttackTuning.Get(CombatAttackKind.Hand2).Parameters,
+            Foot1Strike = CombatAttackTuning.Get(CombatAttackKind.Foot1).Parameters,
+            Foot2Strike = CombatAttackTuning.Get(CombatAttackKind.Foot2).Parameters,
+            PhysicalAbilityStrike = CombatAttackTuning.Get(CombatAttackKind.PhysicalAbility).Parameters,
+            Body = CombatBodyTuning.Default,
         };
+
+        public CombatStrikeParameters GetStrike(CombatAttackKind kind)
+        {
+            switch (kind)
+            {
+                case CombatAttackKind.Hand1: return Hand1Strike;
+                case CombatAttackKind.Hand2: return Hand2Strike;
+                case CombatAttackKind.Foot1: return Foot1Strike;
+                case CombatAttackKind.Foot2: return Foot2Strike;
+                case CombatAttackKind.PhysicalAbility: return PhysicalAbilityStrike;
+                default: return default;
+            }
+        }
+
+        public void SetStrike(CombatAttackKind kind, in CombatStrikeParameters strike)
+        {
+            switch (kind)
+            {
+                case CombatAttackKind.Hand1: Hand1Strike = strike; break;
+                case CombatAttackKind.Hand2: Hand2Strike = strike; break;
+                case CombatAttackKind.Foot1: Foot1Strike = strike; break;
+                case CombatAttackKind.Foot2: Foot2Strike = strike; break;
+                case CombatAttackKind.PhysicalAbility: PhysicalAbilityStrike = strike; break;
+                default: throw new ArgumentOutOfRangeException(nameof(kind));
+            }
+        }
 
         public CombatStrikeTiming Get(CombatAttackKind kind)
         {
             switch (kind)
             {
-                case CombatAttackKind.PunchLeft: return PunchLeft;
-                case CombatAttackKind.PunchRight: return PunchRight;
-                case CombatAttackKind.KickLeft: return KickLeft;
-                case CombatAttackKind.KickRight: return KickRight;
-                case CombatAttackKind.KickSpin: return KickSpin;
+                case CombatAttackKind.Hand1: return Hand1;
+                case CombatAttackKind.Hand2: return Hand2;
+                case CombatAttackKind.Foot1: return Foot1;
+                case CombatAttackKind.Foot2: return Foot2;
+                case CombatAttackKind.PhysicalAbility: return PhysicalAbility;
                 default: return default;
             }
         }
@@ -153,28 +198,32 @@ namespace MLFLegends.Combat
         {
             switch (kind)
             {
-                case CombatAttackKind.PunchLeft: PunchLeft = timing; break;
-                case CombatAttackKind.PunchRight: PunchRight = timing; break;
-                case CombatAttackKind.KickLeft: KickLeft = timing; break;
-                case CombatAttackKind.KickRight: KickRight = timing; break;
-                case CombatAttackKind.KickSpin: KickSpin = timing; break;
+                case CombatAttackKind.Hand1: Hand1 = timing; break;
+                case CombatAttackKind.Hand2: Hand2 = timing; break;
+                case CombatAttackKind.Foot1: Foot1 = timing; break;
+                case CombatAttackKind.Foot2: Foot2 = timing; break;
+                case CombatAttackKind.PhysicalAbility: PhysicalAbility = timing; break;
                 default: throw new ArgumentOutOfRangeException(nameof(kind));
             }
         }
 
-        /// <summary>Every strike has a valid timing whose chain point matches its series rule (finisher = no chain).</summary>
+        /// <summary>
+        /// Every strike has a valid timing whose chain point matches its series rule (finisher = no chain) and supported
+        /// damage/hit box values; the body is inside <see cref="CombatCharacterLimits"/>.
+        /// </summary>
         public bool IsValid
         {
             get
             {
-                for (var kind = CombatAttackKind.PunchLeft; kind <= CombatAttackKind.KickSpin; kind++)
+                for (var kind = CombatAttackKind.Hand1; kind <= CombatAttackKind.PhysicalAbility; kind++)
                 {
                     var timing = Get(kind);
-                    if (!timing.IsValid || timing.CanChain != CombatAttackTuning.Get(kind).CanChain)
+                    if (!timing.IsValid || timing.CanChain != CombatAttackTuning.Get(kind).CanChain
+                        || !CombatCharacterLimits.IsValid(GetStrike(kind)))
                         return false;
                 }
 
-                return true;
+                return CombatCharacterLimits.IsValid(Body);
             }
         }
 

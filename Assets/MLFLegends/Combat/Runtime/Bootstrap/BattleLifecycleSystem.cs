@@ -35,6 +35,7 @@ namespace MLFLegends.Combat
         EntityQuery m_Clock;
         EntityQuery m_RunningClock;
         EntityQuery m_Arena;
+        EntityQuery m_Table;
 
         public void OnCreate(ref SystemState state)
         {
@@ -54,6 +55,7 @@ namespace MLFLegends.Combat
             m_RunningClock = SystemAPI.QueryBuilder().WithAll<SimulationClock, SimulationClockRunning>().Build();
 
             m_Arena = SystemAPI.QueryBuilder().WithAll<CombatArenaState, CombatArenaShape>().Build();
+            m_Table = SystemAPI.QueryBuilder().WithAll<CombatStrikeSchedule>().Build();
 
             state.RequireForUpdate<SimulationClock>();
             state.RequireForUpdate<CombatCommandQueue>();
@@ -175,7 +177,8 @@ namespace MLFLegends.Combat
             entityManager.SetComponentData(entity, id);
             entityManager.SetComponentData(entity, new CombatTeam { Value = setup.Team });
             entityManager.SetComponentData(entity, new CombatPosition { Value = setup.Position });
-            var body = CombatBodyTuning.Default;
+            // The character's published body (#69); a World without the table (partial fixtures) uses the default body.
+            var body = m_Table.CalculateEntityCount() == 1 ? m_Table.GetSingleton<CombatStrikeSchedule>().Body : CombatBodyTuning.Default;
             var motion = new CombatMotion { GroundHeight = setup.Position.y, Grounded = true };
             if (m_Arena.CalculateEntityCount() == 1)
             {

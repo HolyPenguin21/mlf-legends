@@ -2,15 +2,19 @@ using Unity.Entities;
 
 namespace MLFLegends.Combat
 {
-    /// <summary>The melee strikes of Stage 05.1. Values are stable: they appear in replays and logs.</summary>
+    /// <summary>
+    /// Semantic strike slots (#69). Values are stable: they appear in replays and logs. Explicit migration of the Stage 05.1
+    /// ids: 1 PunchLeft → Hand1, 2 PunchRight → Hand2, 3 KickLeft → Foot1, 4 KickRight → Foot2, 5 KickSpin → PhysicalAbility
+    /// (kick_spin is only the compatibility clip of that slot). Which clip a slot plays is per-character data.
+    /// </summary>
     public enum CombatAttackKind : byte
     {
         None = 0,
-        PunchLeft = 1,
-        PunchRight = 2,
-        KickLeft = 3,
-        KickRight = 4,
-        KickSpin = 5,
+        Hand1 = 1,
+        Hand2 = 2,
+        Foot1 = 3,
+        Foot2 = 4,
+        PhysicalAbility = 5,
     }
 
     /// <summary>
@@ -53,10 +57,37 @@ namespace MLFLegends.Combat
         /// <summary>Phase boundaries of the current strike, fixed at its start; default when free.</summary>
         public CombatStrikeTiming Timing;
 
+        /// <summary>
+        /// Damage and hit box of the current strike, copied from the World's table with <see cref="Timing"/> when it starts
+        /// (#69): Action, Movement and Hit read one version of this execution, an Inspector edit acts on the next strike.
+        /// </summary>
+        public CombatStrikeParameters Strike;
+
         /// <summary>First free tick after the last series ended; 0 = no series ended in this battle yet.</summary>
         public uint EndTick;
 
         public bool IsAttacking => Kind != CombatAttackKind.None;
+    }
+
+    /// <summary>
+    /// Per-character combat values of one strike slot (#69): damage and the point-target hit box along the facing. Edited in
+    /// the character's config entry, published in <see cref="CombatStrikeSchedule"/>, frozen per execution in
+    /// <see cref="CombatAttackState.Strike"/>. The target point is its CombatPosition; body radius never widens the box.
+    /// </summary>
+    public struct CombatStrikeParameters
+    {
+        /// <summary>HP removed from each valid target, once per strike.</summary>
+        public int Damage;
+
+        /// <summary>Hit box along the attacker's facing, world units from its position (forward distance, inclusive).</summary>
+        public float ReachMin;
+        public float ReachMax;
+
+        /// <summary>Largest |ΔZ| (depth) between attacker and target, world units.</summary>
+        public float DepthHalfWidth;
+
+        /// <summary>Largest |ΔY| (altitude) between attacker and target, world units.</summary>
+        public float HeightTolerance;
     }
 
     /// <summary>Hit points. Written only by CombatHitSystem after spawn; 0 does not defeat yet (later stage).</summary>

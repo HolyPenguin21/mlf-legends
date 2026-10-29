@@ -35,6 +35,12 @@ namespace MLFLegends.Combat
 
         public int TotalTicks => WindupTicks + ActiveTicks + RecoveryTicks;
 
+        /// <summary>The default per-character values of this slot (damage and hit box).</summary>
+        public CombatStrikeParameters Parameters => new CombatStrikeParameters
+        {
+            Damage = Damage, ReachMin = ReachMin, ReachMax = ReachMax, DepthHalfWidth = DepthHalfWidth, HeightTolerance = HeightTolerance,
+        };
+
         public bool CanChain => ChainDelayTicks != CombatAttackTuning.NoChain;
 
         /// <summary>The default windows as a strike timing (chain point = Windup + Active + ChainDelay).</summary>
@@ -42,9 +48,35 @@ namespace MLFLegends.Combat
     }
 
     /// <summary>
-    /// Provisional Stage 05.1 strike data and series rules: reach, damage, chain delays, series length and the default
-    /// windows of worlds without a published <see cref="CombatStrikeSchedule"/>. In a scene the windows come from the
-    /// strike clips' Preparation/Active/Recovery frames (CharacterAnimationConfig). Not approved balance values.
+    /// Supported ranges of the editable per-character combat values (#69). The validator rejects values outside them with an
+    /// error (never clamps); the simulation's own invariants (finite-cylinder contacts, arena substeps, spatial grid) hold
+    /// inside them.
+    /// </summary>
+    public static class CombatCharacterLimits
+    {
+        public const float MinRadius = .05f, MaxRadius = 2f;
+        public const float MinHeight = .25f, MaxHeight = 8f;
+        public const float MinMass = .05f, MaxMass = 100f;
+        public const int MaxDamage = 1000;
+        public const float MaxReach = 8f, MaxDepthHalfWidth = 4f, MaxHeightTolerance = 8f;
+
+        public static bool IsValid(in CombatBody body) =>
+            InRange(body.Radius, MinRadius, MaxRadius) && InRange(body.Height, MinHeight, MaxHeight) && InRange(body.Mass, MinMass, MaxMass);
+
+        public static bool IsValid(in CombatStrikeParameters strike) =>
+            strike.Damage >= 0 && strike.Damage <= MaxDamage
+            && InRange(strike.ReachMin, 0, MaxReach) && InRange(strike.ReachMax, strike.ReachMin, MaxReach)
+            && InRange(strike.DepthHalfWidth, 0, MaxDepthHalfWidth) && InRange(strike.HeightTolerance, 0, MaxHeightTolerance);
+
+        // NaN fails both comparisons.
+        static bool InRange(float value, float min, float max) => value >= min && value <= max;
+    }
+
+    /// <summary>
+    /// Stage 05.1 series rules and the DEFAULT per-character values: chain delays and the default windows of worlds without
+    /// a published <see cref="CombatStrikeSchedule"/>, plus the default damage/reach of each slot. In a scene the windows come
+    /// from the slot clips' Preparation/Active/Recovery frames and the damage/reach/body from the character's config entry
+    /// (CharacterAnimationConfig → CharacterCombatSettings). Not approved balance values.
     /// </summary>
     /// <remarks>
     /// Default windows follow the delivered art's frame proportions (punch 29, kick 33, spin 45 ticks at 60 Hz). Reach
@@ -64,14 +96,14 @@ namespace MLFLegends.Combat
         {
             switch (kind)
             {
-                case CombatAttackKind.PunchLeft:
+                case CombatAttackKind.Hand1:
                     return Strike(13, 5, 11, 4, 4, 1.0f);
-                case CombatAttackKind.PunchRight:
+                case CombatAttackKind.Hand2:
                     return Strike(9, 9, 11, 4, 4, 1.0f);
-                case CombatAttackKind.KickLeft:
-                case CombatAttackKind.KickRight:
+                case CombatAttackKind.Foot1:
+                case CombatAttackKind.Foot2:
                     return Strike(11, 5, 17, 6, 7, 1.3f);
-                case CombatAttackKind.KickSpin:
+                case CombatAttackKind.PhysicalAbility:
                     return Strike(19, 6, 20, NoChain, 12, 1.45f);
                 default:
                     return default;
@@ -101,28 +133,28 @@ namespace MLFLegends.Combat
 
         /// <summary>
         /// The strike <paramref name="button"/> performs after <paramref name="previous"/> (None = first of a series): the
-        /// first strike is left, each follow-up uses the other side, and a Kick after <see cref="CombatAttackKind.KickRight"/>
-        /// is the <see cref="CombatAttackKind.KickSpin"/> finisher.
+        /// first strike is left, each follow-up uses the other side, and a Kick after <see cref="CombatAttackKind.Foot2"/>
+        /// is the <see cref="CombatAttackKind.PhysicalAbility"/> finisher.
         /// </summary>
         public static CombatAttackKind Select(CommandButtons button, CombatAttackKind previous)
         {
             // Exact requests survive buffering unchanged, including repeated right-side strikes and a free-state spin.
             switch (button)
             {
-                case CommandButtons.PunchLeft: return CombatAttackKind.PunchLeft;
-                case CommandButtons.PunchRight: return CombatAttackKind.PunchRight;
-                case CommandButtons.KickLeft: return CombatAttackKind.KickLeft;
-                case CommandButtons.KickRight: return CombatAttackKind.KickRight;
-                case CommandButtons.KickSpin: return CombatAttackKind.KickSpin;
+                case CommandButtons.PunchLeft: return CombatAttackKind.Hand1;
+                case CommandButtons.PunchRight: return CombatAttackKind.Hand2;
+                case CommandButtons.KickLeft: return CombatAttackKind.Foot1;
+                case CommandButtons.KickRight: return CombatAttackKind.Foot2;
+                case CommandButtons.KickSpin: return CombatAttackKind.PhysicalAbility;
             }
-            var left = previous != CombatAttackKind.PunchLeft && previous != CombatAttackKind.KickLeft;
+            var left = previous != CombatAttackKind.Hand1 && previous != CombatAttackKind.Foot1;
             if (button == CommandButtons.Attack)
-                return left ? CombatAttackKind.PunchLeft : CombatAttackKind.PunchRight;
+                return left ? CombatAttackKind.Hand1 : CombatAttackKind.Hand2;
             if (button != CommandButtons.Kick)
                 return CombatAttackKind.None;
-            if (previous == CombatAttackKind.KickRight)
-                return CombatAttackKind.KickSpin;
-            return left ? CombatAttackKind.KickLeft : CombatAttackKind.KickRight;
+            if (previous == CombatAttackKind.Foot2)
+                return CombatAttackKind.PhysicalAbility;
+            return left ? CombatAttackKind.Foot1 : CombatAttackKind.Foot2;
         }
     }
 }

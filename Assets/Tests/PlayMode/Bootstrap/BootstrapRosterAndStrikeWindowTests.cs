@@ -165,16 +165,21 @@ namespace MLFLegends.Tests.PlayMode
             {
                 bootstrap.AnimationConfig = config;
                 bootstrap.StrikeCharacterId = "mage_female_01";
-                LogAssert.Expect(LogType.Log, new Regex("strike windows .*punch_left 14/6/9, punch_right 14/6/9, kick_left 12/6/12, kick_right 12/6/12, kick_spin 20/5/5"));
+                LogAssert.Expect(LogType.Log, new Regex("character table .*Hand1 punch_left 14/6/9 dmg 4 reach 0-1, Hand2 punch_right 14/6/9 dmg 4 reach 0-1, " +
+                    "Foot1 kick_left 12/6/12 dmg 7 reach 0-1.3, Foot2 kick_right 12/6/12 dmg 7 reach 0-1.3, PhysicalAbility kick_spin 20/5/5 dmg 12 reach 0-1.45.*Body r 0.3 h 2 m 1"));
                 bootstrap.gameObject.SetActive(true);
                 yield return NextTick();
                 var table = Singleton<CombatStrikeSchedule>();
                 Assert.That(table.Revision, Is.EqualTo(bootstrap.PublishedScheduleRevision));
-                Assert.That((table.PunchLeft.WindupTicks, table.PunchLeft.ActiveTicks, table.PunchLeft.RecoveryTicks), Is.EqualTo((14, 6, 9)));
-                Assert.That((table.KickLeft.WindupTicks, table.KickLeft.ActiveTicks, table.KickLeft.RecoveryTicks), Is.EqualTo((12, 6, 12)));
-                Assert.That((table.KickRight.WindupTicks, table.KickRight.ActiveTicks, table.KickRight.RecoveryTicks), Is.EqualTo((12, 6, 12)));
-                Assert.That((table.KickSpin.WindupTicks, table.KickSpin.ActiveTicks, table.KickSpin.RecoveryTicks), Is.EqualTo((20, 5, 5)));
+                Assert.That((table.Hand1.WindupTicks, table.Hand1.ActiveTicks, table.Hand1.RecoveryTicks), Is.EqualTo((14, 6, 9)));
+                Assert.That((table.Foot1.WindupTicks, table.Foot1.ActiveTicks, table.Foot1.RecoveryTicks), Is.EqualTo((12, 6, 12)));
+                Assert.That((table.Foot2.WindupTicks, table.Foot2.ActiveTicks, table.Foot2.RecoveryTicks), Is.EqualTo((12, 6, 12)));
+                Assert.That((table.PhysicalAbility.WindupTicks, table.PhysicalAbility.ActiveTicks, table.PhysicalAbility.RecoveryTicks), Is.EqualTo((20, 5, 5)));
                 Assert.That(table.LandingRecoveryTicks, Is.EqualTo(12u));
+                // #69 default-data regression: the project's migrated Combat block publishes the previous values and body.
+                for (var kind = CombatAttackKind.Hand1; kind <= CombatAttackKind.PhysicalAbility; kind++)
+                    Assert.That(table.GetStrike(kind), Is.EqualTo(CombatAttackTuning.Get(kind).Parameters), kind.ToString());
+                Assert.That(table.Body, Is.EqualTo(CombatBodyTuning.Default));
 
                 // Owner edit in Play Mode: punch_left lasts 1 s (6 flat frames of 10 ticks, phases 0..2 / 3 / 4..5). Published on the next frame.
                 var entries = config.Characters.ToArray();
@@ -186,17 +191,36 @@ namespace MLFLegends.Tests.PlayMode
                 punch.SpeedCurve = AnimationCurve.Linear(0, 1, 1, 1);
                 punch.TotalDurationSeconds = 1.0;
                 config.Set(entries);
-                LogAssert.Expect(LogType.Log, new Regex("strike windows .*punch_left 30/10/20"));
+                LogAssert.Expect(LogType.Log, new Regex("character table .*Hand1 punch_left 30/10/20"));
                 yield return Until(() => Singleton<CombatStrikeSchedule>().Revision == table.Revision + 1);
-                Assert.That(Singleton<CombatStrikeSchedule>().PunchLeft.End, Is.EqualTo(60));
+                Assert.That(Singleton<CombatStrikeSchedule>().Hand1.End, Is.EqualTo(60));
+
+                // #69 Combat edit of this character: damage/reach of one slot reach the table on the next frame, timing unchanged.
+                entries[0].Combat.Hand2.Damage = 9;
+                entries[0].Combat.Hand2.ReachMax = 1.2f;
+                config.Set(entries);
+                LogAssert.Expect(LogType.Log, new Regex("character table .*Hand2 punch_right 14/6/9 dmg 9 reach 0-1.2"));
+                yield return Until(() => Singleton<CombatStrikeSchedule>().Revision == table.Revision + 2);
+                Assert.That(Singleton<CombatStrikeSchedule>().Hand2Strike.Damage, Is.EqualTo(9));
+                Assert.That(Singleton<CombatStrikeSchedule>().Hand1Strike, Is.EqualTo(CombatAttackTuning.Get(CombatAttackKind.Hand1).Parameters));
+                Assert.That(Singleton<CombatStrikeSchedule>().Hand1.End, Is.EqualTo(60), "Timing stays in the animation settings.");
+
+                // An out-of-range body is reported, never clamped, and keeps the last valid table.
+                entries[0].Combat.BodyMass = 0;
+                config.Set(entries);
+                LogAssert.Expect(LogType.Error, new Regex("(?s)character table rejected.*Combat.Body"));
+                yield return null;
+                yield return null;
+                Assert.That(Singleton<CombatStrikeSchedule>().Hand2Strike.Damage, Is.EqualTo(9));
+                entries[0].Combat.BodyMass = 1;
 
                 // A broken edit is reported once and keeps the last valid table.
                 punch.ActiveEndFrame = 5;
                 config.Set(entries);
-                LogAssert.Expect(LogType.Error, new Regex("(?s)strike windows rejected.*punch_left.ActiveEndFrame: 5"));
+                LogAssert.Expect(LogType.Error, new Regex("(?s)character table rejected.*punch_left.ActiveEndFrame: 5"));
                 yield return null;
                 yield return null;
-                Assert.That(Singleton<CombatStrikeSchedule>().PunchLeft.End, Is.EqualTo(60), "Previous windows stay.");
+                Assert.That(Singleton<CombatStrikeSchedule>().Hand1.End, Is.EqualTo(60), "Previous windows stay.");
             }
             finally
             {

@@ -31,16 +31,31 @@ namespace MLFLegends.Combat
         public const string RunClip = "run";
         public const string JumpClip = "jump";
 
-        /// <summary>Every clip the set needs; others (relaxed idle, walk, dash, cast) are neither required nor read.</summary>
+        /// <summary>
+        /// The clips the set needs with every slot on its default clip; others (relaxed idle, walk, dash, cast) are neither
+        /// required nor read. A character that maps a slot to another clip needs <see cref="RequiredClipIds"/> instead.
+        /// </summary>
         public static readonly string[] ClipIds =
         {
             IdleClip, RunClip, JumpClip, "punch_left", "punch_right", "kick_left", "kick_right", "kick_spin",
         };
 
+        /// <summary>Idle, run, jump and the (distinct) clips of the five strike slots under <paramref name="clipFor"/>.</summary>
+        public static List<string> RequiredClipIds(Func<CombatAttackKind, string> clipFor)
+        {
+            var ids = new List<string> { IdleClip, RunClip, JumpClip };
+            foreach (var kind in s_Attacks)
+            {
+                var clip = (clipFor ?? DefaultClip)(kind);
+                if (!ids.Contains(clip)) ids.Add(clip);
+            }
+            return ids;
+        }
+
         static readonly CombatAttackKind[] s_Attacks =
         {
-            CombatAttackKind.PunchLeft, CombatAttackKind.PunchRight, CombatAttackKind.KickLeft, CombatAttackKind.KickRight,
-            CombatAttackKind.KickSpin,
+            CombatAttackKind.Hand1, CombatAttackKind.Hand2, CombatAttackKind.Foot1, CombatAttackKind.Foot2,
+            CombatAttackKind.PhysicalAbility,
         };
 
         struct Segment
@@ -70,39 +85,48 @@ namespace MLFLegends.Combat
         {
         }
 
-        public static string AttackClip(CombatAttackKind kind)
+        /// <summary>
+        /// Compatibility clip of each slot (explicit migration of the Stage 05.1 ids, #69): the delivered art has no hand1/2,
+        /// foot1/2 or ability clips yet, so the slots play punch_left/punch_right/kick_left/kick_right and kick_spin until a
+        /// character's Combat data maps them to other clips.
+        /// </summary>
+        public static string DefaultClip(CombatAttackKind kind)
         {
             switch (kind)
             {
-                case CombatAttackKind.PunchLeft: return "punch_left";
-                case CombatAttackKind.PunchRight: return "punch_right";
-                case CombatAttackKind.KickLeft: return "kick_left";
-                case CombatAttackKind.KickRight: return "kick_right";
-                case CombatAttackKind.KickSpin: return "kick_spin";
+                case CombatAttackKind.Hand1: return "punch_left";
+                case CombatAttackKind.Hand2: return "punch_right";
+                case CombatAttackKind.Foot1: return "kick_left";
+                case CombatAttackKind.Foot2: return "kick_right";
+                case CombatAttackKind.PhysicalAbility: return "kick_spin";
                 default: return null;
             }
         }
 
-        /// <summary>True for the five strike clips: only they have Preparation / Active / Recovery phases.</summary>
+        /// <summary>True for the five default strike clips (phases are also required of any clip a character maps to a slot).</summary>
         public static bool IsAttackClip(string clipId)
         {
             foreach (var kind in s_Attacks)
             {
-                if (AttackClip(kind) == clipId)
+                if (DefaultClip(kind) == clipId)
                     return true;
             }
 
             return false;
         }
 
+        /// <summary>Idle, run and jump: driven by motion state, never a strike slot's clip.</summary>
+        public static bool IsMotionClip(string clipId) => clipId == IdleClip || clipId == RunClip || clipId == JumpClip;
+
         public SpriteAnimationTiming Attack(CombatAttackKind kind) => kind > 0 && (int)kind < m_Attacks.Length ? m_Attacks[(int)kind] : null;
 
         /// <summary>
         /// Builds the set from the atlas definition and the per-clip config settings (<paramref name="settingsFor"/> returns
-        /// null when a clip has none). All-or-nothing: any missing/invalid clip, phase, marker or range adds an error and returns null.
+        /// null when a clip has none); <paramref name="clipFor"/> maps each strike slot to the character's clip (null: the
+        /// default clips). All-or-nothing: any missing/invalid clip, phase, marker or range adds an error and returns null.
         /// </summary>
         public static CombatAnimationSet Create(SpriteAtlasDefinition definition, Func<string, CharacterAnimationSettings> settingsFor,
-            string path, List<string> errors, List<string> warnings = null)
+            string path, List<string> errors, List<string> warnings = null, Func<CombatAttackKind, string> clipFor = null)
         {
             var before = errors.Count;
             var set = new CombatAnimationSet();
@@ -140,7 +164,7 @@ namespace MLFLegends.Combat
                 }
             }
 
-            if (TryStrikes(definition, settingsFor, path, errors, warnings, set.m_Attacks, out var schedule))
+            if (TryStrikes(definition, settingsFor, path, errors, warnings, set.m_Attacks, clipFor, out var schedule))
             {
                 schedule.LandingRecoveryTicks = set.LandingTicks;
                 set.StrikeSchedule = schedule;
@@ -153,17 +177,20 @@ namespace MLFLegends.Combat
         /// needed). The same derivation <see cref="Create"/> uses, so the published table and the drawn phases agree.
         /// </summary>
         public static bool TryCreateStrikeSchedule(SpriteAtlasDefinition definition, Func<string, CharacterAnimationSettings> settingsFor,
-            string path, List<string> errors, List<string> warnings, out CombatStrikeSchedule schedule) =>
-            TryStrikes(definition, settingsFor, path, errors, warnings, new SpriteAnimationTiming[s_Attacks.Length + 1], out schedule);
+            string path, List<string> errors, List<string> warnings, out CombatStrikeSchedule schedule,
+            Func<CombatAttackKind, string> clipFor = null) =>
+            TryStrikes(definition, settingsFor, path, errors, warnings, new SpriteAnimationTiming[s_Attacks.Length + 1], clipFor, out schedule);
 
+        // Damage/reach/body of the returned table are the defaults; the publisher applies the character's Combat values.
         static bool TryStrikes(SpriteAtlasDefinition definition, Func<string, CharacterAnimationSettings> settingsFor, string path,
-            List<string> errors, List<string> warnings, SpriteAnimationTiming[] timings, out CombatStrikeSchedule schedule)
+            List<string> errors, List<string> warnings, SpriteAnimationTiming[] timings, Func<CombatAttackKind, string> clipFor,
+            out CombatStrikeSchedule schedule)
         {
             var before = errors.Count;
-            schedule = default;
+            schedule = CombatStrikeSchedule.Default;
             foreach (var kind in s_Attacks)
             {
-                var clipId = AttackClip(kind);
+                var clipId = (clipFor ?? DefaultClip)(kind);
                 var clipPath = path + "." + clipId;
                 var timing = Timing(definition, settingsFor, path, clipId, false, true, errors, warnings, out var clip);
                 if (timing == null)

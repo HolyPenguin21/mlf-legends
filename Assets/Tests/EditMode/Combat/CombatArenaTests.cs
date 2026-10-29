@@ -314,7 +314,7 @@ namespace MLFLegends.Tests.EditMode
             using var w = new ReplayWorld("arena attack");
             Install(w, Floor, Box(0, 0, 0, .05f, 4, 5));
             var table = CombatStrikeSchedule.Default;
-            table.PunchLeft = CombatStrikeTiming.FromTicks(6, 4, 8, 4);
+            table.Hand1 = CombatStrikeTiming.FromTicks(6, 4, 8, 4);
             CombatStrikeSchedule.Publish(w.Manager, table);
             var setup = BattleSetup.Default; setup.Human.Position = new float3(-.5f, 0, 0); setup.Ai.Position = new float3(.5f, 0, 0);
             var script = new ReplayScript();
@@ -326,12 +326,12 @@ namespace MLFLegends.Tests.EditMode
             for (var i = 0; i < 18; i++)
             {
                 var actor = records[i].Combatant(records[i].HumanId);
-                Assert.That(actor.Attack.Kind, Is.EqualTo(CombatAttackKind.PunchLeft));
-                Assert.That(actor.Attack.Timing, Is.EqualTo(table.PunchLeft));
+                Assert.That(actor.Attack.Kind, Is.EqualTo(CombatAttackKind.Hand1));
+                Assert.That(actor.Attack.Timing, Is.EqualTo(table.Hand1));
                 Assert.That(actor.Position.x, Is.LessThanOrEqualTo(-.35f + .001f));
                 Assert.That(actor.Hits.Length, Is.EqualTo(i < 6 ? 0 : 1));
                 var hp = records[i].Combatant(records[i].AiId).Health.Current;
-                Assert.That(hp, Is.EqualTo(100 - (i < 6 ? 0 : CombatAttackTuning.Get(CombatAttackKind.PunchLeft).Damage)));
+                Assert.That(hp, Is.EqualTo(100 - (i < 6 ? 0 : CombatAttackTuning.Get(CombatAttackKind.Hand1).Damage)));
             }
         }
         [Test]

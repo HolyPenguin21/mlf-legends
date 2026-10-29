@@ -29,7 +29,7 @@ namespace MLFLegends.Tests.EditMode
             public CombatAttackState Attack; public bool HasHealth, CanAttack; public int Health; public uint[] Ledger;
         }
 
-        public static bool OracleInside(in CombatAttackDefinition s, float3 attacker, FacingDirection facing, float3 target)
+        public static bool OracleInside(in CombatStrikeParameters s, float3 attacker, FacingDirection facing, float3 target)
         {
             var dx = target.x - attacker.x;
             var forward = facing == FacingDirection.Left ? -dx : dx;
@@ -61,7 +61,7 @@ namespace MLFLegends.Tests.EditMode
                 if (!a.CanAttack || a.Attack.Kind == CombatAttackKind.None
                     || a.Attack.Timing.PhaseAt(Tick - a.Attack.StartTick) != CombatAttackPhase.Active) continue;
                 ActiveAttackers++;
-                var strike = CombatAttackTuning.Get(a.Attack.Kind);
+                var strike = a.Attack.Strike; // the values frozen at this execution's start (#69), not the live table
                 foreach (var t in rows)
                     if (t.HasHealth && t.Team != a.Team && t.Id != a.Id && !a.Ledger.Contains(t.Id)
                         && OracleInside(strike, a.Position, a.Facing, t.Position))
@@ -96,11 +96,11 @@ namespace MLFLegends.Tests.EditMode
             foreach (var pair in Probe.HealthBefore)
             {
                 var damage = expected.Where(e => e.Target == pair.Key)
-                    .Sum(e => CombatAttackTuning.Get(Kind(byId, e.Attacker)).Damage);
+                    .Sum(e => Strike(byId, e.Attacker).Damage);
                 var hp = EntityManager.GetComponentData<CombatHealth>(byId[pair.Key]).Current;
                 var want = pair.Value;
                 foreach (var e in expected.Where(x => x.Target == pair.Key))
-                    want = math.max(0, want - CombatAttackTuning.Get(Kind(byId, e.Attacker)).Damage);
+                    want = math.max(0, want - Strike(byId, e.Attacker).Damage);
                 if (hp != want) Mismatches.Add($"tick {tick} hp #{pair.Key}: {hp} != oracle {want} (damage {damage})");
             }
             CheckedTicks++; CheckedHits += expected.Length;
@@ -108,8 +108,8 @@ namespace MLFLegends.Tests.EditMode
             Probe.Expected.RemoveAll(e => e.Tick == tick);
         }
 
-        CombatAttackKind Kind(Dictionary<uint, Entity> byId, uint attacker) =>
-            EntityManager.GetComponentData<CombatAttackState>(byId[attacker]).Kind;
+        CombatStrikeParameters Strike(Dictionary<uint, Entity> byId, uint attacker) =>
+            EntityManager.GetComponentData<CombatAttackState>(byId[attacker]).Strike;
     }
 
     public static class HitOracle

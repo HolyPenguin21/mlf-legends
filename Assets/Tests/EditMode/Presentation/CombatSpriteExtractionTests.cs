@@ -424,7 +424,7 @@ namespace MLFLegends.Tests.EditMode
             var set = CombatAnimationFixture.Set();
             m_Replay.Request(BattleRequest.Start(Setup(1))); m_Replay.Step();
             var human = m_Replay.Session.HumanCombatant;
-            var strike = CombatAttackTuning.Get(CombatAttackKind.PunchLeft);
+            var strike = CombatAttackTuning.Get(CombatAttackKind.Hand1);
             Submit(human, pressed: CommandButtons.Attack);
             for (var e = 0; e < strike.TotalTicks; e++)
             {

@@ -71,8 +71,8 @@ namespace MLFLegends.Tests.PlayMode
                 run ?? new CharacterAnimationSettings { ClipId = "run", EndFrame = 1, TotalDurationSeconds = 0.3 },
                 new CharacterAnimationSettings { ClipId = "jump", EndFrame = 5, TotalDurationSeconds = 0.5 },
             };
-            for (var kind = CombatAttackKind.PunchLeft; kind <= CombatAttackKind.KickSpin; kind++)
-                clips.Add(new CharacterAnimationSettings { ClipId = CombatAnimationSet.AttackClip(kind), EndFrame = 2, PreparationEndFrame = 0, ActiveEndFrame = 1,
+            for (var kind = CombatAttackKind.Hand1; kind <= CombatAttackKind.PhysicalAbility; kind++)
+                clips.Add(new CharacterAnimationSettings { ClipId = CombatAnimationSet.DefaultClip(kind), EndFrame = 2, PreparationEndFrame = 0, ActiveEndFrame = 1,
                     TotalDurationSeconds = CombatAttackTuning.Get(kind).TotalTicks / (double)SimulationTiming.TickRateHz });
             return clips.ToArray();
         }
@@ -212,7 +212,7 @@ namespace MLFLegends.Tests.PlayMode
             m_Producer.StrikeEvery = 40;
             m_Producer.StrikeModulo = 2; // odd IDs strike: every roster size has one
             yield return RestartBattle(Duel(float3.zero, FacingDirection.Right, new float3(3, 0, 0), FacingDirection.Left, allies));
-            var punch = CombatAttackTuning.Get(CombatAttackKind.PunchLeft);
+            var punch = CombatAttackTuning.Get(CombatAttackKind.Hand1);
             var seen = new HashSet<(uint, CombatAttackPhase)>();
             var start = Tick;
             yield return Until(() =>
@@ -291,7 +291,7 @@ namespace MLFLegends.Tests.PlayMode
             m_Owned.Add(reference);
             // Four fighters: one of them (ID % 4 == 1) strikes, the even ones run, the other one idles.
             yield return RestartBattle(Duel(new float3(-0.4f, 0, 0), FacingDirection.Left, new float3(0.4f, 0, 0), FacingDirection.Right, 1));
-            var punch = CombatAttackTuning.Get(CombatAttackKind.PunchLeft);
+            var punch = CombatAttackTuning.Get(CombatAttackKind.Hand1);
             foreach (var active in new[] { true, false })
             {
                 Time.timeScale = m_TimeScale;

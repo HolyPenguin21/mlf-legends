@@ -85,7 +85,7 @@ namespace MLFLegends.Tests.EditMode
             Place(w, e[0], origin, facing: facing); Place(w, e[1], origin + new float3(dx, 0, dz));
             var oracle = HitOracle.Attach(w);
             Command(w, e[0], pressed: CommandButtons.PunchLeft);
-            w.Step(CombatAttackTuning.Get(CombatAttackKind.PunchLeft).TotalTicks);
+            w.Step(CombatAttackTuning.Get(CombatAttackKind.Hand1).TotalTicks);
             Assert.That(w.Manager.GetComponentData<CombatHealth>(e[1]).Current, Is.EqualTo(hit ? 96 : 100));
             Assert.That(w.Manager.GetBuffer<CombatHitRecord>(e[0]).Length, Is.EqualTo(hit ? 1 : 0));
             Assert.That(oracle.Mismatches, Is.Empty);
@@ -99,7 +99,7 @@ namespace MLFLegends.Tests.EditMode
             Place(w, e[0], float3.zero, radius: .01f, height: .5f, facing: FacingDirection.Right);
             Place(w, e[1], new float3(1.5f, .6f, 0), radius: 3f);
             Command(w, e[0], pressed: CommandButtons.PunchLeft);
-            var timing = CombatAttackTuning.Get(CombatAttackKind.PunchLeft);
+            var timing = CombatAttackTuning.Get(CombatAttackKind.Hand1);
             w.Step(timing.WindupTicks + 1);
             var d = LastHits(w);
             Assert.That(d.ActiveAttackers, Is.EqualTo(1)); Assert.That(d.Candidates, Is.EqualTo(2), "Attacker and the big body.");
@@ -118,7 +118,7 @@ namespace MLFLegends.Tests.EditMode
             var allies = e.Where(x => x != e[0] && w.Manager.GetComponentData<CombatTeam>(x).Value == 1).ToArray();
             for (var i = 0; i < enemies.Length; i++) Place(w, enemies[i], new float3(.3f + i * .3f, 0, i * .1f - .1f));
             for (var i = 0; i < allies.Length; i++) Place(w, allies[i], new float3(.45f + i * .3f, 0, .2f));
-            var punch = CombatAttackTuning.Get(CombatAttackKind.PunchLeft);
+            var punch = CombatAttackTuning.Get(CombatAttackKind.Hand1);
             Command(w, e[0], pressed: CommandButtons.PunchLeft); w.Step(punch.TotalTicks);
             Assert.That(enemies.All(x => w.Manager.GetComponentData<CombatHealth>(x).Current == 100 - punch.Damage), Is.True,
                 "Each enemy once despite several Active ticks.");
@@ -137,7 +137,7 @@ namespace MLFLegends.Tests.EditMode
             using var w = new ReplayWorld("indexed hit stale"); var e = Start(w, 4);
             Place(w, e[0], float3.zero, facing: FacingDirection.Right); Place(w, e[1], new float3(.5f, 0, 0));
             Place(w, e[2], new float3(-5, 0, 0)); Place(w, e[3], new float3(5, 0, 0));
-            var punch = CombatAttackTuning.Get(CombatAttackKind.PunchLeft);
+            var punch = CombatAttackTuning.Get(CombatAttackKind.Hand1);
             Command(w, e[0], pressed: CommandButtons.PunchLeft); w.Step(punch.WindupTicks + 1);
             Assert.That(w.Manager.GetComponentData<CombatHealth>(e[1]).Current, Is.EqualTo(96));
             var hit = w.World.GetExistingSystem<CombatHitSystem>();

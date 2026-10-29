@@ -227,13 +227,13 @@ namespace MLFLegends.Tests.EditMode
         public void ContactKeepsAttackFacingAndLedgerAndAppliesPhaseSpeedOnlyOnce(bool allies)
         {
             using var w = new ReplayWorld("strike contacts"); Start(w, allies); var e = Actors(w);
-            var timing = CombatAttackTuning.Get(CombatAttackKind.PunchLeft).DefaultTiming;
+            var timing = CombatAttackTuning.Get(CombatAttackKind.Hand1).DefaultTiming;
             var previous = 0f;
             for (var t = 0; t < timing.End; t++)
             {
                 Command(w, e[0], 1, pressed: t == 0 ? CommandButtons.PunchLeft : CommandButtons.None); w.Step();
                 var state = w.Manager.GetComponentData<CombatAttackState>(e[0]);
-                Assert.That(state.Kind, Is.EqualTo(CombatAttackKind.PunchLeft));
+                Assert.That(state.Kind, Is.EqualTo(CombatAttackKind.Hand1));
                 Assert.That(w.Manager.GetComponentData<CombatFacing>(e[0]).Value, Is.EqualTo(FacingDirection.Right));
                 var advance = Position(w, e[0]).x - previous; previous = Position(w, e[0]).x;
                 var multiplier = t < timing.ActiveStart ? .5f : .25f;
@@ -386,7 +386,7 @@ namespace MLFLegends.Tests.EditMode
                 w.Manager.SetComponentData(e[i], new CombatMotion { Grounded = i < 3, GroundHeight = 0 });
             }
             var table = CombatStrikeSchedule.Default;
-            table.PunchLeft = CombatStrikeTiming.FromTicks(0, 60, 1, 4); // Explicit Active-speed fixture, not project tuning.
+            table.Hand1 = CombatStrikeTiming.FromTicks(0, 60, 1, 4); // Explicit Active-speed fixture, not project tuning.
             table.LandingRecoveryTicks = 12;
             CombatStrikeSchedule.Publish(w.Manager, table);
             Command(w, e[0], 1, pressed: CommandButtons.PunchLeft); w.Step();

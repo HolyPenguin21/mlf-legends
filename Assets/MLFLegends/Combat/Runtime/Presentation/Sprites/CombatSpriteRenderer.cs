@@ -141,6 +141,9 @@ namespace MLFLegends.Combat
         bool m_ConfigValid;
         SpriteAtlasCatalog m_CharacterCatalog;
         readonly Dictionary<string, CharacterAnimationSettings> m_ClipSettings = new Dictionary<string, CharacterAnimationSettings>();
+        CharacterCombatSettings m_StrikeClips; // slot → clip of the resolved character (copied with the config version)
+
+        string StrikeClip(CombatAttackKind kind) => m_StrikeClips != null ? m_StrikeClips.ClipFor(kind) : CombatAnimationSet.DefaultClip(kind);
         bool m_TimingDirty;
         float2 m_ImageOffsetCard;
         // Manual preview must not erase the cached character offset: the same config may be rebound without Version changing.
@@ -504,8 +507,10 @@ namespace MLFLegends.Combat
                 errors.Add("no CharacterAnimationConfig assigned");
             else
             {
-                // Every required clip is resolved (and every failure reported) before anything is accepted.
-                foreach (var clipId in CombatAnimationSet.ClipIds)
+                // Every required clip (idle/run/jump and the character's strike-slot clips) is resolved, and every failure
+                // reported, before anything is accepted.
+                m_StrikeClips = m_AnimationConfig.TryResolveCombat(m_CharacterId, out var combat, out _) ? combat.Copy() : null;
+                foreach (var clipId in CombatAnimationSet.RequiredClipIds(StrikeClip))
                 {
                     if (m_AnimationConfig.TryResolve(m_CharacterId, clipId, out var catalog, out var settings, out var error))
                     {
@@ -547,7 +552,7 @@ namespace MLFLegends.Combat
                 // Atomic set: an invalid clip cannot retain an old table or silently substitute another clip.
                 m_Animations = CombatAnimationSet.Create(definition,
                     clipId => m_ClipSettings.TryGetValue(clipId, out var settings) ? settings : null,
-                    $"characters.{m_CharacterId}.animations", errors, warnings);
+                    $"characters.{m_CharacterId}.animations", errors, warnings, StrikeClip);
             }
             foreach (var warning in warnings)
                 Debug.LogWarning($"{nameof(CombatSpriteRenderer)} on '{name}': {warning}", this);
