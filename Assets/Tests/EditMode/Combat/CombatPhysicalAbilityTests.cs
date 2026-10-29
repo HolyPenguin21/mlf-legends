@@ -65,6 +65,20 @@ namespace MLFLegends.Tests.EditMode
         }
 
         [Test]
+        public void SlicedAbilityDoesNotReplenishAnExhaustedTickBudget()
+        {
+            using var w = Start(Schedule(), new ReplayScript().Player(1, 1, ReplayRole.Human,
+                pressed: CommandButtons.PhysicalAbility), Duel(.65f));
+            var owner = w.World.GetExistingSystemManaged<CombatSpatialIndexSystem>();
+            owner.PairVisitBudgetOverride = 1; w.Step();
+            Assert.That(owner.LastContacts.WorkLimit, Is.True);
+            // The solver counts the refused visit once. Remaining slices may hold, but must not buy another visit each.
+            Assert.That(owner.LastContacts.PairVisits, Is.LessThanOrEqualTo(2));
+            Assert.That(owner.LastContacts.TraceHolds, Is.GreaterThan(0));
+            Assert.That(owner.MotionSegmentCount, Is.EqualTo(32), "All 16 accepted/held intervals remain represented for both actors.");
+        }
+
+        [Test]
         public void MovingTargetCrossingBetweenEndpointsIsHitAndImpactWaitsForNextMovement()
         {
             var table = Schedule(24); table.Body.Radius = .05f; var strike = table.PhysicalAbilityStrike;
@@ -74,6 +88,9 @@ namespace MLFLegends.Tests.EditMode
             CombatImpulse.Submit(w.Manager, w.Session.AiCombatant, new float3(-24, 0, 0));
             w.Step();
             var target = Actor(w, w.Session.AiCombatant);
+            ref var hit = ref w.World.Unmanaged.GetUnsafeSystemRef<CombatHitSystem>(w.World.GetExistingSystem<CombatHitSystem>());
+            Assert.That(hit.LastHits.UsedFullScan, Is.True, "Motion envelopes are scanned, not queried through the final-position grid.");
+            Assert.That(hit.LastHits.EntriesVisited, Is.EqualTo(2));
             Assert.That(w.Manager.GetComponentData<CombatHealth>(target).Current, Is.EqualTo(100 - strike.Damage));
             Assert.That(w.Manager.GetComponentData<CombatDamageFeedback>(target).LastDamageTick, Is.EqualTo(1));
             Assert.That(w.Manager.GetComponentData<CombatMotion>(target).ExternalVelocity.y, Is.Zero);

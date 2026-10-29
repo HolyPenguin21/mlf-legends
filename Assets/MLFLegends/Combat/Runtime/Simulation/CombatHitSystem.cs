@@ -186,6 +186,7 @@ namespace MLFLegends.Combat
                     : index.TryQueryAabbBatch(m_Queries.AsArray(), m_Candidates, m_Ranges)))
                     throw new InvalidOperationException(
                         "Hit needs this tick's final spatial snapshot for its Active attackers; no HP or ledger was written.");
+                if (!useMotion) segments = index.EmptyMotionSegments;
 
                 var session = SystemAPI.TryGetSingleton<BattleSession>(out var current) ? current.BattleNumber : 0u;
                 m_Diagnostics[0] = new CombatHitDiagnostics

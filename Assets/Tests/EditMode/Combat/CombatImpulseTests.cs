@@ -409,6 +409,28 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(P(g, f[0]), Is.EqualTo(a)); Assert.That(P(g, f[1]), Is.EqualTo(b), "Nothing discarded is released later.");
         }
 
+        [Test]
+        public void ExactlySpentPairBudgetStillPublishesTheCompletedSolve()
+        {
+            float3 a, b; float2 va, vb; long visits;
+            using (var w = new ReplayWorld("exact budget reference"))
+            {
+                var e = Start(w, new[] { Floor }, new float3(.7f, 0, 0));
+                Push(w, e[0], new float3(12, 0, 0)); w.Step();
+                visits = Contacts(w).PairVisits;
+                a = P(w, e[0]); b = P(w, e[1]); va = M(w, e[0]).ExternalVelocity; vb = M(w, e[1]).ExternalVelocity;
+            }
+            using var g = new ReplayWorld("exact budget boundary");
+            var f = Start(g, new[] { Floor }, new float3(.7f, 0, 0));
+            g.World.GetExistingSystemManaged<CombatSpatialIndexSystem>().PairVisitBudgetOverride = visits;
+            Push(g, f[0], new float3(12, 0, 0)); g.Step();
+            Assert.That(Contacts(g).WorkLimit, Is.False);
+            Assert.That(Contacts(g).TraceHolds, Is.Zero);
+            Assert.That(P(g, f[0]), Is.EqualTo(a)); Assert.That(P(g, f[1]), Is.EqualTo(b));
+            Assert.That(M(g, f[0]).ExternalVelocity, Is.EqualTo(va)); Assert.That(M(g, f[1]).ExternalVelocity, Is.EqualTo(vb));
+            Assert.That(Pending(g), Is.Zero);
+        }
+
         // #69 counterexample: equal bodies .1 apart, 12/0 u/s: the old rule published 8.6/2.6 (average displacements); the
         // declared perfectly inelastic normal response gives the common velocity 6/6, i.e. 5.6/5.6 after ground friction.
         [TestCase(1f, 1f)] [TestCase(1f, 3f)] [TestCase(3f, 1f)]

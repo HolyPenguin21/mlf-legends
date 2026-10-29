@@ -29,6 +29,8 @@ namespace MLFLegends.Tests.EditMode
             w.Manager.SetComponentData(target, new CombatHealth { Current = hp, Max = 100 });
             w.Script = new ReplayScript().Player(1, 1, ReplayRole.Human, pressed: CommandButtons.HandSeries);
             w.Frame(3);
+            ref var hit = ref w.World.Unmanaged.GetUnsafeSystemRef<CombatHitSystem>(w.World.GetExistingSystem<CombatHitSystem>());
+            Assert.That(hit.LastHits.TraceSegments, Is.Zero, "Ordinary Hit schedules with a valid empty motion view.");
             var last = w.Manager.GetComponentData<CombatDamageFeedback>(target).LastDamageTick;
             Assert.That(last, Is.EqualTo(damage > 0 ? 1u : 0u));
             Assert.That(w.Manager.GetComponentData<CombatDamageFeedback>(h).LastDamageTick, Is.Zero);
@@ -107,6 +109,30 @@ namespace MLFLegends.Tests.EditMode
                 Assert.That(f, Is.InRange(0, previous)); previous = f;
             }
             Assert.That(previous, Is.Zero);
+        }
+
+        [TestCase(false, 0f, false)] [TestCase(false, 1.5f, true)]
+        [TestCase(true, 0f, false)] [TestCase(true, 1.5f, true)]
+        public void CompactWaistFlowsThroughMovementBroadphaseAndPointOrSweptHit(bool swept, float offset, bool expectedHit)
+        {
+            using var w = new ReplayWorld("accepted compact waist integration");
+            var table = CombatStrikeSchedule.Default; table.Body.Height = 4;
+            table.PhysicalAbility = CombatStrikeTiming.FromTicks(0, 2, 1, CombatAttackTuning.NoChain);
+            var strike = table.PhysicalAbilityStrike;
+            strike.CompactHeight = 1; strike.CompactEnd = 2; strike.HeightTolerance = .05f;
+            strike.HitOffsetY = offset; strike.SelfImpulse = swept ? 1 : 0; strike.LaunchTick = 0;
+            table.PhysicalAbilityStrike = strike; CombatStrikeSchedule.Publish(w.Manager, table);
+            var setup = BattleSetup.Default; setup.Human.Position = float3.zero; setup.Ai.Position = new float3(.8f, 0, 0);
+            w.Request(BattleRequest.Start(setup)); w.World.GetExistingSystemManaged<InitializationSystemGroup>().Update();
+            w.Script = new ReplayScript().Player(1, 1, ReplayRole.Human, pressed: CommandButtons.PhysicalAbility);
+            w.Step();
+            var attacker = Actor(w, w.Session.HumanCombatant); var victim = Actor(w, w.Session.AiCombatant);
+            Assert.That(w.Manager.GetComponentData<CombatBody>(attacker).Height, Is.EqualTo(1));
+            Assert.That(w.Manager.GetComponentData<CombatBody>(victim).Height, Is.EqualTo(4));
+            // Independent expectation: feet share Y=0, waists are .5 and 2; offset 1.5 aligns them.
+            Assert.That(w.Manager.GetComponentData<CombatHealth>(victim).Current, Is.EqualTo(expectedHit ? 100 - strike.Damage : 100));
+            Assert.That(w.Manager.GetBuffer<CombatHitRecord>(attacker).Length, Is.EqualTo(expectedHit ? 1 : 0));
+            Assert.That(w.Manager.GetComponentData<CombatDamageFeedback>(victim).LastDamageTick, Is.EqualTo(expectedHit ? 1u : 0u));
         }
 
         [Test]
