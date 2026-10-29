@@ -160,6 +160,7 @@ namespace MLFLegends.Tests.PlayMode
             Create();
             m_Producer = SpriteRunTestProducer.Install(DefaultWorld);
             yield return RestartBattle(Duel(float3.zero, FacingDirection.Right, new float3(3, 0, 0), FacingDirection.Left, allies));
+            SeparateRunLanes();
             var count = 2 + 2 * allies;
             var idle = m_Renderer.AnimationTiming;
             var run = m_Renderer.RunAnimationTiming;

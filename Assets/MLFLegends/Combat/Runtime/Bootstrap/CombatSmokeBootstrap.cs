@@ -165,7 +165,9 @@ namespace MLFLegends.Combat
             if (m_RequireArena)
             {
                 var source = GetComponent<CombatArenaAuthoring>();
-                var missing = source == null || !source.isActiveAndEnabled;
+                // Serialized state, not isActiveAndEnabled: OnEnable calls Update before a later sibling component's own
+                // OnEnable, which would report an enabled arena on this object as missing at every scene start.
+                var missing = source == null || !source.enabled || !source.gameObject.activeInHierarchy;
                 if (missing && !m_ArenaMissingReported)
                     Debug.LogError("Required static arena source is missing or disabled; movement remains frozen for this battle.", this);
                 m_ArenaMissingReported = missing;

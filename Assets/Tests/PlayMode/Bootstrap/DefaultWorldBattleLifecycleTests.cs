@@ -405,7 +405,9 @@ namespace MLFLegends.Tests.PlayMode
                 var first = Session;
                 Assert.That(first.State, Is.EqualTo(BattleState.Active));
                 Assert.That(first.Owner, Is.Not.Zero);
-                Assert.That(LiveIds, Is.EqualTo(new[] { first.HumanCombatant.Value, first.AiCombatant.Value }));
+                // The roster comes from the scene's bootstrap (the owner's CombatSmoke uses 1 + 2); leaders first.
+                Assert.That(LiveIds.Take(2), Is.EqualTo(new[] { first.HumanCombatant.Value, first.AiCombatant.Value }));
+                Assert.That(LiveIds.Length, Is.EqualTo(Object.FindObjectsByType<CombatSmokeBootstrap>(FindObjectsInactive.Exclude).Single().TotalCombatants));
                 Entity human;
                 using (var actors = Manager.CreateEntityQuery(typeof(CombatantId)))
                 using (var entities = actors.ToEntityArray(Allocator.Temp))
@@ -433,7 +435,9 @@ namespace MLFLegends.Tests.PlayMode
                 Assert.That(next.State, Is.EqualTo(BattleState.Active), "The late end of the unloaded scene did not stop the next battle.");
                 Assert.That(next.Owner, Is.Not.EqualTo(first.Owner));
                 Assert.That(next.BattleNumber, Is.EqualTo(first.BattleNumber + 1));
-                Assert.That(LiveIds, Is.EqualTo(new[] { next.HumanCombatant.Value, next.AiCombatant.Value }));
+                // The roster comes from the scene's bootstrap (the owner's CombatSmoke uses 1 + 2); leaders first.
+                Assert.That(LiveIds.Take(2), Is.EqualTo(new[] { next.HumanCombatant.Value, next.AiCombatant.Value }));
+                Assert.That(LiveIds.Length, Is.EqualTo(Object.FindObjectsByType<CombatSmokeBootstrap>(FindObjectsInactive.Exclude).Single().TotalCombatants));
                 Assert.That(next.HumanCombatant.Value, Is.GreaterThan(first.AiCombatant.Value));
                 foreach (var scene in SmokeScenes())
                     SceneManager.UnloadSceneAsync(scene);
