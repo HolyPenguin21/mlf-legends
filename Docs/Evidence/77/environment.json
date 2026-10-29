@@ -1,0 +1,12 @@
+{
+  "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+  "tools_on_PATH": {
+    "Unity": null,
+    "Unity.exe": null,
+    "dotnet": null,
+    "mono": null,
+    "csc": null
+  },
+  "Unity_execution": "NOT RUN",
+  "GPU_execution": "NOT RUN"
+}
