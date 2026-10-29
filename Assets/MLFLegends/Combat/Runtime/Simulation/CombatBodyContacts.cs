@@ -14,6 +14,14 @@ namespace MLFLegends.Combat
         public const float ControlledMobility = .2f;
         public const float ControlledDistanceEpsilon = 4 * Skin; // Joint world/body tolerance must not advance run stride.
         public const float CorrectionBudget = .5f;
+        // Accepted leftover after the iteration budget: a swept violation up to this fraction of the smaller radius
+        // (.015 for the default body) is published and resolved as initial overlap next tick instead of rolling back
+        // the whole island. Far below any crossing; deeper leftovers still freeze with diagnostics.
+        public const float SlopRadiusFraction = .05f;
+        // Escalation before an island rollback: hold only the bodies of pairs still violating beyond slop at their start
+        // positions for this tick, then re-solve the rest around them. Bounded rounds × extra iterations.
+        public const int MaxHoldRounds = 6;
+        public const int HoldIterations = 16;
         public const float AllyYieldSpeed = 3f;
         public const int MaxYieldAttempts = 4;
         public const float TinyVerticalSpeed = 1e-12f;
@@ -57,6 +65,10 @@ namespace MLFLegends.Combat
         // or rejected (non-finite / speed limit). Discarded = bodies whose external motion was rolled back with their island.
         public int ImpulsesApplied, ImpulsesDropped, ImpulsesRejected, PhysicalBodies, DiscardedVelocities, OverSpeedBodies;
         public float MaxExternalSpeed;
+        public int SlopAcceptedPairs;
+        public float SlopAcceptedDepth;
+        // LocalHolds: bodies held at their start for this tick by escalation; RolledBackBodies: bodies of whole-island rollbacks.
+        public int LocalHolds, RolledBackBodies;
     }
 
     // Scratch rows, not ECS components or an alternative position source. Lifetime: one synchronous Movement call.
@@ -199,7 +211,9 @@ namespace MLFLegends.Combat
                 Actors[i] = a;
             }
             var solved = false;
-            for (var iteration = 0; iteration < CombatContactTuning.MaxIterations; iteration++)
+            var holdRounds = 0;
+            var iterationLimit = CombatContactTuning.MaxIterations;
+            for (var iteration = 0; iteration < iterationLimit; iteration++)
             {
                 if (!BuildPairs(ref d)) break;
                 d.Iterations++;
@@ -215,11 +229,35 @@ namespace MLFLegends.Combat
                         a.Id, b.Id, out var n, out var depth)) continue;
                     violation = true;
                     Union(pair.x, pair.y);
-                    var initial = CombatBodyContacts.Penetration(a.Start, a.Body, b.Start, b.Body) > CombatContactTuning.Skin;
-                    // Split the violation by cause. The physical share (external motion approaching along n, either team)
-                    // is a mass-weighted inelastic normal response and becomes velocity; locomotion and initial overlap keep
-                    // the Stage 04.3 rules below and never become velocity. Without external motion the share is zero.
-                    var physicalShare = initial ? 0 : PhysicalShare(a, b, n);
+                    var initialDepth = CombatBodyContacts.Penetration(a.Start, a.Body, b.Start, b.Body);
+                    var initial = initialDepth > CombatContactTuning.Skin;
+                    if (initial)
+                    {
+                        // Only the overlap the tick started with is depenetrated by physical mass (no role bias, no velocity).
+                        // Motion added on top keeps its own rules below: an accepted slop never lets walking bulldoze an enemy.
+                        var part = math.min(depth, initialDepth);
+                        depth -= part;
+                        var small = math.min(a.Body.Mass, b.Body.Mass);
+                        var ia = small / a.Body.Mass; var ib = small / b.Body.Mass;
+                        if (a.Team != b.Team)
+                        {
+                            // An enemy pressing inward this tick owns the leftover overlap too (no slow bulldozing).
+                            var la = math.max(0, math.dot((a.Result.Position - a.Start).xz - a.Physical, n));
+                            var lb = math.max(0, -math.dot((b.Result.Position - b.Start).xz - b.Physical, n));
+                            if (la + lb >= CombatContactTuning.TinyInwardDistance) { ia = la; ib = lb; }
+                        }
+                        if (a.Frozen) ia = 0;
+                        if (b.Frozen) ib = 0;
+                        if (ia + ib > 0)
+                        {
+                            Correct(ref a, -n * part * (ia / (ia + ib)), ref d);
+                            Correct(ref b, n * part * (ib / (ia + ib)), ref d);
+                        }
+                    }
+                    // Split the remaining violation by cause. The physical share (external motion approaching along n, either
+                    // team) is a mass-weighted inelastic normal response and becomes velocity; locomotion keeps the Stage 04.3
+                    // rules below and never becomes velocity. Without external motion the share is zero.
+                    var physicalShare = depth > 0 ? PhysicalShare(a, b, n) : 0;
                     if (physicalShare > 0)
                     {
                         var physicalDepth = depth * physicalShare;
@@ -234,15 +272,24 @@ namespace MLFLegends.Combat
                         }
                     }
                     float wa, wb;
-                    if (a.Team == b.Team || initial)
+                    if (a.Team == b.Team)
                     {
                         // Normalise without storing inverse mass or overflowing 1/Mass for tiny valid Mass.
                         var small = math.min(a.Body.Mass, b.Body.Mass);
                         wa = small / a.Body.Mass; wb = small / b.Body.Mass;
-                        if (!initial && a.Team == b.Team)
+                        if (a.Controlled || b.Controlled)
                         {
                             if (a.Controlled) wa *= CombatContactTuning.ControlledMobility;
                             if (b.Controlled) wb *= CombatContactTuning.ControlledMobility;
+                        }
+                        else
+                        {
+                            // Two uncontrolled allies: the one whose own command presses into the other takes it, so a rear
+                            // row cannot shove a front row that the enemy holds (mass halves converged one row per pass and
+                            // froze large pressing fronts). Commands only, so a passive chain pushed by the controller still
+                            // shares by mass; no pressing → mass.
+                            var ca = math.max(0, math.dot(a.Desired, n)); var cb = math.max(0, -math.dot(b.Desired, n));
+                            if (ca + cb >= CombatContactTuning.TinyInwardDistance) { wa = ca; wb = cb; }
                         }
                     }
                     else
@@ -262,7 +309,7 @@ namespace MLFLegends.Combat
                     if (wa + wb <= 0 || depth <= 0) { a.Island = Actors[pair.x].Island; b.Island = Actors[pair.y].Island; Actors[pair.x] = a; Actors[pair.y] = b; continue; }
                     var share = wa / (wa + wb);
                     var yielded = false;
-                    if (!initial && a.Team == b.Team)
+                    if (a.Team == b.Team)
                     {
                         // A finite normal priority alone pushes a collinear queue forever. Yield sideways as well,
                         // under the same world/body budgets, so a free ally can actually let the controller pass.
@@ -286,7 +333,16 @@ namespace MLFLegends.Combat
                     d.ResidualPenetration = actualResidual; d.ResidualComplete = true;
                     solved = true; break;
                 }
+                if (iteration == iterationLimit - 1 && holdRounds < CombatContactTuning.MaxHoldRounds && HoldViolators(ref d))
+                {
+                    holdRounds++;
+                    iterationLimit += CombatContactTuning.HoldIterations;
+                }
             }
+            // Closure: hold every body still in a new violation beyond slop until none remains. Each pass holds at least
+            // one more body, so at most one pass per body, inside the same pair-visit budget. Held bodies stay at their
+            // valid start; everybody else keeps a violation-free move. Island rollback remains for work-limit/carried cases.
+            for (var pass = 0; !solved && pass < Actors.Length && HoldViolators(ref d); pass++) { }
             // A tight island must stop instead of publishing penetration. Other islands continue moving.
             // Every candidate edge is unioned while building, including new neighbours after a correction.
             if (!solved)
@@ -299,9 +355,17 @@ namespace MLFLegends.Combat
                     if (!CombatBodyContacts.Sweep(a.Start, a.Result.Position, a.Body, b.Start, b.Result.Position, b.Body,
                         a.Id, b.Id, out _, out var depth)) continue;
                     d.ResidualConstraint = math.max(d.ResidualConstraint, depth);
+                    // Two held bodies at their own starts carry only the overlap this tick began with: not a new violation.
+                    var carried = a.Frozen && b.Frozen && a.Result.Position.Equals(a.Start) && b.Result.Position.Equals(b.Start);
+                    if (carried || depth <= CombatContactTuning.SlopRadiusFraction * math.min(a.Body.Radius, b.Body.Radius))
+                    {
+                        // Slow Gauss-Seidel convergence in long pressing chains, not a crossing: publish, diagnose.
+                        d.SlopAcceptedPairs++; d.SlopAcceptedDepth = math.max(d.SlopAcceptedDepth, depth);
+                        continue;
+                    }
                     d.UnresolvedPenetration = math.max(d.UnresolvedPenetration,
                         CombatBodyContacts.Penetration(a.Result.Position, a.Body, b.Result.Position, b.Body));
-                    FreezeIsland(Root(pair.x));
+                    FreezeIsland(Root(pair.x), ref d);
                 }
                 // Full working envelopes contain every rollback endpoint, so this same complete pair list
                 // also covers final penetrations. Keep diagnostics inside the same explicit work budget.
@@ -376,9 +440,29 @@ namespace MLFLegends.Combat
             if (a == b) return;
             var row = Actors[math.max(a, b)]; row.Island = math.min(a, b); Actors[math.max(a, b)] = row;
         }
-        void FreezeIsland(int root)
+        void FreezeIsland(int root, ref CombatContactDiagnostics d)
         {
-            for (var i = 0; i < Actors.Length; i++) if (Root(i) == root) Freeze(i);
+            for (var i = 0; i < Actors.Length; i++)
+                if (Root(i) == root) { if (!Actors[i].Frozen) d.RolledBackBodies++; Freeze(i); }
+        }
+
+        // Holds (restores to start, zero mobility) both bodies of every pair still violating beyond slop. Start positions
+        // are inside every working envelope, so the held bodies act as fixed obstacles for the following iterations.
+        bool HoldViolators(ref CombatContactDiagnostics d)
+        {
+            if (d.WorkLimit || !BuildPairs(ref d)) return false;
+            var held = false;
+            for (var p = 0; p < Pairs.Length; p++)
+            {
+                if (++d.PairVisits > CombatContactTuning.MaxPairVisits) { d.WorkLimit = true; return false; }
+                var pair = Pairs[p]; var a = Actors[pair.x]; var b = Actors[pair.y];
+                if (!CombatBodyContacts.Sweep(a.Start, a.Result.Position, a.Body, b.Start, b.Result.Position, b.Body,
+                    a.Id, b.Id, out _, out var depth)
+                    || depth <= CombatContactTuning.SlopRadiusFraction * math.min(a.Body.Radius, b.Body.Radius)) continue;
+                if (!a.Frozen) { Freeze(pair.x); d.LocalHolds++; held = true; }
+                if (!Actors[pair.y].Frozen) { Freeze(pair.y); d.LocalHolds++; held = true; }
+            }
+            return held;
         }
         void Freeze(int i)
         {

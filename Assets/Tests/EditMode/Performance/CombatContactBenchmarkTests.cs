@@ -95,7 +95,8 @@ namespace MLFLegends.Tests.EditMode
                 lines.Add("bodies\tscenario\tcold_move_us\tcold_native_payload\twarm_native_payload\tmove_mean_us\tmove_p95_us\tkernel_mean_us\tindex_mean_us\thit_mean_us\tfull_tick_mean_us\tfull_tick_p95_us\tcandidates\tpair_visits\tpeak_pairs\titerations\tfinal_residual\tresidual_complete\tunresolved_penetration\tconstraint_violation\tfrozen\tyield_attempts\tworld_rejections\twork_limits\tmanaged_kernel\tgc_samples\tprocess_native_delta"
                     + "\timpulses_applied\timpulses_rejected\tphysical_bodies\tdiscarded_velocities\tover_speed\tmax_external_speed"
                     + "\tactive_attacker_ticks\taccepted_hits\thit_queries\thit_candidates\thit_entries\thit_inside_tests\thit_managed_kernel"
-                    + "\tbruteforce_search_mean_us\tindexed_search_mean_us\tbruteforce_inside_tests\tindexed_inside_tests\tsearch_inside\tsearch_match");
+                    + "\tbruteforce_search_mean_us\tindexed_search_mean_us\tbruteforce_inside_tests\tindexed_inside_tests\tsearch_inside\tsearch_match"
+                    + "\tlocal_holds\trolled_back_bodies\tslop_pairs\tmax_slop_depth");
                 var failures = new List<string>();
                 foreach (var count in new[] { 2, 100, 400 })
                 foreach (var scenario in new[] { "sparse", "dense_allies", "opponents", "corridor", "wall_pressure", "impulse_single", "impulse_mass", "strikes" })
@@ -146,6 +147,7 @@ namespace MLFLegends.Tests.EditMode
                     var peak = 0; var residual = 0f; var unresolved = 0f; var constraint = 0f; var complete = true; var managed = false;
                     long applied = 0, rejected = 0, physical = 0, discarded = 0, overSpeed = 0, activeTicks = 0, accepted = 0, queries = 0, hitCandidates = 0, entries = 0, insideTests = 0;
                     long bfTests = 0, ixTests = 0, searchInside = 0; var maxSpeed = 0f; var hitManaged = false; var match = true;
+                    long holds = 0, rolledBack = 0, slopPairs = 0; var slopDepth = 0f;
                     var bruteSearch = new BenchmarkSamples(MeasuredTicks); var indexedSearch = new BenchmarkSamples(MeasuredTicks);
                     using var attackerQuery = bench.Manager.CreateEntityQuery(typeof(CombatAttackState), typeof(CombatFacing), typeof(CombatPosition), typeof(CombatTeam), typeof(InCombat));
                     using var all = new NativeList<CombatSpatialBody>(1024, Allocator.Persistent); using var hitRows = new NativeList<CombatSpatialBody>(4096, Allocator.Persistent);
@@ -195,6 +197,7 @@ namespace MLFLegends.Tests.EditMode
                             unresolved = Math.Max(unresolved, d.UnresolvedPenetration); constraint = Math.Max(constraint, d.ResidualConstraint); managed |= d.KernelRanManaged;
                             applied += d.ImpulsesApplied; rejected += d.ImpulsesRejected; physical += d.PhysicalBodies; discarded += d.DiscardedVelocities;
                             overSpeed += d.OverSpeedBodies; maxSpeed = Math.Max(maxSpeed, d.MaxExternalSpeed);
+                            holds += d.LocalHolds; rolledBack += d.RolledBackBodies; slopPairs += d.SlopAcceptedPairs; slopDepth = Math.Max(slopDepth, d.SlopAcceptedDepth);
                         }
                         start = Stopwatch.GetTimestamp(); index.Update(); if (measure) grid.Add(Stopwatch.GetTimestamp() - start);
                         if (compare) CompareSearch();
@@ -227,6 +230,8 @@ namespace MLFLegends.Tests.EditMode
                         failures.Add($"{count} {scenario}: no Active strike in the measured window (empty Hit phase)");
                     if (scenario == "strikes" && accepted == 0) failures.Add($"{count} {scenario}: no accepted hits (only full ledgers)");
                     if (scenario.StartsWith("impulse") && applied == 0) failures.Add($"{count} {scenario}: no impulse applied");
+                    if (rolledBack > 0 && (scenario == "opponents" || scenario == "strikes" || scenario.StartsWith("impulse")))
+                        failures.Add($"{count} {scenario}: {rolledBack} body-ticks of whole-island rollback in a pressing front");
                     index.TryGetSnapshotInfo(out var finalInfo);
                     Assert.That(finalInfo.NativePayloadCapacityBytes + index.MovementScratchCapacityBytes, Is.EqualTo(warmCapacity));
                     for (var i = 0; i < WarmupTicks; i++) bench.Frames(1, 1);
@@ -237,7 +242,7 @@ namespace MLFLegends.Tests.EditMode
                     lines.Add(string.Join("\t", count, scenario, cold, coldCapacity, warmCapacity, m.Mean, m.P95, k.Mean, g.Mean, hs.Mean,
                         f.Mean, f.P95, candidates, visits, peak, iterations, residual, complete, unresolved, constraint, frozen, yields, rejects, workLimits, managed, gcSamples, nativeDelta,
                         applied, rejected, physical, discarded, overSpeed, maxSpeed, activeTicks, accepted, queries, hitCandidates, entries, insideTests, hitManaged,
-                        bf, ix, bfTests, ixTests, searchInside, match));
+                        bf, ix, bfTests, ixTests, searchInside, match, holds, rolledBack, slopPairs, slopDepth));
                 }
                 Directory.CreateDirectory(BenchmarkReport.Directory);
                 File.WriteAllLines(Path.Combine(BenchmarkReport.Directory, "stage04-impulses-hit.tsv"), lines);

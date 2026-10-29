@@ -163,12 +163,24 @@ once-per-strike ledger, now resolved on the shared final index. Remaining Stage 
 wired to this impulse input, stagger/launch as combat effects, interrupt/cancel, guard damage, jump attacks,
 heavy/light mapping, defeat and balance.
 
-## 9. Measured limits (see Evidence/66)
+## 9. Pressing-front convergence (owner: fix in this task) and measured limits
 
-- Dense pressing fronts: at 400 the opposing-front layout is rolled back on every tick (also without impulses); at 100
-  a single impulse into the front leaves it frozen on every later tick. The diagnosed bounded fallback works as
-  specified, but convergence for large pressing groups needs a decision before Stage 04 is closed.
-- Indexed Hit search is faster than a full scan in sparse layouts and slower in dense 400 packs (managed batch query
-  cost). Correctness matches the brute-force oracle in every measured and tested case.
-- Burst-off benchmark measured all scenarios but exceeded the 1800 s test timeout (FAIL by timeout). Other Performance
-  suites and the owner's manual checklist: NOT RUN.
+Measured on this branch: a 400 opposing front (rows touching, both teams walking in) rolled back every tick, and a 100
+front froze for good after one impulse. Corrections in `CombatContactJob` (all deterministic, bounded, diagnosed):
+- **Uncontrolled ally pairs** give the correction to the body whose own command presses into the other (mass shares when
+  neither presses). A rear row can no longer shove a front row held by the enemy; the controlled role's mobility .2 and
+  ally yielding are unchanged. Convergence of the 400 front: 48+ → 5 iterations.
+- **Initial overlap**: only the overlap the tick started with is depenetrated (by mass, or by the inward-pressing enemy);
+  motion added on top keeps the locomotion/physics rules, so accepted leftovers never become slow bulldozing.
+- **Slop**: after the iteration budget a swept violation ≤ `SlopRadiusFraction` (5 %) of the smaller radius is published
+  (`SlopAcceptedPairs/Depth`) and resolved next tick.
+- **Hold escalation instead of island rollback**: bodies of pairs still violating beyond slop are held at their valid
+  start for this tick (`LocalHolds`), up to 6 rounds × 16 extra iterations, then a closure pass (≤ one pass per body,
+  same pair-visit budget). Two held bodies at their starts carry only their initial overlap. Whole-island rollback
+  (`RolledBackBodies`) remains only for work-limit exhaustion.
+
+Remaining measured limits (Evidence/66): a mass-impulse tick into a 400 jam holds all bodies for that tick (impulses
+discarded, counted); a 400 single-file corridor holds 63 bodies per tick at ~13 ms Movement. Indexed Hit search is faster
+than a full scan in sparse layouts and slower in dense 400 packs (managed batch query cost); correctness matches the
+oracle everywhere. Burst-off benchmarks are excluded by owner decision. Other Performance suites and the owner's manual
+checklist: NOT RUN.

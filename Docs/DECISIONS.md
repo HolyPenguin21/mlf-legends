@@ -14,6 +14,9 @@ Agent implementation choices, pending manager review and owner acceptance ([cont
 - Hit: managed orchestration + one atomic index batch + Burst kernel; ulp-padded point-target box as broadphase; stale
   snapshot with Active attackers throws before writes, no brute-force fallback. The 04.1 "disabled index" replay control
   is replaced by an independent brute-force oracle.
+- Owner (2026-10-29): Burst-off benchmark runs are excluded; production code runs with Burst. Owner (same day): fix the
+  pressing-front convergence in #66 — uncontrolled ally pairs by pressing command, initial-overlap split, 5 % radius slop,
+  bounded hold escalation instead of whole-island rollback (STAGE04_IMPULSES_HIT §9).
 - 04.3 blockers found by the first real compile/run: missing `using Unity.Mathematics` in the replay driver (CS0246), 04.2
   arena lifecycle tests calling SendMessage in EditMode, and a sprite fixture walking enemies through each other.
   Fixed test-side in the first commit; no runtime 04.3 change was needed.
