@@ -317,6 +317,40 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(M(w, e[1]).MoveStreakDistance, Is.Zero, "Passive transfer is not running.");
         }
 
+        // #69 baseline for the #66 limits: a FREE (no wall, no jam) touching chain of 6 or 20 bodies of both teams transfers
+        // an impulse end to end with no hold, discard or rollback, no overlap and no energy gain.
+        [TestCase(2)] [TestCase(9)]
+        public void FreeSmallAndMediumChainsTransferWithoutHoldsOrDiscards(int allies)
+        {
+            using var w = new ReplayWorld("free chain"); var e = Start(w, new[] { Floor }, allies: (ushort)allies);
+            for (var i = 0; i < e.Length; i++)
+                w.Manager.SetComponentData(e[i], new CombatPosition { Value = new float3(i * .6f, 0, 0) });
+            var last = e.Length - 1;
+            const float v0 = 12;
+            Push(w, e[0], new float3(v0, 0, 0));
+            var energy = v0 * v0;
+            var maxSlop = 0f;
+            for (var t = 0; t < 60; t++)
+            {
+                w.Step();
+                var d = Contacts(w);
+                Assert.That((d.LocalHolds, d.DiscardedVelocities, d.RolledBackBodies, d.FrozenBodies, d.WorkLimit), Is.EqualTo((0, 0, 0, 0, false)), $"tick {t}");
+                var now = e.Sum(x => math.lengthsq(M(w, x).ExternalVelocity));
+                Assert.That(now, Is.LessThanOrEqualTo(energy + 1e-3f), "Contacts never create kinetic energy.");
+                energy = now;
+                // A long pressing chain may publish the documented, diagnosed slop (<= 5 % of the radius, resolved next tick).
+                var slop = CombatContactTuning.SlopRadiusFraction * .3f;
+                Assert.That(d.SlopAcceptedDepth, Is.LessThanOrEqualTo(slop + 1e-6f));
+                for (var i = 0; i + 1 < e.Length; i++)
+                    Assert.That(math.distance(P(w, e[i]).xz, P(w, e[i + 1]).xz), Is.GreaterThanOrEqualTo(.6f - slop - .00021f), $"tick {t} pair {i}");
+                maxSlop = math.max(maxSlop, d.SlopAcceptedDepth);
+            }
+            TestContext.WriteLine($"chain {e.Length}: max accepted slop {maxSlop}");
+            if (e.Length <= 6) Assert.That(maxSlop, Is.Zero, "A small free chain needs no slop.");
+            Assert.That(P(w, e[last]).x, Is.GreaterThan(last * .6f + .01f), "The far end of the chain moved.");
+            Assert.That(e.All(x => M(w, x).ExternalVelocity.Equals(float2.zero)), Is.True, "Friction stops the chain.");
+        }
+
         // #69: whole-entity Disabled (Unity tag) hides the fighter from every default query; it must not keep and later
         // release its external velocity, exactly like a disabled InCombat bit.
         [Test]
