@@ -7,6 +7,7 @@ using NUnit.Framework;
 using Unity.Collections;
 using Unity.Core;
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace MLFLegends.Tests.EditMode
 {

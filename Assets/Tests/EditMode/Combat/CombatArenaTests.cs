@@ -12,6 +12,11 @@ namespace MLFLegends.Tests.EditMode
     public class CombatArenaTests
     {
         static CombatBody Body => CombatBodyTuning.Default;
+        // SendMessage to a non-[ExecuteAlways] behaviour in EditMode trips Unity's 'ShouldRunBehaviour()' assertion
+        // (an unhandled log that fails the test). Invoke the same private lifecycle method directly instead.
+        static void Call(MonoBehaviour behaviour, string method) => behaviour.GetType().GetMethod(method,
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)
+            .Invoke(behaviour, null);
         internal static CombatArenaShape Box(float x, float bottom, float z, float hx, float top, float hz, float yaw = 0) =>
             new CombatArenaShape { Center = new float2(x, z), HalfSize = new float2(hx, hz), Bottom = bottom, Top = top,
                 AxisX = new float2(math.cos(yaw), math.sin(yaw)) };
@@ -417,16 +422,16 @@ namespace MLFLegends.Tests.EditMode
                 var adapter = root.AddComponent<CombatArenaAuthoring>();
                 adapter.Sources = new[] { new CombatArenaSource { Transform = floor.transform } };
                 World.DefaultGameObjectInjectionWorld = first.World;
-                root.SetActive(true); root.SendMessage("OnEnable"); Arena(first).Update();
+                root.SetActive(true); Call(adapter, "OnEnable"); Arena(first).Update();
                 using var a = first.Manager.CreateEntityQuery(typeof(CombatArenaState));
                 Assert.That(a.GetSingleton<CombatArenaState>().Valid, Is.True);
                 World.DefaultGameObjectInjectionWorld = second.World;
-                for (var i = 0; i < 10; i++) root.SendMessage("Update");
+                for (var i = 0; i < 10; i++) Call(adapter, "Update");
                 Arena(first).Update(); Arena(second).Update();
                 using var b = second.Manager.CreateEntityQuery(typeof(CombatArenaState));
                 Assert.That(a.GetSingleton<CombatArenaState>().Required, Is.False);
                 Assert.That(b.GetSingleton<CombatArenaState>().Valid, Is.True);
-                root.SendMessage("OnDisable"); Arena(second).Update();
+                Call(adapter, "OnDisable"); Arena(second).Update();
                 Assert.That(b.GetSingleton<CombatArenaState>().Required, Is.False);
             }
             finally
@@ -448,7 +453,7 @@ namespace MLFLegends.Tests.EditMode
                 World.DefaultGameObjectInjectionWorld = w.World;
                 var adapter = root.AddComponent<CombatArenaAuthoring>();
                 adapter.Sources = new[] { new CombatArenaSource { Transform = floor.transform } };
-                root.SetActive(true); root.SendMessage("OnEnable"); Arena(w).Update();
+                root.SetActive(true); Call(adapter, "OnEnable"); Arena(w).Update();
                 var old = Arena(w); var group = w.World.GetExistingSystemManaged<FixedStepSimulationSystemGroup>();
                 group.RemoveSystemFromUpdateList(old); w.World.DestroySystemManaged(old);
                 var replacement = w.World.CreateSystemManaged<CombatArenaSystem>(); group.AddSystemToUpdateList(replacement); group.SortSystems();
@@ -457,7 +462,7 @@ namespace MLFLegends.Tests.EditMode
                 replacement.Update();
                 Assert.That(old.Release(lease), Is.False);
                 Assert.That(old.Stage(lease, new[] { Floor }), Is.False);
-                root.SendMessage("Update");
+                Call(adapter, "Update");
                 using var query = w.Manager.CreateEntityQuery(typeof(CombatArenaState));
                 Assert.That(query.GetSingleton<CombatArenaState>().Lease, Is.EqualTo(lease));
                 Assert.That(query.GetSingleton<CombatArenaState>().Pending, Is.False);
@@ -485,10 +490,10 @@ namespace MLFLegends.Tests.EditMode
                 World.DefaultGameObjectInjectionWorld = w.World;
                 var adapter = root.AddComponent<CombatArenaAuthoring>();
                 adapter.Sources = new[] { new CombatArenaSource { Transform = floor.transform } };
-                root.SetActive(true); root.SendMessage("OnDisable"); adapter.EnsureForBattle(w.World);
+                root.SetActive(true); Call(adapter, "OnDisable"); adapter.EnsureForBattle(w.World);
                 var successor = Arena(w).Acquire();
                 Assert.That(Arena(w).Stage( successor, new[] { Floor }), Is.True); Arena(w).Update();
-                root.SendMessage("OnEnable");
+                Call(adapter, "OnEnable");
                 using var query = w.Manager.CreateEntityQuery(typeof(CombatArenaState));
                 Assert.That(query.GetSingleton<CombatArenaState>().Lease, Is.EqualTo(successor));
                 Assert.That(query.GetSingleton<CombatArenaState>().Pending, Is.False);
