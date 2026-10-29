@@ -1,3 +1,17 @@
+## Stage 04.2 static arena (#61)
+
+[Full contract, authoring/tuning, work guards, ownership and evidence](../../../../../Docs/STAGE04_ARENA.md).
+One World-owned CombatArenaSystem publishes numeric static boxes/yaw/ramp data from one scene authoring adapter.
+Pending geometry is committed by the same owner before lifecycle at fixed/Initialization safe boundaries. The tiny
+Initialization proxy only forwards; it owns no geometry. Lifecycle initializes Grounded using actual support at spawn;
+only CombatMovementSystem subsequently writes Position/Motion. Action → Facing → Movement contacts → final index → Hit.
+Commands/frozen phase speed and gravity retain their existing owners; no actor contacts, impulses or Hit migration.
+Production CombatSmoke requires explicit geometry and diagnoses invalid/missing sources, freezing movement instead
+of using spawn Y as a floor. Bare Worlds that never acquire geometry keep flat GroundHeight support in the same solver.
+Lease/revision/pending+active buffers belong to one World; late old adapters cannot clear a successor. ECS disposes buffer
+memory at World teardown; no native view escapes a tick. Actual X/Z distance, excluding depenetration, drives run history.
+C# geometry/integration/lifecycle tests and arena benchmark authored, **NOT RUN**; source/model is not Unity execution.
+
 ## Current Stage 04.1 — final-position spatial snapshot (#58)
 
 State order: **CombatActionSystem → CombatFacingSystem → CombatMovementSystem → CombatSpatialIndexSystem → CombatHitSystem**.

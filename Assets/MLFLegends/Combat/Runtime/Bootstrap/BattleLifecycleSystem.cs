@@ -34,6 +34,7 @@ namespace MLFLegends.Combat
         EntityQuery m_Combatants;
         EntityQuery m_Clock;
         EntityQuery m_RunningClock;
+        EntityQuery m_Arena;
 
         public void OnCreate(ref SystemState state)
         {
@@ -51,6 +52,8 @@ namespace MLFLegends.Combat
                 .WithOptions(EntityQueryOptions.IgnoreComponentEnabledState | EntityQueryOptions.IncludeDisabledEntities).Build();
             m_Clock = SystemAPI.QueryBuilder().WithAll<SimulationClock>().Build();
             m_RunningClock = SystemAPI.QueryBuilder().WithAll<SimulationClock, SimulationClockRunning>().Build();
+
+            m_Arena = SystemAPI.QueryBuilder().WithAll<CombatArenaState, CombatArenaShape>().Build();
 
             state.RequireForUpdate<SimulationClock>();
             state.RequireForUpdate<CombatCommandQueue>();
@@ -172,8 +175,21 @@ namespace MLFLegends.Combat
             entityManager.SetComponentData(entity, id);
             entityManager.SetComponentData(entity, new CombatTeam { Value = setup.Team });
             entityManager.SetComponentData(entity, new CombatPosition { Value = setup.Position });
-            entityManager.SetComponentData(entity, new CombatMotion { GroundHeight = setup.Position.y, Grounded = true });
-            entityManager.SetComponentData(entity, CombatBodyTuning.Default);
+            var body = CombatBodyTuning.Default;
+            var motion = new CombatMotion { GroundHeight = setup.Position.y, Grounded = true };
+            if (m_Arena.CalculateEntityCount() == 1)
+            {
+                var arenaEntity = m_Arena.GetSingletonEntity();
+                var arena = entityManager.GetComponentData<CombatArenaState>(arenaEntity);
+                if (arena.Required)
+                {
+                    motion.Grounded = arena.Valid && CombatArenaGeometry.Support(
+                        entityManager.GetBuffer<CombatArenaShape>(arenaEntity, true).AsNativeArray(), setup.Position,
+                        body.Radius, setup.Position.y, setup.Position.y, true, out _);
+                }
+            }
+            entityManager.SetComponentData(entity, motion);
+            entityManager.SetComponentData(entity, body);
             entityManager.SetComponentData(entity, new CombatFacing { Value = setup.Facing });
             entityManager.SetComponentData(entity, new CombatHealth { Current = CombatAttackTuning.MaxHealth, Max = CombatAttackTuning.MaxHealth });
 

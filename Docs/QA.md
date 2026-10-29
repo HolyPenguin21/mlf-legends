@@ -1,3 +1,24 @@
+## #63 bottom-up review corrections (2026-10-29)
+
+[Concrete source findings, corrections and authored regressions](STAGE04_ARENA_REVIEW.md): roof/ramp ejection,
+contact-tick drift, steep-surface fall, missing-arena restart bypass, cached-query lifecycle, unsupported authoring and
+bare-fixture compatibility. These are source/model counterexamples, **not executed Unity FAIL**. The final updated
+source report records its own exact tested SHA/tree. C# suites/Unity/Entities/Burst/GPU/performance remain **NOT RUN**.
+
+## Current #61 — Stage 04.2 static arena (2026-10-29)
+
+Dependent branch `feature/61-static-arena` starts from corrected #60 PR #62 head
+`e26e668435b9cb55bcf5bced163710b6c2b61230`; main at dispatch is `180b4121792e68931f27c109b78cd0d24c21a4d4`.
+The owner authorized proceeding to physics while #62 remains open; neither PR is merged by the implementing agent.
+[Owners, supported geometry/limits, scene setup, leases, fallback, tests and evidence](STAGE04_ARENA.md).
+Stage 03 OWNER-ACCEPTED; Stage 04 IN PROGRESS. Only 04.2: no actor contacts/yield, impulses or Hit migration.
+Geometry publication → lifecycle/clock/commands → Action → Facing → Movement contacts → final index → Hit.
+Only Movement publishes runtime Position/Motion; lifecycle initializes actual spawn support. Core collision body stays
+independent of images/pivots; current animation settings and combat rules are retained. Run stride now records actual
+planar distance; the old diagonal one-axis distance expectation is corrected without changing physical speed.
+**Unity/C# compilation/suites/Burst/GPU/runtime performance NOT RUN**; source/model results are separate and do not
+certify runtime acceptance. Historical dated evidence below applies only to its recorded SHA/scope.
+
 ## Current #58 — Stage 04.1 (2026-10-28)
 
 **Stage 03 OWNER-ACCEPTED**, by the owner's direct message recorded in #58: «Stage 03 закрыли. Идем дальше».

@@ -158,6 +158,8 @@ namespace MLFLegends.Tests.EditMode
             typeof(BattleLifecycleSystem),
             typeof(BattleLifecycleInitializationProxy),
             typeof(CombatClockSystem),
+            typeof(CombatArenaSystem),
+            typeof(CombatArenaInitializationProxy),
             typeof(CombatCommandCollectionSystemGroup),
             typeof(CombatCommandProcessorSystem),
             typeof(CombatStateUpdateSystemGroup),

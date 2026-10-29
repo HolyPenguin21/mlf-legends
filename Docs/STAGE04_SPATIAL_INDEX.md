@@ -1,3 +1,9 @@
+## Stage 04.2 consumer update (#61)
+
+[Static arena contract](STAGE04_ARENA.md): Movement now resolves world contacts before this final snapshot.
+The index API, ownership, validation and Hit search remain unchanged. Runtime geometry has no body grid or predicted
+snapshot. #60's pinned source verifier/evidence remains historical to its tested SHA; use the arena verifier for #61.
+
 # Stage 04.1 / #58 — bodies and final-position spatial snapshot
 
 Date: 2026-10-28. Base: `a6e96295c0a1e008327e28e8ff89205caf0a4f77` (fresh main, PR #57 already merged).

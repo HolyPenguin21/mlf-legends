@@ -1,5 +1,7 @@
 using Unity.Burst;
 using Unity.Entities;
+using Unity.Collections;
+using Unity.Mathematics;
 
 namespace MLFLegends.Combat
 {
@@ -13,7 +15,7 @@ namespace MLFLegends.Combat
     /// Besides kinetics it records what actually happened (landing tick, last planar move, movement streak and its
     /// distance) for presentation; a stop of at most <see cref="CombatMovementTuning.MoveStreakGraceTicks"/> continues
     /// the streak, a landing restarts it.
-    /// One linear, synchronous Burst pass; no allocations, structural changes, entity caches or second clock.
+    /// One synchronous Burst pass with bounded arena contacts; no allocations, structural changes or second clock.
     /// Stage 04 collision corrections must extend this owner rather than introduce another position writer.
     /// </remarks>
     [BurstCompile]
@@ -33,6 +35,11 @@ namespace MLFLegends.Combat
             var tick = SystemAPI.TryGetSingleton<SimulationClock>(out var clock) ? clock.Tick : SimulationClock.NoTick;
             var attacks = SystemAPI.GetComponentLookup<CombatAttackState>(true);
             var landingTicks = SystemAPI.TryGetSingleton<CombatStrikeSchedule>(out var schedule) ? schedule.LandingRecoveryTicks : 0u;
+            var bodies = SystemAPI.GetComponentLookup<CombatBody>(true);
+            var hasArena = SystemAPI.TryGetSingleton<CombatArenaState>(out var arena);
+            var legacy = !hasArena || !arena.Required;
+            var shapes = hasArena ? SystemAPI.GetSingletonBuffer<CombatArenaShape>(true).AsNativeArray() : default;
+            var diagnostics = new CombatArenaDiagnostics { Tick = tick, Revision = hasArena ? arena.Revision : 0 };
             foreach (var (position, motion, applied, entity) in
                 SystemAPI.Query<RefRW<CombatPosition>, RefRW<CombatMotion>, RefRO<AppliedCombatCommand>>().WithAll<InCombat>()
                     .WithEntityAccess())
@@ -49,27 +56,28 @@ namespace MLFLegends.Combat
                 if (kinetic.IsLandingRecovery(tick))
                     command.Pressed = CommandButtons.None;
 
-                if (kinetic.Grounded && (command.Pressed & CommandButtons.Jump) != 0)
+                if (kinetic.IsLandingRecovery(tick)) { command.MoveX = 0; command.MoveZ = 0; }
+                var distance = CombatMovementTuning.MoveSpeed * dt * moveMultiplier;
+                if (command.MoveX != 0 && command.MoveZ != 0) distance *= diagonalScale;
+                var body = !legacy && bodies.TryGetComponent(entity, out var actualBody) ? actualBody : CombatBodyTuning.Default;
+                if (!legacy && (!arena.Valid || !bodies.HasComponent(entity)))
                 {
-                    kinetic.Grounded = false;
-                    kinetic.VerticalVelocity = CombatMovementTuning.JumpImpulse;
+                    diagnostics.FailedBodies++; diagnostics.LastFailure = !arena.Valid ? CombatArenaFailure.ArenaUnavailable : CombatArenaFailure.InvalidBody;
+                    continue; // Required production arena is invalid: freeze, never use spawn support.
                 }
-
-                var landed = false;
-                if (!kinetic.Grounded)
+                var result = CombatArenaGeometry.Move(shapes, body, next,
+                    new float2(command.MoveX * distance, command.MoveZ * distance), kinetic.VerticalVelocity,
+                    kinetic.Grounded, (command.Pressed & CommandButtons.Jump) != 0, landingTicks, legacy, kinetic.GroundHeight);
+                if (result.Failure != CombatArenaFailure.None)
                 {
-                    // Semi-implicit Euler: gravity, then height, then clamp to this actor's spawn support.
-                    kinetic.VerticalVelocity -= CombatMovementTuning.Gravity * dt;
-                    next.y += kinetic.VerticalVelocity * dt;
-                    if (next.y <= kinetic.GroundHeight)
-                    {
-                        next.y = kinetic.GroundHeight;
-                        kinetic.VerticalVelocity = 0f;
-                        kinetic.Grounded = true;
-                        landed = true;
-                    }
+                    diagnostics.FailedBodies++; diagnostics.LastFailure = result.Failure;
+                    continue;
                 }
-
+                next = result.Position;
+                kinetic.VerticalVelocity = result.Velocity;
+                kinetic.Grounded = result.Grounded;
+                if (!legacy) kinetic.GroundHeight = result.GroundHeight;
+                var landed = result.Landed;
                 if (landed)
                 {
                     kinetic.LandTick = tick;
@@ -79,18 +87,9 @@ namespace MLFLegends.Combat
                     kinetic.MoveStreakDistance = 0f;
                 }
 
-                // Vertical contact is resolved first, so even the contact tick cannot slide along the ground.
-                if (kinetic.IsLandingRecovery(tick))
-                {
-                    command.MoveX = 0;
-                    command.MoveZ = 0;
-                }
-                var distance = CombatMovementTuning.MoveSpeed * dt * moveMultiplier;
-                if (command.MoveX != 0 && command.MoveZ != 0)
-                    distance *= diagonalScale;
-                next.x += command.MoveX * distance;
-                next.z += command.MoveZ * distance;
-                var moved = command.MoveX != 0 || command.MoveZ != 0;
+                // Physical displacement after contacts, excluding initial depenetration; no wall-pressure run accumulation.
+                distance = result.ControlledDistance;
+                var moved = distance > CombatArenaTuning.Skin;
 
                 if (landed && moved)
                 {
@@ -114,6 +113,7 @@ namespace MLFLegends.Combat
                 position.ValueRW.Value = next;
                 motion.ValueRW = kinetic;
             }
+            if (hasArena) SystemAPI.SetSingleton(diagnostics);
         }
     }
 }

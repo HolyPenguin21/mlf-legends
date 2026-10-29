@@ -1,3 +1,11 @@
+## Stage 04.2 benchmark scope (#61)
+
+[Arena delivery, counters, warmup, test scope and limits](STAGE04_ARENA.md). Existing CombatBenchmarkWorld and
+CombatStrikeBenchmarkTests now include an arena owner; Movement includes contacts. New static-arena benchmark adds
+few/many walls, sparse/dense 2/100/400, jumping/pressure, separate owner samples and full-group samples, with a separate
+managed contact-math microbenchmark (not a Burst cost or additive live split). **NOT RUN**: actual Unity CPU/GC/native/
+GPU data. Earlier figures below are historical to their tested SHA and do not certify 04.2. No FPS claim is made.
+
 ## Stage 04.1 spatial-index benchmark — authored / NOT RUN (2026-10-28)
 
 Base main `a6e96295c0a1e008327e28e8ff89205caf0a4f77`; the common RuntimeSystems list now includes CombatSpatialIndexSystem
