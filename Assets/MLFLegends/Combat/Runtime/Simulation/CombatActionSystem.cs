@@ -56,13 +56,10 @@ namespace MLFLegends.Combat
             {
                 var current = attack.ValueRO;
                 // Input is still polled/consumed. Landing presses are dropped, never added to the strike buffer.
-                if (motion.ValueRO.IsLandingRecovery(tick))
-                {
-                    current.Buffered = CommandButtons.None;
-                    attack.ValueRW = current;
-                    continue;
-                }
-                var pressed = CombatAttackTuning.StrikeButton(applied.ValueRO.Command.Pressed);
+                var landing = motion.ValueRO.IsLandingRecovery(tick);
+                if (landing) current.Buffered = CommandButtons.None;
+                // Landing suppresses inputs, not the already accepted execution's timeline.
+                var pressed = landing ? CommandButtons.None : CombatAttackTuning.StrikeButton(applied.ValueRO.Command.Pressed);
                 if (current.IsAttacking)
                 {
                     var timing = current.Timing;
@@ -90,7 +87,7 @@ namespace MLFLegends.Combat
 
                 // A grounded Jump press on the same tick wins: the movement owner takes off, the strike press is dropped.
                 var jumps = (applied.ValueRO.Command.Pressed & CommandButtons.Jump) != 0;
-                if (!current.IsAttacking && pressed != CommandButtons.None && motion.ValueRO.Grounded && !jumps)
+                if (!current.IsAttacking && pressed != CommandButtons.None && motion.ValueRO.Grounded && !jumps && !landing)
                 {
                     Begin(ref current, CombatAttackTuning.Select(pressed, 0), tick, schedule, hits);
                     current.SeriesStep = 0;
