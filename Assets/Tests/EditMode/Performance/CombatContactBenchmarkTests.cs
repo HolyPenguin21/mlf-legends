@@ -157,7 +157,8 @@ namespace MLFLegends.Tests.EditMode
                     long bfTests = 0, ixTests = 0, searchInside = 0; var maxSpeed = 0f; var hitManaged = false; var match = true;
                     long holds = 0, rolledBack = 0, slopPairs = 0, velocityContacts = 0; var slopDepth = 0f; var velocityPasses = 0;
                     var bruteSearch = new BenchmarkSamples(MeasuredTicks); var indexedSearch = new BenchmarkSamples(MeasuredTicks);
-                    using var attackerQuery = bench.Manager.CreateEntityQuery(typeof(CombatAttackState), typeof(CombatFacing), typeof(CombatPosition), typeof(CombatTeam), typeof(InCombat));
+                    // Disposed explicitly before the World (the World also releases it on an exception path).
+                    var attackerQuery = bench.Manager.CreateEntityQuery(typeof(CombatAttackState), typeof(CombatFacing), typeof(CombatPosition), typeof(CombatTeam), typeof(InCombat));
                     using var all = new NativeList<CombatSpatialBody>(1024, Allocator.Persistent); using var hitRows = new NativeList<CombatSpatialBody>(4096, Allocator.Persistent);
                     using var ranges = new NativeList<int2>(512, Allocator.Persistent); using var boxes = new NativeList<CombatSpatialBounds>(512, Allocator.Persistent);
                     using var attackers = new NativeList<float4>(512, Allocator.Persistent); using var strikes = new NativeList<CombatStrikeParameters>(512, Allocator.Persistent);
@@ -255,6 +256,7 @@ namespace MLFLegends.Tests.EditMode
                     var full = new BenchmarkSamples(MeasuredTicks);
                     for (var i = 0; i < MeasuredTicks; i++) { bench.PrepareFrame(1); var start = Stopwatch.GetTimestamp(); bench.RunFrame(); full.Add(Stopwatch.GetTimestamp() - start); }
                     var m = move.Stats(); var g = grid.Stats(); var hs = hits.Stats(); var k = kernel.Stats(); var f = full.Stats();
+                    attackerQuery.Dispose();
                     bench.Dispose(); // idempotent; the using declaration disposes again at the end of the scope
                     var nativeAfterDispose = Profiler.GetTotalAllocatedMemoryLong() - nativeScenarioStart;
                     var bf = bruteSearch.Count > 0 ? bruteSearch.Stats().Mean : 0; var ix = indexedSearch.Count > 0 ? indexedSearch.Stats().Mean : 0;
