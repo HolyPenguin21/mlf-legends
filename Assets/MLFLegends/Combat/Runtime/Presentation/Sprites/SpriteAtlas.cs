@@ -229,7 +229,7 @@ namespace MLFLegends.Combat
             float2[] pivots;
             if (catalog != null)
             {
-                if (!catalog.TryImagePivots(definition, pages, errors, out pivots)) return null;
+                if (!catalog.TryImagePivots(definition, pages, errors, out pivots, warnings)) return null;
             }
             else
             {

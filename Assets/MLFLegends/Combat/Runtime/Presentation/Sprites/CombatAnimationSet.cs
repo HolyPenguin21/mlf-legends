@@ -31,14 +31,25 @@ namespace MLFLegends.Combat
         public const string RunClip = "run";
         public const string JumpClip = "jump";
 
+        public const string PhysicalAbilityClip = "physical_ability";
+
+        /// <summary>Stage 05.1 clip of the PhysicalAbility slot in the first (v1) art; renamed by the v2 art (#70).</summary>
+        public const string LegacyPhysicalAbilityClip = "kick_spin";
+
         /// <summary>
-        /// The clips the set needs with every slot on its default clip; others (relaxed idle, walk, dash, cast) are neither
+        /// The clips the set needs with every slot on its default clip; others (block, dash, skills, relaxed idle) are neither
         /// required nor read. A character that maps a slot to another clip needs <see cref="RequiredClipIds"/> instead.
         /// </summary>
         public static readonly string[] ClipIds =
         {
-            IdleClip, RunClip, JumpClip, "punch_left", "punch_right", "kick_left", "kick_right", "kick_spin",
+            IdleClip, RunClip, JumpClip, "punch_left", "punch_right", "kick_left", "kick_right", PhysicalAbilityClip,
         };
+
+        /// <summary>
+        /// Explicit successor of a retired art clip id (#70: kick_spin → physical_ability), or null. Used only by the atlas
+        /// migration and by diagnostics; a slot never plays a successor silently.
+        /// </summary>
+        public static string SuccessorClip(string clipId) => clipId == LegacyPhysicalAbilityClip ? PhysicalAbilityClip : null;
 
         /// <summary>Idle, run, jump and the (distinct) clips of the five strike slots under <paramref name="clipFor"/>.</summary>
         public static List<string> RequiredClipIds(Func<CombatAttackKind, string> clipFor)
@@ -86,9 +97,9 @@ namespace MLFLegends.Combat
         }
 
         /// <summary>
-        /// Compatibility clip of each slot (explicit migration of the Stage 05.1 ids, #69): the delivered art has no hand1/2,
-        /// foot1/2 or ability clips yet, so the slots play punch_left/punch_right/kick_left/kick_right and kick_spin until a
-        /// character's Combat data maps them to other clips.
+        /// Default clip of each slot: the v2 art (#70) keeps punch_left/punch_right/kick_left/kick_right for Hand1/Hand2/
+        /// Foot1/Foot2 and adds physical_ability for PhysicalAbility (the v1 kick_spin; see <see cref="SuccessorClip"/>).
+        /// A character's Combat data may map a slot to another clip.
         /// </summary>
         public static string DefaultClip(CombatAttackKind kind)
         {
@@ -98,7 +109,7 @@ namespace MLFLegends.Combat
                 case CombatAttackKind.Hand2: return "punch_right";
                 case CombatAttackKind.Foot1: return "kick_left";
                 case CombatAttackKind.Foot2: return "kick_right";
-                case CombatAttackKind.PhysicalAbility: return "kick_spin";
+                case CombatAttackKind.PhysicalAbility: return PhysicalAbilityClip;
                 default: return null;
             }
         }
@@ -223,7 +234,9 @@ namespace MLFLegends.Combat
             var clipPath = path + "." + clipId;
             if (!definition.TryGetClipIndex(clipId, out var index))
             {
-                errors.Add(clipPath + ": clip missing from manifest");
+                var successor = SuccessorClip(clipId);
+                errors.Add(clipPath + ": clip missing from manifest" + (successor != null && definition.TryGetClipIndex(successor, out _)
+                    ? $"; this art renames it to '{successor}': run the config's atlas migration (Inspector) or map the slot explicitly" : ""));
                 return null;
             }
 
@@ -235,7 +248,11 @@ namespace MLFLegends.Combat
                 return null;
             }
 
-            return SpriteAnimationTiming.Create(clip, settings, clipPath, errors, warnings, looping, phases);
+            var timing = SpriteAnimationTiming.Create(clip, settings, clipPath, errors, warnings, looping, phases);
+            // A range authored for a shorter clip must not hide the frames a new atlas added without saying so (#70).
+            if (timing != null && settings.EndFrame < clip.Frames.Count - 1)
+                warnings?.Add(clipPath + $": EndFrame {settings.EndFrame} leaves local frames {settings.EndFrame + 1}..{clip.Frames.Count - 1} of the clip unplayed");
+            return timing;
         }
 
         /// <summary>A marker as one ascending run of consecutive local frames inside the first <paramref name="frameCount"/>.</summary>

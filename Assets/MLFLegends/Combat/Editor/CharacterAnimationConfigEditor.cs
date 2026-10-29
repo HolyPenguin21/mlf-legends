@@ -87,8 +87,8 @@ namespace MLFLegends.Editor
                 "settings above. Scene gizmos: Combat Bootstrap → Draw Combat Gizmos.", MessageType.Info);
             EditorGUILayout.HelpBox("Sprite Editor pivot positions each image relative to CombatPosition. Catalog Image Pivots " +
                 "maps frame_id to Sprite; only an absent binding uses the legacy JSON pivot. Image Offset Pixels adds one " +
-                "translation (+X right, +Y down), mirrored with the image and anchors. Reference support for 192×192 is " +
-                "[96,163.2]; physics does not move. Raster preview has been removed.", MessageType.Info);
+                "translation (+X right, +Y down), mirrored with the image and anchors. Reference support is source_size × " +
+                "[0.5, 0.85] (192×160: [96,136]); physics does not move. Raster preview has been removed.", MessageType.Info);
             var config = (CharacterAnimationConfig)target;
             EnsureCache(config);
             var characters = serializedObject.FindProperty("m_Characters");
@@ -102,6 +102,7 @@ namespace MLFLegends.Editor
                     EditorGUILayout.HelpBox("Image Offset Pixels must be finite", MessageType.Error);
                 foreach (var message in diagnostics.Errors) EditorGUILayout.HelpBox(message, MessageType.Error);
                 foreach (var message in diagnostics.Warnings) EditorGUILayout.HelpBox(message, MessageType.Warning);
+                DrawMigrationButton(config, c);
                 for (var a = 0; a < diagnostics.Clips.Count; a++)
                 {
                     var item = diagnostics.Clips[a];
@@ -290,6 +291,30 @@ namespace MLFLegends.Editor
         }
 
         static string Ticks(int first, int end) => end > first ? $"{first}..{end - 1} ({end - first})" : "none (shorter than one tick)";
+
+        /// <summary>
+        /// Explicit owner action (#70, never automatic, undoable): renamed slot clips and atlas clips without settings, see
+        /// <see cref="CharacterAtlasMigration"/>. Valid ranges, T, curves and phases are reported, not rewritten.
+        /// </summary>
+        void DrawMigrationButton(CharacterAnimationConfig config, int index)
+        {
+            var character = config.Characters[index];
+            var manifest = character.AtlasCatalog != null && m_Manifests.TryGetValue(character.AtlasCatalog, out var cache) ? cache.Definition : null;
+            if (manifest == null || !GUILayout.Button("Migrate settings to this atlas's clips (report in Console)"))
+                return;
+            Undo.RecordObject(config, "Migrate character animation settings");
+            var report = new List<string>();
+            var changed = CharacterAtlasMigration.Apply(character, manifest, report);
+            if (changed)
+            {
+                var all = new CharacterAnimationEntry[config.Characters.Count];
+                for (var i = 0; i < all.Length; i++) all[i] = config.Characters[i];
+                config.Set(all); // defensive copies, Version++: renderer and bootstrap re-resolve
+                EditorUtility.SetDirty(config);
+            }
+            Debug.Log($"{config.name}: atlas migration of {character.CharacterId}{(changed ? "" : " (no change)")}\n  " + string.Join("\n  ", report), config);
+            Invalidate();
+        }
 
         /// <summary>Explicit owner action (never automatic): copy the manifest's strike_pose marker into the Active range.</summary>
         static void DrawMarkerButton(SerializedProperty characters, int character, int animation, CharacterAnimationSettings settings, SpriteAtlasClip clip)

@@ -431,7 +431,7 @@ namespace MLFLegends.Tests.PlayMode
 
             Rejects(manifest.text.Replace("\"idle_combat\":", "\"unavailable_idle\":"), "idle_combat: clip missing");
             Rejects(manifest.text.Replace("\"run\":", "\"unavailable_run\":"), "run: clip missing");
-            Rejects(manifest.text.Replace("\"kick_spin\":", "\"unavailable_spin\":"), "kick_spin: clip missing");
+            Rejects(manifest.text.Replace("\"physical_ability\":", "\"unavailable_ability\":"), "physical_ability: clip missing");
             Rejects(manifest.text.Replace("\"land\": [4, 5]", "\"landing\": [4, 5]"), "jump.markers.land: missing");
             // Atlas update that shortens punch_left to 2 frames: the stale EndFrame 2 is reported (phases come from the config).
             Rejects(manifest.text.Replace("\"punch_left\": { \"frames\": [ { \"id\": \"tech_a\", \"duration_ms\": 100 }, ", "\"punch_left\": { \"frames\": [ "),

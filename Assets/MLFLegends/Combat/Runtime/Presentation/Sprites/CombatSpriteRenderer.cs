@@ -543,9 +543,6 @@ namespace MLFLegends.Combat
             var definition = m_Atlas.Definition;
             if (definition.CharacterId != m_CharacterId)
                 errors.Add($"characters.{m_CharacterId}: catalog character_id is {definition.CharacterId}");
-            if (m_CharacterId == "mage_female_01" && (definition.SourceSize.x != 192 || definition.SourceSize.y != 192 ||
-                definition.NominalHeightPx != 128))
-                errors.Add($"characters.{m_CharacterId}: expected source_size [192,192], nominal_height_px 128 (pivot is artistic alignment)");
             if (errors.Count == 0)
             {
                 TimingBuilds++;
