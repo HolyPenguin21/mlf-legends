@@ -93,7 +93,7 @@ namespace MLFLegends.Tests.EditMode
                 lines.Add("# #69 native columns (Profiler.GetTotalAllocatedMemoryLong, process-wide, NOT a leak test by itself): native_owner_profiler_on = the measured owner loop with the Profiler enabled (GC.Alloc recorder);");
                 lines.Add("#   native_compare_pass = the following test-only scan/index comparison pass; native_owner_profiler_off = another owner pass with the Profiler disabled;");
                 lines.Add("#   native_after_dispose = after World disposal minus before World creation (test-side scratch of this scenario is still alive, ~100 KB).");
-                lines.Add("# #69 contact velocity: velocity_contacts = recorded contact pairs summed over measured ticks; velocity_passes_max = the largest per-tick pass count.");
+                lines.Add("# #69 contact velocity: velocity_contacts = recorded contact pairs summed over measured ticks; velocity_passes_max = the largest per-tick pass count; velocity_residual_max = the largest last-pass change (u/s; > 1e-5 means the pass cap was reached).");
                 lines.Add("# Stage 04.4/04.5 (#66): impulses every 30 ticks (single = controlled fighter, mass = everyone); strikes = presses every 30 ticks.");
                 lines.Add("# Hit search: the same final snapshot and Active attackers, complete scan vs index batch (+Inside kernel); counts must match. Overlapping timings are not additive.");
                 lines.Add("bodies\tscenario\tcold_move_us\tcold_native_payload\twarm_native_payload\tmove_mean_us\tmove_p95_us\tkernel_mean_us\tindex_mean_us\thit_mean_us\tfull_tick_mean_us\tfull_tick_p95_us\tcandidates\tpair_visits\tpeak_pairs\titerations\tfinal_residual\tresidual_complete\tunresolved_penetration\tconstraint_violation\tfrozen\tyield_attempts\tworld_rejections\twork_limits\tmanaged_kernel\tgc_samples\tprocess_native_delta"
@@ -101,7 +101,7 @@ namespace MLFLegends.Tests.EditMode
                     + "\tactive_attacker_ticks\taccepted_hits\thit_queries\thit_candidates\thit_entries\thit_inside_tests\thit_managed_kernel"
                     + "\tbruteforce_search_mean_us\tindexed_search_mean_us\tbruteforce_inside_tests\tindexed_inside_tests\tsearch_inside\tsearch_match"
                     + "\tlocal_holds\trolled_back_bodies\tslop_pairs\tmax_slop_depth"
-                    + "\tnative_compare_pass\tnative_owner_profiler_off\tnative_after_dispose\tvelocity_contacts\tvelocity_passes_max");
+                    + "\tnative_compare_pass\tnative_owner_profiler_off\tnative_after_dispose\tvelocity_contacts\tvelocity_passes_max\tvelocity_residual_max");
                 lines[lines.FindIndex(l => l.StartsWith("bodies\t"))] = lines[lines.FindIndex(l => l.StartsWith("bodies\t"))]
                     .Replace("\tprocess_native_delta\t", "\tnative_owner_profiler_on\t");
                 var failures = new List<string>();
@@ -155,7 +155,7 @@ namespace MLFLegends.Tests.EditMode
                     var peak = 0; var residual = 0f; var unresolved = 0f; var constraint = 0f; var complete = true; var managed = false;
                     long applied = 0, rejected = 0, physical = 0, discarded = 0, overSpeed = 0, activeTicks = 0, accepted = 0, queries = 0, hitCandidates = 0, entries = 0, insideTests = 0;
                     long bfTests = 0, ixTests = 0, searchInside = 0; var maxSpeed = 0f; var hitManaged = false; var match = true;
-                    long holds = 0, rolledBack = 0, slopPairs = 0, velocityContacts = 0; var slopDepth = 0f; var velocityPasses = 0;
+                    long holds = 0, rolledBack = 0, slopPairs = 0, velocityContacts = 0; var slopDepth = 0f; var velocityPasses = 0; var velocityResidual = 0f;
                     var bruteSearch = new BenchmarkSamples(MeasuredTicks); var indexedSearch = new BenchmarkSamples(MeasuredTicks);
                     // Disposed explicitly before the World (the World also releases it on an exception path).
                     var attackerQuery = bench.Manager.CreateEntityQuery(typeof(CombatAttackState), typeof(CombatFacing), typeof(CombatPosition), typeof(CombatTeam), typeof(InCombat));
@@ -207,7 +207,7 @@ namespace MLFLegends.Tests.EditMode
                             applied += d.ImpulsesApplied; rejected += d.ImpulsesRejected; physical += d.PhysicalBodies; discarded += d.DiscardedVelocities;
                             overSpeed += d.OverSpeedBodies; maxSpeed = Math.Max(maxSpeed, d.MaxExternalSpeed);
                             holds += d.LocalHolds; rolledBack += d.RolledBackBodies; slopPairs += d.SlopAcceptedPairs; slopDepth = Math.Max(slopDepth, d.SlopAcceptedDepth);
-                            velocityContacts += d.VelocityContacts; velocityPasses = Math.Max(velocityPasses, d.VelocityIterations);
+                            velocityContacts += d.VelocityContacts; velocityPasses = Math.Max(velocityPasses, d.VelocityIterations); velocityResidual = Math.Max(velocityResidual, d.VelocityResidual);
                         }
                         start = Stopwatch.GetTimestamp(); index.Update(); if (measure) grid.Add(Stopwatch.GetTimestamp() - start);
                         if (compare) CompareSearch();
@@ -264,7 +264,7 @@ namespace MLFLegends.Tests.EditMode
                         f.Mean, f.P95, candidates, visits, peak, iterations, residual, complete, unresolved, constraint, frozen, yields, rejects, workLimits, managed, gcSamples, nativeDelta,
                         applied, rejected, physical, discarded, overSpeed, maxSpeed, activeTicks, accepted, queries, hitCandidates, entries, insideTests, hitManaged,
                         bf, ix, bfTests, ixTests, searchInside, match, holds, rolledBack, slopPairs, slopDepth,
-                        nativeCompare, nativeOwnerOff, nativeAfterDispose, velocityContacts, velocityPasses));
+                        nativeCompare, nativeOwnerOff, nativeAfterDispose, velocityContacts, velocityPasses, velocityResidual));
                 }
                 Directory.CreateDirectory(BenchmarkReport.Directory);
                 File.WriteAllLines(Path.Combine(BenchmarkReport.Directory, "stage05-contact-velocity.tsv"), lines);
