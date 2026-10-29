@@ -27,6 +27,15 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(math.all(math.isfinite(r.Position)), Is.True);
         }
 
+        [Test]
+        public void BareWorldFallbackDoesNotReadAnUnallocatedNativeArray()
+        {
+            var result = CombatArenaGeometry.Move(default, Body, new float3(0, 3.5f, 0), new float2(.05f, 0),
+                0, true, false, 0, legacy: true, legacyHeight: 3.5f);
+            Good(result); Assert.That(result.Grounded, Is.True);
+            Assert.That(result.Position.y, Is.EqualTo(3.5f)); Assert.That(result.Position.x, Is.EqualTo(.05f).Within(.0001));
+        }
+
         [TestCase(1)] [TestCase(-1)]
         public void HeadOnStopsAtRadiusButParallelAndAwayRemainFree(int side)
         {

@@ -101,6 +101,7 @@ namespace MLFLegends.Combat
             float maxHeight, float minHeight, bool walkableOnly, out float height)
         {
             height = float.NegativeInfinity;
+            if (!shapes.IsCreated) return false;
             foreach (var s in shapes)
                 if ((!walkableOnly || s.Kind == CombatArenaKind.Box || s.Slope <= CombatArenaTuning.MaxSlope)
                     && TopAt(s, Xz(p), radius, out var top) && top <= maxHeight + CombatArenaTuning.Skin
@@ -143,6 +144,7 @@ namespace MLFLegends.Combat
 
         static bool Depenetrate(NativeArray<CombatArenaShape> shapes, in CombatBody body, ref float3 p)
         {
+            if (!shapes.IsCreated) return true;
             var origin = p;
             for (var iteration = 0; iteration < CombatArenaTuning.MaxIterations; iteration++)
             {
@@ -179,7 +181,7 @@ namespace MLFLegends.Combat
             else velocity = 0;
             var vertical = velocity * SimulationTiming.TickDuration;
             var feature = math.min(body.Radius, body.Height);
-            foreach (var s in shapes) feature = math.min(feature, math.min(math.cmin(s.HalfSize) * 2, s.Top - s.Bottom));
+            if (shapes.IsCreated) foreach (var s in shapes) feature = math.min(feature, math.min(math.cmin(s.HalfSize) * 2, s.Top - s.Bottom));
             // Also bound grazing-corner chord error below Skin (conservative circle sagitta bound).
             var stepSize = math.min(feature * .25f, math.sqrt(4 * body.Radius * CombatArenaTuning.Skin));
             var work = math.ceil((math.length(desired) + math.abs(vertical)) / stepSize);
@@ -202,7 +204,7 @@ namespace MLFLegends.Combat
                     else if (dy > 0)
                     {
                         var ceiling = float.PositiveInfinity;
-                        foreach (var s in shapes)
+                        if (shapes.IsCreated) foreach (var s in shapes)
                             if (p.y + body.Height <= s.Bottom + CombatArenaTuning.Skin
                                 && nextY + body.Height >= s.Bottom && TopAt(s, Xz(p), body.Radius, out _))
                                 ceiling = math.min(ceiling, s.Bottom - body.Height);
@@ -220,7 +222,7 @@ namespace MLFLegends.Combat
                     if (Ground(shapes, candidate, body.Radius, p.y + rise, p.y - rise, legacy, legacyHeight, out var ground))
                     {
                         var mayRise = ground <= p.y + CombatArenaTuning.Skin;
-                        foreach (var s in shapes)
+                        if (shapes.IsCreated) foreach (var s in shapes)
                             if (s.Kind == CombatArenaKind.Ramp && s.Slope <= CombatArenaTuning.MaxSlope
                                 && TopAt(s, Xz(candidate), body.Radius, out var top) && math.abs(top - ground) <= CombatArenaTuning.Skin) mayRise = true;
                         if (mayRise) candidate.y = ground;
@@ -230,7 +232,7 @@ namespace MLFLegends.Combat
                 for (var iteration = 0; iteration < CombatArenaTuning.MaxIterations; iteration++)
                 {
                     var touched = false;
-                    foreach (var s in shapes)
+                    if (shapes.IsCreated) foreach (var s in shapes)
                         if (Side(s, candidate, body, out var correction))
                         { candidate = WithXz(candidate, Xz(candidate) + correction); touched = true; }
                     if (!touched) { resolved = true; break; }
