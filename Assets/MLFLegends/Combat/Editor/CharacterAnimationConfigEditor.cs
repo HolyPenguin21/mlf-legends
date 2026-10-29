@@ -241,7 +241,8 @@ namespace MLFLegends.Editor
             {
                 result.Landing = $"jump {set.LandingStartFrame}..{set.LandingEndFrame}: {set.LandingTicks} ticks = {set.LandingTicks / (double)SimulationTiming.TickRateHz:0.######} s (movement/new actions locked)";
                 var table = set.StrikeSchedule;
-                combat.ApplyTo(ref table);
+                try { combat.ApplyTo(ref table, set); }
+                catch (ArgumentException invalid) { result.Errors.Add(invalid.Message); }
                 result.Strikes = CombatSmokeBootstrap.Describe(table, combat.ClipFor);
             }
             foreach (var settings in character.Animations ?? Array.Empty<CharacterAnimationSettings>())

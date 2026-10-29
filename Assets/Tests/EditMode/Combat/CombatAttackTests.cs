@@ -535,6 +535,32 @@ namespace MLFLegends.Tests.EditMode
             }
         }
 
+        [Test]
+        public void LandingRecoveryDropsPressesButDoesNotFreezeAnAcceptedAbility()
+        {
+            using var w = new ReplayWorld("landing timeline");
+            var schedule = CombatStrikeSchedule.Default;
+            schedule.PhysicalAbility = CombatStrikeTiming.FromTicks(0, 1, 1, CombatAttackTuning.NoChain);
+            CombatStrikeSchedule.Publish(w.Manager, schedule);
+            w.Script = new ReplayScript().Player(1, 1, ReplayRole.Human, pressed: O)
+                .Player(2, 2, ReplayRole.Human, pressed: A);
+            w.Request(BattleRequest.Start(Duel(new float3(10, 0, 0))));
+            w.Step();
+            using var query = w.Manager.CreateEntityQuery(typeof(CombatantId), typeof(CombatMotion));
+            using var entities = query.ToEntityArray(Allocator.Temp);
+            foreach (var entity in entities)
+            {
+                if (w.Manager.GetComponentData<CombatantId>(entity).Value != w.Session.HumanCombatant.Value) continue;
+                var motion = w.Manager.GetComponentData<CombatMotion>(entity);
+                motion.LandTick = w.Records.Last().Tick;
+                motion.LandingRecoveryTicks = 12;
+                w.Manager.SetComponentData(entity, motion);
+            }
+            w.Step(3);
+            Assert.That(H(w.Records.Last()).Attack.IsAttacking, Is.False);
+            Assert.That(H(w.Records.Last()).Attack.Buffered, Is.EqualTo(CommandButtons.None));
+        }
+
         static void SetInCombat(ReplayWorld w, CombatantId id, bool value)
         {
             using var query = w.Manager.CreateEntityQuery(new EntityQueryDesc

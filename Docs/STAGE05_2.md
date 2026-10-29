@@ -1,0 +1,37 @@
+# Stage 05.2 — physical execution (#73)
+
+Base: e39600b1304190d7afe9737bcf295729c3f7d857. Stage 03 owner acceptance remains; Stage 04/05 manual acceptance remains open.
+
+## Authoring and owners
+
+`Assets/MLFLegends/Combat/PresentationData/CharacterAnimationConfig.asset` → Characters → mage_female_01 → Combat → each of five strike slots. SelfImpulse is J (mass·world units/s), ElevationDegrees is above horizontal, LaunchFrame is a local clip frame (-1 = first Active tick). The same clip T/curve converts frames to fixed ticks; floor selects the interval containing a trigger, so quantization cannot skip it. CompactHeight is an absolute world height (0 disables), CompactFirstFrame inclusive / CompactEndFrame exclusive. No PNG, pivot or animation duration changed.
+
+Example O: J=12, elevation=35°, launch at Active start, height=1 during local frames [1,6), on-hit J=(forward 1, up 1, outward 2), HitOffsetY=-0.3. U/I remain neutral. These are technical calibration values, not owner-approved balance. Launch J/Mass and on-hit vector norm/Mass are validated against the published body's 24 u/s supported limit; existing input validation rejects a summed impulse that exceeds actual target limits instead of clamping. Other masses can cause a particular on-hit input to be rejected; ImpulsesRejected reports this.
+
+Action freezes all numeric strike data and derived timing at execution start. Facing remains the only facing writer; Movement resolves J after this tick's Facing and appends to the existing impulse input only on elapsed == LaunchTick. Held/rejected presses do not launch. Hit appends authored on-hit impulses to the same input after Movement; they apply T+1, once per target/ledger. Frozen facing determines forward; outward Z follows impact ΔZ, with stable-id XOR parity on the centerline.
+
+Action advances an already accepted execution while landing recovery drops presses/buffering. Grounded input/control remains blocked by the existing landing lock. The action ends on its own End boundary, independent of residual velocity and eventual height restoration. Renderer keeps strike priority, then existing airborne/landing animation.
+
+## Physical body and committed path
+
+Lifecycle stores the spawn height in CombatBodyProfile. Movement gathers all requests, samples the frozen compact interval at the fixed tick boundary, and uses one accepted height for every interval of this tick. Growth checks arena clearance and conservative neighbour old/requested height unions before accepting; blocked restoration keeps actual height, sets RestorePending and retries without blocking the action or input. Mass/radius/base position never change from the profile. Gray/yellow debug cylinders show base/requested height beside accepted body height.
+
+Physical normal contacts retain the existing perfectly inelastic mass response: approaching normal velocities share by mass; kinetic energy cannot grow without an authored input. Ground/air deceleration remains 24/2 u/s²; control remains phase scaled 50/25/25 and never scales J. Heavy/blocked groups can stop the performer. No collision membership is disabled.
+
+The existing spatial owner leases the existing solver scratch. A tick with an executing self-impulse strike uses 16 synchronized numerical slices of the same fixed tick; all other ticks keep one solver call and former final-point hit behavior. Gravity and deceleration use dt/16; input, Action, Facing and clock still run once per tick. This is intentionally more expensive, not a claim of unchanged performance. Each slice completes its contact solve before appending only the committed from/to segment. Solver proposals/correction iterates never become separate hit segments. A conservatively solid-crossing chord or exhausted budget holds the complete slice (TraceHolds); earlier accepted intervals remain real travel. Rounded-corner prism checks can conservatively hold movement; this is visible, safe fallback, not promised free passage through arbitrary packing. Pair visits share the existing full-tick 4,000,000 budget. Work exhaustion is diagnosed, not a dropped tail of a path.
+
+Motion envelopes and segments are reusable native data in the same spatial owner; there is no second grid. Final spatial publication still follows Movement. The internal motion batch requires the final snapshot epoch/membership guards, then performs a bounded scan of at most 400 envelopes per query. This is O(active attackers × roster), followed by at most 16 relative segment tests per candidate (binary lookup of stable ids). Scratch is cleared at the next Movement boundary and disposed with the World; stale epochs cannot be queried.
+
+Only self-impulse executions opt into swept hit resolution. Both actors use matching time intervals; precise animation-derived Active boundaries clip those intervals. Relative point-vs-frozen-box slab tests use inclusive bounds. Confirmation order is contact time, target id, attacker id. All confirmations are built before HP/ledger writes. The point-target reference remains CombatPosition plus explicit HitOffsetY in #73; #74 will change both body reference points to waists. Reach and depth stay in X/Z. Hit checks the segment to the victim against supported box/ramp solids, so reach cannot damage through a wall. Ordinary neutral U/I/default fixtures retain their old point rule.
+
+## Validation and evidence
+
+Targeted Unity source: CombatPhysicalAbilityTests (launch/mass/facing, jump priority, moving target/T+1 impact, compact restoration, blocked restore, pacing 1/2/3/10, independent closed sweep equations and solid occlusion), plus a landing timeline regression in CombatAttackTests. Replay includes frozen physical parameters, requested/accepted shape and committed segments. Existing randomized final-hit oracle uses neutral strikes; its fixture explicitly updates spawn height when authoring a different test body.
+
+CombatAbilityBenchmarkTests adds 2/100/400 × free/packed/corridor × single/all launchers × J4/J12. It writes `stage05-ability.tsv` under Unity temporaryCachePath, with full-tick mean/p95, Movement/index cost, candidates/hits, path count, holds/discards, GC and motion capacity, and actual managed/Burst marker. This benchmark includes first-use/JIT/capacity growth; no warm steady-state claim. No prior performance values are carried forward.
+
+Available validation is SOURCE/MODEL only. Unity compilation, EditMode, PlayMode, Burst execution, performance, GPU and owner visual checks: NOT RUN in this environment (Unity is unavailable). Source syntax is not C# type checking or runtime proof. Run the targeted suite and benchmark in the project's pinned Unity before claiming those categories PASS.
+
+Queue: #73 → source review/delivery → #74 (waists, damage tint, nearest-facing, shadows, edit-mode presentation gizmos) → 05.3 VFX. No block/dash/magic/AI/navigation/fighter GameObjects were added.
+
+Source review at bee238461df30ce5fbca90e08b4c842061d96b63: traced lifecycle → frozen table → Action → same-tick Facing → single impulse input → Movement/height → synchronized paths → final publication guards → confirmation/ledger → next-tick impact. Neutral authoring and indexed-hit fixtures were reconciled; profile restore cannot overwrite a custom test spawn height. Source/model evidence: Evidence/73/source-model.json (111 C# source files parsed, 10,000 independent mass/energy equation cases). This review does not establish runtime/performance/manual acceptance.

@@ -29,9 +29,25 @@ namespace MLFLegends.Combat
         [Tooltip("Largest |ΔY| (altitude) between attacker and target, world units (0..8).")]
         public float HeightTolerance;
 
+        [Tooltip("Vertical hit center offset from the current reference point, world units.")]
+        public float HitOffsetY;
+        [Tooltip("Self launch impulse J; 0 disables. Delta velocity = J / spawn mass. Maximum 24 units/s.")]
+        public float SelfImpulse;
+        public float ElevationDegrees;
+        [Tooltip("Local clip frame of launch; -1 = first Active tick. Quantized through the same T/curve as phases.")]
+        public int LaunchFrame = -1;
+        [Tooltip("Temporary physical height in world units; 0 keeps the spawn height.")]
+        public float CompactHeight;
+        public int CompactFirstFrame, CompactEndFrame;
+        [Tooltip("Additional once-per-target J: forward X, upward Y, outward Z (tie: stable ids). Applied next tick.")]
+        public Vector3 OnHitImpulse;
+
         public CombatStrikeParameters Parameters => new CombatStrikeParameters
         {
             Damage = Damage, ReachMin = ReachMin, ReachMax = ReachMax, DepthHalfWidth = DepthHalfWidth, HeightTolerance = HeightTolerance,
+            HitOffsetY = HitOffsetY, SelfImpulse = SelfImpulse, ElevationDegrees = ElevationDegrees,
+            CompactHeight = CompactHeight, CompactEnd = (ushort)(CompactHeight > 0 ? 1 : 0),
+            OnHitImpulse = new Unity.Mathematics.float3(OnHitImpulse.x, OnHitImpulse.y, OnHitImpulse.z),
         };
 
         internal static CharacterStrikeSettings Default(CombatAttackKind kind)
@@ -137,10 +153,31 @@ namespace MLFLegends.Combat
         }
 
         /// <summary>Writes this character's per-strike values and body into <paramref name="table"/> (timing is not touched).</summary>
-        public void ApplyTo(ref CombatStrikeSchedule table)
+        public void ApplyTo(ref CombatStrikeSchedule table, CombatAnimationSet animations = null)
         {
             for (var kind = CombatAttackKind.Hand1; kind <= CombatAttackKind.PhysicalAbility; kind++)
-                table.SetStrike(kind, Strike(kind).Parameters);
+            {
+                var settings = Strike(kind);
+                var value = settings.Parameters;
+                var timing = animations?.Attack(kind);
+                value.LaunchTick = value.SelfImpulse > 0 ? table.Get(kind).ActiveStart : (ushort)0;
+                if (timing != null)
+                {
+                    if (settings.LaunchFrame >= timing.FrameCount || settings.LaunchFrame < -1
+                        || (value.CompactHeight > 0 && (settings.CompactFirstFrame < 0
+                            || settings.CompactEndFrame <= settings.CompactFirstFrame || settings.CompactEndFrame > timing.FrameCount)))
+                        throw new ArgumentException($"{kind}: physical frame outside clip range");
+                    ushort TickAt(int frame) => (ushort)Math.Floor((frame == timing.FrameCount ? timing.DurationSeconds
+                        : timing.FrameStartSeconds(frame)) * SimulationTiming.TickRateHz + 1e-6);
+                    if (settings.LaunchFrame >= 0) value.LaunchTick = TickAt(settings.LaunchFrame);
+                    if (value.CompactHeight > 0)
+                    {
+                        value.CompactStart = TickAt(settings.CompactFirstFrame);
+                        value.CompactEnd = (ushort)Math.Max(value.CompactStart + 1, TickAt(settings.CompactEndFrame));
+                    }
+                }
+                table.SetStrike(kind, value);
+            }
             table.Body = Body;
         }
 

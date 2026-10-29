@@ -423,6 +423,14 @@ MonoBehaviour:
         HeightTolerance: 0.9
       PhysicalAbility:
         ClipId: physical_ability
+        SelfImpulse: 12
+        ElevationDegrees: 35
+        LaunchFrame: -1
+        CompactHeight: 1
+        CompactFirstFrame: 1
+        CompactEndFrame: 6
+        OnHitImpulse: {x: 1, y: 1, z: 2}
+        HitOffsetY: -0.3
         Damage: 12
         ReachMin: 0
         ReachMax: 1.45

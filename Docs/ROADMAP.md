@@ -318,3 +318,8 @@ After merged Issue #5 (PR #13), execute narrow follow-ups **before final validat
 
 **Operating policy:** manager tracks every nonblocking follow-up as an Issue and decides the integration window. Truly independent polish/low-impact debt can wait until end of the stage; a fix that affects a subsequent test, measurement, integration boundary or correctness must go **before** that consumer. Keep one Issue per focused PR, prohibit competing writers/file overlap, perform available static checks, report Unity execution status honestly. These follow-ups do **not** retroactively block delivery of #5 or require a new ECS layer. Core `CombatantId` comments and `Core/CONTRACTS.md` were reconciled to World-scoped uniqueness by manager (documentation-only changes).
 
+
+
+## Stage 05.2 — #73 physical ability
+
+Implementation and numerical contracts: [STAGE05_2.md](STAGE05_2.md). Order remains Action → Facing → Movement (accepted shape/path) → final SpatialIndex → Hit. Next: #74, then 05.3 VFX. Stage 04/05 owner manual acceptance is still open. Unity/Burst/GPU/benchmark execution for this change is NOT RUN; available source/model evidence does not replace it.

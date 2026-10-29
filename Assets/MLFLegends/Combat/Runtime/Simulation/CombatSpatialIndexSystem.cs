@@ -117,6 +117,7 @@ namespace MLFLegends.Combat
         internal NativeList<CombatContactActor> BeginMovement()
         {
             m_Published = false;
+            m_MotionSegments.Clear(); m_MotionBodies.Clear(); m_TickInputs.Clear();
             m_Movement.Clear(); m_ContactPairs.Clear(); m_Contacts.Clear();
             return m_Movement;
         }
@@ -125,6 +126,29 @@ namespace MLFLegends.Combat
         {
             // Do not retain Entity/pair rows across pause, Despawn, End, Restart or World replacement.
             m_Movement.Clear(); m_ContactPairs.Clear(); m_Contacts.Clear(); m_Cells.Clear(); m_Impulses.Clear();
+        }
+
+        internal void ResolveBodyProfiles(NativeArray<CombatArenaShape> shapes)
+        {
+            // Gathered requests are immutable during this pass. Shrink first logically; growth checks the conservative
+            // union of each neighbour's old/requested heights, so chunk order cannot decide who grows through whom.
+            for (var i = 0; i < m_Movement.Length; i++)
+            {
+                var a = m_Movement[i];
+                if (!a.Collidable || a.Frozen || a.RequestedHeight <= 0) continue;
+                var proposed = a.Body; proposed.Height = a.RequestedHeight;
+                var clear = proposed.Height <= a.Body.Height || CombatArenaGeometry.Clear(shapes, proposed, a.Start);
+                if (clear && proposed.Height > a.Body.Height)
+                    for (var j = 0; j < m_Movement.Length; j++)
+                    {
+                        var b = m_Movement[j];
+                        if (i == j || !b.Collidable) continue;
+                        var other = b.Body; other.Height = math.max(b.InitialHeight, b.RequestedHeight);
+                        if (CombatBodyContacts.Penetration(a.Start, proposed, b.Start, other) > CombatContactTuning.Skin)
+                        { clear = false; break; }
+                    }
+                if (clear) { a.Body = proposed; a.MovementBody.Height = proposed.Height; m_Movement[i] = a; }
+            }
         }
 
         // impulses: Movement's pending input of this tick, copied into owner scratch for the job (consumed by the caller).
@@ -178,13 +202,7 @@ namespace MLFLegends.Combat
             if (maxPairs > m_ContactPairs.Capacity) m_ContactPairs.Capacity = math.max(maxPairs, m_ContactPairs.Capacity * 2);
             if (maxPairs > m_Contacts.Capacity) m_Contacts.Capacity = math.max(maxPairs, m_Contacts.Capacity * 2);
             m_Seen.Resize(n, NativeArrayOptions.ClearMemory);
-            var start = Stopwatch.GetTimestamp();
-            new CombatContactJob { Actors = m_Movement, Cells = m_Cells, Seen = m_Seen, Pairs = m_ContactPairs, Contacts = m_Contacts,
-                Shapes = shapes, Impulses = m_Impulses.AsArray(), Diagnostics = m_ContactDiagnostics, Tick = tick, LandingTicks = landingTicks,
-                BattleNumber = session.BattleNumber, Physics = physics, PairVisitBudget = PairVisitBudgetOverride > 0 ? PairVisitBudgetOverride
-                    : CombatContactTuning.MaxPairVisits }.Schedule().Complete();
-            LastMovementKernelMicroseconds = MicrosSince(start);
-            LastContacts = m_ContactDiagnostics[0];
+            SolveMotion(shapes, tick, landingTicks, session.BattleNumber, physics);
         }
         EntityQuery m_Session;
         EntityQuery m_Clock;
@@ -235,6 +253,9 @@ namespace MLFLegends.Combat
                 m_ContactDiagnostics = new NativeArray<CombatContactDiagnostics>(1, Allocator.Persistent);
                 m_EmptyShapes = new NativeList<CombatArenaShape>(1, Allocator.Persistent);
                 m_Impulses = new NativeList<CombatImpulse>(1, Allocator.Persistent);
+                m_MotionSegments = new NativeList<CombatMotionSegment>(1, Allocator.Persistent);
+                m_TickInputs = new NativeList<CombatContactActor>(1, Allocator.Persistent);
+                m_MotionBodies = new NativeList<CombatSpatialBody>(1, Allocator.Persistent);
                 m_Allocated = true;
             }
             catch
@@ -253,6 +274,9 @@ namespace MLFLegends.Combat
 
         void DisposeStorage()
         {
+            if (m_MotionSegments.IsCreated) m_MotionSegments.Dispose();
+            if (m_TickInputs.IsCreated) m_TickInputs.Dispose();
+            if (m_MotionBodies.IsCreated) m_MotionBodies.Dispose();
             if (m_Impulses.IsCreated) m_Impulses.Dispose();
             if (m_EmptyShapes.IsCreated) m_EmptyShapes.Dispose();
             if (m_ContactDiagnostics.IsCreated) m_ContactDiagnostics.Dispose();

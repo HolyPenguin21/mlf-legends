@@ -378,7 +378,7 @@ namespace MLFLegends.Combat
             }
         }
 
-        static bool Clear(NativeArray<CombatArenaShape> shapes, in CombatBody body, float3 p)
+        public static bool Clear(NativeArray<CombatArenaShape> shapes, in CombatBody body, float3 p)
         {
             if (shapes.IsCreated) foreach (var s in shapes) if (Overlap(s, p, body, out _)) return false;
             return true;
@@ -388,7 +388,7 @@ namespace MLFLegends.Combat
         // A failed budget freezes the entire tick, never silently truncates displacement or crosses geometry.
         public static CombatArenaMove Move(NativeArray<CombatArenaShape> shapes, in CombatBody body, float3 start,
             float2 desired, float velocity, bool grounded, bool jump, uint landingTicks, bool legacy = false, float legacyHeight = 0,
-            bool integrateTime = true, float lift = 0)
+            bool integrateTime = true, float lift = 0, float deltaTime = SimulationTiming.TickDuration)
         {
             var result = new CombatArenaMove { Position = start, Velocity = velocity, Grounded = grounded };
             if (!math.all(math.isfinite(start)) || math.cmax(math.abs(start)) > CombatArenaTuning.MaxCoordinate
@@ -409,10 +409,10 @@ namespace MLFLegends.Combat
             else if (integrateTime && !grounded) velocity += lift;
             if (integrateTime)
             {
-                if (!grounded) velocity -= CombatMovementTuning.Gravity * SimulationTiming.TickDuration;
+                if (!grounded) velocity -= CombatMovementTuning.Gravity * deltaTime;
                 else velocity = 0;
             }
-            var vertical = integrateTime ? velocity * SimulationTiming.TickDuration : 0;
+            var vertical = integrateTime ? velocity * deltaTime : 0;
             var feature = math.min(body.Radius, body.Height);
             if (shapes.IsCreated) foreach (var s in shapes) feature = math.min(feature, math.min(math.cmin(s.HalfSize) * 2, s.Top - s.Bottom));
             // Also bound grazing-corner chord error below Skin (conservative circle sagitta bound).
@@ -476,8 +476,8 @@ namespace MLFLegends.Combat
                     // A time-free body correction may remove support, but must not integrate gravity again.
                     if (integrateTime)
                     {
-                        velocity = -CombatMovementTuning.Gravity * SimulationTiming.TickDuration;
-                        dy = velocity * SimulationTiming.TickDuration / count;
+                        velocity = -CombatMovementTuning.Gravity * deltaTime;
+                        dy = velocity * deltaTime / count;
                     }
                 }
             }

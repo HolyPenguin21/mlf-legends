@@ -255,3 +255,8 @@ Per-stage tests and profiles: stable tick replay, spawned/despawned entities, st
 
 ## Architectural acceptance
 Before merging any combat feature, trace how commands → state transition → geometry and collisions → damage and guard → injury and death → presentation and AI connect. Confirm exactly one authoritative location for each effect and safe job ownership.
+
+
+## Stage 05.2 — #73 physical ability
+
+Implementation and numerical contracts: [STAGE05_2.md](STAGE05_2.md). Order remains Action → Facing → Movement (accepted shape/path) → final SpatialIndex → Hit. Next: #74, then 05.3 VFX. Stage 04/05 owner manual acceptance is still open. Unity/Burst/GPU/benchmark execution for this change is NOT RUN; available source/model evidence does not replace it.

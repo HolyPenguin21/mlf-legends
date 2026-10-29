@@ -169,3 +169,8 @@ Fixed simulation tick, combat responsiveness, stability capacity/recovery, perfe
 - Future defense acceptance: a separately chosen guard/dash binding must not repeat from holding or clip through actors/obstacles.
 - Damage/stagger applies exactly once per intended hit; multi-target hits all valid separate targets.
 - Broken arm/leg/eye changes executable actions, perception or movement, and death stops further action.
+
+
+## Stage 05.2 — #73 physical ability
+
+Implementation and numerical contracts: [STAGE05_2.md](STAGE05_2.md). Order remains Action → Facing → Movement (accepted shape/path) → final SpatialIndex → Hit. Next: #74, then 05.3 VFX. Stage 04/05 owner manual acceptance is still open. Unity/Burst/GPU/benchmark execution for this change is NOT RUN; available source/model evidence does not replace it.

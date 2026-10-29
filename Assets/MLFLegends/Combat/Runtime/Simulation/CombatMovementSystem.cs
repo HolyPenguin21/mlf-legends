@@ -55,7 +55,10 @@ namespace MLFLegends.Combat
                 var tick = SystemAPI.TryGetSingleton<SimulationClock>(out var clock) ? clock.Tick : SimulationClock.NoTick;
                 var attacks = SystemAPI.GetComponentLookup<CombatAttackState>(true);
                 var landingTicks = SystemAPI.TryGetSingleton<CombatStrikeSchedule>(out var schedule) ? schedule.LandingRecoveryTicks : 0u;
-                var bodies = SystemAPI.GetComponentLookup<CombatBody>(true);
+                var bodies = SystemAPI.GetComponentLookup<CombatBody>();
+                var profiles = SystemAPI.GetComponentLookup<CombatBodyProfile>();
+                var facings = SystemAPI.GetComponentLookup<CombatFacing>(true);
+                var pending = SystemAPI.GetBuffer<CombatImpulse>(m_Impulses);
                 var hasArena = SystemAPI.TryGetSingleton<CombatArenaState>(out var arena);
                 var legacy = !hasArena || !arena.Required;
                 var shapes = hasArena ? SystemAPI.GetSingletonBuffer<CombatArenaShape>(true).AsNativeArray() : owner.EmptyShapes;
@@ -84,6 +87,21 @@ namespace MLFLegends.Combat
                     if (command.MoveX != 0 && command.MoveZ != 0) distance *= diagonalScale;
                     var hasBody = bodies.TryGetComponent(entity, out var actualBody);
                     var body = !legacy && hasBody ? actualBody : CombatBodyTuning.Default;
+                    var requestedHeight = actualBody.Height;
+                    if (profiles.TryGetComponent(entity, out var profile))
+                    {
+                        var elapsed = tick - attack.StartTick;
+                        requestedHeight = attack.IsAttacking && attack.Strike.CompactHeight > 0
+                            && elapsed >= attack.Strike.CompactStart && elapsed < attack.Strike.CompactEnd
+                            ? attack.Strike.CompactHeight : profile.BaseHeight;
+                    }
+                    if (attack.IsAttacking && attack.Strike.SelfImpulse > 0 && tick - attack.StartTick == attack.Strike.LaunchTick)
+                    {
+                        var sign = facings.TryGetComponent(entity, out var facing) && facing.Value == FacingDirection.Left ? -1f : 1f;
+                        var radians = math.radians(attack.Strike.ElevationDegrees);
+                        pending.Add(new CombatImpulse { Target = ids[entity], BattleNumber = session.BattleNumber,
+                            Impulse = new float3(sign * math.cos(radians), math.sin(radians), 0) * attack.Strike.SelfImpulse });
+                    }
                     var frozen = !legacy && (!arena.Valid || !hasBody);
                     var failure = frozen ? (!arena.Valid ? CombatArenaFailure.ArenaUnavailable : CombatArenaFailure.InvalidBody) : CombatArenaFailure.None;
                     rows.Add(new CombatContactActor
@@ -92,7 +110,8 @@ namespace MLFLegends.Combat
                         Team = teams.TryGetComponent(entity, out var team) ? team.Value : (byte)0,
                         Collidable = hasBody && ids.HasComponent(entity) && teams.HasComponent(entity),
                         Controlled = ids.HasComponent(entity) && id.Value == controlled,
-                        Legacy = legacy, Frozen = frozen, Body = actualBody, MovementBody = body,
+                        Legacy = legacy, Frozen = frozen, Body = actualBody, MovementBody = body, RequestedHeight = requestedHeight, InitialHeight = actualBody.Height,
+                        Trace = attack.IsAttacking && attack.Strike.SelfImpulse > 0,
                         Start = next, Motion = kinetic, Desired = new float2(command.MoveX * distance, command.MoveZ * distance),
                         Velocity = kinetic.ExternalVelocity,
                         Jump = (command.Pressed & CommandButtons.Jump) != 0,
@@ -100,7 +119,7 @@ namespace MLFLegends.Combat
                             Grounded = kinetic.Grounded, GroundHeight = kinetic.GroundHeight, Failure = failure },
                     });
                 }
-                var pending = SystemAPI.GetBuffer<CombatImpulse>(m_Impulses);
+                owner.ResolveBodyProfiles(shapes);
                 owner.CalculateMovement(shapes, pending.AsNativeArray(), tick, landingTicks);
                 var positions = SystemAPI.GetComponentLookup<CombatPosition>();
                 var motions = SystemAPI.GetComponentLookup<CombatMotion>();
@@ -108,6 +127,13 @@ namespace MLFLegends.Combat
                 {
                     var row = rows[i];
                     var result = row.Result;
+                    if (bodies.HasComponent(row.Entity)) bodies[row.Entity] = row.Body;
+                    if (profiles.TryGetComponent(row.Entity, out var profile))
+                    {
+                        profile.RequestedHeight = row.RequestedHeight;
+                        profile.RestorePending = row.Body.Height < row.RequestedHeight;
+                        profiles[row.Entity] = profile;
+                    }
                     if (row.Frozen)
                     {
                         if (result.Failure != CombatArenaFailure.None)

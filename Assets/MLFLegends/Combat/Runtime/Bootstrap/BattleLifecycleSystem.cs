@@ -48,7 +48,7 @@ namespace MLFLegends.Combat
             // starts free (default) and the hit ledger empty; both die with the entity, so no strike outlives its battle.
             m_CombatantArchetype = state.EntityManager.CreateArchetype(
                 typeof(CombatantId), typeof(CombatTeam), typeof(CombatPosition), typeof(CombatFacing), typeof(InCombat), typeof(CombatMotion), typeof(CombatBody),
-                typeof(CombatAttackState), typeof(CombatHealth), typeof(CombatHitRecord));
+                typeof(CombatAttackState), typeof(CombatHealth), typeof(CombatHitRecord), typeof(CombatBodyProfile));
             m_Combatants = SystemAPI.QueryBuilder().WithAll<CombatantId>()
                 .WithOptions(EntityQueryOptions.IgnoreComponentEnabledState | EntityQueryOptions.IncludeDisabledEntities).Build();
             m_Clock = SystemAPI.QueryBuilder().WithAll<SimulationClock>().Build();
@@ -193,6 +193,7 @@ namespace MLFLegends.Combat
             }
             entityManager.SetComponentData(entity, motion);
             entityManager.SetComponentData(entity, body);
+            entityManager.SetComponentData(entity, new CombatBodyProfile { BaseHeight = body.Height, RequestedHeight = body.Height });
             entityManager.SetComponentData(entity, new CombatFacing { Value = setup.Facing });
             entityManager.SetComponentData(entity, new CombatHealth { Current = CombatAttackTuning.MaxHealth, Max = CombatAttackTuning.MaxHealth });
 

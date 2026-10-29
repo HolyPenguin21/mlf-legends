@@ -1,0 +1,14 @@
+{
+  "sha": "bee238461df30ce5fbca90e08b4c842061d96b63",
+  "dirty": false,
+  "source_syntax_files": 111,
+  "source": "PASS",
+  "independent_equation_cases": 10000,
+  "model": "PASS",
+  "unity_compilation": "NOT RUN",
+  "EditMode": "NOT RUN",
+  "PlayMode": "NOT RUN",
+  "Burst": "NOT RUN",
+  "benchmark": "NOT RUN",
+  "GPU": "NOT RUN"
+}

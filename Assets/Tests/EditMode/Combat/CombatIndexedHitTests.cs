@@ -35,6 +35,7 @@ namespace MLFLegends.Tests.EditMode
             w.Manager.SetComponentData(e, new CombatPosition { Value = p });
             w.Manager.SetComponentData(e, new CombatMotion { Grounded = true, GroundHeight = p.y });
             w.Manager.SetComponentData(e, new CombatBody { Radius = radius, Height = height, Mass = 1 });
+            w.Manager.SetComponentData(e, new CombatBodyProfile { BaseHeight = height, RequestedHeight = height });
             if (facing.HasValue) w.Manager.SetComponentData(e, new CombatFacing { Value = facing.Value });
         }
 
