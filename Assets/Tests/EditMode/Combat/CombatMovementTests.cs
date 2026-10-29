@@ -48,7 +48,9 @@ namespace MLFLegends.Tests.EditMode
             for (uint tick = 1; tick <= 60; tick++)
                 script.Player(tick, tick, ReplayRole.Human, (sbyte)x, (sbyte)z);
             w.Script = script;
-            w.Request(BattleRequest.Start(BattleSetup.Default));
+            var setup = BattleSetup.Default;
+            setup.Ai.Position = new float3(20, 0, 20); // Unobstructed speed fixture; contacts are tested separately.
+            w.Request(BattleRequest.Start(setup));
             w.Step(60);
             var p = Human(w).Position;
             var direction = math.normalizesafe(new float3(x, 0, z));

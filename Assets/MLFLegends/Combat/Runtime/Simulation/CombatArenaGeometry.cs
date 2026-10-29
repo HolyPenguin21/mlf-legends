@@ -256,7 +256,8 @@ namespace MLFLegends.Combat
         // Bounded displacement substeps: each is <= 1/4 of BOTH body dimensions AND every solid feature.
         // A failed budget freezes the entire tick, never silently truncates displacement or crosses geometry.
         public static CombatArenaMove Move(NativeArray<CombatArenaShape> shapes, in CombatBody body, float3 start,
-            float2 desired, float velocity, bool grounded, bool jump, uint landingTicks, bool legacy = false, float legacyHeight = 0)
+            float2 desired, float velocity, bool grounded, bool jump, uint landingTicks, bool legacy = false, float legacyHeight = 0,
+            bool integrateTime = true)
         {
             var result = new CombatArenaMove { Position = start, Velocity = velocity, Grounded = grounded };
             if (!math.all(math.isfinite(start)) || math.cmax(math.abs(start)) > CombatArenaTuning.MaxCoordinate
@@ -268,12 +269,15 @@ namespace MLFLegends.Combat
             var p = start;
             if (!Depenetrate(shapes, body, ref p)) { result.Failure = CombatArenaFailure.InitialOverlap; return result; }
             grounded = grounded && (legacy || Ground(shapes, p, body.Radius, p.y, p.y, false, legacyHeight, out _));
-            var takeoff = grounded && jump;
+            var takeoff = integrateTime && grounded && jump;
             var takeoffHeight = p.y;
             if (takeoff) { velocity = CombatMovementTuning.JumpImpulse; grounded = false; }
-            if (!grounded) velocity -= CombatMovementTuning.Gravity * SimulationTiming.TickDuration;
-            else velocity = 0;
-            var vertical = velocity * SimulationTiming.TickDuration;
+            if (integrateTime)
+            {
+                if (!grounded) velocity -= CombatMovementTuning.Gravity * SimulationTiming.TickDuration;
+                else velocity = 0;
+            }
+            var vertical = integrateTime ? velocity * SimulationTiming.TickDuration : 0;
             var feature = math.min(body.Radius, body.Height);
             if (shapes.IsCreated) foreach (var s in shapes) feature = math.min(feature, math.min(math.cmin(s.HalfSize) * 2, s.Top - s.Bottom));
             // Also bound grazing-corner chord error below Skin (conservative circle sagitta bound).
@@ -285,7 +289,7 @@ namespace MLFLegends.Combat
             var planar = desired / count;
             var dy = 0f;
             var traveled = 0f;
-            var landed = !grounded && VerticalStep(shapes, body, ref p, vertical, ref velocity, ref grounded, legacy, legacyHeight);
+            var landed = integrateTime && !grounded && VerticalStep(shapes, body, ref p, vertical, ref velocity, ref grounded, legacy, legacyHeight);
             if (takeoff && grounded && math.abs(p.y - takeoffHeight) <= CombatArenaTuning.Skin) landed = false;
             if (!Clear(shapes, body, p)) { result.Failure = CombatArenaFailure.UnresolvedContact; return result; }
             for (var step = 0; step < count; step++)
@@ -325,8 +329,12 @@ namespace MLFLegends.Combat
                 if (grounded && !legacy && !Ground(shapes, p, body.Radius, p.y, p.y, false, legacyHeight, out _))
                 {
                     grounded = false;
-                    velocity = -CombatMovementTuning.Gravity * SimulationTiming.TickDuration;
-                    dy = velocity * SimulationTiming.TickDuration / count;
+                    // A time-free body correction may remove support, but must not integrate gravity again.
+                    if (integrateTime)
+                    {
+                        velocity = -CombatMovementTuning.Gravity * SimulationTiming.TickDuration;
+                        dy = velocity * SimulationTiming.TickDuration / count;
+                    }
                 }
             }
             if (math.cmax(math.abs(p)) > CombatArenaTuning.MaxCoordinate)

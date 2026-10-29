@@ -1,3 +1,23 @@
+## #64 bottom-up source review update (2026-10-29)
+
+[Findings/corrections](STAGE04_BODY_CONTACTS_REVIEW.md) and [exact evidence](Evidence/64/README.md): final support/landing,
+complete physical inputs, bounded lateral ally passage, joint-skin run facts, final residual completeness, paused stats
+epoch and final snapshot bounds. SOURCE / independent PYTHON MODEL PASS; C#/Unity/Entities/Burst/scene/performance NOT RUN.
+This is implementer review, not independent manager acceptance. The owner subsequently explicitly authorized commit/push/merge, superseding the earlier private-code egress block;
+#62/#63 are already merged. Stage 04 stays IN PROGRESS.
+
+## Current #64 — Stage 04.3 body contacts (2026-10-29)
+
+PR #62 and #63 were merged on the owner's explicit command; integrated main base is
+`adf98cd1c9ca4df2b2d2e96aa65d3a7e17eb3a5a`. Branch `feature/64-body-contacts`; the owner subsequently explicitly authorized commit, push and merge of #64.
+[Current body-contact contract, execution boundary, tuning, limits, checks and benchmark](STAGE04_BODY_CONTACTS.md).
+Movement remains the only Position/Motion writer: gather all proposals → same owner's working swept grid → sorted
+body/world constraints → write all results → current-tick final index → unchanged Hit. Managed orchestration explicitly
+schedules/completes a Burst job; actual execution is diagnosed, not assumed. Mass and controlled-role priority are separate.
+Free allies yield, ordinary locomotion does not bulldoze enemies, trapped/unresolved islands stop with diagnostics.
+Stage 03 OWNER-ACCEPTED; Stage 04 IN PROGRESS. Unity/C#/Burst/scene/performance NOT RUN; source/model checks are separate.
+Historical notes below retain their original SHA/status and do not override this update.
+
 ## #63 bottom-up review corrections (2026-10-29)
 
 [Concrete source findings, corrections and authored regressions](STAGE04_ARENA_REVIEW.md): roof/ramp ejection,

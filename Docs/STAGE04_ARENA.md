@@ -1,3 +1,15 @@
+## Current #64 — Stage 04.3 body contacts (2026-10-29)
+
+PR #62 and #63 were merged on the owner's explicit command; integrated main base is
+`adf98cd1c9ca4df2b2d2e96aa65d3a7e17eb3a5a`. Branch `feature/64-body-contacts`; the owner subsequently explicitly authorized commit, push and merge of #64.
+[Current body-contact contract, execution boundary, tuning, limits, checks and benchmark](STAGE04_BODY_CONTACTS.md).
+Movement remains the only Position/Motion writer: gather all proposals → same owner's working swept grid → sorted
+body/world constraints → write all results → current-tick final index → unchanged Hit. Managed orchestration explicitly
+schedules/completes a Burst job; actual execution is diagnosed, not assumed. Mass and controlled-role priority are separate.
+Free allies yield, ordinary locomotion does not bulldoze enemies, trapped/unresolved islands stop with diagnostics.
+Stage 03 OWNER-ACCEPTED; Stage 04 IN PROGRESS. Unity/C#/Burst/scene/performance NOT RUN; source/model checks are separate.
+Historical notes below retain their original SHA/status and do not override this update.
+
 # Stage 04.2 / #61 — static arena
 
 Work starts from #60 PR #62 head `e26e668435b9cb55bcf5bced163710b6c2b61230`, whose correction includes

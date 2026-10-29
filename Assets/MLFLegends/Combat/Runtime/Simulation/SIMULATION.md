@@ -1,3 +1,13 @@
+## Stage 04.3 / #64 current contract
+
+CombatMovementSystem is the sole runtime Position/Motion writer. Its managed input/output orchestration calls one
+synchronous Burst job via the existing CombatSpatialIndexSystem owner. That owner's Cells/Seen storage is reused for
+working swept bounds, invalidating public publication, then rebuilt as the guarded final current-tick snapshot before Hit.
+No second grid/writer/clock. Mass remains CombatBody.Mass; locomotion priority comes from BattleSession's controlled role,
+not command source. Corrections recheck world/support without repeating time; passive movement adds no run distance.
+Native scratch/pairs are cleared after every call and disposed by the same owner. Unresolved islands/work guards are
+explicitly diagnosed and rolled back. Full contract: Docs/STAGE04_BODY_CONTACTS.md. Unity/runtime checks NOT RUN here.
+
 ## Stage 04.2 static arena (#61)
 
 [Full contract, authoring/tuning, work guards, ownership and evidence](../../../../../Docs/STAGE04_ARENA.md).
