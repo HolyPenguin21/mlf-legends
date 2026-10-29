@@ -17,8 +17,24 @@ namespace MLFLegends.Editor
 
         static float Line => EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
 
-        static bool IsAttack(SerializedProperty property) =>
-            CombatAnimationSet.IsAttackClip(property.FindPropertyRelative(nameof(CharacterAnimationSettings.ClipId)).stringValue);
+        // A default strike clip, or a clip the owning character's Combat data maps to a strike slot (#69).
+        static bool IsAttack(SerializedProperty property)
+        {
+            var clipId = property.FindPropertyRelative(nameof(CharacterAnimationSettings.ClipId)).stringValue;
+            if (CombatAnimationSet.IsAttackClip(clipId))
+                return true;
+            var path = property.propertyPath;
+            var animations = path.LastIndexOf("." + nameof(CharacterAnimationEntry.Animations) + ".Array", System.StringComparison.Ordinal);
+            if (animations < 0 || string.IsNullOrEmpty(clipId))
+                return false;
+            var combat = property.serializedObject.FindProperty(path.Substring(0, animations) + "." + nameof(CharacterAnimationEntry.Combat));
+            if (combat == null)
+                return false;
+            foreach (var slot in new[] { "Hand1", "Hand2", "Foot1", "Foot2", "PhysicalAbility" })
+                if (combat.FindPropertyRelative(slot + "." + nameof(CharacterStrikeSettings.ClipId))?.stringValue == clipId)
+                    return true;
+            return false;
+        }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {

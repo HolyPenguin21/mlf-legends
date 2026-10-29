@@ -30,8 +30,8 @@ namespace MLFLegends.Tests.EditMode
             if (!definition.TryGetClipIndex(clipId, out var index))
                 return null;
             double seconds = clipId == CombatAnimationSet.IdleClip ? idleSeconds : 0.5;
-            for (var kind = CombatAttackKind.PunchLeft; kind <= CombatAttackKind.KickSpin; kind++)
-                if (CombatAnimationSet.AttackClip(kind) == clipId)
+            for (var kind = CombatAttackKind.Hand1; kind <= CombatAttackKind.PhysicalAbility; kind++)
+                if (CombatAnimationSet.DefaultClip(kind) == clipId)
                     seconds = CombatAttackTuning.Get(kind).TotalTicks / (double)SimulationTiming.TickRateHz;
             // Strikes: tech_a = Preparation, tech_c = Active, tech_b = Recovery (the strike_pose marker [1]).
             return new CharacterAnimationSettings

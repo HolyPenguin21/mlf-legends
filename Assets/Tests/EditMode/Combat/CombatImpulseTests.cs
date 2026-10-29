@@ -159,10 +159,10 @@ namespace MLFLegends.Tests.EditMode
         {
             using var w = new ReplayWorld("impulse during strike"); var e = Start(w, new[] { Floor });
             var before = w.Manager.GetComponentData<CombatFacing>(e[0]);
-            Command(w, e[0], -1, CommandButtons.PunchLeft); Push(w, e[0], new float3(6, 0, 0));
+            Command(w, e[0], -1, CommandButtons.HandSeries); Push(w, e[0], new float3(6, 0, 0));
             w.Step();
             var strike = w.Manager.GetComponentData<CombatAttackState>(e[0]);
-            Assert.That(strike.Kind, Is.EqualTo(CombatAttackKind.PunchLeft));
+            Assert.That(strike.Kind, Is.EqualTo(CombatAttackKind.Hand1));
             Assert.That(P(w, e[0]).x, Is.EqualTo(6 * Dt - CombatMovementTuning.MoveSpeed * Dt * .5f).Within(.00021),
                 "Full external step plus 50% Windup control in the opposite direction.");
             Assert.That(w.Manager.GetComponentData<CombatFacing>(e[0]).Value, Is.EqualTo(FacingDirection.Left), "Only the command turns.");
@@ -264,6 +264,107 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(M(w2, f[0]).ExternalVelocity, Is.EqualTo(float2.zero));
             var x = P(w2, f[0]).x; w2.Step(10);
             Assert.That(P(w2, f[0]).x, Is.EqualTo(x), "Nothing is released after the pressure stops.");
+        }
+
+        // #69 counterexample: the old velocity = achieved displacement / dt kept 6 - .4 = 5.6 u/s INTO the wall after a hit
+        // after half a tick of travel. The final velocity of an inelastic impact on a static wall has no normal part.
+        [Test]
+        public void WallHitAfterPartOfTheTickLeavesNoNormalVelocityAndKeepsTheTangent()
+        {
+            using var w = new ReplayWorld("toi wall");
+            var owner = w.World.GetExistingSystemManaged<CombatArenaSystem>(); var lease = owner.Acquire();
+            Assert.That(owner.Stage(lease, new[] { Floor, CombatArenaTests.Box(.45f, 0, 0, .05f, 4, 10) }), Is.True);
+            var e = Start(w, null, new float3(-5, 0, 0));
+            Push(w, e[0], new float3(12, 0, 6)); w.Step();
+            Assert.That(P(w, e[0]).x, Is.EqualTo(.1f).Within(.0005f), "Only the free gap .1 of the requested .2 is travelled.");
+            var v = M(w, e[0]).ExternalVelocity;
+            Assert.That(v.x, Is.EqualTo(0).Within(1e-5), "No hidden normal velocity into the wall.");
+            Assert.That(v.y, Is.EqualTo(6 - CombatImpulseTuning.GroundDeceleration * Dt).Within(1e-4), "Frictionless wall: tangent kept.");
+            Push(w, e[0], new float3(-6, 0, 0)); // a later push away from the wall is not cancelled by any stored velocity
+            w.Step();
+            Assert.That(M(w, e[0]).ExternalVelocity.x, Is.LessThan(-5.5f));
+
+            // Pressure with control + impulse, then the wall disappears: nothing stored is released.
+            using var p = new ReplayWorld("toi wall removed");
+            var po = p.World.GetExistingSystemManaged<CombatArenaSystem>(); var pl = po.Acquire();
+            Assert.That(po.Stage(pl, new[] { Floor, CombatArenaTests.Box(.45f, 0, 0, .05f, 4, 10) }), Is.True);
+            var f = Start(p, null, new float3(-5, 0, 0));
+            for (var t = 0; t < 6; t++) { Command(p, f[0], 1); Push(p, f[0], new float3(4, 0, 0)); p.Step(); }
+            Assert.That(M(p, f[0]).ExternalVelocity, Is.EqualTo(float2.zero), "Combined control + impulse: no normal velocity.");
+            Assert.That(po.Stage(pl, new[] { Floor }), Is.True);
+            var x = P(p, f[0]).x; p.Step(10);
+            Assert.That(P(p, f[0]).x, Is.EqualTo(x), "The released contact frees no old impulse.");
+        }
+
+        // #69 counterexample: equal bodies .1 apart, 12/0 u/s: the old rule published 8.6/2.6 (average displacements); the
+        // declared perfectly inelastic normal response gives the common velocity 6/6, i.e. 5.6/5.6 after ground friction.
+        [TestCase(1f, 1f)] [TestCase(1f, 3f)] [TestCase(3f, 1f)]
+        public void BodyHitAfterPartOfTheTickSharesTheInelasticCommonVelocity(float ma, float mb)
+        {
+            using var w = new ReplayWorld("toi body"); var e = Start(w, new[] { Floor }, new float3(.7f, 0, 0));
+            w.Manager.SetComponentData(e[0], Body(mass: ma)); w.Manager.SetComponentData(e[1], Body(mass: mb));
+            const float v0 = 12;
+            Push(w, e[0], new float3(v0 * ma, 0, 0)); w.Step(); Separated(w, e[0], e[1]);
+            var va = M(w, e[0]).ExternalVelocity; var vb = M(w, e[1]).ExternalVelocity;
+            var common = ma * v0 / (ma + mb) - CombatImpulseTuning.GroundDeceleration * Dt;
+            Assert.That(va.x, Is.EqualTo(common).Within(1e-3)); Assert.That(vb.x, Is.EqualTo(common).Within(1e-3));
+            Assert.That(va.y, Is.Zero); Assert.That(vb.y, Is.Zero);
+            Assert.That(ma * va.x * va.x + mb * vb.x * vb.x, Is.LessThan(ma * v0 * v0), "Inelastic: energy decreases.");
+            Assert.That(Contacts(w).VelocityContacts, Is.EqualTo(1)); Assert.That(Contacts(w).FrozenBodies, Is.Zero);
+            w.Step(40);
+            Assert.That(M(w, e[0]).ExternalVelocity, Is.EqualTo(float2.zero)); Assert.That(M(w, e[1]).ExternalVelocity, Is.EqualTo(float2.zero));
+            Separated(w, e[0], e[1]);
+            Assert.That(M(w, e[1]).MoveStreakDistance, Is.Zero, "Passive transfer is not running.");
+        }
+
+        // #69 baseline for the #66 limits: a FREE (no wall, no jam) touching chain of 6 or 20 bodies of both teams transfers
+        // an impulse end to end with no hold, discard or rollback, no overlap and no energy gain.
+        [TestCase(2)] [TestCase(9)]
+        public void FreeSmallAndMediumChainsTransferWithoutHoldsOrDiscards(int allies)
+        {
+            using var w = new ReplayWorld("free chain"); var e = Start(w, new[] { Floor }, allies: (ushort)allies);
+            for (var i = 0; i < e.Length; i++)
+                w.Manager.SetComponentData(e[i], new CombatPosition { Value = new float3(i * .6f, 0, 0) });
+            var last = e.Length - 1;
+            const float v0 = 12;
+            Push(w, e[0], new float3(v0, 0, 0));
+            var energy = v0 * v0;
+            var maxSlop = 0f;
+            for (var t = 0; t < 60; t++)
+            {
+                w.Step();
+                var d = Contacts(w);
+                Assert.That((d.LocalHolds, d.DiscardedVelocities, d.RolledBackBodies, d.FrozenBodies, d.WorkLimit), Is.EqualTo((0, 0, 0, 0, false)), $"tick {t}");
+                var now = e.Sum(x => math.lengthsq(M(w, x).ExternalVelocity));
+                Assert.That(now, Is.LessThanOrEqualTo(energy + 1e-3f), "Contacts never create kinetic energy.");
+                energy = now;
+                // A long pressing chain may publish the documented, diagnosed slop (<= 5 % of the radius, resolved next tick).
+                var slop = CombatContactTuning.SlopRadiusFraction * .3f;
+                Assert.That(d.SlopAcceptedDepth, Is.LessThanOrEqualTo(slop + 1e-6f));
+                for (var i = 0; i + 1 < e.Length; i++)
+                    Assert.That(math.distance(P(w, e[i]).xz, P(w, e[i + 1]).xz), Is.GreaterThanOrEqualTo(.6f - slop - .00021f), $"tick {t} pair {i}");
+                maxSlop = math.max(maxSlop, d.SlopAcceptedDepth);
+            }
+            TestContext.WriteLine($"chain {e.Length}: max accepted slop {maxSlop}");
+            if (e.Length <= 6) Assert.That(maxSlop, Is.Zero, "A small free chain needs no slop.");
+            Assert.That(P(w, e[last]).x, Is.GreaterThan(last * .6f + .01f), "The far end of the chain moved.");
+            Assert.That(e.All(x => M(w, x).ExternalVelocity.Equals(float2.zero)), Is.True, "Friction stops the chain.");
+        }
+
+        // #69: whole-entity Disabled (Unity tag) hides the fighter from every default query; it must not keep and later
+        // release its external velocity, exactly like a disabled InCombat bit.
+        [Test]
+        public void WholeEntityDisabledFighterLosesItsExternalVelocity()
+        {
+            using var w = new ReplayWorld("impulse disabled entity"); var e = Start(w, new[] { Floor });
+            Push(w, e[1], new float3(-6, 0, 0)); w.Step();
+            Assert.That(M(w, e[1]).ExternalVelocity.x, Is.LessThan(0));
+            w.Manager.SetEnabled(e[1], false); w.Step();
+            Assert.That(M(w, e[1]).ExternalVelocity, Is.EqualTo(float2.zero), "Cleared while disabled.");
+            var parked = P(w, e[1]);
+            w.Manager.SetEnabled(e[1], true); w.Step(3);
+            Assert.That(P(w, e[1]), Is.EqualTo(parked), "Re-enabling releases no old impulse.");
+            Assert.That(M(w, e[1]).VerticalVelocity, Is.Zero, "Vertical semantics unchanged (grounded).");
         }
 
         [Test]
@@ -400,8 +501,8 @@ namespace MLFLegends.Tests.EditMode
                 producer.Script.Add((17, ReplayRole.Ai, new float3(-9, 0, 0))); producer.Script.Add((31, ReplayRole.Human, new float3(0, 0, -5)));
                 for (uint t = 1; t <= 60; t++)
                 {
-                    w.Script.Player(t, t, ReplayRole.Human, moveX: (sbyte)(t % 3 - 1), pressed: t % 13 == 0 ? CommandButtons.PunchLeft : CommandButtons.None);
-                    w.Script.Ai(t, t, ReplayRole.Ai, moveX: -1, pressed: t % 11 == 0 ? CommandButtons.Kick : CommandButtons.None);
+                    w.Script.Player(t, t, ReplayRole.Human, moveX: (sbyte)(t % 3 - 1), pressed: t % 13 == 0 ? CommandButtons.HandSeries : CommandButtons.None);
+                    w.Script.Ai(t, t, ReplayRole.Ai, moveX: -1, pressed: t % 11 == 0 ? CommandButtons.FootSeries : CommandButtons.None);
                 }
             }
             Start(a, new[] { Floor }, new float3(1.2f, 0, 0)); var eb = Start(b, new[] { Floor }, new float3(1.2f, 0, 0));

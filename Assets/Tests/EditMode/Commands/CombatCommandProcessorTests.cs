@@ -157,7 +157,7 @@ namespace MLFLegends.Tests.EditMode
         public void CommandForTheCurrentTickIsAcceptedAndAppliedOnThatTick()
         {
             var combatant = Spawn(7);
-            var command = Cmd(7, 1, moveX: -1, pressed: CommandButtons.Attack);
+            var command = Cmd(7, 1, moveX: -1, pressed: CommandButtons.HandSeries);
             command.MoveZ = 1;
             command.Held = CommandButtons.Guard;
             Submit(command);
@@ -393,7 +393,7 @@ namespace MLFLegends.Tests.EditMode
             var moveZ = Cmd(1, 1, source: CommandSource.AI);
             moveZ.MoveZ = -2;
             var buttons = Cmd(1, 1, source: CommandSource.AI);
-            buttons.Held = (CommandButtons)0x200;
+            buttons.Held = (CommandButtons)(1 << 4); // a retired pre-#69 exact-limb bit
             var noSource = Cmd(1, 1, source: CommandSource.None);
             var badSource = Cmd(1, 1, source: (CommandSource)9);
             Submit(moveX, moveZ, buttons, noSource, badSource, Cmd(0, 1));

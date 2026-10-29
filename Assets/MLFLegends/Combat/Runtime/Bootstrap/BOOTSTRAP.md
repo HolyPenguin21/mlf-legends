@@ -1,3 +1,14 @@
+## Stage 05.1 (#69) — character table, body at spawn, gizmos
+
+- `CombatSmokeBootstrap` publishes the selected character's table (`CombatStrikeSchedule`): slot windows from the slot
+  clips plus the Combat block's damage/hit box and body; an invalid value is reported once and the previous table stays.
+- `BattleLifecycleSystem.Spawn` gives every fighter the table's `Body` (start/restart); a World without the table uses
+  `CombatBodyTuning.Default`. The body of a running battle never changes.
+- **Draw Combat Gizmos** (bootstrap, Play Mode Scene view): body cylinder, facing, airborne support line and the strike box
+  frozen in each fighter's state by phase. Reads ECS only.
+- `CombatArenaAuthoring` reports frozen-movement diagnostics only after its own staged geometry is published, so a
+  rebind after another lease released the World never reports the old interval as its failure.
+
 ## Stage 04.2 static arena (#61)
 
 [Full contract, authoring/tuning, work guards, ownership and evidence](../../../../../Docs/STAGE04_ARENA.md).

@@ -14,8 +14,9 @@ namespace MLFLegends.Tests.EditMode
     // and the documented rules (COMBAT_SPEC.md), never from presentation.
     public class CombatAttackTests
     {
-        const CommandButtons A = CommandButtons.Attack;
-        const CommandButtons K = CommandButtons.Kick;
+        const CommandButtons A = CommandButtons.HandSeries;
+        const CommandButtons K = CommandButtons.FootSeries;
+        const CommandButtons O = CommandButtons.PhysicalAbility;
 
         static BattleSetup Duel(float3 ai, FacingDirection human = FacingDirection.Right, FacingDirection aiFacing = FacingDirection.Left) => new BattleSetup
         {
@@ -65,7 +66,9 @@ namespace MLFLegends.Tests.EditMode
 
         /// <summary>
         /// Presses a series: the first button on r1, every next one on the first Active tick of the strike before it, so it is
-        /// buffered and starts exactly at that strike's chain point. Returns the expected (start, kind) list.
+        /// buffered and starts exactly at that strike's chain point. 'A' = U hand series, 'K' = I foot series, 'O' = the
+        /// physical ability (first position only: it is never buffered). Returns the expected (start, kind) list, written from
+        /// the #69 rule 1, 1, 2, 1, 2, … per series; switching series restarts at 1.
         /// </summary>
         static List<(uint start, CombatAttackKind kind)> Series(ReplayScript script, string buttons, CommandSource source = CommandSource.Player,
             ReplayRole role = ReplayRole.Human)
@@ -73,10 +76,15 @@ namespace MLFLegends.Tests.EditMode
             var expected = new List<(uint, CombatAttackKind)>();
             uint start = 1;
             var previous = CombatAttackKind.None;
+            var position = 0; // index in the current series' own 1, 1, 2, 1, 2, … sequence
             for (var i = 0; i < buttons.Length; i++)
             {
-                var button = buttons[i] == 'A' ? A : K;
-                var kind = CombatAttackTuning.Select(button, previous);
+                var button = buttons[i] == 'A' ? A : buttons[i] == 'K' ? K : O;
+                Assert.That(i == 0 || button != O, "The physical ability never chains from a strike.");
+                position = i > 0 && CombatAttackTuning.SeriesOf(previous) == button ? position + 1 : 0;
+                var kind = button == O ? CombatAttackKind.PhysicalAbility
+                    : position >= 2 && position % 2 == 0 ? (button == A ? CombatAttackKind.Hand2 : CombatAttackKind.Foot2)
+                    : (button == A ? CombatAttackKind.Hand1 : CombatAttackKind.Foot1);
                 if (i > 0)
                 {
                     var before = Def(previous);
@@ -103,11 +111,14 @@ namespace MLFLegends.Tests.EditMode
                 script.Ai(tick, tick, role, moveX: moveX, pressed: button);
         }
 
-        [TestCase("A", CombatAttackKind.PunchLeft)]
-        [TestCase("AA", CombatAttackKind.PunchRight)]
-        [TestCase("K", CombatAttackKind.KickLeft)]
-        [TestCase("KK", CombatAttackKind.KickRight)]
-        [TestCase("KKK", CombatAttackKind.KickSpin)]
+        [TestCase("A", CombatAttackKind.Hand1)]
+        [TestCase("AA", CombatAttackKind.Hand1)]
+        [TestCase("AAA", CombatAttackKind.Hand2)]
+        [TestCase("AAAA", CombatAttackKind.Hand1)]
+        [TestCase("K", CombatAttackKind.Foot1)]
+        [TestCase("KK", CombatAttackKind.Foot1)]
+        [TestCase("KKK", CombatAttackKind.Foot2)]
+        [TestCase("O", CombatAttackKind.PhysicalAbility)]
         public void EveryStrikeRunsWindupActiveRecoveryAndDamagesItsTargetOncePerStrike(string buttons, CombatAttackKind last)
         {
             var script = new ReplayScript();
@@ -116,7 +127,7 @@ namespace MLFLegends.Tests.EditMode
             var end = expected.Last().start + (uint)Def(last).TotalTicks;
             var records = Play(Duel(new float3(0.9f, 0f, 0f)), script, (int)end + 5);
 
-            Assert.That(Strikes(records, H), Is.EqualTo(expected), "Each strike starts on its tick with its kind (sides alternate, Kick after kick_right spins).");
+            Assert.That(Strikes(records, H), Is.EqualTo(expected), "Each strike starts on its tick with its kind (1, 1, 2, 1, 2, …).");
             var hp = CombatAttackTuning.MaxHealth;
             for (var j = 0; j < expected.Count; j++)
             {
@@ -139,7 +150,7 @@ namespace MLFLegends.Tests.EditMode
             var free = records[end - 1];
             Assert.That(H(free).Attack.Kind, Is.EqualTo(CombatAttackKind.None), "Recovery ran out: free on this tick.");
             Assert.That(Rel(free, H(free).Attack.EndTick), Is.EqualTo(end));
-            Assert.That(H(free).Attack.SeriesLength, Is.Zero);
+            Assert.That(H(free).Attack.SeriesStep, Is.Zero);
             Assert.That(Ai(records.Last()).Health.Current, Is.EqualTo(CombatAttackTuning.MaxHealth - expected.Sum(e => Def(e.kind).Damage)));
             Assert.That(H(records.Last()).Health.Current, Is.EqualTo(CombatAttackTuning.MaxHealth), "Nobody hit the attacker.");
         }
@@ -157,7 +168,7 @@ namespace MLFLegends.Tests.EditMode
             var script = new ReplayScript();
             Press(script, 1, A);
             var records = Play(Duel(new float3(x, y, z)), script, 40, hitGeometryFixture: true);
-            Assert.That(Ai(records.Last()).Health.Current, Is.EqualTo(hit ? CombatAttackTuning.MaxHealth - Def(CombatAttackKind.PunchLeft).Damage : CombatAttackTuning.MaxHealth));
+            Assert.That(Ai(records.Last()).Health.Current, Is.EqualTo(hit ? CombatAttackTuning.MaxHealth - Def(CombatAttackKind.Hand1).Damage : CombatAttackTuning.MaxHealth));
             Assert.That(records.Any(r => H(r).Hits.Length > 0), Is.EqualTo(hit));
         }
 
@@ -168,10 +179,10 @@ namespace MLFLegends.Tests.EditMode
             // r1: Attack while holding left: turn, then strike to the left. From Active on, holding right never turns
             // mid-strike (Preparation movement, which would carry the fighter out of reach, is covered separately).
             Press(script, 1, A, moveX: -1);
-            for (uint r = 1u + Def(CombatAttackKind.PunchLeft).WindupTicks; r <= 40; r++)
+            for (uint r = 1u + Def(CombatAttackKind.Hand1).WindupTicks; r <= 40; r++)
                 script.Player(r, r, ReplayRole.Human, moveX: 1);
             var records = Play(Duel(new float3(-0.8f, 0f, 0f)), script, 40);
-            var end = 1 + Def(CombatAttackKind.PunchLeft).TotalTicks;
+            var end = 1 + Def(CombatAttackKind.Hand1).TotalTicks;
             for (var t = 1; t < end; t++)
                 Assert.That(H(records[t - 1]).Facing, Is.EqualTo(FacingDirection.Left), $"r{t}: locked");
             Assert.That(H(records[end - 1]).Facing, Is.EqualTo(FacingDirection.Right), "Free again: MoveX turns.");
@@ -186,7 +197,7 @@ namespace MLFLegends.Tests.EditMode
             for (uint r = 2; r <= 50; r++)
                 script.Player(r, r, ReplayRole.Human, moveX: 1, pressed: r == 5 ? CommandButtons.Jump : CommandButtons.None);
             var records = Play(Duel(new float3(5f, 0f, 0f)), script, 50);
-            var punch = Def(CombatAttackKind.PunchLeft);
+            var punch = Def(CombatAttackKind.Hand1);
             var end = 1 + punch.TotalTicks;
             var step = CombatMovementTuning.MoveSpeed * SimulationTiming.TickDuration;
             for (var t = 1; t < end; t++)
@@ -195,7 +206,7 @@ namespace MLFLegends.Tests.EditMode
                 var slowedSteps = preparation * 0.5f + (t - preparation) * 0.25f;
                 Assert.That(H(records[t - 1]).Position.x, Is.EqualTo(slowedSteps * step).Within(1e-4f), $"r{t}: 50% Preparation, 25% Active/Recovery");
                 Assert.That(H(records[t - 1]).Motion.Grounded, Is.True, $"r{t}: no takeoff during the strike, Preparation included");
-                Assert.That(H(records[t - 1]).Attack.Kind, Is.EqualTo(CombatAttackKind.PunchLeft), $"r{t}: moving never cancels the strike");
+                Assert.That(H(records[t - 1]).Attack.Kind, Is.EqualTo(CombatAttackKind.Hand1), $"r{t}: moving never cancels the strike");
             }
             Assert.That(H(records[end - 1]).Position.x - H(records[end - 2]).Position.x,
                 Is.EqualTo(step).Within(1e-4f), "Full speed resumes on the first free tick.");
@@ -211,90 +222,117 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(records.All(r => !H(r).Attack.IsAttacking), Is.True, "…and the strike press is dropped.");
         }
 
-        [TestCase("A", new[] { CombatAttackKind.PunchLeft, CombatAttackKind.PunchRight, CombatAttackKind.PunchLeft, CombatAttackKind.PunchRight })]
-        [TestCase("K", new[] { CombatAttackKind.KickLeft, CombatAttackKind.KickRight, CombatAttackKind.KickSpin })]
-        public void MashingChainsAtTheChainPointsUpToTheSeriesEndThenStartsAFreshSeries(string button, CombatAttackKind[] series)
+        // #69: no hard series limit; a long mash keeps chaining at the chain points in 1, 1, 2, 1, 2, … with a bounded step.
+        [TestCase("A")] [TestCase("K")]
+        public void MashingChainsForeverInTheOneOneTwoSequenceWithABoundedStep(string button)
         {
             var b = button == "A" ? A : K;
+            var one = b == A ? CombatAttackKind.Hand1 : CombatAttackKind.Foot1;
+            var two = b == A ? CombatAttackKind.Hand2 : CombatAttackKind.Foot2;
             var script = new ReplayScript();
-            for (uint r = 1; r <= 200; r++)
+            for (uint r = 1; r <= 900; r++)
                 Press(script, r, b);
-            var records = Play(Duel(new float3(0.9f, 0f, 0f)), script, 200);
+            var records = Play(Duel(new float3(0.9f, 0f, 0f)), script, 900);
             var strikes = Strikes(records, H);
+            Assert.That(strikes.Count, Is.GreaterThan(30), "Far beyond the old limit of four.");
             uint start = 1;
-            for (var i = 0; i < series.Length; i++)
+            for (var i = 0; i < strikes.Count; i++)
             {
-                Assert.That(strikes[i], Is.EqualTo((start, series[i])), $"strike {i}: windup presses ignored, buffered press waits for the chain point");
-                var d = Def(series[i]);
-                start += i + 1 < series.Length ? (uint)(d.WindupTicks + d.ActiveTicks + d.ChainDelayTicks) : (uint)d.TotalTicks;
+                var kind = i >= 2 && i % 2 == 0 ? two : one;
+                Assert.That(strikes[i], Is.EqualTo((start, kind)), $"strike {i}: windup presses ignored, buffered press waits for the chain point");
+                var d = Def(kind);
+                start += (uint)(d.WindupTicks + d.ActiveTicks + d.ChainDelayTicks);
             }
-
-            Assert.That(strikes[series.Length], Is.EqualTo((start, series[0])),
-                "The series end plays the full recovery; a press on the first free tick starts a new series on the left.");
-            Assert.That(records.Max(r => H(r).Attack.SeriesLength), Is.EqualTo(series.Length));
+            Assert.That(records.Max(r => H(r).Attack.SeriesStep), Is.EqualTo(3), "Bounded state, no growing counter.");
+            Assert.That(strikes.Any(s => s.kind == CombatAttackKind.PhysicalAbility), Is.False, "No hidden finisher.");
         }
 
         [Test]
-        public void MixedSeriesAlternateSidesAndKickAfterTheRightKickSpins()
+        public void SwitchingHandsAndFeetStartsTheOtherSequenceAtOneAndFeetNeverStartTheAbility()
         {
-            var script = new ReplayScript();
-            var expected = Series(script, "AKK");
-            var records = Play(Duel(new float3(0.9f, 0f, 0f)), script, 120);
-            Assert.That(expected.Select(e => e.kind), Is.EqualTo(new[] { CombatAttackKind.PunchLeft, CombatAttackKind.KickRight, CombatAttackKind.KickSpin }));
-            Assert.That(Strikes(records, H), Is.EqualTo(expected));
-
-            script = new ReplayScript();
-            expected = Series(script, "KAA");
-            records = Play(Duel(new float3(0.9f, 0f, 0f)), script, 120);
-            Assert.That(expected.Select(e => e.kind), Is.EqualTo(new[] { CombatAttackKind.KickLeft, CombatAttackKind.PunchRight, CombatAttackKind.PunchLeft }));
-            Assert.That(Strikes(records, H), Is.EqualTo(expected));
+            var cases = new (string buttons, CombatAttackKind[] kinds)[]
+            {
+                ("AKK", new[] { CombatAttackKind.Hand1, CombatAttackKind.Foot1, CombatAttackKind.Foot1 }),
+                ("KAA", new[] { CombatAttackKind.Foot1, CombatAttackKind.Hand1, CombatAttackKind.Hand1 }),
+                ("AAAKA", new[] { CombatAttackKind.Hand1, CombatAttackKind.Hand1, CombatAttackKind.Hand2, CombatAttackKind.Foot1, CombatAttackKind.Hand1 }),
+                ("KKKKKK", new[] { CombatAttackKind.Foot1, CombatAttackKind.Foot1, CombatAttackKind.Foot2, CombatAttackKind.Foot1, CombatAttackKind.Foot2, CombatAttackKind.Foot1 }),
+            };
+            foreach (var (buttons, kinds) in cases)
+            {
+                var script = new ReplayScript();
+                var expected = Series(script, buttons);
+                var records = Play(Duel(new float3(0.9f, 0f, 0f)), script, 260);
+                Assert.That(expected.Select(e => e.kind), Is.EqualTo(kinds), buttons);
+                Assert.That(Strikes(records, H), Is.EqualTo(expected), buttons);
+            }
         }
 
         [Test]
         public void ForbiddenTransitionsNeverSkipRecovery()
         {
             // A windup press is dropped; a press after the finisher's / full series' chain point is dropped at its end.
-            var punch = Def(CombatAttackKind.PunchLeft);
+            var punch = Def(CombatAttackKind.Hand1);
             var script = new ReplayScript();
             Press(script, 1, A);
             Press(script, 5, A);
             var records = Play(Duel(new float3(0.9f, 0f, 0f)), script, 80);
-            Assert.That(Strikes(records, H), Is.EqualTo(new[] { (1u, CombatAttackKind.PunchLeft) }));
+            Assert.That(Strikes(records, H), Is.EqualTo(new[] { (1u, CombatAttackKind.Hand1) }));
             Assert.That(Rel(records.Last(), H(records.Last()).Attack.EndTick), Is.EqualTo(1 + punch.TotalTicks));
 
+            // The physical ability plays its whole Recovery and drops any press made during it.
             script = new ReplayScript();
-            var expected = Series(script, "KKK");
-            var spin = expected.Last();
-            Press(script, spin.start + Def(CombatAttackKind.KickSpin).WindupTicks + 1, K);
-            Press(script, spin.start + (uint)Def(CombatAttackKind.KickSpin).TotalTicks - 1, A);
+            var expected = Series(script, "O");
+            var ability = Def(CombatAttackKind.PhysicalAbility);
+            Press(script, 1u + ability.WindupTicks + 1, K);
+            Press(script, (uint)ability.TotalTicks, A);
             records = Play(Duel(new float3(0.9f, 0f, 0f)), script, 160);
-            Assert.That(Strikes(records, H), Is.EqualTo(expected), "The spin finisher plays its whole recovery and drops its buffer.");
+            Assert.That(Strikes(records, H), Is.EqualTo(expected), "The ability is a finisher: full Recovery, buffer dropped.");
+            Assert.That(Rel(records.Last(), H(records.Last()).Attack.EndTick), Is.EqualTo(1 + ability.TotalTicks));
 
+            // O during a melee strike is neither buffered nor an interrupt, and it does not evict a buffered series press.
             script = new ReplayScript();
-            expected = Series(script, "AAAA");
-            var fourth = expected.Last();
-            Press(script, fourth.start + Def(fourth.kind).WindupTicks + 2, A);
+            Press(script, 1, A);
+            Press(script, 1u + punch.WindupTicks, A);
+            Press(script, 1u + punch.WindupTicks + 1, O);
+            Press(script, 1u + punch.WindupTicks + punch.ActiveTicks + punch.ChainDelayTicks, O);
+            records = Play(Duel(new float3(0.9f, 0f, 0f)), script, 120);
+            var chain = 1u + (uint)(punch.WindupTicks + punch.ActiveTicks + punch.ChainDelayTicks);
+            Assert.That(Strikes(records, H), Is.EqualTo(new[] { (1u, CombatAttackKind.Hand1), (chain, CombatAttackKind.Hand1) }));
+
+            // The end of Recovery without a continuation resets the series: the next press starts at 1 again.
+            script = new ReplayScript();
+            expected = Series(script, "AA");
+            var second = expected.Last();
+            // End is still a chain tick (a press on it continues); the first tick after it is free with the series reset.
+            var free = second.start + (uint)Def(second.kind).TotalTicks + 1;
+            Press(script, free, A);
             records = Play(Duel(new float3(0.9f, 0f, 0f)), script, 160);
-            Assert.That(Strikes(records, H), Is.EqualTo(expected), "The fourth strike ends the series.");
-            Assert.That(records.Count(r => H(r).Attack.IsAttacking), Is.EqualTo(fourth.start - 1 + Def(fourth.kind).TotalTicks));
+            Assert.That(Strikes(records, H), Is.EqualTo(expected.Concat(new[] { (free, CombatAttackKind.Hand1) })),
+                "Hand1 again (not the Hand2 a continuation would have played); no hidden timeout.");
+
+            // Dropped presses never advance the sequence: a windup press and a jump-tick press leave the next strike at Hand1.
+            script = new ReplayScript().Player(1, 1, ReplayRole.Human, pressed: A | CommandButtons.Jump)
+                .Player(70, 70, ReplayRole.Human, pressed: A).Player(74, 74, ReplayRole.Human, pressed: A);
+            records = Play(Duel(new float3(0.9f, 0f, 0f)), script, 120);
+            Assert.That(Strikes(records, H), Is.EqualTo(new[] { (70u, CombatAttackKind.Hand1) }));
         }
 
         [Test]
         public void ABufferedPressLateInRecoveryChainsOnItsOwnTickAndHoldNeverRepeats()
         {
-            var punch = Def(CombatAttackKind.PunchLeft);
+            var punch = Def(CombatAttackKind.Hand1);
             var late = 1u + punch.WindupTicks + punch.ActiveTicks + punch.ChainDelayTicks + 3;
             var script = new ReplayScript();
             Press(script, 1, A);
             Press(script, late, A);
             Assert.That(Strikes(Play(Duel(new float3(0.9f, 0f, 0f)), script, 80), H),
-                Is.EqualTo(new[] { (1u, CombatAttackKind.PunchLeft), (late, CombatAttackKind.PunchRight) }));
+                Is.EqualTo(new[] { (1u, CombatAttackKind.Hand1), (late, CombatAttackKind.Hand1) }), "The second strike of a series is Hand1 again.");
 
             script = new ReplayScript().Player(1, 1, ReplayRole.Human, held: A, pressed: A);
             for (uint r = 2; r <= 120; r++)
                 script.Player(r, r, ReplayRole.Human, held: A);
             var records = Play(Duel(new float3(0.9f, 0f, 0f)), script, 120);
-            Assert.That(Strikes(records, H), Is.EqualTo(new[] { (1u, CombatAttackKind.PunchLeft) }), "Holding the button is one strike, no queue.");
+            Assert.That(Strikes(records, H), Is.EqualTo(new[] { (1u, CombatAttackKind.Hand1) }), "Holding the button is one strike, no queue.");
             Assert.That(Ai(records.Last()).Health.Current, Is.EqualTo(CombatAttackTuning.MaxHealth - punch.Damage));
         }
 
@@ -327,7 +365,7 @@ namespace MLFLegends.Tests.EditMode
                 }
             w.Step(40);
             var last = w.Records.Last();
-            var damaged = CombatAttackTuning.MaxHealth - Def(CombatAttackKind.PunchLeft).Damage;
+            var damaged = CombatAttackTuning.MaxHealth - Def(CombatAttackKind.Hand1).Damage;
             Assert.That(last.Combatants.Select(c => (c.Id, c.Health.Current)), Is.EquivalentTo(new[]
             {
                 (first, CombatAttackTuning.MaxHealth), (first + 1, damaged), (first + 2, CombatAttackTuning.MaxHealth),
@@ -355,30 +393,21 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(Ai(records.Last()).Health.Current, Is.EqualTo(H(records.Last()).Health.Current), "Symmetric damage.");
             Assert.That(H(records.Last()).Health.Current, Is.LessThan(CombatAttackTuning.MaxHealth));
 
-            // Exact intentions must survive the SAME queue and buffer for either source, without alternation.
-            var exact = new[] { CommandButtons.PunchLeft, CommandButtons.PunchRight, CommandButtons.KickLeft,
-                CommandButtons.KickRight, CommandButtons.KickSpin };
-            var kinds = new[] { CombatAttackKind.PunchLeft, CombatAttackKind.PunchRight, CombatAttackKind.KickLeft,
-                CombatAttackKind.KickRight, CombatAttackKind.KickSpin };
-            for (var i = 0; i < exact.Length; i++)
-            {
-                var button = exact[i];
-                var kind = kinds[i];
-                var d = Def(kind);
-                var active = 1u + d.WindupTicks;
-                var chain = active + d.ActiveTicks + d.ChainDelayTicks;
-                script = new ReplayScript().Player(1, 1, ReplayRole.Human, pressed: button)
-                    .Ai(1, 1, ReplayRole.Ai, pressed: button)
-                    .Player(active, active, ReplayRole.Human, pressed: button)
-                    .Ai(active, active, ReplayRole.Ai, pressed: button);
-                records = Play(Duel(new float3(0.9f, 0f, 0f)), script, 140);
-                var expected = kind == CombatAttackKind.KickSpin ? new[] { (1u, kind) } : new[] { (1u, kind), (chain, kind) };
-                Assert.That(Strikes(records, H), Is.EqualTo(expected), "Exact side/spin, including the buffered follow-up.");
-                Assert.That(Strikes(records, Ai), Is.EqualTo(expected), "AI preserves the same exact intention.");
-            }
+            // The ability and long series use the same queue/rules for either source.
+            script = new ReplayScript();
+            human = Series(script, "O");
+            ai = Series(script, "O", CommandSource.AI, ReplayRole.Ai);
+            records = Play(Duel(new float3(0.9f, 0f, 0f)), script, 80);
+            Assert.That(Strikes(records, H), Is.EqualTo(human));
+            Assert.That(Strikes(records, Ai), Is.EqualTo(ai));
 
-            // Every nonempty simultaneous strike mask uses the same deterministic priority, independently of callbacks.
-            var priority = exact.Concat(new[] { A, K }).ToArray();
+            // A retired exact-limb bit (pre-#69 intention) is rejected by the processor, never remapped to a strike.
+            script = new ReplayScript().Player(1, 1, ReplayRole.Human, pressed: (CommandButtons)(1 << 4));
+            records = Play(Duel(new float3(0.9f, 0f, 0f)), script, 30);
+            Assert.That(records.All(r => !H(r).Attack.IsAttacking), Is.True);
+
+            // Every nonempty simultaneous strike mask uses the same deterministic priority U → I → O, independently of callbacks.
+            var priority = new[] { A, K, O };
             for (var mask = 1; mask < 1 << priority.Length; mask++)
             {
                 var pressed = CommandButtons.None;
@@ -397,9 +426,9 @@ namespace MLFLegends.Tests.EditMode
             for (uint r = 21; r <= 150; r++)
             {
                 script.Player(r, r, ReplayRole.Human, moveX: (sbyte)(r % 40 < 20 ? 1 : -1),
-                    pressed: r % 13 == 0 ? A : r % 17 == 0 ? K : r % 47 == 0 ? CommandButtons.Jump : CommandButtons.None);
+                    pressed: r % 13 == 0 ? A : r % 17 == 0 ? K : r % 47 == 0 ? CommandButtons.Jump : r % 29 == 0 ? O : CommandButtons.None);
                 script.Ai(r, r, ReplayRole.Ai, moveX: (sbyte)(r % 30 < 15 ? -1 : 1), moveZ: (sbyte)(r % 7 - 3 > 0 ? 1 : 0),
-                    pressed: r % 11 == 0 ? K : r % 19 == 0 ? A : CommandButtons.None);
+                    pressed: r % 11 == 0 ? K : r % 19 == 0 ? A : r % 31 == 0 ? O | A : CommandButtons.None);
             }
 
             return script;
@@ -426,7 +455,7 @@ namespace MLFLegends.Tests.EditMode
         public void PausedFramesFreezeStrikesAndRestartDropsThemWithTheirBuffer()
         {
             using var w = new ReplayWorld("strike lifecycle");
-            var punch = Def(CombatAttackKind.PunchLeft);
+            var punch = Def(CombatAttackKind.Hand1);
             // r1 strike; a buffered press at the first Active tick would chain at r(1+W+A+chain).
             w.Script = new ReplayScript().Player(1, 1, ReplayRole.Human, pressed: A).Player(1u + punch.WindupTicks, 1u + punch.WindupTicks, ReplayRole.Human, pressed: A);
             w.Request(BattleRequest.Start(Duel(new float3(0.9f, 0f, 0f))));
@@ -453,7 +482,7 @@ namespace MLFLegends.Tests.EditMode
         [Test]
         public void DespawnedTargetsAndAttackersLeaveNoPendingHits()
         {
-            var punch = Def(CombatAttackKind.PunchLeft);
+            var punch = Def(CombatAttackKind.Hand1);
             using (var w = new ReplayWorld("despawn target"))
             {
                 w.Script = new ReplayScript().Player(1, 1, ReplayRole.Human, pressed: A);
@@ -480,7 +509,7 @@ namespace MLFLegends.Tests.EditMode
         [Test]
         public void AnOutOfCombatTargetIsNeverHitAndAnOutOfCombatAttackerNeverStrikes()
         {
-            var punch = Def(CombatAttackKind.PunchLeft);
+            var punch = Def(CombatAttackKind.Hand1);
             using (var w = new ReplayWorld("disabled target"))
             {
                 w.Script = new ReplayScript().Player(1, 1, ReplayRole.Human, pressed: A);

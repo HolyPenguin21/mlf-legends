@@ -15,25 +15,7 @@
                     "initialStateCheck": true
                 },
                 {
-                    "name": "PunchLeft",
-                    "type": "Button",
-                    "id": "3148d258-2db6-4650-aec7-acb4573943ab",
-                    "expectedControlType": "Button",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
-                    "name": "PunchRight",
-                    "type": "Button",
-                    "id": "89b519a6-0bce-4a63-9a33-a21063957265",
-                    "expectedControlType": "Button",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
-                    "name": "Attack",
+                    "name": "HandSeries",
                     "type": "Button",
                     "id": "6c2ab1b8-8984-453a-af3d-a3c78ae1679a",
                     "expectedControlType": "Button",
@@ -42,36 +24,18 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "KickLeft",
-                    "type": "Button",
-                    "id": "798453e2-0b8e-4d52-9179-2b097d7a4958",
-                    "expectedControlType": "Button",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
-                    "name": "KickRight",
-                    "type": "Button",
-                    "id": "b5e9fa00-defd-436d-adc2-aa9fc30ec1b0",
-                    "expectedControlType": "Button",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
-                    "name": "KickSpin",
-                    "type": "Button",
-                    "id": "ee77a928-3ca7-403c-ab4b-19e86b4e5155",
-                    "expectedControlType": "Button",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
-                    "name": "Kick",
+                    "name": "FootSeries",
                     "type": "Button",
                     "id": "611e7f28-3d40-4984-9ccb-964da2f91391",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "PhysicalAbility",
+                    "type": "Button",
+                    "id": "ee77a928-3ca7-403c-ab4b-19e86b4e5155",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
@@ -178,78 +142,34 @@
                 },
                 {
                     "name": "",
-                    "id": "9fe01eae-8fe9-4c4c-b213-76d5af596b11",
-                    "path": "<Keyboard>/y",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "Keyboard&Mouse",
-                    "action": "PunchLeft",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "ae1f6722-2ef8-4592-8a62-de99cecbf10f",
+                    "id": "2c038448-5f78-4723-bda4-cb1ca14b5a76",
                     "path": "<Keyboard>/u",
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard&Mouse",
-                    "action": "PunchRight",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "2c038448-5f78-4723-bda4-cb1ca14b5a76",
-                    "path": "<Keyboard>/i",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "Keyboard&Mouse",
-                    "action": "Attack",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "ac885212-2964-456d-9512-39553988964e",
-                    "path": "<Keyboard>/h",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "Keyboard&Mouse",
-                    "action": "KickLeft",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "28ac1925-7b6d-4e91-b898-f92235b68fc7",
-                    "path": "<Keyboard>/j",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "Keyboard&Mouse",
-                    "action": "KickRight",
+                    "action": "HandSeries",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
                 {
                     "name": "",
                     "id": "9e88b5d3-67ec-4754-8042-4be829343db5",
-                    "path": "<Keyboard>/k",
+                    "path": "<Keyboard>/o",
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard&Mouse",
-                    "action": "KickSpin",
+                    "action": "PhysicalAbility",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
                 {
                     "name": "",
                     "id": "98a70171-6de8-49d9-97bc-f3f6d43e385d",
-                    "path": "<Keyboard>/l",
+                    "path": "<Keyboard>/i",
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard&Mouse",
-                    "action": "Kick",
+                    "action": "FootSeries",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

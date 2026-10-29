@@ -1,4 +1,14 @@
-## Current #66 — Stage 04.4–04.5 impulses, indexed Hit, 2/100/400 (2026-10-29)
+## Current #69 — Stage 05.1 (2026-10-29)
+
+Only this section is current; every older "History" section keeps its own SHA/scope and is superseded where it disagrees (old key layouts, exact-limb intentions, velocity = displacement/dt, series limit 4, stage states).
+
+Results with exact SHA, raw XML/logs and TSV: [Evidence/69](Evidence/69/README.md). Summary: reproduced the reported ordered PlayMode
+FAIL on main (56/66), found its cause (test World without the arena owner + unrun `finally` → cascade), fixed it and the
+two real faults it hid (stale landing-lock tests; arena authoring reporting another lease's diagnostics). Full EditMode
+(non-Performance) and full ordered PlayMode pass on the tested SHA; the 2/100/400 benchmark ran with Burst on (Burst-off
+excluded by owner decision, #66). Owner manual checklist: NOT RUN ([STAGE05_1_CHARACTER_SERIES.md](STAGE05_1_CHARACTER_SERIES.md) §5).
+
+## History — #66 — Stage 04.4–04.5 impulses, indexed Hit, 2/100/400 (2026-10-29)
 
 Fresh main base `cf2b5bcf57c2b81b635074a0322a85ecf50879b3` (PR #65); branch `feature/66-impulses-indexed-hit`, one PR.
 [Contract: impulse input/epoch, integration, mass/contacts, rollback, Hit migration, checks, manual checklist](STAGE04_IMPULSES_HIT.md);
@@ -18,7 +28,7 @@ epoch and final snapshot bounds. SOURCE / independent PYTHON MODEL PASS; C#/Unit
 This is implementer review, not independent manager acceptance. The owner subsequently explicitly authorized commit/push/merge, superseding the earlier private-code egress block;
 #62/#63 are already merged. Stage 04 stays IN PROGRESS.
 
-## Current #64 — Stage 04.3 body contacts (2026-10-29)
+## History — #64 — Stage 04.3 body contacts (2026-10-29)
 
 PR #62 and #63 were merged on the owner's explicit command; integrated main base is
 `adf98cd1c9ca4df2b2d2e96aa65d3a7e17eb3a5a`. Branch `feature/64-body-contacts`; the owner subsequently explicitly authorized commit, push and merge of #64.
@@ -37,7 +47,7 @@ contact-tick drift, steep-surface fall, missing-arena restart bypass, cached-que
 bare-fixture compatibility. These are source/model counterexamples, **not executed Unity FAIL**. The final updated
 source report records its own exact tested SHA/tree. C# suites/Unity/Entities/Burst/GPU/performance remain **NOT RUN**.
 
-## Current #61 — Stage 04.2 static arena (2026-10-29)
+## History — #61 — Stage 04.2 static arena (2026-10-29)
 
 Dependent branch `feature/61-static-arena` starts from corrected #60 PR #62 head
 `e26e668435b9cb55bcf5bced163710b6c2b61230`; main at dispatch is `180b4121792e68931f27c109b78cd0d24c21a4d4`.
@@ -51,7 +61,7 @@ planar distance; the old diagonal one-axis distance expectation is corrected wit
 **Unity/C# compilation/suites/Burst/GPU/runtime performance NOT RUN**; source/model results are separate and do not
 certify runtime acceptance. Historical dated evidence below applies only to its recorded SHA/scope.
 
-## Current #58 — Stage 04.1 (2026-10-28)
+## History — #58 — Stage 04.1 (2026-10-28)
 
 **Stage 03 OWNER-ACCEPTED**, by the owner's direct message recorded in #58: «Stage 03 закрыли. Идем дальше».
 Exact owner manual-test SHA/protocol was not supplied; this is not a blanket Unity/GPU PASS. **Stage 04 IN PROGRESS**;
@@ -99,7 +109,7 @@ repeated per-query membership cost via atomic batches, and the missing Body entr
 archetype guard; adds boundary/failure/ownership regressions and benchmark modes.
 No 04.1 CPU/memory measurements or runtime PASS claimed. Historical Stage 03 logs are not 04.1 evidence.
 
-## Current #56 validation boundary — pivot/Inspector correction (2026-10-28)
+## History — #56 validation boundary — pivot/Inspector correction (2026-10-28)
 
 Fresh base `311c3d7d06b5320b9df701ae6f21f519d07c6af1`; [implementation, exact source/model checks and owner checklist](STAGE03_PIVOT_CORRECTION.md).
 PASS (source/model only): 84 C# syntax trees, 50 stable Sprite bindings under 100 enumeration shuffles, 43,200 world-bound
@@ -108,7 +118,7 @@ FAIL. This is not Unity execution. Compile/import/EditMode/PlayMode/GPU/build/Do
 acceptance are NOT RUN (Unity and external PNG absent). Owner slowdown cause proportions remain unmeasured.
 Stage 03 is unaccepted; one PR, no merge and no Stage 04.1 work. Older PASS records do not certify this delivery.
 
-## Current #52 validation boundary (2026-10-28)
+## History — #52 validation boundary (2026-10-28)
 
 Base `1c96c6f`; [control implementation and checks](STAGE03_CONTROLS.md). Existing fixtures are updated for the final
 keyboard layout, absent gamepad combat aliases, widened flag mask and exact/general buffer semantics. No new test cases.

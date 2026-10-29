@@ -1,3 +1,16 @@
+## Current #69 — strike slots and per-character combat data
+
+The five strikes are semantic slots — **Hand1, Hand2, Foot1, Foot2, PhysicalAbility** (stable values 1..5). Each
+character entry has a **Combat** block next to its `Animations`: body Radius/Height/Mass and, per slot, the **Clip Id** it
+plays plus Damage / Reach Min..Max / Depth Half Width / Height Tolerance (world units, validated, never clamped).
+Default (migrated) clips: punch_left, punch_right, kick_left, kick_right, kick_spin. The required clips of a character
+are idle_combat, run, jump and its slot clips; a slot clip needs Preparation/Active/Recovery here exactly like before.
+**Timing stays in this file's clip settings** (the only Active source); the Combat block holds no times. The renderer,
+the config Inspector and the bootstrap use the same slot → clip mapping; the bootstrap publishes timing + values + body
+as one table (strikes freeze it at start, fighters get the body at spawn). Migration of pre-#69 data is versioned and
+idempotent and never touches T, curves, phases or Sprite pivots. Contract and Inspector table:
+[STAGE05_1_CHARACTER_SERIES.md](../../../../../../Docs/STAGE05_1_CHARACTER_SERIES.md).
+
 # Current #52 control integration
 
 [Current keyboard/intent contract](../../../../../../Docs/STAGE03_CONTROLS.md). Exact hand/foot/spin and general-series

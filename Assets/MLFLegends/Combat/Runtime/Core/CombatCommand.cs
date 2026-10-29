@@ -3,23 +3,28 @@ using System;
 namespace MLFLegends.Combat
 {
     /// <summary>Logical combat buttons. Bindings to physical keys belong to the input layer.</summary>
+    /// <remarks>
+    /// #69 migration: <see cref="HandSeries"/>/<see cref="FootSeries"/> keep the values of the former general Attack/Kick;
+    /// the exact-limb intentions PunchLeft/PunchRight/KickLeft/KickRight/KickSpin (bits 4..8) are retired — the processor
+    /// rejects them as InvalidValue, so a pre-#69 replay that used them is NOT compatible and their bits are never reused.
+    /// </remarks>
     [Flags]
     public enum CommandButtons : ushort
     {
         None = 0,
-        Attack = 1 << 0,
+
+        /// <summary>Hand series (U): Hand1, Hand1, Hand2, Hand1, Hand2, …</summary>
+        HandSeries = 1 << 0,
         Jump = 1 << 1,
+
+        /// <summary>Reserved for the Stage 06 block (future K); unbound and ignored by the simulation.</summary>
         Guard = 1 << 2,
 
-        /// <summary>Foot strike; <see cref="Attack"/> is the hand strike (Stage 05.1).</summary>
-        Kick = 1 << 3,
+        /// <summary>Foot series (I): Foot1, Foot1, Foot2, Foot1, Foot2, …</summary>
+        FootSeries = 1 << 3,
 
-        // Exact strike intentions. Old values above remain stable; no physical keys belong in the simulation.
-        PunchLeft = 1 << 4,
-        PunchRight = 1 << 5,
-        KickLeft = 1 << 6,
-        KickRight = 1 << 7,
-        KickSpin = 1 << 8,
+        /// <summary>Stand-alone physical ability (O); never part of a series, never buffered.</summary>
+        PhysicalAbility = 1 << 9,
     }
 
     /// <summary>

@@ -12,7 +12,7 @@ namespace MLFLegends.Tests.EditMode
     // through the real runtime chain in an isolated replay World. Expectations come from the published windows only.
     public class CombatStrikeScheduleTests
     {
-        const CommandButtons A = CommandButtons.Attack;
+        const CommandButtons A = CommandButtons.HandSeries;
 
         static BattleSetup Duel(float aiX) => new BattleSetup
         {
@@ -28,7 +28,7 @@ namespace MLFLegends.Tests.EditMode
         static CombatStrikeSchedule WithPunch(int windup, int active, int recovery)
         {
             var schedule = CombatStrikeSchedule.Default;
-            schedule.PunchLeft = CombatStrikeTiming.FromTicks(windup, active, recovery, CombatAttackTuning.Get(CombatAttackKind.PunchLeft).ChainDelayTicks);
+            schedule.Hand1 = CombatStrikeTiming.FromTicks(windup, active, recovery, CombatAttackTuning.Get(CombatAttackKind.Hand1).ChainDelayTicks);
             return schedule;
         }
 
@@ -45,7 +45,7 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(CombatStrikeTiming.TryFromSeconds(13 * dt, 18 * dt, 29 * dt, 4, out var exact, out var error), Is.True, error);
             Assert.That((exact.WindupTicks, exact.ActiveTicks, exact.RecoveryTicks, (int)exact.ChainPoint), Is.EqualTo((13, 5, 11, 22)),
                 "Boundaries on exact tick multiples land on those ticks despite double rounding.");
-            Assert.That(exact.Equals(CombatAttackTuning.Get(CombatAttackKind.PunchLeft).DefaultTiming), Is.True);
+            Assert.That(exact.Equals(CombatAttackTuning.Get(CombatAttackKind.Hand1).DefaultTiming), Is.True);
 
             // Active [1.2, 1.26) ticks lies inside tick 1: that tick is Active, Preparation keeps tick 0.
             Assert.That(CombatStrikeTiming.TryFromSeconds(1.2 * dt, 1.26 * dt, 3 * dt, 4, out var tiny, out error), Is.True, error);
@@ -75,17 +75,17 @@ namespace MLFLegends.Tests.EditMode
             using var w = new ReplayWorld("publish");
             Assert.That(Table(w).Revision, Is.Zero);
             Assert.That(Table(w).IsValid, Is.True);
-            Assert.That(Table(w).PunchLeft.Equals(CombatAttackTuning.Get(CombatAttackKind.PunchLeft).DefaultTiming), Is.True);
+            Assert.That(Table(w).Hand1.Equals(CombatAttackTuning.Get(CombatAttackKind.Hand1).DefaultTiming), Is.True);
 
             var broken = CombatStrikeSchedule.Default;
-            broken.KickSpin = CombatStrikeTiming.FromTicks(5, 0, 5, CombatAttackTuning.NoChain);
+            broken.PhysicalAbility = CombatStrikeTiming.FromTicks(5, 0, 5, CombatAttackTuning.NoChain);
             Assert.Throws<ArgumentException>(() => CombatStrikeSchedule.Publish(w.Manager, broken), "Empty Active is rejected.");
             broken = CombatStrikeSchedule.Default;
-            broken.KickSpin = CombatStrikeTiming.FromTicks(5, 1, 5, 2);
+            broken.PhysicalAbility = CombatStrikeTiming.FromTicks(5, 1, 5, 2);
             Assert.Throws<ArgumentException>(() => CombatStrikeSchedule.Publish(w.Manager, broken), "The finisher never chains.");
             Assert.That(Table(w).Revision, Is.Zero, "A rejected publish changes nothing.");
 
-            var first = CombatAttackTuning.Get(CombatAttackKind.PunchLeft).DefaultTiming;
+            var first = CombatAttackTuning.Get(CombatAttackKind.Hand1).DefaultTiming;
             w.Script = new ReplayScript().Player(1, 1, ReplayRole.Human, pressed: A).Player(40, 40, ReplayRole.Human, pressed: A);
             w.Request(BattleRequest.Start(Duel(5f)));
             w.Step(5);
@@ -96,8 +96,8 @@ namespace MLFLegends.Tests.EditMode
                 "The strike started before the publish keeps its windows to the end, however the table changes mid-strike.");
             Assert.That(H(records[first.End]).Attack.IsAttacking, Is.False, "…and ends exactly when its own timing ends.");
             var second = H(records[39]).Attack;
-            Assert.That(second.Kind, Is.EqualTo(CombatAttackKind.PunchLeft));
-            Assert.That(second.Timing.Equals(WithPunch(3, 2, 4).PunchLeft), Is.True, "The next strike copies the new table.");
+            Assert.That(second.Kind, Is.EqualTo(CombatAttackKind.Hand1));
+            Assert.That(second.Timing.Equals(WithPunch(3, 2, 4).Hand1), Is.True, "The next strike copies the new table.");
             Assert.That(H(records[39 + 9]).Attack.IsAttacking, Is.False, "3 + 2 + 4 ticks.");
         }
 
@@ -113,8 +113,8 @@ namespace MLFLegends.Tests.EditMode
             w.Request(BattleRequest.Start(Duel(0.5f)));
             w.Step(windup + active + recovery + 5);
             var records = w.BattleRecords(1);
-            var timing = WithPunch(windup, active, recovery).PunchLeft;
-            var damage = CombatAttackTuning.Get(CombatAttackKind.PunchLeft).Damage;
+            var timing = WithPunch(windup, active, recovery).Hand1;
+            var damage = CombatAttackTuning.Get(CombatAttackKind.Hand1).Damage;
             for (var e = 0; e < records.Length; e++)
             {
                 var phase = timing.PhaseAt((uint)e);
@@ -148,7 +148,7 @@ namespace MLFLegends.Tests.EditMode
                 var preparation = Math.Min(e + 1, 10);
                 var slowedSteps = preparation * 0.5f + (e + 1 - preparation) * 0.25f;
                 Assert.That(c.Position.z, Is.EqualTo(slowedSteps * step).Within(1e-4f), $"tick {e}: phase movement multiplier");
-                Assert.That(c.Attack.Kind, Is.EqualTo(CombatAttackKind.PunchLeft), $"tick {e}: moving never cancels the strike");
+                Assert.That(c.Attack.Kind, Is.EqualTo(CombatAttackKind.Hand1), $"tick {e}: moving never cancels the strike");
                 Assert.That(c.Motion.Grounded, Is.True, "No takeoff during the strike.");
                 Assert.That(c.Facing, Is.EqualTo(FacingDirection.Right), "Facing stays locked after the first tick (backpedal, no turn).");
                 var frame = set.FrameFor(records[e].Tick, records[e].BattleStartTick, c.Motion, c.Attack);
@@ -171,9 +171,9 @@ namespace MLFLegends.Tests.EditMode
             w.Request(BattleRequest.Start(Duel(5f)));
             w.Step(12);
             var records = w.BattleRecords(1);
-            Assert.That(H(records[6]).Attack.Kind, Is.EqualTo(CombatAttackKind.PunchRight), "Follow-up on the strike's End tick (r7).");
+            Assert.That(H(records[6]).Attack.Kind, Is.EqualTo(CombatAttackKind.Hand1), "Follow-up (second of the series: Hand1) on the strike's End tick (r7).");
             Assert.That(H(records[6]).Attack.StartTick - records[6].BattleStartTick, Is.EqualTo(7u));
-            Assert.That(H(records[6]).Attack.SeriesLength, Is.EqualTo(2));
+            Assert.That(H(records[6]).Attack.SeriesStep, Is.EqualTo(1));
         }
 
         [TestCase(CombatAttackPhase.Windup)]
@@ -182,9 +182,9 @@ namespace MLFLegends.Tests.EditMode
         public void PauseResumeRestartAndDespawnInEveryPhase(CombatAttackPhase phase)
         {
             var schedule = WithPunch(4, 4, 4);
-            var timing = schedule.PunchLeft;
+            var timing = schedule.Hand1;
             var steps = phase == CombatAttackPhase.Windup ? 2 : phase == CombatAttackPhase.Active ? 6 : 10; // strike ticks 1 / 5 / 9
-            var damage = CombatAttackTuning.Get(CombatAttackKind.PunchLeft).Damage;
+            var damage = CombatAttackTuning.Get(CombatAttackKind.Hand1).Damage;
             var hitBefore = phase != CombatAttackPhase.Windup;
 
             using (var w = new ReplayWorld("pause " + phase))

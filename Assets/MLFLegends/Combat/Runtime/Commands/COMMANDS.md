@@ -1,4 +1,11 @@
-## Current #52 flag validation
+## Current #69 flag validation
+
+The processor validates ushort CommandButtons with the mask HandSeries(1) | Jump(2) | Guard(4) | FootSeries(8) |
+PhysicalAbility(512). The retired #52 exact-limb bits 4..8 (16..256) and every other undefined bit are InvalidValue for
+Player and AI alike; nothing is remapped. The processor still chooses no strike: `CombatActionSystem` applies U → I → O.
+Queue bounds, first-wins policy and lifecycle unchanged. Contract: [STAGE05_1_CHARACTER_SERIES.md](../../../../../Docs/STAGE05_1_CHARACTER_SERIES.md).
+
+## History — #52 flag validation
 
 The existing processor validates ushort CommandButtons with mask 0x1ff (old Attack/Jump/Guard/Kick values + five exact
 strikes). Undefined bits 0x200 and above remain InvalidValue, for Player and AI alike. Held/Pressed and pending values

@@ -30,11 +30,12 @@ namespace MLFLegends.Combat
         // sin(22.5°): an axis counts when it is at least this fraction of the stick's magnitude, i.e. 8 equal sectors.
         const float k_AxisFraction = 0.38268343f;
 
-        static readonly string[] s_ButtonNames = { "PunchLeft", "PunchRight", "KickLeft", "KickRight", "KickSpin", "Attack", "Kick", "Jump" };
+        // #69 layout: U hand series, I foot series, O physical ability, Space jump. K (Stage 06 block), double-tap dash and
+        // 7/8/9/0 magic slots are deliberately unbound; the old exact-limb actions were removed from the asset.
+        static readonly string[] s_ButtonNames = { "HandSeries", "FootSeries", "PhysicalAbility", "Jump" };
         static readonly CommandButtons[] s_ButtonFlags =
         {
-            CommandButtons.PunchLeft, CommandButtons.PunchRight, CommandButtons.KickLeft, CommandButtons.KickRight,
-            CommandButtons.KickSpin, CommandButtons.Attack, CommandButtons.Kick, CommandButtons.Jump,
+            CommandButtons.HandSeries, CommandButtons.FootSeries, CommandButtons.PhysicalAbility, CommandButtons.Jump,
         };
 
         readonly InputActionMap m_Map;
@@ -50,7 +51,7 @@ namespace MLFLegends.Combat
         bool m_Focused = true;
 
         /// <exception cref="ArgumentNullException"><paramref name="actions"/> is null.</exception>
-        /// <exception cref="ArgumentException">The asset has no Player map with Move, Jump, general hand/foot and all five exact strikes.</exception>
+        /// <exception cref="ArgumentException">The asset has no Player map with Move, HandSeries, FootSeries, PhysicalAbility and Jump.</exception>
         public PlayerInputCapture(InputActionAsset actions)
         {
             if (actions == null)

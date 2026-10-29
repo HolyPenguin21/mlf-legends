@@ -292,7 +292,7 @@ namespace MLFLegends.Tests.EditMode
             {
                 Down(Key.D);
                 Tap(Key.Space);
-                Down(Key.L);
+                Down(Key.I);
             });
             Frame(3);
 
@@ -302,8 +302,8 @@ namespace MLFLegends.Tests.EditMode
             {
                 var command = HumanCommand(battle[i]);
                 Assert.That(command.MoveX, Is.EqualTo(1), $"tick {i}");
-                Assert.That(command.Held, Is.EqualTo(CommandButtons.Kick), $"tick {i}: L held, Space already released");
-                Assert.That(command.Pressed, Is.EqualTo(i == 0 ? CommandButtons.Jump | CommandButtons.Kick : CommandButtons.None),
+                Assert.That(command.Held, Is.EqualTo(CommandButtons.FootSeries), $"tick {i}: I held, Space already released");
+                Assert.That(command.Pressed, Is.EqualTo(i == 0 ? CommandButtons.Jump | CommandButtons.FootSeries : CommandButtons.None),
                     $"tick {i}: presses only on the first tick after the frame (a 0-tick frame keeps them)");
             }
 
@@ -324,10 +324,10 @@ namespace MLFLegends.Tests.EditMode
             Frame(0, () =>
             {
                 Tap(Key.Space);
-                Tap(Key.I);
+                Tap(Key.U);
             });
             Frame(1);
-            Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.Jump | CommandButtons.Attack));
+            Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.Jump | CommandButtons.HandSeries));
             Frame(1);
             Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.None), "Consumed by one tick.");
 
@@ -397,9 +397,9 @@ namespace MLFLegends.Tests.EditMode
             var command = HumanCommand(Last);
             Assert.That(command.Held, Is.EqualTo(CommandButtons.None), "Gamepad combat aliases removed; movement stick remains tested separately.");
             Assert.That(command.Pressed, Is.EqualTo(CommandButtons.None));
-            var keys = new[] { Key.Y, Key.U, Key.I, Key.H, Key.J, Key.K, Key.L, Key.Space };
-            var flags = new[] { CommandButtons.PunchLeft, CommandButtons.PunchRight, CommandButtons.Attack,
-                CommandButtons.KickLeft, CommandButtons.KickRight, CommandButtons.KickSpin, CommandButtons.Kick, CommandButtons.Jump };
+            // #69 layout: U hand series, I foot series, O physical ability, Space jump.
+            var keys = new[] { Key.U, Key.I, Key.O, Key.Space };
+            var flags = new[] { CommandButtons.HandSeries, CommandButtons.FootSeries, CommandButtons.PhysicalAbility, CommandButtons.Jump };
             for (var i = 0; i < keys.Length; i++)
             {
                 Frame(1, () => Tap(keys[i]));
@@ -408,6 +408,16 @@ namespace MLFLegends.Tests.EditMode
             }
             Frame(1, () => { Tap(Key.Enter); Tap(Key.C); Tap(Key.LeftShift); });
             Assert.That(HumanCommand(Last).IsNone, Is.True, "Old template/Enter combat aliases are gone.");
+            // Simultaneous U/I/O in one frame reach the tick together; the simulation picks U → I → O (CombatAttackTuning.StrikeButton).
+            Frame(1, () => { Tap(Key.O); Tap(Key.I); Tap(Key.U); });
+            Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.HandSeries | CommandButtons.FootSeries | CommandButtons.PhysicalAbility));
+            Assert.That(CombatAttackTuning.StrikeButton(HumanCommand(Last).Pressed), Is.EqualTo(CommandButtons.HandSeries));
+            // The old exact-limb keys are not extra gameplay buttons; K (future block), 7/8/9/0 (future magic) stay unbound.
+            foreach (var unbound in new[] { Key.Y, Key.H, Key.J, Key.K, Key.L, Key.Digit7, Key.Digit8, Key.Digit9, Key.Digit0 })
+            {
+                Frame(1, () => Tap(unbound));
+                Assert.That(HumanCommand(Last).IsNone, Is.True, $"{unbound} is unbound");
+            }
 
         }
 
@@ -424,11 +434,11 @@ namespace MLFLegends.Tests.EditMode
             Frame(4, () =>
             {
                 Down(Key.D);
-                Tap(Key.I); // pressed in battle 1's frame, consumed by its tick 2
+                Tap(Key.U); // pressed in battle 1's frame, consumed by its tick 2
             });
             var first = BattleTicks(1);
             Assert.That(first.Length, Is.EqualTo(2), "Battle 1 ends after its tick 2; the Restart applies before the next catch-up tick.");
-            Assert.That(HumanCommand(first[1]).Pressed, Is.EqualTo(CommandButtons.Jump | CommandButtons.Attack));
+            Assert.That(HumanCommand(first[1]).Pressed, Is.EqualTo(CommandButtons.Jump | CommandButtons.HandSeries));
             var second = BattleTicks(2);
             Assert.That(second.Length, Is.EqualTo(3), "The remaining three catch-up ticks of the frame belong to battle 2.");
             Assert.That(second[0].HumanId, Is.Not.EqualTo(first[0].HumanId));
@@ -459,7 +469,7 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(m_Replay.Records.Skip(1).All(r => !r.Active && r.Results.Length == 0), Is.True, "Idle: nothing submitted.");
             Assert.That(m_Capture.PendingPressed, Is.EqualTo(CommandButtons.None), "Idle ticks drop presses.");
 
-            Frame(0, () => Tap(Key.I));
+            Frame(0, () => Tap(Key.U));
             m_Replay.Request(BattleRequest.Start(BattleSetup.Default));
             Frame(2);
             Assert.That(BattleTicks(2).Select(r => HumanCommand(r).Pressed), Is.All.EqualTo(CommandButtons.None),
@@ -497,7 +507,7 @@ namespace MLFLegends.Tests.EditMode
         {
             StartRig();
             Frame(1);
-            Frame(0, () => Tap(Key.I)); // a tap of the last unpaused frame, not consumed by any tick
+            Frame(0, () => Tap(Key.U)); // a tap of the last unpaused frame, not consumed by any tick
             Time.timeScale = 0f;
             Frame(0, () => Tap(Key.Space));
             Frame(0, () =>
@@ -533,7 +543,7 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(HumanCommand(Last).MoveX, Is.EqualTo(1));
             Frame(0, () => Tap(Key.Space));
             m_Capture.SetFocused(false);
-            Frame(1, () => Tap(Key.I));
+            Frame(1, () => Tap(Key.U));
             Assert.That(HumanCommand(Last).IsNone, Is.True, "Unfocused: neutral, the fighter stops on the next tick.");
             var x = Human(Last).Position.x;
             m_Capture.SetFocused(true);
@@ -568,9 +578,9 @@ namespace MLFLegends.Tests.EditMode
             Frame(1, () =>
             {
                 Down(Key.Space);
-                Down(Key.L);
+                Down(Key.I);
             });
-            Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.Jump | CommandButtons.Kick));
+            Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.Jump | CommandButtons.FootSeries));
             for (var i = 0; i < 6; i++)
                 Frame(10); // land, K and L still held
 
@@ -592,21 +602,21 @@ namespace MLFLegends.Tests.EditMode
             var ticks = BattleTicks();
             foreach (var record in ticks.Skip(ticks.Length - 3))
             {
-                Assert.That(HumanCommand(record).Held, Is.EqualTo(CommandButtons.Jump | CommandButtons.Kick), "Restored hold.");
+                Assert.That(HumanCommand(record).Held, Is.EqualTo(CommandButtons.Jump | CommandButtons.FootSeries), "Restored hold.");
                 Assert.That(HumanCommand(record).Pressed, Is.EqualTo(CommandButtons.None), "A restored hold is not a press.");
                 Assert.That(Human(record).Motion.Grounded, Is.True, "No unwanted jump.");
             }
 
-            Frame(1, () => Tap(Key.I));
-            Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.Attack), "A key not held across the cycle presses.");
+            Frame(1, () => Tap(Key.U));
+            Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.HandSeries), "A key not held across the cycle presses.");
             // Stage 05.1: J now strikes, and a running strike blocks the jump until its recovery ends.
-            for (var i = 0; i < CombatAttackTuning.Get(CombatAttackKind.PunchLeft).TotalTicks; i++)
+            for (var i = 0; i < CombatAttackTuning.Get(CombatAttackKind.Hand1).TotalTicks; i++)
                 Frame(1);
             Frame(1, () => Up(Key.Space));
             Frame(1, () => Down(Key.Space));
             Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.Jump), "Release, then a fresh press.");
             Assert.That(Human(Last).Motion.Grounded, Is.False);
-            Assert.That(m_Capture.BlockedButtons, Is.EqualTo(CommandButtons.Kick), "L stays blocked until it is released.");
+            Assert.That(m_Capture.BlockedButtons, Is.EqualTo(CommandButtons.FootSeries), "I stays blocked until it is released.");
         }
 
         /// <summary>
@@ -629,16 +639,16 @@ namespace MLFLegends.Tests.EditMode
             Frame(1, () =>
             {
                 Tap(Key.Space);
-                Tap(Key.I);
+                Tap(Key.U);
             });
-            Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.Jump | CommandButtons.Attack), "Fresh taps after the attach.");
+            Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.Jump | CommandButtons.HandSeries), "Fresh taps after the attach.");
             Assert.That(HumanCommand(Last).Held, Is.EqualTo(CommandButtons.None));
             Assert.That(Human(Last).Motion.Grounded, Is.False);
             Frame(2);
             Assert.That(BattleTicks().Count(r => HumanCommand(r).Pressed != CommandButtons.None), Is.EqualTo(1), "Exactly once.");
 
             // Restart between frames still drops presses of the old battle.
-            Frame(0, () => Tap(Key.I));
+            Frame(0, () => Tap(Key.U));
             m_Replay.Request(BattleRequest.Restart(BattleSetup.Default));
             Frame(1);
             Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.None));

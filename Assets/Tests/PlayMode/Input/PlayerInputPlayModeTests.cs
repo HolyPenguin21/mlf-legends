@@ -34,6 +34,12 @@ namespace MLFLegends.Tests.PlayMode
         float m_TimeScale;
         int m_CaptureFramerate;
 
+        // A test that replaces the default World records the original here; the fixture's UnityTearDown restores it and
+        // disposes the replacement even when the test fails (#69: a failed coroutine never ran its own finally, and every
+        // later test of the ordered run inherited the incomplete World).
+        World m_OriginalWorld;
+        World m_ReplacementWorld;
+
         static World DefaultWorld => World.DefaultGameObjectInjectionWorld;
 
         static EntityManager Manager => DefaultWorld.EntityManager;
@@ -109,6 +115,11 @@ namespace MLFLegends.Tests.PlayMode
         [UnityTearDown]
         public IEnumerator UnloadScenesAndEndTheBattle()
         {
+            if (m_OriginalWorld != null)
+                World.DefaultGameObjectInjectionWorld = m_OriginalWorld;
+            if (m_ReplacementWorld != null && m_ReplacementWorld.IsCreated)
+                m_ReplacementWorld.Dispose();
+            m_OriginalWorld = m_ReplacementWorld = null;
             foreach (var scene in SmokeScenes())
                 SceneManager.UnloadSceneAsync(scene);
             yield return Until(() => SmokeScenes().Length == 0);
@@ -131,6 +142,16 @@ namespace MLFLegends.Tests.PlayMode
                 yield return null;
             }
         }
+
+        /// <summary>
+        /// Grounded AND out of the ECS landing lock on the next simulated tick (#50: after touch-down the published landing
+        /// frames lock control and Jump). Waiting for Grounded alone let taps/holds fall into the lock (#69 findings).
+        /// </summary>
+        static IEnumerator UntilFree(Entity human) => Until(() =>
+        {
+            var motion = Manager.GetComponentData<CombatMotion>(human);
+            return motion.Grounded && !motion.IsLandingRecovery(Tick + 1);
+        });
 
         static IEnumerator LoadSmokeScene()
         {
@@ -218,7 +239,7 @@ namespace MLFLegends.Tests.PlayMode
 
             for (var attempt = 0; attempt < (fps == 120 ? 4 : 1); attempt++)
             {
-                yield return Until(() => Manager.GetComponentData<CombatMotion>(human).Grounded);
+                yield return UntilFree(human);
                 for (var i = 0; i < attempt; i++)
                     yield return null; // shift the tap by a frame: both tick parities at 120 FPS
 
@@ -247,24 +268,25 @@ namespace MLFLegends.Tests.PlayMode
             if (fps == 120)
                 Assert.That(sawZeroTickFrame && sawTickFrame, Is.True, "Taps landed in both 0-tick and 1-tick frames.");
 
-            // Hold D from frame f+1 to g.
-            yield return Until(() => Manager.GetComponentData<CombatMotion>(human).Grounded);
+            // Hold A from frame f+1 to g: leftwards, away from the scene's central Cube obstacle (26 ticks at 30 FPS would
+            // reach it moving right).
+            yield return UntilFree(human);
             var x0 = Manager.GetComponentData<CombatPosition>(human).Value.x;
-            Down(Key.D);
+            Down(Key.A);
             yield return null;
             var first = Tick;
             for (var i = 0; i < 12; i++)
                 yield return null;
-            Up(Key.D);
+            Up(Key.A);
             yield return null;
             var last = Tick;
             yield return null;
             yield return Until(() => Tick > last);
             var moved = last - first;
             Assert.That(moved, Is.GreaterThan(0));
-            Assert.That(Manager.GetComponentData<CombatPosition>(human).Value.x, Is.EqualTo(x0 + moved * Step).Within(1e-4f),
+            Assert.That(Manager.GetComponentData<CombatPosition>(human).Value.x, Is.EqualTo(x0 - moved * Step).Within(1e-4f),
                 $"fps {fps}: moved on exactly the {moved} ticks of the held frames");
-            Assert.That(Manager.GetComponentData<CombatFacing>(human).Value, Is.EqualTo(FacingDirection.Right));
+            Assert.That(Manager.GetComponentData<CombatFacing>(human).Value, Is.EqualTo(FacingDirection.Left));
 
             // The camera's LateUpdate of the previous frame followed the ECS position of that frame's last tick.
             var position = Manager.GetComponentData<CombatPosition>(human).Value;
@@ -330,7 +352,7 @@ namespace MLFLegends.Tests.PlayMode
             Down(Key.D);
             yield return Until(() => Manager.GetComponentData<AppliedCombatCommand>(human).Command.MoveX == 1);
 
-            Down(Key.I);
+            Down(Key.U);
             adapter.SendMessage("OnApplicationFocus", false);
             Assert.That(adapter.Capture.PendingPressed, Is.EqualTo(CommandButtons.None));
             var tick = Tick;
@@ -346,16 +368,16 @@ namespace MLFLegends.Tests.PlayMode
             yield return Until(() => Tick > tick);
             var applied = Manager.GetComponentData<AppliedCombatCommand>(human).Command;
             Assert.That((applied.MoveX, applied.Held, applied.Pressed),
-                Is.EqualTo(((sbyte)1, CommandButtons.Attack, CommandButtons.None)), "Focus back: live hold, no old press.");
+                Is.EqualTo(((sbyte)1, CommandButtons.HandSeries, CommandButtons.None)), "Focus back: live hold, no old press.");
             Up(Key.D);
-            Up(Key.I);
+            Up(Key.U);
             yield return null;
         }
 
         /// <summary>
         /// Review regression (#22): the Input System's own focus cycle (runInBackground: disable + soft reset on loss,
         /// re-enable on regain; otherwise reset on regain), plus Unity's OnApplicationFocus, then the device re-reporting the
-        /// still-held Space/I/L: Held, never Pressed (no jump/attack); a fresh press after releasing works.
+        /// still-held Space/U/I: Held, never Pressed (no jump/attack); a fresh press after releasing works.
         /// </summary>
         [UnityTest]
         public IEnumerator RealFocusLossAndRegainWithDeviceResyncTurnsNoRestoredHoldIntoAPress([Values(true, false)] bool runInBackground)
@@ -366,10 +388,10 @@ namespace MLFLegends.Tests.PlayMode
             RunInBackground(runInBackground);
             Down(Key.Space);
             Down(Key.I);
-            Down(Key.L);
+            Down(Key.U);
             yield return null;
             yield return Until(() => !Manager.GetComponentData<CombatMotion>(human).Grounded);
-            yield return Until(() => Manager.GetComponentData<CombatMotion>(human).Grounded); // landed, Space/I/L still held
+            yield return Until(() => Manager.GetComponentData<CombatMotion>(human).Grounded); // landed, Space/U/I still held
 
             InputSystemFocus(false);
             adapter.SendMessage("OnApplicationFocus", false);
@@ -385,22 +407,23 @@ namespace MLFLegends.Tests.PlayMode
             tick = Tick;
             yield return Until(() => Tick > tick + 2);
             var applied = Manager.GetComponentData<AppliedCombatCommand>(human).Command;
-            Assert.That(applied.Held, Is.EqualTo(CommandButtons.Jump | CommandButtons.Attack | CommandButtons.Kick), "Restored hold.");
+            Assert.That(applied.Held, Is.EqualTo(CommandButtons.Jump | CommandButtons.HandSeries | CommandButtons.FootSeries), "Restored hold.");
             Assert.That(adapter.Capture.PendingPressed, Is.EqualTo(CommandButtons.None));
             Assert.That(Manager.GetComponentData<CombatMotion>(human).Grounded, Is.True, "The restored Space hold did not jump.");
             Assert.That(Results.Where(r => r.Command.Source == CommandSource.Player).Select(r => r.Command.Pressed),
                 Is.All.EqualTo(CommandButtons.None), "No Pressed from the restored holds.");
 
+            yield return UntilFree(human);
             Up(Key.Space);
             yield return null;
             Down(Key.Space);
             yield return null; // processed in this frame's PreUpdate, consumed by its first tick
             tick = Tick;
             yield return Until(() => Tick > tick);
-            Assert.That(Manager.GetComponentData<CombatMotion>(human).Grounded, Is.False, "Release, then a fresh K press jumps.");
+            Assert.That(Manager.GetComponentData<CombatMotion>(human).Grounded, Is.False, "Release, then a fresh Space press jumps.");
             Up(Key.Space);
             Up(Key.I);
-            Up(Key.L);
+            Up(Key.U);
             yield return null;
         }
 
@@ -415,66 +438,59 @@ namespace MLFLegends.Tests.PlayMode
             yield return null;
             var a = DefaultWorld;
             var producerA = Producer;
-            World b = null;
-            try
+            m_OriginalWorld = a;
+            World.DefaultGameObjectInjectionWorld = null; // the scene is enabled before any World exists
+            yield return LoadSmokeScene();
+            var firstScene = SmokeScenes().Single();
+            var first = Adapter(firstScene);
+            Assert.That(first.Capture, Is.Not.Null);
+            Assert.That(first.BoundWorld, Is.Null);
+            Down(Key.Space);
+            Up(Key.Space);
+            yield return null;
+            Assert.That(first.Capture.PendingPressed, Is.EqualTo(CommandButtons.Jump), "Recorded while no World exists...");
+
+            World.DefaultGameObjectInjectionWorld = a;
+            yield return null;
+            Assert.That(producerA.Source, Is.SameAs(first.Capture), "...attached once the World appears...");
+            Assert.That(first.Capture.PendingPressed, Is.EqualTo(CommandButtons.None), "...without the stale press.");
+
+            // A combat World the CombatSmoke scene accepts: its bootstrap requires the World's arena owner (#69). Without
+            // it the second scene's start is rightly rejected with an error, which failed this test.
+            var b = m_ReplacementWorld = new World("Player input test World B");
+            DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups(b, new[]
             {
-                World.DefaultGameObjectInjectionWorld = null; // the scene is enabled before any World exists
-                yield return LoadSmokeScene();
-                var firstScene = SmokeScenes().Single();
-                var first = Adapter(firstScene);
-                Assert.That(first.Capture, Is.Not.Null);
-                Assert.That(first.BoundWorld, Is.Null);
-                Down(Key.Space);
-                Up(Key.Space);
-                yield return null;
-                Assert.That(first.Capture.PendingPressed, Is.EqualTo(CommandButtons.Jump), "Recorded while no World exists...");
+                typeof(BeginSimulationEntityCommandBufferSystem), typeof(FixedStepSimulationSystemGroup),
+                typeof(CombatArenaSystem), typeof(BattleLifecycleSystem), typeof(CombatClockSystem),
+                typeof(CombatCommandCollectionSystemGroup), typeof(CombatCommandProcessorSystem), typeof(PlayerInputCommandSystem),
+            });
+            var producerB = b.GetExistingSystemManaged<PlayerInputCommandSystem>();
+            Down(Key.I);
+            Up(Key.I);
+            yield return null;
+            World.DefaultGameObjectInjectionWorld = b;
+            yield return null;
+            Assert.That(producerB.Source, Is.SameAs(first.Capture), "A -> B without disable/enable.");
+            Assert.That(producerA.Source, Is.Null, "Detached from A.");
+            Assert.That(first.Capture.PendingPressed, Is.EqualTo(CommandButtons.None));
 
-                World.DefaultGameObjectInjectionWorld = a;
-                yield return null;
-                Assert.That(producerA.Source, Is.SameAs(first.Capture), "...attached once the World appears...");
-                Assert.That(first.Capture.PendingPressed, Is.EqualTo(CommandButtons.None), "...without the stale press.");
+            yield return LoadSmokeScene(); // a later adapter in B
+            var second = Adapter(SmokeScenes().Single(s => s != firstScene));
+            Assert.That(producerB.Source, Is.SameAs(second.Capture));
+            yield return null;
+            yield return null;
+            Assert.That(producerB.Source, Is.SameAs(second.Capture), "The replaced adapter does not retake control.");
 
-                b = new World("Player input test World B");
-                DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups(b, new[]
-                {
-                    typeof(BeginSimulationEntityCommandBufferSystem), typeof(FixedStepSimulationSystemGroup),
-                    typeof(BattleLifecycleSystem), typeof(CombatClockSystem), typeof(CombatCommandCollectionSystemGroup),
-                    typeof(CombatCommandProcessorSystem), typeof(PlayerInputCommandSystem),
-                });
-                var producerB = b.GetExistingSystemManaged<PlayerInputCommandSystem>();
-                Down(Key.I);
-                Up(Key.I);
-                yield return null;
-                World.DefaultGameObjectInjectionWorld = b;
-                yield return null;
-                Assert.That(producerB.Source, Is.SameAs(first.Capture), "A -> B without disable/enable.");
-                Assert.That(producerA.Source, Is.Null, "Detached from A.");
-                Assert.That(first.Capture.PendingPressed, Is.EqualTo(CommandButtons.None));
+            World.DefaultGameObjectInjectionWorld = a;
+            yield return null;
+            Assert.That(producerA.Source, Is.SameAs(second.Capture), "B -> A: the later adapter wins whatever the update order.");
+            Assert.That(producerB.Source, Is.Null);
+            Assert.That(first.BoundWorld, Is.SameAs(a));
 
-                yield return LoadSmokeScene(); // a later adapter in B
-                var second = Adapter(SmokeScenes().Single(s => s != firstScene));
-                Assert.That(producerB.Source, Is.SameAs(second.Capture));
-                yield return null;
-                yield return null;
-                Assert.That(producerB.Source, Is.SameAs(second.Capture), "The replaced adapter does not retake control.");
-
-                World.DefaultGameObjectInjectionWorld = a;
-                yield return null;
-                Assert.That(producerA.Source, Is.SameAs(second.Capture), "B -> A: the later adapter wins whatever the update order.");
-                Assert.That(producerB.Source, Is.Null);
-                Assert.That(first.BoundWorld, Is.SameAs(a));
-
-                Object.Destroy(second);
-                yield return null;
-                Assert.That(producerA.Source, Is.Null, "Destroying the active adapter detaches it.");
-                Assert.That(second.Capture == null || second == null, Is.True);
-            }
-            finally
-            {
-                World.DefaultGameObjectInjectionWorld = a;
-                if (b != null && b.IsCreated)
-                    b.Dispose();
-            }
+            Object.Destroy(second);
+            yield return null;
+            Assert.That(producerA.Source, Is.Null, "Destroying the active adapter detaches it.");
+            Assert.That(second.Capture == null || second == null, Is.True);
         }
 
         [UnityTest]

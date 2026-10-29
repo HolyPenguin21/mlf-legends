@@ -517,7 +517,7 @@ namespace MLFLegends.Tests.EditMode
                     + $"body({Float(c.Body.Radius)},{Float(c.Body.Height)},{Float(c.Body.Mass)}) "
                     + $"motion(ground:{Float(c.Motion.GroundHeight)},vy:{Float(c.Motion.VerticalVelocity)},ext:{Float(c.Motion.ExternalVelocity.x)}/{Float(c.Motion.ExternalVelocity.y)},grounded:{c.Motion.Grounded},"
                     + $"land:{At(c.Motion.LandTick)},landingTicks:{c.Motion.LandingRecoveryTicks},moved:{At(c.Motion.LastMoveTick)},streak:{At(c.Motion.MoveStreakStartTick)}/{Float(c.Motion.MoveStreakDistance)}) "
-                    + $"strike({c.Attack.Kind},start:{(c.Attack.IsAttacking ? At(c.Attack.StartTick) : "-")},series:{c.Attack.SeriesLength},"
+                    + $"strike({c.Attack.Kind},start:{(c.Attack.IsAttacking ? At(c.Attack.StartTick) : "-")},series:{c.Attack.SeriesStep},"
                     + $"timing:{c.Attack.Timing.ActiveStart}/{c.Attack.Timing.RecoveryStart}/{c.Attack.Timing.End}/{c.Attack.Timing.ChainPoint},"
                     + $"buffered:{c.Attack.Buffered},end:{At(c.Attack.EndTick)},hits:[{string.Join(",", c.Hits.Select(Id))}]) hp:{c.Health.Current}/{c.Health.Max} "
                     + $"{c.Facing} {(c.InCombat ? "in-combat" : "out")} applied[{applied}]");

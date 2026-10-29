@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Failed(Child)" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-29 14:06:31Z" end-time="2026-10-29 14:06:32Z" duration="0,8787029">
+  <test-suite type="TestSuite" id="1000" name="mlf-legends" fullname="mlf-legends" runstate="Runnable" testcasecount="594" result="Failed" site="Child" start-time="2026-10-29 14:06:31Z" end-time="2026-10-29 14:06:32Z" duration="0.878703" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1703" name="MLFLegends.Tests.EditMode.dll" fullname="D:/Unity/Project/mlf-w66/Library/ScriptAssemblies/MLFLegends.Tests.EditMode.dll" runstate="Runnable" testcasecount="594" result="Failed" site="Child" start-time="2026-10-29 14:06:31Z" end-time="2026-10-29 14:06:32Z" duration="0.812651" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="18924" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1704" name="MLFLegends" fullname="MLFLegends" runstate="Runnable" testcasecount="594" result="Failed" site="Child" start-time="2026-10-29 14:06:31Z" end-time="2026-10-29 14:06:32Z" duration="0.802808" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1705" name="Tests" fullname="MLFLegends.Tests" runstate="Runnable" testcasecount="594" result="Failed" site="Child" start-time="2026-10-29 14:06:31Z" end-time="2026-10-29 14:06:32Z" duration="0.793422" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestSuite" id="1706" name="EditMode" fullname="MLFLegends.Tests.EditMode" runstate="Runnable" testcasecount="594" result="Failed" site="Child" start-time="2026-10-29 14:06:31Z" end-time="2026-10-29 14:06:32Z" duration="0.783245" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-suite type="TestFixture" id="1512" name="CombatStrikeBenchmarkTests" fullname="MLFLegends.Tests.EditMode.CombatStrikeBenchmarkTests" classname="MLFLegends.Tests.EditMode.CombatStrikeBenchmarkTests" runstate="Runnable" testcasecount="4" result="Failed" site="Child" start-time="2026-10-29 14:06:31Z" end-time="2026-10-29 14:06:32Z" duration="0.774312" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="Performance" />
+              </properties>
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1514" name="BodyContactScenarios2_100_400ReportColdWarmWorkAndOwnerCosts" fullname="MLFLegends.Tests.EditMode.CombatStrikeBenchmarkTests.BodyContactScenarios2_100_400ReportColdWarmWorkAndOwnerCosts" methodname="BodyContactScenarios2_100_400ReportColdWarmWorkAndOwnerCosts" classname="MLFLegends.Tests.EditMode.CombatStrikeBenchmarkTests" runstate="Runnable" seed="1832180682" result="Failed" label="Error" start-time="2026-10-29 14:06:31Z" end-time="2026-10-29 14:06:32Z" duration="0.758152" asserts="0">
+                <properties>
+                  <property name="Timeout" value="1800000" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[System.NullReferenceException : Object reference not set to an instance of an object]]></message>
+                  <stack-trace><![CDATA[  at Unity.Collections.LowLevel.Unsafe.UnsafeParallelHashMap`2[TKey,TValue].Remove (TKey key) [0x00000] in .\Library\PackageCache\com.unity.collections@a43cabe808ca\Unity.Collections\UnsafeParallelHashMap.cs:1271 
+  at Unity.Entities.EntityQueryImpl.Dispose () [0x00018] in .\Library\PackageCache\com.unity.entities@7c40ffdd1a69\Unity.Entities\Iterators\EntityQuery.cs:587 
+  at Unity.Entities.EntityQuery.Dispose () [0x00006] in .\Library\PackageCache\com.unity.entities@7c40ffdd1a69\Unity.Entities\Iterators\EntityQuery.cs:2262 
+  at MLFLegends.Tests.EditMode.CombatStrikeBenchmarkTests.BodyContactScenarios2_100_400ReportColdWarmWorkAndOwnerCosts () [0x0114b] in D:\Unity\Project\mlf-w66\Assets\Tests\EditMode\Performance\CombatContactBenchmarkTests.cs:261 
+  at (wrapper managed-to-native) System.Reflection.RuntimeMethodInfo.InternalInvoke(System.Reflection.RuntimeMethodInfo,object,object[],System.Exception&)
+  at System.Reflection.RuntimeMethodInfo.Invoke (System.Object obj, System.Reflection.BindingFlags invokeAttr, System.Reflection.Binder binder, System.Object[] parameters, System.Globalization.CultureInfo culture) [0x0006a] in <816f70bc2a9c4332b0bd119906a8d40e>:0 ]]></stack-trace>
+                </failure>
+                <output><![CDATA[Saving results to: C:/Users/Стас/AppData/LocalLow/DefaultCompany/mlf-legends\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

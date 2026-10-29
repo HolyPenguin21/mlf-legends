@@ -1,4 +1,11 @@
-## Current #64 — Stage 04.3 body contacts (2026-10-29)
+## Current #69 — contact/velocity benchmark 2/100/400 (2026-10-29)
+
+Burst on, `00abb4c` (benchmark test source; runtime = `12d8b69`): [Evidence/69](Evidence/69/README.md),
+TSV `TestResults/performance/stage05-contact-velocity.tsv` (copied as Evidence/69/stage05-contact-velocity-burst-on.tsv).
+New columns split the old process_native_delta (owner loop Profiler on/off, test-only comparison pass, after dispose) and
+record the final contact-velocity pass. The #66 numbers are not reused for this solver. No FPS is promised.
+
+## History — #64 — Stage 04.3 body contacts (2026-10-29)
 
 PR #62 and #63 were merged on the owner's explicit command; integrated main base is
 `adf98cd1c9ca4df2b2d2e96aa65d3a7e17eb3a5a`. Branch `feature/64-body-contacts`; the owner subsequently explicitly authorized commit, push and merge of #64.

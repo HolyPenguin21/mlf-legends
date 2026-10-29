@@ -1,3 +1,21 @@
+## Current #69 contracts (Stage 05.1)
+
+- `CommandButtons` (ushort): HandSeries=1, Jump=2, Guard=4 (reserved), FootSeries=8, PhysicalAbility=512; retired
+  exact-limb bits 16..256 are invalid. Player and AI use the same intents; priority U → I → O in `CombatActionSystem`.
+- `CombatAttackKind` (stable values): 1 Hand1, 2 Hand2, 3 Foot1, 4 Foot2, 5 PhysicalAbility (former punch/kick/spin ids).
+- `CombatAttackState`: `SeriesStep` (bounded 0..3 position in the 1-1-2-1-2 sequence) replaces `SeriesLength`;
+  `Strike` (`CombatStrikeParameters`: Damage, ReachMin/Max, DepthHalfWidth, HeightTolerance) is copied with `Timing` at
+  strike start and is the only damage/box source of Hit for that execution. Written only by `CombatActionSystem`.
+- `CombatStrikeSchedule` (the World's character table): per-slot timing + `CombatStrikeParameters` + `Body`; published on
+  the main thread outside fixed steps; Body is read by `BattleLifecycleSystem` at spawn. Validity includes
+  `CombatCharacterLimits` (Radius .05..2, Height .25..8, Mass .05..100, Damage 0..1000, 0 ≤ ReachMin ≤ ReachMax ≤ 8,
+  Depth 0..4, HeightTolerance 0..8).
+- `CombatArenaMove.Wall0/Wall1/Walls`: outward normals of surfaces that blocked planar travel in that move.
+- `CombatContactDiagnostics.VelocityContacts/VelocityIterations/VelocityResidual`: the final contact-velocity pass.
+- `CombatMotion.ExternalVelocity` is the physical final velocity after contacts (never displacement / dt) and is cleared
+  for fighters with a disabled InCombat bit or a whole-entity `Disabled` tag.
+Contract and rules: [STAGE05_1_CHARACTER_SERIES.md](../../../../../Docs/STAGE05_1_CHARACTER_SERIES.md).
+
 ## Stage 04.4–04.5 / #66 current contract
 
 `CombatMotion.ExternalVelocity` (float2 X/Z, units/s) is the only stored physical horizontal velocity; VerticalVelocity
@@ -45,7 +63,7 @@ Existing End/Despawn/Restart destroys body with its entity. No second lifecycle 
 World-owned CombatSpatialIndexSystem reads these values into derivative copies, never writes Core. Main-thread API,
 closed AABB geometry, Id ordering, validity/lifetime and memory ownership: [04.1 contract](../../../../../Docs/STAGE04_SPATIAL_INDEX.md).
 
-## Current #52 intention contract
+## History — #52 intention contract
 
 CommandButtons uses ushort, preserving Attack=1, Jump=2, Guard=4, Kick=8. Exact PunchLeft/PunchRight/KickLeft/KickRight/
 KickSpin = 16/32/64/128/256. All fields (Held/Pressed/Buffered, pending commands and replay) retain the complete flags;

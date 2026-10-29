@@ -1,4 +1,13 @@
-## Current #64 — Stage 04.3 body contacts (2026-10-29)
+## Current #69 — Stage 05.1 (2026-10-29)
+
+Only this section is current; every older "History" section keeps its own SHA/scope and is superseded where it disagrees (old key layouts, exact-limb intentions, velocity = displacement/dt, series limit 4, stage states).
+
+Fresh main `86012a0` (PR #68). Branch `feature/69-stage05-character-series`, one PR, **no merge by the implementer**.
+Commit order: confirmed fixes → per-character data → input/series → checks → docs/evidence. Contract: [STAGE05_1_CHARACTER_SERIES.md](STAGE05_1_CHARACTER_SERIES.md);
+results: [Evidence/69](Evidence/69/README.md). The owner's #67 agreements are recorded in ROADMAP.md (single entry point). The atlas pass
+is #70 (after #69 review); 05.2 self impulse/dynamic Height/swept hits; 05.3 VFX.
+
+## History — #64 — Stage 04.3 body contacts (2026-10-29)
 
 PR #62 and #63 were merged on the owner's explicit command; integrated main base is
 `adf98cd1c9ca4df2b2d2e96aa65d3a7e17eb3a5a`. Branch `feature/64-body-contacts`; the owner subsequently explicitly authorized commit, push and merge of #64.
@@ -10,7 +19,7 @@ Free allies yield, ordinary locomotion does not bulldoze enemies, trapped/unreso
 Stage 03 OWNER-ACCEPTED; Stage 04 IN PROGRESS. Unity/C#/Burst/scene/performance NOT RUN; source/model checks are separate.
 Historical notes below retain their original SHA/status and do not override this update.
 
-## Current #58 — Stage 04.1 (2026-10-28)
+## History — #58 — Stage 04.1 (2026-10-28)
 
 **Stage 03 OWNER-ACCEPTED**, by the owner's direct message recorded in #58: «Stage 03 закрыли. Идем дальше».
 Exact owner manual-test SHA/protocol was not supplied; this is not a blanket Unity/GPU PASS. **Stage 04 IN PROGRESS**;
@@ -26,13 +35,13 @@ assertions. Actual new component: CombatBody. New system: CombatSpatialIndexSyst
 [Bottom-up review and corrections](STAGE04_BOTTOM_UP_REVIEW.md): atomic AABB batches, complete enabled-ID membership,
 whole-entity Disabled cleanup and new edge/measurement tests. Unity-unavailable checks remain NOT RUN without blocking PR delivery; do not merge or close follow-up issues.
 
-## Current task #56 — pivot and Inspector corrective delivery
+## History — task #56 — pivot and Inspector corrective delivery
 
 Fresh base main `311c3d7d06b5320b9df701ae6f21f519d07c6af1`. Branch `fix/56-sprite-pivot-inspector`, one PR, no merge.
 [Current implementation and verification](STAGE03_PIVOT_CORRECTION.md). Stage 03 still requires owner manual acceptance.
 The older #52 input layout, phase speeds, damage/simulation, landing and owner timing settings are preserved.
 
-## Current task #52 — final controls (2026-10-28)
+## History — task #52 — final controls (2026-10-28)
 
 Base main `1c96c6f` already contains #50/#51; do not duplicate their scene/config/preview fixes. Work in
 `feature/52-final-combat-controls`, one PR, no merge without owner instruction. [Current control contract and handoff](STAGE03_CONTROLS.md).
@@ -107,7 +116,7 @@ unrelated invalid entry. Current renderer still selects ONE default character ty
 mixed-character/multi-atlas fighters require separate follow-up #46; this change does not claim that feature.
 
 
-## Current dispatch — #43 (2026-10-27)
+## History — dispatch — #43 (2026-10-27)
 
 Implement/review Stage 03.3a on feature/stage03-idle-combat: real mage idle_combat ONLY and shared character-animation
 config (N/T/normalized speed curve), existing read-only renderer/extraction and existing simulation clock. One PR,

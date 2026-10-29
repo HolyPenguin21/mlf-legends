@@ -242,7 +242,7 @@ namespace MLFLegends.Tests.EditMode
             var script = new ReplayScript();
             for (uint i = 1; i <= 90; i++)
             {
-                var pressed = i == 1 ? CommandButtons.Jump : i == 65 ? CommandButtons.PunchLeft : CommandButtons.None;
+                var pressed = i == 1 ? CommandButtons.Jump : i == 65 ? CommandButtons.HandSeries : CommandButtons.None;
                 script.Player(i, i, ReplayRole.Human, moveX: 1, pressed: pressed);
                 script.Ai(i, i, ReplayRole.Ai, moveX: 1, pressed: pressed);
             }
@@ -295,7 +295,7 @@ namespace MLFLegends.Tests.EditMode
             for (var i = 1; i < 12; i++)
             {
                 w.SubmitBetweenFrames(new CombatCommand { Combatant = w.Session.HumanCombatant, Tick = w.Tick + 1,
-                    MoveX = 1, Pressed = CommandButtons.Attack | CommandButtons.Jump, Source = CommandSource.Player });
+                    MoveX = 1, Pressed = CommandButtons.HandSeries | CommandButtons.Jump, Source = CommandSource.Player });
                 w.Step(); var actor = Human();
                 Assert.That(actor.Position, Is.EqualTo(contact.Position)); Assert.That(actor.Motion.LandTick, Is.EqualTo(landTick));
                 Assert.That(actor.Attack.IsAttacking, Is.False); Assert.That(actor.Attack.Buffered, Is.EqualTo(CommandButtons.None));
@@ -314,24 +314,24 @@ namespace MLFLegends.Tests.EditMode
             using var w = new ReplayWorld("arena attack");
             Install(w, Floor, Box(0, 0, 0, .05f, 4, 5));
             var table = CombatStrikeSchedule.Default;
-            table.PunchLeft = CombatStrikeTiming.FromTicks(6, 4, 8, 4);
+            table.Hand1 = CombatStrikeTiming.FromTicks(6, 4, 8, 4);
             CombatStrikeSchedule.Publish(w.Manager, table);
             var setup = BattleSetup.Default; setup.Human.Position = new float3(-.5f, 0, 0); setup.Ai.Position = new float3(.5f, 0, 0);
             var script = new ReplayScript();
             for (uint i = 1; i <= 18; i++) script.Player(i, i, ReplayRole.Human, moveX: 1,
-                pressed: i == 1 ? CommandButtons.Attack : CommandButtons.None);
+                pressed: i == 1 ? CommandButtons.HandSeries : CommandButtons.None);
             w.Script = script; w.Request(BattleRequest.Start(setup)); w.Step(18);
             var records = w.BattleRecords(1);
             Assert.That(records[0].Combatant(records[0].HumanId).Position.x, Is.EqualTo(-.5f + 4f / 60 * .5f).Within(.0001));
             for (var i = 0; i < 18; i++)
             {
                 var actor = records[i].Combatant(records[i].HumanId);
-                Assert.That(actor.Attack.Kind, Is.EqualTo(CombatAttackKind.PunchLeft));
-                Assert.That(actor.Attack.Timing, Is.EqualTo(table.PunchLeft));
+                Assert.That(actor.Attack.Kind, Is.EqualTo(CombatAttackKind.Hand1));
+                Assert.That(actor.Attack.Timing, Is.EqualTo(table.Hand1));
                 Assert.That(actor.Position.x, Is.LessThanOrEqualTo(-.35f + .001f));
                 Assert.That(actor.Hits.Length, Is.EqualTo(i < 6 ? 0 : 1));
                 var hp = records[i].Combatant(records[i].AiId).Health.Current;
-                Assert.That(hp, Is.EqualTo(100 - (i < 6 ? 0 : CombatAttackTuning.Get(CombatAttackKind.PunchLeft).Damage)));
+                Assert.That(hp, Is.EqualTo(100 - (i < 6 ? 0 : CombatAttackTuning.Get(CombatAttackKind.Hand1).Damage)));
             }
         }
         [Test]
@@ -357,7 +357,7 @@ namespace MLFLegends.Tests.EditMode
         {
             using var w = new ReplayWorld("elevated arena spawn"); Install(w, Floor);
             var setup = BattleSetup.Default; setup.Human.Position = new float3(-2, 3, 0);
-            w.Script = new ReplayScript().Player(1, 1, ReplayRole.Human, pressed: CommandButtons.Attack);
+            w.Script = new ReplayScript().Player(1, 1, ReplayRole.Human, pressed: CommandButtons.HandSeries);
             w.Request(BattleRequest.Start(setup)); w.Step();
             var first = w.BattleRecords(1).Single().Combatant(w.Session.HumanCombatant.Value);
             Assert.That(first.Motion.Grounded, Is.False); Assert.That(first.Attack.IsAttacking, Is.False);
@@ -377,7 +377,7 @@ namespace MLFLegends.Tests.EditMode
             using var query = w.Manager.CreateEntityQuery(typeof(CombatArenaState));
             Assert.That(query.GetSingleton<CombatArenaState>().Required, Is.True);
             Assert.That(query.GetSingleton<CombatArenaState>().Valid, Is.False, "Same production battle stays fail-closed.");
-            w.Script = new ReplayScript().Player(1, 1, ReplayRole.Human, pressed: CommandButtons.Attack);
+            w.Script = new ReplayScript().Player(1, 1, ReplayRole.Human, pressed: CommandButtons.HandSeries);
             w.Request(BattleRequest.Restart(BattleSetup.Default)); w.Step();
             var restarted = w.BattleRecords(2).Single().Combatant(w.Session.HumanCombatant.Value);
             Assert.That(restarted.Motion.Grounded, Is.False); Assert.That(restarted.Attack.IsAttacking, Is.False);

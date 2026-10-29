@@ -1,4 +1,87 @@
-## Current #66 — Stage 04.4–04.5 impulses, indexed Hit, 2/100/400 (2026-10-29)
+# MLF Legends — Combat development roadmap
+
+## Current status — single entry point (updated 2026-10-29, #69)
+
+This section is the only current status. Every dated section under **History** is a snapshot of its own SHA/scope and is
+superseded wherever it disagrees with this section (including its "Current" wording, old key layouts and stage states).
+
+- **main** `86012a006b51f6295a855dbaa9b6bbf1d3d23133` (PR #68 / #66). **Stage 03** OWNER-ACCEPTED. **Stage 04** IN PROGRESS:
+  everything merged, owner manual acceptance open. **Stage 05** IN PROGRESS.
+- **Delivered for review: [#69](https://github.com/HolyPenguin21/mlf-legends/issues/69) — Stage 05.1** on branch
+  `feature/69-stage05-character-series`, one PR, merge only on a separate owner command:
+  [contract, Inspector path, owners/versioning, rules, manual checklist](STAGE05_1_CHARACTER_SERIES.md) ·
+  [exact SHA and PASS/FAIL/NOT RUN](Evidence/69/README.md).
+  Base fixes (final contact velocity, whole-entity Disabled cleanup, ordered PlayMode isolation and the faults it hid),
+  per-character Radius/Height/Mass and per-slot clip/damage/reach/depth/height in the existing config and publication
+  table (frozen per strike), U/I series 1-1-2-1-2, O physical ability, Scene gizmos.
+- Open separately: #17/#25/#30 (QA debt), #46/#53 (presentation follow-ups).
+
+### Queue (owner/manager order from #67)
+
+1. #69 → manager review (no merge by the implementer).
+2. **#70 / Stage 05.1a** — new atlas (owner-reported: 12 animations / 76 frames, figure ≈128 px, source canvas 192×160,
+   page 2000×2016; not verified here). Integration maps its clips through the per-character slot Clip Ids; metadata
+   (source_size/nominal_height/trim/pivots) is read, never hard-coded. Do not start a parallel config migration before #69 is reviewed.
+3. **05.2** — self impulse of an action (example: 35° above the horizontal for one ability, not a global angle), contact
+   attenuation from numeric parameters of the participants, real crowd displacement with multi-target damage, an editable
+   Height profile with safe restore under a ceiling, hits along the actual Active path (ledger, impact targets), never
+   through a solid wall or by ghost collision. Formulas and landing/interruption policy need their own spec after #69 review.
+4. **05.3** — VFX: effect-on-swing separate from effect-on-confirmed-hit, shared resources/batching/culling; no renderer
+   callback ever deals damage.
+5. **Stage 06** — block (K), stability, timely defence, double-tap dash. **Stage 13** — magic slots 7/8/9/0.
+
+### Owner agreements recorded from #67 (do not keep them only in the Issue)
+
+- Controls: U hand series, I foot series, O the character's physical ability, K block (06), double-tap WASD dash (06),
+  7/8/9/0 magic slots (13), WASD movement; Space jump stays until explicitly cancelled. No crouch. Exact left/right keys
+  are not extra combat bindings.
+- Series: **1–1–2–1–2–…** for hands and feet (the first two started strikes use clip 1); the spin is no longer the foot
+  finisher; O is a per-character ability (the same semantic atlas row may hold different art per character).
+- Body: a simple vertical cylinder per character (Radius/Height/Mass, world units), no Rigidbody/GameObject per fighter, no
+  alpha/limb colliders; pixels/nominal height/art pivot never become physics units. Height may change by action frames
+  in 05.2 (constant in 05.1).
+- Attacks: editable per-character/per-strike hit data with clear units; multi-target kept; damage, knockback and
+  physical transfer are separate calculations; no free energy per contact/Active tick.
+- Art: the target library is idle, run, one jump, hand1/2, foot1/2, physical ability, block, dash, light skill, complex
+  skill; one animation per preview row, right-facing, consistent anatomical limbs; world travel comes from physics, not
+  from drawing the whole silhouette drifting. This is an artistic contract, not an order to redraw PNGs; PNGs stay out of Git.
+- Open questions (owner): final series/switch/reset rules (current = manager's working interpretation), self-impulse
+  axis/direction rules, landing policy of airborne abilities, hurt volume vs point target, dash/block gates.
+
+## Governing rules
+- Focus **only on combat** until the owner explicitly reopens campaign design.
+- One authoritative ECS combat architecture from 1v1 through 200v200, without a separate duel/mass code path.
+- Stage states: NOT STARTED / READY / IN PROGRESS / BLOCKED / ACCEPTED (owner report) / VERIFIED (evidence independently checked). **Delivery and verification are independent**: lack of Unity Editor access is not a gate for committing, merging, pushing or continuing implementation when authorized. Owner-reported tests may justify ACCEPTED, not independently VERIFIED.
+- Each change: inspect current code and call sites → define owner and boundaries → implement → all **available** static/automated tests → bottom-up dependency audit → commit/PR/merge when authorized → update QA and roadmap. Unavailable Unity tests are recorded as NOT RUN, not invented as passing.
+- Don't silently introduce duplicate systems, unjustified architecture or redundant per-entity MonoBehaviours.
+- Unity version: **6000.5.4f1**; repository: https://github.com/HolyPenguin21/mlf-legends; main branch: `main`.
+- Template: **Universal 3D (URP)**, chosen for 3D terrain with sprite characters. URP 17.5.0 in current manifest.
+- Performance promises need measurements on named hardware; never claim 400 combatants already work.
+
+## Stages and verified deliverables
+| Stage | Work | Acceptance | Status |
+|---|---|---|---|
+| 00 | GitHub/Unity/URP bootstrap, dependencies, folders, test harness, CI feasibility | Source tracked; editor/packages committed; tests owner-reported PASS; CI and independent evidence deferred | ACCEPTED (OWNER) |
+| 01 | ECS simulation, fixed-step scheduler, entity data, command buffer, replay tests and 2/100/400 ECS baseline | Six main tasks delivered, Bootstrap debt #19 implemented; independent code audit #23 static PASS, owner accepted Stage 02 transition with missing Unity proof tracked in #30 and Windows Unicode/Burst #17 separate. No movement/AI/collisions/renderer yet. | ACCEPTED FOR NEXT STAGE (OWNER) — UNITY QA DEFERRED |
+| 02 | Movement and camera | Deterministic X/Z movement + jump Y, facing/action-state, tick-aligned input, fixed orthographic camera follow/zoom/pan, with one ECS authority | IMPLEMENTATION COMPLETE / MANAGER REVIEW PASS — #31/#33/#35 reviewed; #22 merged via PR #37, fixes and raw 244/244 ×2 + 21/21 ×2 + Performance 7/7 independently inspected; manual/hardware/full-frame QA remains qualified in QA.md |
+| 03 | GPU sprite rendering | Atlas animation, direction/frame selection, stable depth sorting, instancing | OWNER-ACCEPTED — direct owner message in #58; exact manual-test SHA/protocol unknown, no blanket Unity/GPU PASS. #46/#53 remain separate follow-ups; historical per-SHA evidence below is retained. |
+| 04 | Collisions | Custom actor/world collision, spatial index, masses, allies yield, enemies block, knockback | IN PROGRESS — 04.1–04.5 merged (#58/#61/#64/#66, PR #68). #69 fixes the final contact velocity and Disabled cleanup; owner manual acceptance of Stage 04 still OPEN. |
+| 05 | Attack resolution | Windup/active/recovery; fast/heavy/jump attacks; shapes, multi-hit rules, damage/impact/stagger | IN PROGRESS — 05.1 #69 delivered for review: per-character body/strike data, U/I series 1-1-2-1-2, O ability (kick_spin, no self impulse), on the current art. Next: #70 (05.1a atlas), 05.2 self impulse/dynamic Height/swept hits, 05.3 VFX. Rules are the manager's working interpretation pending owner review. |
+| 06 | Defense | Facing guard (K), stability, timely defense/counter opportunity, guard break; double-tap WASD dash | NOT STARTED |
+| 07 | Duel AI | Range, observable windups, bounded reaction time, mistakes, defense/dash/counter via same command rules | NOT STARTED |
+| 08 | Physiology | SPECIAL, body regions, injury and broken limbs, eye loss, bleeding, death, capability filtering | NOT STARTED |
+| 09 | Complete 1v1 prototype | Combat feel/balance, UI, animation feedback, sound, robust regression suite | NOT STARTED |
+| 10 | Group combat | 4v4 → 16v16 → 50v50, target allocation, local teamwork/formation, morale decisions | NOT STARTED |
+| 11 | Navigation | Own heightfield grid, flow fields, bounded A*, avoidance, dirty-region recalculation, jump-vs-detour | NOT STARTED |
+| 12 | 200v200 scale | ECS/Burst/rendering/perf benchmark on 400 actors; profile collisions, AI, render, frame pacing | NOT STARTED |
+| 13 | Magic and destruction | Prepared spells, multiple resources, systemic area effects, destructible objects/terrain, nav changes | NOT STARTED |
+
+## Delivery policy
+Existing Unity-generated project content is preserved. Code changes belong in focused commits/PRs and must not be merged before authorization. **Project-owner rule (2026-10-25): Unity Editor tests must never block commit/merge/push when the owner cannot run them from the current environment.** Perform available static checks, report risks, mark runtime tests **NOT RUN**, and leave them outstanding for a later verification opportunity. Do not mislabel delivery as VERIFIED. Update status and QA together whenever delivering milestones.
+
+# History — dated snapshots (superseded where they disagree with "Current status")
+
+## History — #66 — Stage 04.4–04.5 impulses, indexed Hit, 2/100/400 (2026-10-29)
 
 Fresh main base `cf2b5bcf57c2b81b635074a0322a85ecf50879b3` (PR #65); branch `feature/66-impulses-indexed-hit`, one PR.
 [Contract: impulse input/epoch, integration, mass/contacts, rollback, Hit migration, checks, manual checklist](STAGE04_IMPULSES_HIT.md);
@@ -10,7 +93,7 @@ The first real Unity compile of the 04.3 base failed (CS0246 in the replay drive
 EditMode fixes. Per-attack Impact/stagger/guard remain Stage 05/06. Stage 03 OWNER-ACCEPTED; Stage 04 IN PROGRESS —
 manager review and owner manual acceptance pending; merge only on owner instruction.
 
-## Current #64 — Stage 04.3 body contacts (2026-10-29)
+## History — #64 — Stage 04.3 body contacts (2026-10-29)
 
 PR #62 and #63 were merged on the owner's explicit command; integrated main base is
 `adf98cd1c9ca4df2b2d2e96aa65d3a7e17eb3a5a`. Branch `feature/64-body-contacts`; the owner subsequently explicitly authorized commit, push and merge of #64.
@@ -22,7 +105,7 @@ Free allies yield, ordinary locomotion does not bulldoze enemies, trapped/unreso
 Stage 03 OWNER-ACCEPTED; Stage 04 IN PROGRESS. Unity/C#/Burst/scene/performance NOT RUN; source/model checks are separate.
 Historical notes below retain their original SHA/status and do not override this update.
 
-## Current #61 — Stage 04.2 static arena (2026-10-29)
+## History — #61 — Stage 04.2 static arena (2026-10-29)
 
 Dependent branch `feature/61-static-arena` starts from corrected #60 PR #62 head
 `e26e668435b9cb55bcf5bced163710b6c2b61230`; main at dispatch is `180b4121792e68931f27c109b78cd0d24c21a4d4`.
@@ -36,7 +119,7 @@ planar distance; the old diagonal one-axis distance expectation is corrected wit
 **Unity/C# compilation/suites/Burst/GPU/runtime performance NOT RUN**; source/model results are separate and do not
 certify runtime acceptance. Historical dated evidence below applies only to its recorded SHA/scope.
 
-## Current #58 — Stage 04.1 (2026-10-28)
+## History — #58 — Stage 04.1 (2026-10-28)
 
 **Stage 03 OWNER-ACCEPTED**, by the owner's direct message recorded in #58: «Stage 03 закрыли. Идем дальше».
 Exact owner manual-test SHA/protocol was not supplied; this is not a blanket Unity/GPU PASS. **Stage 04 IN PROGRESS**;
@@ -46,7 +129,7 @@ One branch `feature/58-combat-spatial-index`, one PR to main; merge requires a s
 #46/#53 and QA #17/#25/#30 remain separate. Older dated status/evidence entries below are historical and superseded
 where they say Stage 03 awaits acceptance or Stage 04 has not started; their original test results/SHA remain unchanged.
 
-## Current correction #52 — final combat controls (2026-10-28)
+## History — correction #52 — final combat controls (2026-10-28)
 
 Base main `1c96c6f` includes merged PR #50/#51: full canvas/offset, 50%/25%/25% attack movement, ECS landing recovery,
 scene config binding and safe empty preview are already delivered. Remaining #52 implementation uses one branch
@@ -55,8 +138,6 @@ Y/U/H/J/K are exact strikes, I/L general hand/foot series, Space jump. Crouch is
 no binding and its future key is decided before Stage 06. Five strikes/hits are implemented; Stage 04 body/world collisions
 are not. Stage 03 remains OPEN pending owner acceptance. Earlier dated delivery notes below are historical snapshots,
 including their old key bindings and movement/landing descriptions; they do not override this correction.
-
-# MLF Legends — Combat development roadmap
 
 ## Stage 03 tuning — Inspector settings before Stage 03 acceptance (2026-10-28)
 
@@ -114,7 +195,7 @@ unrelated invalid entry. Current renderer still selects ONE default character ty
 mixed-character/multi-atlas fighters require separate follow-up #46; this change does not claim that feature.
 
 
-## Current delivery — 2026-10-27 / #43
+## History — delivery — 2026-10-27 / #43
 
 `main` base fe324f83 includes merged #42; #41 is CLOSED as delivered, manager STATIC PASS.
 Its new Unity/GPU/GC measurements remain NOT RUN. Older corrections-requested dispatch notes below are historical.
@@ -134,34 +215,6 @@ has independent manager STATIC PASS; runtime acceptance is NOT RUN. Full state-d
 2. **03.3 follows review:** bind idle/walk/jump to existing authoritative state, integrate the final mage and calibrate visible scene/animations; profile graphics on actual hardware. Other attack/dash/cast clips remain content preview until their gameplay stages.
 3. Artist/code handshake uses the same manifest before mass export; technical starting canvas 192×192, nominal body height 96, pivot (96,160), right-facing authored art + flip. Dimensions remain data, not shader constants. The exact markers form is fixed in #38 as name → local-index array.
 4. Existing #30/#17/#25 qualifications remain. No merge by the implementing agent; raw graphics checks and headless test results are reported separately. No Stage 03 runtime result is claimed by this dispatch.
-
-## Governing rules
-- Focus **only on combat** until the owner explicitly reopens campaign design.
-- One authoritative ECS combat architecture from 1v1 through 200v200, without a separate duel/mass code path.
-- Stage states: NOT STARTED / READY / IN PROGRESS / BLOCKED / ACCEPTED (owner report) / VERIFIED (evidence independently checked). **Delivery and verification are independent**: lack of Unity Editor access is not a gate for committing, merging, pushing or continuing implementation when authorized. Owner-reported tests may justify ACCEPTED, not independently VERIFIED.
-- Each change: inspect current code and call sites → define owner and boundaries → implement → all **available** static/automated tests → bottom-up dependency audit → commit/PR/merge when authorized → update QA and roadmap. Unavailable Unity tests are recorded as NOT RUN, not invented as passing.
-- Don't silently introduce duplicate systems, unjustified architecture or redundant per-entity MonoBehaviours.
-- Unity version: **6000.5.4f1**; repository: https://github.com/HolyPenguin21/mlf-legends; main branch: `main`.
-- Template: **Universal 3D (URP)**, chosen for 3D terrain with sprite characters. URP 17.5.0 in current manifest.
-- Performance promises need measurements on named hardware; never claim 400 combatants already work.
-
-## Stages and verified deliverables
-| Stage | Work | Acceptance | Status |
-|---|---|---|---|
-| 00 | GitHub/Unity/URP bootstrap, dependencies, folders, test harness, CI feasibility | Source tracked; editor/packages committed; tests owner-reported PASS; CI and independent evidence deferred | ACCEPTED (OWNER) |
-| 01 | ECS simulation, fixed-step scheduler, entity data, command buffer, replay tests and 2/100/400 ECS baseline | Six main tasks delivered, Bootstrap debt #19 implemented; independent code audit #23 static PASS, owner accepted Stage 02 transition with missing Unity proof tracked in #30 and Windows Unicode/Burst #17 separate. No movement/AI/collisions/renderer yet. | ACCEPTED FOR NEXT STAGE (OWNER) — UNITY QA DEFERRED |
-| 02 | Movement and camera | Deterministic X/Z movement + jump Y, facing/action-state, tick-aligned input, fixed orthographic camera follow/zoom/pan, with one ECS authority | IMPLEMENTATION COMPLETE / MANAGER REVIEW PASS — #31/#33/#35 reviewed; #22 merged via PR #37, fixes and raw 244/244 ×2 + 21/21 ×2 + Performance 7/7 independently inspected; manual/hardware/full-frame QA remains qualified in QA.md |
-| 03 | GPU sprite rendering | Atlas animation, direction/frame selection, stable depth sorting, instancing | OWNER-ACCEPTED — direct owner message in #58; exact manual-test SHA/protocol unknown, no blanket Unity/GPU PASS. #46/#53 remain separate follow-ups; historical per-SHA evidence below is retained. |
-| 04 | Collisions | Custom actor/world collision, spatial index, masses, allies yield, enemies block, knockback | IN PROGRESS — 04.1 index (#58), 04.2 arena (#61), 04.3 body contacts (#64) merged; 04.4 impulses + 04.5 indexed Hit + 2/100/400 scale delivered in #66 for manager review and owner manual acceptance (Unity results in Docs/Evidence/66). |
-| 05 | Attack resolution | Windup/active/recovery; fast/heavy/jump attacks; shapes, multi-hit rules, damage/impact/stagger | IN PROGRESS — 05.1 (#48, MERGED `b828ccb`, Unity EditMode/PlayMode/GPU PASS): five grounded strikes, W/A/R, box hit tests, multi-target, once-per-strike ledger, HP damage, series/buffer; rules PROPOSED pending owner approval. Since #66 Hit runs on the shared final index (no reimplementation needed). Open: per-attack Impact wired to the #66 impulse input, stagger/launch, interrupt/cancel, guard damage, heavy/light mapping, jump attacks, defeat, balance |
-| 06 | Defense | Facing guard, stability, timely defense/counter opportunity, guard break; future guard key undecided, dash deferred/unbound | NOT STARTED |
-| 07 | Duel AI | Range, observable windups, bounded reaction time, mistakes, defense/dash/counter via same command rules | NOT STARTED |
-| 08 | Physiology | SPECIAL, body regions, injury and broken limbs, eye loss, bleeding, death, capability filtering | NOT STARTED |
-| 09 | Complete 1v1 prototype | Combat feel/balance, UI, animation feedback, sound, robust regression suite | NOT STARTED |
-| 10 | Group combat | 4v4 → 16v16 → 50v50, target allocation, local teamwork/formation, morale decisions | NOT STARTED |
-| 11 | Navigation | Own heightfield grid, flow fields, bounded A*, avoidance, dirty-region recalculation, jump-vs-detour | NOT STARTED |
-| 12 | 200v200 scale | ECS/Burst/rendering/perf benchmark on 400 actors; profile collisions, AI, render, frame pacing | NOT STARTED |
-| 13 | Magic and destruction | Prepared spells, multiple resources, systemic area effects, destructible objects/terrain, nav changes | NOT STARTED |
 
 ## Historical Unity compilation blocker (resolved by reviewed PR #36)
 
@@ -261,5 +314,3 @@ After merged Issue #5 (PR #13), execute narrow follow-ups **before final validat
 
 **Operating policy:** manager tracks every nonblocking follow-up as an Issue and decides the integration window. Truly independent polish/low-impact debt can wait until end of the stage; a fix that affects a subsequent test, measurement, integration boundary or correctness must go **before** that consumer. Keep one Issue per focused PR, prohibit competing writers/file overlap, perform available static checks, report Unity execution status honestly. These follow-ups do **not** retroactively block delivery of #5 or require a new ECS layer. Core `CombatantId` comments and `Core/CONTRACTS.md` were reconciled to World-scoped uniqueness by manager (documentation-only changes).
 
-## Delivery policy
-Existing Unity-generated project content is preserved. Code changes belong in focused commits/PRs and must not be merged before authorization. **Project-owner rule (2026-10-25): Unity Editor tests must never block commit/merge/push when the owner cannot run them from the current environment.** Perform available static checks, report risks, mark runtime tests **NOT RUN**, and leave them outstanding for a later verification opportunity. Do not mislabel delivery as VERIFIED. Update status and QA together whenever delivering milestones.

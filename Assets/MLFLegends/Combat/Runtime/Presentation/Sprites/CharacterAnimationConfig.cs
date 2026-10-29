@@ -81,9 +81,13 @@ namespace MLFLegends.Combat
         public Vector2 ImageOffsetPixels;
         public CharacterAnimationSettings[] Animations = Array.Empty<CharacterAnimationSettings>();
 
+        [Tooltip("Combat data of this character type (#69): physical body (cylinder) and the five strike slots (clip, damage, hit box). Timing stays in Animations.")]
+        public CharacterCombatSettings Combat = new CharacterCombatSettings();
+
         internal CharacterAnimationEntry Copy()
         {
-            var copy = new CharacterAnimationEntry { CharacterId = CharacterId, AtlasCatalog = AtlasCatalog, ImageOffsetPixels = ImageOffsetPixels };
+            var copy = new CharacterAnimationEntry { CharacterId = CharacterId, AtlasCatalog = AtlasCatalog, ImageOffsetPixels = ImageOffsetPixels,
+                Combat = Combat?.Copy() };
             copy.Animations = new CharacterAnimationSettings[Animations?.Length ?? 0];
             for (var i = 0; i < copy.Animations.Length; i++)
                 copy.Animations[i] = Animations[i]?.Copy();
@@ -91,7 +95,10 @@ namespace MLFLegends.Combat
         }
     }
 
-    /// <summary>One project-owned presentation config: characters → existing atlas catalogs → animation timing.</summary>
+    /// <summary>
+    /// One project-owned character config: characters → existing atlas catalogs → animation timing, plus each character's
+    /// combat data (body, strike slots; #69). The only source of strike timing (Animations) and of per-character combat values.
+    /// </summary>
     /// <remarks>Inspector edits increment Version. Runtime callers replace settings through Set (defensive copy),
     /// not by mutating Characters. Consumers never destroy the config/catalog/textures.</remarks>
     [CreateAssetMenu(menuName = "MLF Legends/Character Animation Config", fileName = "CharacterAnimationConfig")]
@@ -119,6 +126,39 @@ namespace MLFLegends.Combat
                     return character.ImageOffsetPixels;
             return Vector2.zero;
         }
+
+        /// <summary>
+        /// The combat data of <paramref name="characterId"/> (a missing block on a code-built entry means the defaults). Only
+        /// this character is checked; ranges are validated by the caller (<see cref="CharacterCombatSettings.Validate"/>).
+        /// </summary>
+        public bool TryResolveCombat(string characterId, out CharacterCombatSettings combat, out string error)
+        {
+            combat = null;
+            error = null;
+            CharacterAnimationEntry found = null;
+            foreach (var character in Characters)
+            {
+                if (character == null || character.CharacterId != characterId)
+                    continue;
+                if (found != null)
+                {
+                    error = $"characters.{characterId}: duplicate CharacterId";
+                    return false;
+                }
+                found = character;
+            }
+            if (string.IsNullOrWhiteSpace(characterId) || found == null)
+            {
+                error = $"characters.{characterId}: character settings missing";
+                return false;
+            }
+            combat = found.Combat ?? new CharacterCombatSettings();
+            return true;
+        }
+
+        /// <summary>Clip of a strike slot for this character (its Combat data, else the slot's default clip).</summary>
+        public string StrikeClip(string characterId, CombatAttackKind kind) =>
+            TryResolveCombat(characterId, out var combat, out _) ? combat.ClipFor(kind) : CombatAnimationSet.DefaultClip(kind);
 
         /// <summary>Validates only the requested character/clip: unrelated invalid records cannot block this character.</summary>
         public bool TryResolve(string characterId, string clipId, out SpriteAtlasCatalog catalog,

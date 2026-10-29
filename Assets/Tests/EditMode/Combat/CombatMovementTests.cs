@@ -223,7 +223,7 @@ namespace MLFLegends.Tests.EditMode
                 .Player(2, 2, ReplayRole.Human, pressed: CommandButtons.Jump)
                 .Player(4, 4, ReplayRole.Human, pressed: CommandButtons.Jump)
                 .Player(6, 6, ReplayRole.Human) // explicit None also continues gravity
-                .Player(8, 8, ReplayRole.Human, held: CommandButtons.Guard | CommandButtons.Attack, pressed: CommandButtons.Attack)
+                .Player(8, 8, ReplayRole.Human, held: CommandButtons.Guard | CommandButtons.HandSeries, pressed: CommandButtons.HandSeries)
                 .Player(10, 10, ReplayRole.Human, pressed: CommandButtons.Jump);
             clean.Request(BattleRequest.Start(BattleSetup.Default));
             extra.Request(BattleRequest.Start(BattleSetup.Default));

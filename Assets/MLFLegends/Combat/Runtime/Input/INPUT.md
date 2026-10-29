@@ -16,28 +16,24 @@ stay with their owners in `Simulation/`; player and AI commands are validated an
 The actions asset is `Assets/InputSystem_Actions.inputactions` (also the project-wide actions). Nobody here enables or
 disables the shared asset or its maps: each capture enables and disposes only its own clone.
 
-## Bindings — current owner layout (#52)
+## Bindings — current layout (#69, owner requirements #67)
 
 | Player action | Physical key | Logical flag |
 |---|---|---|
-| PunchLeft | Y | PunchLeft |
-| PunchRight | U | PunchRight |
-| Attack | I | Attack (general hand series) |
-| KickLeft | H | KickLeft |
-| KickRight | J | KickRight |
-| KickSpin | K | KickSpin |
-| Kick | L | Kick (general foot series) |
+| HandSeries | U | HandSeries (Hand1, Hand1, Hand2, Hand1, Hand2, …) |
+| FootSeries | I | FootSeries (Foot1, Foot1, Foot2, …) |
+| PhysicalAbility | O | PhysicalAbility (stand-alone, never buffered) |
 | Jump | Space | Jump |
 
 No Shift is required. These are the only combat action bindings; no mouse/Enter/gamepad/other-device combat aliases.
-Move/WASD and its existing stick bindings are preserved. Camera/UI maps are unchanged. Player template Look, Interact,
-Crouch, Previous, Next, Sprint and Guard are removed. Crouch is excluded; Guard has no key/implementation; Dash/Cast deferred.
+Move/WASD and its existing stick bindings are preserved. Camera/UI maps are unchanged. K (future Stage 06 block),
+double-tap WASD (future Stage 06 dash) and 7/8/9/0 (future Stage 13 magic slots) are deliberately unbound; the #52
+exact-limb actions (Y/U/H/J/K/L) were removed from the asset (renamed actions keep their GUIDs). Crouch is excluded.
 
-The capture uses one cloned map and shared arrays of the eight button names/flags. Arrays/callback delegates are created
+The capture uses one cloned map and shared arrays of the four button names/flags. Arrays/callback delegates are created
 once per capture; sampling/disposal iterate those same arrays. Capture ORs all pressed bits; it does NOT choose strikes.
-CombatAttackTuning.StrikeButton applies priority in simulation: exact hand L/R, exact foot L/R/spin, general hand, general
-foot. Jump wins from free grounded stance. Exact/general flags remain distinct through the existing one-slot combo buffer.
-See [current settings and validation](../../../../../Docs/STAGE03_CONTROLS.md).
+`CombatAttackTuning.StrikeButton` applies the stable priority **U → I → O** in the simulation, identically for AI. Jump
+wins from free grounded stance. Contract: [STAGE05_1_CHARACTER_SERIES.md](../../../../../Docs/STAGE05_1_CHARACTER_SERIES.md).
 
 ## Sampling policy (what one command contains)
 
@@ -114,8 +110,9 @@ re-reported, loses its first press after regain (the next release unblocks it).
 
 Use the external art PNG and `Assets/Scenes/CombatSmoke.unity`. Inspect AppliedCombatCommand/CombatAttackState and the
 bootstrap's published timing revision alongside the Game view.
-1. Y/U/H/J/K always choose their named strike; K starts spin from free grounded stance. I alternates hands, L follows
-   the existing foot series. Holding never repeats; simultaneous keys follow the documented priority, Space wins when free.
+1. U U U…: punch_left, punch_left, punch_right, punch_left…; I I I…: kick_left, kick_left, kick_right…; O from idle plays
+   the ability (kick_spin) fully and does nothing during a strike. Y/H/J/K/L do nothing. Holding never repeats;
+   simultaneous keys follow U → I → O; Space wins when free.
 2. Hold direction through jump/landing: frames 4 then 5 play on the ground before run/idle, no sliding. Strike/Space taps
    during recovery do not execute later. Startup log shows the configured landing duration (currently 12 ticks after 68c43c).
 3. Verify pause, focus/device reset, disable/re-enable, restart/despawn and World replacement drop stale presses; live
@@ -134,13 +131,14 @@ bootstrap's published timing revision alongside the Game view.
 - `Tests/PlayMode/Input/PlayerInputPlayModeTests`: real PlayerLoop order, real-loop taps/holds at 30/60/120 FPS
   (`Time.captureFramerate`), pause, focus, additive scene switch/re-enable, camera follow/rebind and the exact view on End
   (CombatSmoke); the Input System's real focus cycle (test runtime focus, runInBackground on/off) with the device
-  re-reporting held Space/I/L; an adapter following a default World that appears late or is replaced A → B → A.
+  re-reporting held Space/U/I; an adapter following a default World that appears late or is replaced A → B → A (World B is
+  a valid combat World with the arena owner; the fixture restores replaced Worlds in `[UnityTearDown]`, #69).
 - `Tests/EditMode/Performance/PlayerInputBenchmarkTests`: producer cost, see `Docs/PERFORMANCE_BASELINE.md`.
 
-## Compatibility and scope (#52)
+## Compatibility and scope (#69; #52 historical)
 
-CommandButtons is now ushort. Old numeric values Attack=1, Jump=2, Guard=4, Kick=8 remain stable; the five exact bits are
-16/32/64/128/256. Guard remains a reserved logical flag for compatibility, without an action or device binding.
-Typed command/buffer/replay fields carry all bits; no byte truncation. Rebuild consumers of the unmanaged command layout;
-no binary command-file format is promised. Undefined bits 512 and above remain invalid at the common processor.
+CommandButtons is ushort: HandSeries=1 (former Attack), Jump=2, Guard=4 (reserved, unbound), FootSeries=8 (former Kick),
+PhysicalAbility=512. The #52 exact-limb bits 16/32/64/128/256 are retired: the common processor rejects them as
+InvalidValue and they are never reused, so a pre-#69 recording that pressed them is not compatible. Other undefined bits
+stay invalid. Typed command/buffer/replay fields carry all bits; no binary command-file format is promised.
 Existing lifecycle, input pacing and generic strike rules are retained; historical Unity evidence uses its original SHA.

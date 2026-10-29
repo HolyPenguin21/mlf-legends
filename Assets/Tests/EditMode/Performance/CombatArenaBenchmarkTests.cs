@@ -22,7 +22,7 @@ namespace MLFLegends.Tests.EditMode
             foreach (var (id, team) in SystemAPI.Query<RefRO<CombatantId>, RefRO<CombatTeam>>().WithAll<InCombat>())
                 buffer.Add(new CombatCommandSubmission(new CombatCommand { Combatant = id.ValueRO, Tick = tick,
                     MoveX = (sbyte)(team.ValueRO.Value == 1 ? 1 : -1), Source = CommandSource.AI,
-                    Pressed = tick % 90 == 1 ? CommandButtons.Jump : tick % 90 == 65 ? CommandButtons.PunchLeft : CommandButtons.None }));
+                    Pressed = tick % 90 == 1 ? CommandButtons.Jump : tick % 90 == 65 ? CommandButtons.HandSeries : CommandButtons.None }));
         }
     }
 

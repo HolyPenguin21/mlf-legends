@@ -1,3 +1,6 @@
+> **Historical (#52).** The key layout and exact-limb intentions below were replaced by #69 (U/I series, O ability,
+> Space jump; exact bits retired): [STAGE05_1_CHARACTER_SERIES.md](STAGE05_1_CHARACTER_SERIES.md).
+
 # Final combat controls — issue #52, 2026-10-28
 
 Base main: **1c96c6faf12a70e27e735655dd2c993434dd8e0b**, including merged PR #50 and #51.

@@ -37,7 +37,7 @@ namespace MLFLegends.Tests.EditMode
                 var direction = team.ValueRO.Value == 1 ? 1f : -1f;
                 buffer.Add(new CombatCommandSubmission(new CombatCommand { Combatant = id.ValueRO, Tick = tick,
                     MoveX = moving ? (sbyte)direction : (sbyte)0,
-                    Source = CommandSource.AI, Pressed = moving && tick % period == 1 ? CommandButtons.PunchLeft : CommandButtons.None }));
+                    Source = CommandSource.AI, Pressed = moving && tick % period == 1 ? CommandButtons.HandSeries : CommandButtons.None }));
                 if (tick % 30 == 5 && (Impulses == 2 || Impulses == 1 && id.ValueRO.Equals(controlled)))
                     impulses.Add(new CombatImpulse { Target = id.ValueRO, BattleNumber = session.BattleNumber,
                         Impulse = new float3(8 * direction, id.ValueRO.Value % 4 == 0 ? 3 : 0, id.ValueRO.Value % 2 == 0 ? 2 : -2) });
@@ -53,7 +53,7 @@ namespace MLFLegends.Tests.EditMode
         [ReadOnly] public NativeArray<CombatSpatialBody> Candidates; // indexed: flat candidate rows
         [ReadOnly] public NativeArray<int2> Ranges;
         [ReadOnly] public NativeArray<float4> Attackers; // position xyz, facing
-        [ReadOnly] public NativeArray<CombatAttackKind> Kinds;
+        [ReadOnly] public NativeArray<CombatStrikeParameters> Strikes; // frozen per execution (#69), as Hit reads them
         [ReadOnly] public NativeArray<byte> Teams;
         public bool Indexed;
         public NativeArray<long> Result; // [0] Inside tests, [1] inside, [2] checksum of inside (attacker index, target id)
@@ -63,7 +63,7 @@ namespace MLFLegends.Tests.EditMode
             long tests = 0, inside = 0, sum = 0;
             for (var a = 0; a < Attackers.Length; a++)
             {
-                var strike = CombatAttackTuning.Get(Kinds[a]);
+                var strike = Strikes[a];
                 var rows = Indexed ? Candidates.GetSubArray(Ranges[a].x, Ranges[a].y) : Bodies;
                 for (var t = 0; t < rows.Length; t++)
                 {
@@ -89,18 +89,26 @@ namespace MLFLegends.Tests.EditMode
                 var lines = BenchmarkEnvironment.Capture().Select(p => "# " + p.Key + ": " + p.Value).ToList();
                 lines.Add("# Numerical kernel is Schedule+Complete; movement includes main-thread gather/write and job dispatch. Kernel flag reports actual managed execution, never assumes Burst.");
                 lines.Add("# Cold means first Movement in a new World; Burst may already be compiled by earlier tests.");
-                lines.Add("# Dense work is not linear. Native capacity is payload lower bound, process delta also includes allocator/ECS effects. Full fixed group measured separately.");
+                lines.Add("# Dense work is not linear. Native capacity is payload lower bound. Full fixed group measured separately.");
+                lines.Add("# #69 native columns (Profiler.GetTotalAllocatedMemoryLong, process-wide, NOT a leak test by itself): native_owner_profiler_on = the measured owner loop with the Profiler enabled (GC.Alloc recorder);");
+                lines.Add("#   native_compare_pass = the following test-only scan/index comparison pass; native_owner_profiler_off = another owner pass with the Profiler disabled;");
+                lines.Add("#   native_after_dispose = after World disposal minus before World creation (test-side scratch of this scenario is still alive, ~100 KB).");
+                lines.Add("# #69 contact velocity: velocity_contacts = recorded contact pairs summed over measured ticks; velocity_passes_max = the largest per-tick pass count; velocity_residual_max = the largest last-pass change (u/s; > 1e-5 means the pass cap was reached).");
                 lines.Add("# Stage 04.4/04.5 (#66): impulses every 30 ticks (single = controlled fighter, mass = everyone); strikes = presses every 30 ticks.");
                 lines.Add("# Hit search: the same final snapshot and Active attackers, complete scan vs index batch (+Inside kernel); counts must match. Overlapping timings are not additive.");
                 lines.Add("bodies\tscenario\tcold_move_us\tcold_native_payload\twarm_native_payload\tmove_mean_us\tmove_p95_us\tkernel_mean_us\tindex_mean_us\thit_mean_us\tfull_tick_mean_us\tfull_tick_p95_us\tcandidates\tpair_visits\tpeak_pairs\titerations\tfinal_residual\tresidual_complete\tunresolved_penetration\tconstraint_violation\tfrozen\tyield_attempts\tworld_rejections\twork_limits\tmanaged_kernel\tgc_samples\tprocess_native_delta"
                     + "\timpulses_applied\timpulses_rejected\tphysical_bodies\tdiscarded_velocities\tover_speed\tmax_external_speed"
                     + "\tactive_attacker_ticks\taccepted_hits\thit_queries\thit_candidates\thit_entries\thit_inside_tests\thit_managed_kernel"
                     + "\tbruteforce_search_mean_us\tindexed_search_mean_us\tbruteforce_inside_tests\tindexed_inside_tests\tsearch_inside\tsearch_match"
-                    + "\tlocal_holds\trolled_back_bodies\tslop_pairs\tmax_slop_depth");
+                    + "\tlocal_holds\trolled_back_bodies\tslop_pairs\tmax_slop_depth"
+                    + "\tnative_compare_pass\tnative_owner_profiler_off\tnative_after_dispose\tvelocity_contacts\tvelocity_passes_max\tvelocity_residual_max");
+                lines[lines.FindIndex(l => l.StartsWith("bodies\t"))] = lines[lines.FindIndex(l => l.StartsWith("bodies\t"))]
+                    .Replace("\tprocess_native_delta\t", "\tnative_owner_profiler_on\t");
                 var failures = new List<string>();
                 foreach (var count in new[] { 2, 100, 400 })
                 foreach (var scenario in new[] { "sparse", "dense_allies", "opponents", "corridor", "wall_pressure", "impulse_single", "impulse_mass", "strikes" })
                 {
+                    var nativeScenarioStart = Profiler.GetTotalAllocatedMemoryLong();
                     using var bench = new CombatBenchmarkWorld("body contact benchmark"); bench.Producer.Load = ProducerLoad.None;
                     var rows = new List<CombatArenaShape> { CombatArenaTests.Box(0, -.5f, 0, 500, 0, 500) };
                     if (scenario == "corridor")
@@ -147,17 +155,18 @@ namespace MLFLegends.Tests.EditMode
                     var peak = 0; var residual = 0f; var unresolved = 0f; var constraint = 0f; var complete = true; var managed = false;
                     long applied = 0, rejected = 0, physical = 0, discarded = 0, overSpeed = 0, activeTicks = 0, accepted = 0, queries = 0, hitCandidates = 0, entries = 0, insideTests = 0;
                     long bfTests = 0, ixTests = 0, searchInside = 0; var maxSpeed = 0f; var hitManaged = false; var match = true;
-                    long holds = 0, rolledBack = 0, slopPairs = 0; var slopDepth = 0f;
+                    long holds = 0, rolledBack = 0, slopPairs = 0, velocityContacts = 0; var slopDepth = 0f; var velocityPasses = 0; var velocityResidual = 0f;
                     var bruteSearch = new BenchmarkSamples(MeasuredTicks); var indexedSearch = new BenchmarkSamples(MeasuredTicks);
-                    using var attackerQuery = bench.Manager.CreateEntityQuery(typeof(CombatAttackState), typeof(CombatFacing), typeof(CombatPosition), typeof(CombatTeam), typeof(InCombat));
+                    // Disposed explicitly before the World (the World also releases it on an exception path).
+                    var attackerQuery = bench.Manager.CreateEntityQuery(typeof(CombatAttackState), typeof(CombatFacing), typeof(CombatPosition), typeof(CombatTeam), typeof(InCombat));
                     using var all = new NativeList<CombatSpatialBody>(1024, Allocator.Persistent); using var hitRows = new NativeList<CombatSpatialBody>(4096, Allocator.Persistent);
                     using var ranges = new NativeList<int2>(512, Allocator.Persistent); using var boxes = new NativeList<CombatSpatialBounds>(512, Allocator.Persistent);
-                    using var attackers = new NativeList<float4>(512, Allocator.Persistent); using var kinds = new NativeList<CombatAttackKind>(512, Allocator.Persistent);
+                    using var attackers = new NativeList<float4>(512, Allocator.Persistent); using var strikes = new NativeList<CombatStrikeParameters>(512, Allocator.Persistent);
                     using var attackerTeams = new NativeList<byte>(512, Allocator.Persistent); using var result = new NativeArray<long>(3, Allocator.Persistent);
                     var everywhere = new CombatSpatialBounds { Min = new float3(-float.MaxValue), Max = new float3(float.MaxValue) };
                     void CompareSearch()
                     {
-                        attackers.Clear(); kinds.Clear(); attackerTeams.Clear(); boxes.Clear();
+                        attackers.Clear(); strikes.Clear(); attackerTeams.Clear(); boxes.Clear();
                         var tick = bench.Tick;
                         using (var states = attackerQuery.ToComponentDataArray<CombatAttackState>(Allocator.Temp))
                         using (var facings = attackerQuery.ToComponentDataArray<CombatFacing>(Allocator.Temp))
@@ -167,14 +176,14 @@ namespace MLFLegends.Tests.EditMode
                             {
                                 if (!states[i].IsAttacking || states[i].Timing.PhaseAt(tick - states[i].StartTick) != CombatAttackPhase.Active) continue;
                                 var facingSign = facings[i].Value == FacingDirection.Left ? -1f : 1f;
-                                attackers.Add(new float4(positions[i].Value, facingSign)); kinds.Add(states[i].Kind); attackerTeams.Add(teams[i].Value);
-                                boxes.Add(CombatHitSystem.StrikeQuery(CombatAttackTuning.Get(states[i].Kind), positions[i].Value, facingSign));
+                                attackers.Add(new float4(positions[i].Value, facingSign)); strikes.Add(states[i].Strike); attackerTeams.Add(teams[i].Value);
+                                boxes.Add(CombatHitSystem.StrikeQuery(states[i].Strike, positions[i].Value, facingSign));
                             }
                         if (attackers.Length == 0) return;
                         var start = Stopwatch.GetTimestamp();
                         if (!index.TryQueryAabb(everywhere, all)) { match = false; return; }
                         var probe = new HitSearchProbeJob { Bodies = all.AsArray(), Candidates = all.AsArray(), Ranges = ranges.AsArray(), Attackers = attackers.AsArray(),
-                            Kinds = kinds.AsArray(), Teams = attackerTeams.AsArray(), Result = result };
+                            Strikes = strikes.AsArray(), Teams = attackerTeams.AsArray(), Result = result };
                         probe.Run(); bruteSearch.Add(Stopwatch.GetTimestamp() - start);
                         long bt = result[0], bi = result[1], bs = result[2];
                         start = Stopwatch.GetTimestamp();
@@ -198,6 +207,7 @@ namespace MLFLegends.Tests.EditMode
                             applied += d.ImpulsesApplied; rejected += d.ImpulsesRejected; physical += d.PhysicalBodies; discarded += d.DiscardedVelocities;
                             overSpeed += d.OverSpeedBodies; maxSpeed = Math.Max(maxSpeed, d.MaxExternalSpeed);
                             holds += d.LocalHolds; rolledBack += d.RolledBackBodies; slopPairs += d.SlopAcceptedPairs; slopDepth = Math.Max(slopDepth, d.SlopAcceptedDepth);
+                            velocityContacts += d.VelocityContacts; velocityPasses = Math.Max(velocityPasses, d.VelocityIterations); velocityResidual = Math.Max(velocityResidual, d.VelocityResidual);
                         }
                         start = Stopwatch.GetTimestamp(); index.Update(); if (measure) grid.Add(Stopwatch.GetTimestamp() - start);
                         if (compare) CompareSearch();
@@ -221,9 +231,17 @@ namespace MLFLegends.Tests.EditMode
                     if (control.End() == 0) Assert.Inconclusive("NOT RUN: allocation counter positive control failed.");
                     var nativeBefore = Profiler.GetTotalAllocatedMemoryLong(); var gc = GcAllocationScope.Begin(); int gcSamples;
                     try { for (var i = 0; i < MeasuredTicks; i++) Tick(true); } finally { gcSamples = gc.End(); }
-                    // Separate pass on the following ticks: the search comparison is test code, outside the GC/owner timings.
-                    for (var i = 0; i < MeasuredTicks; i++) Tick(false, true);
                     var nativeDelta = Profiler.GetTotalAllocatedMemoryLong() - nativeBefore;
+                    // Separate pass on the following ticks: the search comparison is test code, outside the GC/owner timings.
+                    var compareBefore = Profiler.GetTotalAllocatedMemoryLong();
+                    for (var i = 0; i < MeasuredTicks; i++) Tick(false, true);
+                    var nativeCompare = Profiler.GetTotalAllocatedMemoryLong() - compareBefore;
+                    // The same owner loop with the Profiler (and its sample buffers) disabled: separates measurement cost.
+                    Profiler.enabled = false;
+                    var offBefore = Profiler.GetTotalAllocatedMemoryLong();
+                    for (var i = 0; i < MeasuredTicks; i++) Tick(false);
+                    var nativeOwnerOff = Profiler.GetTotalAllocatedMemoryLong() - offBefore;
+                    Profiler.enabled = true;
                     Assert.That(gcSamples, Is.Zero, "Warm Movement + contacts + index + Hit owner loop.");
                     if (!match) failures.Add($"{count} {scenario}: indexed and complete-scan searches differ");
                     if ((scenario == "strikes" || scenario == "opponents" || scenario.StartsWith("impulse")) && activeTicks == 0)
@@ -238,14 +256,18 @@ namespace MLFLegends.Tests.EditMode
                     var full = new BenchmarkSamples(MeasuredTicks);
                     for (var i = 0; i < MeasuredTicks; i++) { bench.PrepareFrame(1); var start = Stopwatch.GetTimestamp(); bench.RunFrame(); full.Add(Stopwatch.GetTimestamp() - start); }
                     var m = move.Stats(); var g = grid.Stats(); var hs = hits.Stats(); var k = kernel.Stats(); var f = full.Stats();
+                    attackerQuery.Dispose();
+                    bench.Dispose(); // idempotent; the using declaration disposes again at the end of the scope
+                    var nativeAfterDispose = Profiler.GetTotalAllocatedMemoryLong() - nativeScenarioStart;
                     var bf = bruteSearch.Count > 0 ? bruteSearch.Stats().Mean : 0; var ix = indexedSearch.Count > 0 ? indexedSearch.Stats().Mean : 0;
                     lines.Add(string.Join("\t", count, scenario, cold, coldCapacity, warmCapacity, m.Mean, m.P95, k.Mean, g.Mean, hs.Mean,
                         f.Mean, f.P95, candidates, visits, peak, iterations, residual, complete, unresolved, constraint, frozen, yields, rejects, workLimits, managed, gcSamples, nativeDelta,
                         applied, rejected, physical, discarded, overSpeed, maxSpeed, activeTicks, accepted, queries, hitCandidates, entries, insideTests, hitManaged,
-                        bf, ix, bfTests, ixTests, searchInside, match, holds, rolledBack, slopPairs, slopDepth));
+                        bf, ix, bfTests, ixTests, searchInside, match, holds, rolledBack, slopPairs, slopDepth,
+                        nativeCompare, nativeOwnerOff, nativeAfterDispose, velocityContacts, velocityPasses, velocityResidual));
                 }
                 Directory.CreateDirectory(BenchmarkReport.Directory);
-                File.WriteAllLines(Path.Combine(BenchmarkReport.Directory, "stage04-impulses-hit.tsv"), lines);
+                File.WriteAllLines(Path.Combine(BenchmarkReport.Directory, "stage05-contact-velocity.tsv"), lines);
                 Assert.That(failures, Is.Empty);
             }
             finally { recorder.enabled = recorderEnabled; Profiler.enabled = enabled; }
