@@ -15,7 +15,7 @@ Results only from actual runs: **PASS / FAIL / NOT RUN**.
 | PlayMode (GPU) | base `8568f0a` | **FAIL 48/66** (18) |
 | PlayMode (GPU) | full branch with `c1a1c0a` | **FAIL 56/66**: the 10 `PlayerInputPlayModeTests` fail only in the full ordered run ("CombatSmoke requires CombatArenaSystem"); one of them run alone **PASS**; same tests failed on the base. Pre-existing order dependency, not fixed |
 | Performance `BodyContactScenarios2_100_400…`, Burst on | full branch | **PASS** (GC samples 0 in every owner loop, indexed = brute-force Inside pairs, Active strikes/impulses present). [TSV](stage04-impulses-hit-burst-on.tsv) |
-| Same, `--burst-disable-compilation` | full branch | **NOT RUN to completion**: still running after 44 min (dense 400 managed kernel); no result recorded |
+| Same, `--burst-disable-compilation` | full branch | **FAIL (timeout only)**: all 24 scenarios measured and the [TSV](stage04-impulses-hit-burst-off.tsv) written (managed-kernel flags True, GC samples 0, search match True), but the run took 2673 s > the 1800 s test timeout |
 | Other Performance suites (baseline, arena, strikes, sprites) | — | **NOT RUN** on this branch (an early full-suite base run was stopped) |
 | Manual Unity checklist (STAGE04_IMPULSES_HIT §7) | — | **NOT RUN** (owner) |
 
@@ -33,7 +33,7 @@ Results only from actual runs: **PASS / FAIL / NOT RUN**.
 | 400 strikes | 16068 | 15389 | 386 | 328 | 17129 / 19941 | 240000 | 100 / 800 | 815 / 1353 |
 | 400 impulse_mass | 15867 | 15190 | 384 | 205 | 16737 / 20312 | 240000 | 50 / 400 | 812 / 1336 |
 
-Managed-kernel flags (contacts and Hit) were False: Burst executed.
+Managed-kernel flags (contacts and Hit) were False: Burst executed. Burst off, same scenarios (µs, Movement / full tick): 2 strikes 65 / 122; 100 strikes 13768 / 14072; 400 sparse 4623 / 5519; 400 strikes 195429 / 196237 — the contact kernel is ~12× slower managed; index (~400 µs at 400) and Hit (~230–376 µs) barely change.
 
 ## Findings for the manager
 

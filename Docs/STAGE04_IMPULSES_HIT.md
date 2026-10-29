@@ -170,4 +170,5 @@ heavy/light mapping, defeat and balance.
   specified, but convergence for large pressing groups needs a decision before Stage 04 is closed.
 - Indexed Hit search is faster than a full scan in sparse layouts and slower in dense 400 packs (managed batch query
   cost). Correctness matches the brute-force oracle in every measured and tested case.
-- Burst-off benchmark, other Performance suites and the owner's manual checklist: NOT RUN.
+- Burst-off benchmark measured all scenarios but exceeded the 1800 s test timeout (FAIL by timeout). Other Performance
+  suites and the owner's manual checklist: NOT RUN.
