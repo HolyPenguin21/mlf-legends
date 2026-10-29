@@ -56,6 +56,13 @@ namespace MLFLegends.Combat
         public void Rebuild()
         {
             if (m_World == null || !m_World.IsCreated || m_Lease == 0) return;
+            using var ownership = m_World.EntityManager.CreateEntityQuery(typeof(CombatArenaState));
+            if (ownership.CalculateEntityCount() != 1 || ownership.GetSingleton<CombatArenaState>().Lease != m_Lease)
+            {
+                ClearRampVisuals();
+                Debug.LogWarning("Stale arena rebuild ignored; the current owner's geometry is unchanged.", this);
+                return;
+            }
             var shapes = new List<CombatArenaShape>();
             string error = null;
             foreach (var source in Sources ?? Array.Empty<CombatArenaSource>())
@@ -66,7 +73,7 @@ namespace MLFLegends.Combat
             var valid = error == null && shapes.Count > 0 && shapes.Count <= CombatArenaTuning.MaxShapes;
             var accepted = CombatArenaSystem.Stage(m_World.EntityManager, m_Lease, valid ? shapes.ToArray() : null);
             if (!accepted || !valid)
-                Debug.LogError("Static arena rejected: " + (error ?? "missing source, invalid dimensions or lost lease") + ". Movement is frozen; no spawn-height floor fallback.", this);
+                Debug.LogError("Static arena rejected: " + (error ?? "missing source, invalid dimensions or shape limit") + ". Required geometry will be invalid at the next boundary; no spawn-height fallback.", this);
             m_ReportedFailure = false;
             ClearRampVisuals();
             if (valid && accepted && RampMaterial != null)
