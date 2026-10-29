@@ -32,6 +32,33 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(math.all(math.isfinite(r.Position)), Is.True);
         }
 
+        // #70: walls the body rests against at its final position constrain velocity; floors, distant walls and the sloped face
+        // of a walkable ramp do not (a body can be pushed uphill), the side of a steep ramp does.
+        [Test]
+        public void TouchingWallsAreTheSidesWithinGapOfTheFinalPosition()
+        {
+            var walkable = new CombatArenaShape { Kind = CombatArenaKind.Ramp, Center = new float2(0, 4), HalfSize = new float2(2, 1),
+                Bottom = 0, Top = 1, AxisX = new float2(1, 0) };
+            var steep = walkable; steep.Center = new float2(0, -4); steep.Top = 5; // slope 1.25 > MaxSlope
+            using var shapes = new NativeArray<CombatArenaShape>(new[] { Floor, Box(-1.1f, 0, 0, .1f, 4, 1), walkable, steep }, Allocator.Temp);
+            CombatWallSet Touching(float3 p)
+            {
+                var set = new CombatWallSet();
+                CombatArenaGeometry.AddTouchingWalls(shapes, Body, p, CombatContactTuning.ContactGap, ref set);
+                return set;
+            }
+            var resting = Touching(new float3(-1 + Body.Radius, 0, 0));
+            Assert.That(resting.Count, Is.EqualTo(1)); Assert.That(math.distance(resting.N0, new float2(1, 0)), Is.LessThan(1e-5f));
+            Assert.That(Touching(new float3(-1 + Body.Radius + .01f, 0, 0)).Count, Is.Zero, "Beyond the gap.");
+            Assert.That(Touching(new float3(5, 0, 5)).Count, Is.Zero, "The floor under the feet is support, not a wall.");
+            // On the walkable ramp at x = -1: feet at the height under the disk's front edge.
+            var feet = (-1 + Body.Radius + 2) * .25f;
+            Assert.That(Touching(new float3(-1, feet, 4)).Count, Is.Zero, "Walkable slope face.");
+            var steepFeet = (-1 + Body.Radius + 2) * 1.25f; // the steep face at this height is at the disk's front edge
+            var wall = Touching(new float3(-1, steepFeet, -4));
+            Assert.That(wall.Count, Is.EqualTo(1)); Assert.That(wall.N0.x, Is.LessThan(-.99f), "Steep side blocks.");
+        }
+
         [Test]
         public void BareWorldFallbackDoesNotReadAnUnallocatedNativeArray()
         {
