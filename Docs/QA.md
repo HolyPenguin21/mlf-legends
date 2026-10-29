@@ -1013,3 +1013,8 @@ independent manager acceptance remains required. This follow-up **was merged as 
 ## Acceptance history supersession (2026-10-26)
 
 Earlier entries calling #23 a blocker of Stage 02, or describing #19/#26 as not yet merged, are historical dated notes. **Current controlling status:** #19 fixed and closed via merged PR #28 + #29; #23 static audit completed and closed by owner-approved transition; #30 deferred Unity evidence OPEN; #17 Cyrillic path Burst OPEN; Stage 02 #31 implemented and manager STATIC PASS via merged PR #32 (Unity NOT RUN). These statuses supersede the earlier sequence without rewriting historical agent claims.
+
+
+## Stage 05.2 — #73 physical ability
+
+Implementation and numerical contracts: [STAGE05_2.md](STAGE05_2.md). Order remains Action → Facing → Movement (accepted shape/path) → final SpatialIndex → Hit. Next: #74, then 05.3 VFX. Stage 04/05 owner manual acceptance is still open. Unity/Burst/GPU/benchmark execution for this change is NOT RUN; available source/model evidence does not replace it.

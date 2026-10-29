@@ -15,6 +15,7 @@ namespace MLFLegends.Combat
         public int ActiveAttackers, Queries, Candidates, InsideTests, AcceptedHits;
         public long EntriesVisited;
         public bool UsedFullScan, KernelRanManaged;
+        public int TraceSegments;
     }
 
     /// <summary>The single fixed-tick hit resolution owner: the only writer of <see cref="CombatHealth"/> and of hit ledgers.</summary>
@@ -48,6 +49,8 @@ namespace MLFLegends.Combat
             public CombatAttackKind Kind;
             public CombatStrikeParameters Strike; // Frozen at strike start (CombatAttackState.Strike), never the live table.
             public float Facing;
+            public float ActiveLo, ActiveHi;
+            public bool Swept;
         }
 
         struct ById : IComparer<Attacker>
@@ -60,12 +63,16 @@ namespace MLFLegends.Combat
         NativeList<CombatSpatialBody> m_Candidates;
         NativeList<int2> m_Ranges;
         NativeArray<CombatHitDiagnostics> m_Diagnostics;
+        NativeList<CombatHitConfirmation> m_Confirmed;
+        NativeList<CombatImpulse> m_HitImpulses;
 
         /// <summary>Last call with Active attackers (stays in its own Tick/BattleNumber epoch).</summary>
         public CombatHitDiagnostics LastHits;
 
         public void OnCreate(ref SystemState state)
         {
+            m_Confirmed = new NativeList<CombatHitConfirmation>(1, Allocator.Persistent);
+            m_HitImpulses = new NativeList<CombatImpulse>(1, Allocator.Persistent);
             m_Attackers = new NativeList<Attacker>(1, Allocator.Persistent);
             m_Queries = new NativeList<CombatSpatialBounds>(1, Allocator.Persistent);
             m_Candidates = new NativeList<CombatSpatialBody>(1, Allocator.Persistent);
@@ -77,6 +84,8 @@ namespace MLFLegends.Combat
 
         public void OnDestroy(ref SystemState state)
         {
+            if (m_Confirmed.IsCreated) m_Confirmed.Dispose();
+            if (m_HitImpulses.IsCreated) m_HitImpulses.Dispose();
             if (m_Diagnostics.IsCreated) m_Diagnostics.Dispose();
             if (m_Ranges.IsCreated) m_Ranges.Dispose();
             if (m_Candidates.IsCreated) m_Candidates.Dispose();
@@ -95,7 +104,7 @@ namespace MLFLegends.Combat
         /// <summary>Exact closed strike box around a point target; Hit and its oracles share this rule.</summary>
         public static bool Inside(in CombatStrikeParameters strike, float3 attacker, float facing, float3 target)
         {
-            var delta = target - attacker;
+            var delta = target - attacker; delta.y -= strike.HitOffsetY;
             var forward = delta.x * facing;
             return forward >= strike.ReachMin && forward <= strike.ReachMax
                 && math.abs(delta.z) <= strike.DepthHalfWidth && math.abs(delta.y) <= strike.HeightTolerance;
@@ -107,6 +116,7 @@ namespace MLFLegends.Combat
         /// </summary>
         public static CombatSpatialBounds StrikeQuery(in CombatStrikeParameters strike, float3 attacker, float facing)
         {
+            attacker.y += strike.HitOffsetY;
             var lo = facing > 0 ? attacker.x + strike.ReachMin : attacker.x - strike.ReachMax;
             var hi = facing > 0 ? attacker.x + strike.ReachMax : attacker.x - strike.ReachMin;
             var extent = new float3(math.max(math.abs(strike.ReachMin), math.abs(strike.ReachMax)), strike.HeightTolerance, strike.DepthHalfWidth);
@@ -132,24 +142,41 @@ namespace MLFLegends.Combat
                     var kind = attack.ValueRO.Kind;
                     if (kind == CombatAttackKind.None || attack.ValueRO.Timing.PhaseAt(tick - attack.ValueRO.StartTick) != CombatAttackPhase.Active)
                         continue;
+                    attack.ValueRO.Timing.ActiveWindow(tick - attack.ValueRO.StartTick, out var lo, out var hi);
                     m_Attackers.Add(new Attacker
                     {
                         Id = id.ValueRO.Value, Entity = entity, Team = team.ValueRO.Value, Position = position.ValueRO.Value, Kind = kind,
                         Strike = attack.ValueRO.Strike,
                         Facing = facing.ValueRO.Value == FacingDirection.Left ? -1f : 1f,
+                        ActiveLo = lo, ActiveHi = hi, Swept = attack.ValueRO.Strike.SelfImpulse > 0,
                     });
                 }
                 if (m_Attackers.Length == 0)
                     return;
 
                 m_Attackers.Sort(new ById());
+                var index = state.World.GetExistingSystemManaged<CombatSpatialIndexSystem>();
+                var useMotion = false;
                 for (var i = 0; i < m_Attackers.Length; i++)
                 {
                     var a = m_Attackers[i];
-                    m_Queries.Add(StrikeQuery(a.Strike, a.Position, a.Facing));
+                    var query = StrikeQuery(a.Strike, a.Position, a.Facing);
+                    if (a.Swept)
+                    {
+                        useMotion = true;
+                        if (index == null || !index.TryMotionBounds(a.Id, out var motion))
+                            throw new InvalidOperationException("Missing accepted movement for a swept attack; no hits applied.");
+                        var start = StrikeQuery(a.Strike, motion.Min, a.Facing);
+                        var end = StrikeQuery(a.Strike, motion.Max, a.Facing);
+                        query.Min = math.min(start.Min, end.Min); query.Max = math.max(start.Max, end.Max);
+                    }
+                    m_Queries.Add(query);
                 }
-                var index = state.World.GetExistingSystemManaged<CombatSpatialIndexSystem>();
-                if (index == null || !index.TryQueryAabbBatch(m_Queries.AsArray(), m_Candidates, m_Ranges))
+                NativeArray<CombatMotionSegment> segments = default;
+                var bodyCount = 0;
+                if (index == null || !(useMotion
+                    ? index.TryMotionBatch(m_Queries.AsArray(), m_Candidates, m_Ranges, out segments, out bodyCount)
+                    : index.TryQueryAabbBatch(m_Queries.AsArray(), m_Candidates, m_Ranges)))
                     throw new InvalidOperationException(
                         "Hit needs this tick's final spatial snapshot for its Active attackers; no HP or ledger was written.");
 
@@ -159,21 +186,40 @@ namespace MLFLegends.Combat
                     Tick = tick, BattleNumber = session, ActiveAttackers = m_Attackers.Length, Queries = m_Queries.Length,
                     Candidates = m_Candidates.Length, EntriesVisited = index.LastQueryEntriesVisited, UsedFullScan = index.LastQueryUsedFullScan,
                 };
+                if (m_Candidates.Length > m_Confirmed.Capacity) m_Confirmed.Capacity = m_Candidates.Length;
+                if (m_Candidates.Length > m_HitImpulses.Capacity) m_HitImpulses.Capacity = m_Candidates.Length;
+                var shapes = SystemAPI.TryGetSingleton<CombatArenaState>(out var arena) && arena.Required
+                    ? SystemAPI.GetSingletonBuffer<CombatArenaShape>(true).AsNativeArray() : index.EmptyShapes;
                 state.Dependency = new CombatHitJob
                 {
                     Attackers = m_Attackers.AsArray(), Candidates = m_Candidates.AsArray(), Ranges = m_Ranges.AsArray(),
                     Health = SystemAPI.GetComponentLookup<CombatHealth>(), Ledgers = SystemAPI.GetBufferLookup<CombatHitRecord>(),
-                    Diagnostics = m_Diagnostics,
+                    Diagnostics = m_Diagnostics, Segments = segments, BodyCount = bodyCount, Shapes = shapes,
+                    Confirmed = m_Confirmed, Impulses = m_HitImpulses, BattleNumber = session,
                 }.Schedule(state.Dependency);
                 state.Dependency.Complete();
                 LastHits = m_Diagnostics[0];
+                if (m_HitImpulses.Length > 0)
+                {
+                    var queue = SystemAPI.GetSingletonEntity<CombatImpulseQueue>();
+                    SystemAPI.GetBuffer<CombatImpulse>(queue).AddRange(m_HitImpulses.AsArray());
+                }
             }
             finally
             {
                 // Copies of Entity rows never outlive the call (Despawn/End/Restart/World replacement).
                 m_Attackers.Clear(); m_Queries.Clear(); m_Candidates.Clear(); m_Ranges.Clear();
+                m_Confirmed.Clear(); m_HitImpulses.Clear();
             }
         }
+    }
+
+    internal struct CombatHitConfirmation
+    {
+        public int AttackerIndex;
+        public CombatSpatialBody Target;
+        public float Time;
+        public float3 ImpactDelta;
     }
 
     // Explicit Burst kernel: no ECS queries or managed API; writes only HP and ledgers through the lookups.
@@ -186,6 +232,24 @@ namespace MLFLegends.Combat
         public ComponentLookup<CombatHealth> Health;
         public BufferLookup<CombatHitRecord> Ledgers;
         public NativeArray<CombatHitDiagnostics> Diagnostics;
+
+        [ReadOnly] public NativeArray<CombatMotionSegment> Segments;
+        [ReadOnly] public NativeArray<CombatArenaShape> Shapes;
+        public int BodyCount;
+        public uint BattleNumber;
+        public NativeList<CombatHitConfirmation> Confirmed;
+        public NativeList<CombatImpulse> Impulses;
+
+        struct ByTime : IComparer<CombatHitConfirmation>
+        {
+            public int Compare(CombatHitConfirmation a, CombatHitConfirmation b)
+            {
+                var t = a.Time.CompareTo(b.Time);
+                if (t != 0) return t;
+                t = a.Target.Id.Value.CompareTo(b.Target.Id.Value);
+                return t != 0 ? t : a.AttackerIndex.CompareTo(b.AttackerIndex);
+            }
+        }
 
         [BurstDiscard]
         static void MarkManaged(ref CombatHitDiagnostics d) => d.KernelRanManaged = true;
@@ -206,16 +270,70 @@ namespace MLFLegends.Combat
                     if (target.Team.Value == attacker.Team || target.Id.Value == attacker.Id || !Health.HasComponent(target.Entity))
                         continue;
                     d.InsideTests++;
-                    if (!CombatHitSystem.Inside(strike, attacker.Position, attacker.Facing, target.Position) || Contains(ledger, target.Id.Value))
-                        continue;
-                    ledger.Add(new CombatHitRecord { Target = target.Id });
-                    var hp = Health[target.Entity];
-                    hp.Current = math.max(0, hp.Current - strike.Damage);
-                    Health[target.Entity] = hp;
-                    d.AcceptedHits++;
+                    if (Contains(ledger, target.Id.Value)) continue;
+                    var contact = 1f; var delta = target.Position - attacker.Position;
+                    if (attacker.Swept)
+                    {
+                        if (!TrySwept(attacker, target, out contact, out delta)) continue;
+                    }
+                    else if (!CombatHitSystem.Inside(strike, attacker.Position, attacker.Facing, target.Position)) continue;
+                    Confirmed.Add(new CombatHitConfirmation { AttackerIndex = a, Target = target, Time = contact, ImpactDelta = delta });
                 }
             }
+            // No HP/ledger mutation before the complete bounded confirmation pass.
+            Confirmed.Sort(new ByTime());
+            for (var h = 0; h < Confirmed.Length; h++)
+            {
+                var hit = Confirmed[h]; var attacker = Attackers[hit.AttackerIndex]; var strike = attacker.Strike;
+                var ledger = Ledgers[attacker.Entity];
+                ledger.Add(new CombatHitRecord { Target = hit.Target.Id });
+                var hp = Health[hit.Target.Entity]; hp.Current = math.max(0, hp.Current - strike.Damage); Health[hit.Target.Entity] = hp;
+                if (math.any(strike.OnHitImpulse != 0))
+                {
+                    var outward = math.abs(hit.ImpactDelta.z) > 1e-6f ? math.sign(hit.ImpactDelta.z)
+                        : ((attacker.Id ^ hit.Target.Id.Value) & 1) == 0 ? 1f : -1f;
+                    Impulses.Add(new CombatImpulse { Target = hit.Target.Id, BattleNumber = BattleNumber,
+                        Impulse = new float3(attacker.Facing * strike.OnHitImpulse.x, strike.OnHitImpulse.y, outward * strike.OnHitImpulse.z) });
+                }
+                d.AcceptedHits++;
+            }
+            d.TraceSegments = Segments.IsCreated ? Segments.Length : 0;
             Diagnostics[0] = d;
+        }
+
+        bool TrySwept(in CombatHitSystem.Attacker attacker, in CombatSpatialBody target, out float contact, out float3 delta)
+        {
+            contact = float.PositiveInfinity; delta = default;
+            var actorOffset = FindMotion(attacker.Id); var targetOffset = FindMotion(target.Id.Value);
+            if (actorOffset < 0 || targetOffset < 0) return false;
+            // The owner stores each slice in stable Id order. Both sides use precisely the same interval.
+            for (var first = 0; first < Segments.Length; first += BodyCount)
+            {
+                var ai = first + actorOffset; var bi = first + targetOffset;
+                var a = Segments[ai]; var b = Segments[bi];
+                var span = a.End - a.Begin;
+                var lo = math.max(0, (attacker.ActiveLo - a.Begin) / span);
+                var hi = math.min(1, (attacker.ActiveHi - a.Begin) / span);
+                if (lo > hi || !CombatMotionGeometry.Sweep(attacker.Strike, attacker.Facing, a.From, a.To, b.From, b.To, lo, hi, out var local)) continue;
+                var point = math.lerp(a.From, a.To, local); point.y += attacker.Strike.HitOffsetY;
+                var victim = math.lerp(b.From, b.To, local);
+                if (!CombatMotionGeometry.SegmentClear(Shapes, point, victim)) continue;
+                var time = a.Begin + local * span;
+                if (time < contact) { contact = time; delta = victim - point; }
+            }
+            return math.isfinite(contact);
+        }
+
+        int FindMotion(uint id)
+        {
+            var lo = 0; var hi = BodyCount - 1;
+            while (lo <= hi)
+            {
+                var mid = (lo + hi) >> 1; var found = Segments[mid].Actor.Id.Value;
+                if (found == id) return mid;
+                if (found < id) lo = mid + 1; else hi = mid - 1;
+            }
+            return -1;
         }
 
         static bool Contains(DynamicBuffer<CombatHitRecord> ledger, uint id)

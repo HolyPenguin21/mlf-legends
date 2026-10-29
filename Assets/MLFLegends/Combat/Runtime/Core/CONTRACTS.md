@@ -185,3 +185,8 @@ Rules (the processor #4 implements them; their outcome must be observable for te
 - `CombatHealth` (`Current`/`Max`, spawned 100/100) and the `CombatHitRecord` buffer (per-strike ledger): written only by
   `CombatHitSystem` (the ledger is cleared by `CombatActionSystem` when a strike starts). 0 HP does not defeat yet.
 - `CombatMotion` gains `LandTick`, `LastMoveTick`, `MoveStreakStartTick`, `MoveStreakDistance` (movement owner only).
+
+
+## Stage 05.2 physical executions
+
+Strike parameters additionally freeze self J/elevation/launch tick, compact height interval, HitOffsetY and authored on-hit J. Movement alone accepts actual Body.Height; CombatBodyProfile stores spawn base/request/pending restore. Same tick Facing precedes launch direction. Hit T appends on-hit input for Movement T+1; no position/shape writes after final publication. Motion segments belong to the existing spatial owner and require its final epoch/membership guard. See Docs/STAGE05_2.md.

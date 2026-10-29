@@ -402,7 +402,8 @@ namespace MLFLegends.Combat
                     if (set != null)
                     {
                         schedule = set.StrikeSchedule;
-                        combat.ApplyTo(ref schedule); // Damage/reach per slot and the body: one table with the timing.
+                        try { combat.ApplyTo(ref schedule, set); }
+                        catch (System.ArgumentException invalid) { errors.Add(invalid.Message); }
                     }
                 }
             }
@@ -454,7 +455,7 @@ namespace MLFLegends.Combat
                 var t = schedule.Get(kind);
                 var p = schedule.GetStrike(kind);
                 parts[(int)kind - 1] = $"{kind} {(clipFor ?? CombatAnimationSet.DefaultClip)(kind)} {t.WindupTicks}/{t.ActiveTicks}/{t.RecoveryTicks} " +
-                    $"dmg {p.Damage} reach {p.ReachMin}-{p.ReachMax}";
+                    $"dmg {p.Damage} reach {p.ReachMin}-{p.ReachMax} J {p.SelfImpulse}@{p.LaunchTick} angle {p.ElevationDegrees} height {p.CompactHeight}[{p.CompactStart},{p.CompactEnd}) impact {p.OnHitImpulse} offsetY {p.HitOffsetY}";
             }
 
             return string.Join(", ", parts);
@@ -486,6 +487,12 @@ namespace MLFLegends.Combat
                 var team = entityManager.HasComponent<CombatTeam>(entity) ? entityManager.GetComponentData<CombatTeam>(entity).Value : 0;
                 Gizmos.color = team == m_HumanTeam ? new Color(.2f, .8f, 1f) : new Color(1f, .6f, .2f);
                 DrawCylinder(p, body.Radius, body.Height);
+                if (entityManager.HasComponent<CombatBodyProfile>(entity))
+                {
+                    var profile = entityManager.GetComponentData<CombatBodyProfile>(entity);
+                    Gizmos.color = Color.gray; DrawCylinder(p, body.Radius, profile.BaseHeight);
+                    if (profile.RestorePending) { Gizmos.color = Color.yellow; DrawCylinder(p, body.Radius, profile.RequestedHeight); }
+                }
                 var facing = entityManager.HasComponent<CombatFacing>(entity)
                     && entityManager.GetComponentData<CombatFacing>(entity).Value == FacingDirection.Left ? -1f : 1f;
                 var chest = p + Vector3.up * (body.Height * .5f);
@@ -505,7 +512,7 @@ namespace MLFLegends.Combat
                 Gizmos.color = phase == CombatAttackPhase.Active ? Color.red
                     : phase == CombatAttackPhase.Windup ? new Color(1f, .9f, .1f) : new Color(.6f, .6f, .6f);
                 var strike = attack.Strike;
-                var center = p + new Vector3(facing * (strike.ReachMin + strike.ReachMax) * .5f, 0f, 0f);
+                var center = p + new Vector3(facing * (strike.ReachMin + strike.ReachMax) * .5f, strike.HitOffsetY, 0f);
                 Gizmos.DrawWireCube(center, new Vector3(strike.ReachMax - strike.ReachMin, 2f * strike.HeightTolerance, 2f * strike.DepthHalfWidth));
             }
         }

@@ -29,6 +29,16 @@ namespace MLFLegends.Combat
         /// <summary>First tick on which a buffered press starts the next strike of the series; <see cref="NoChain"/> for a finisher.</summary>
         public ushort ChainPoint;
 
+        byte m_PreciseActiveWindow;
+        public bool PreciseActiveWindow { get => m_PreciseActiveWindow != 0; set => m_PreciseActiveWindow = value ? (byte)1 : (byte)0; }
+        public double ActiveStartTicks, RecoveryStartTicks;
+
+        public void ActiveWindow(uint elapsed, out float lo, out float hi)
+        {
+            lo = PreciseActiveWindow ? (float)Math.Max(0, ActiveStartTicks - elapsed) : 0;
+            hi = PreciseActiveWindow ? (float)Math.Min(1, RecoveryStartTicks - elapsed) : 1;
+        }
+
         public bool CanChain => ChainPoint != NoChain;
 
         public int WindupTicks => ActiveStart;
@@ -97,6 +107,9 @@ namespace MLFLegends.Combat
             var recovery = Math.Max(active + 1, (int)Math.Ceiling(recoveryStart * hz - epsilon));
             var end = Math.Max(recovery, (int)Math.Ceiling(duration * hz - epsilon));
             timing = FromTicks(active, recovery - active, end - recovery, chainDelay);
+            timing.PreciseActiveWindow = true;
+            timing.ActiveStartTicks = activeStart * hz;
+            timing.RecoveryStartTicks = recoveryStart * hz;
             return true;
         }
 
@@ -219,7 +232,10 @@ namespace MLFLegends.Combat
                 {
                     var timing = Get(kind);
                     if (!timing.IsValid || timing.CanChain != CombatAttackTuning.Get(kind).CanChain
-                        || !CombatCharacterLimits.IsValid(GetStrike(kind)))
+                        || !CombatCharacterLimits.IsValid(GetStrike(kind))
+                        || (GetStrike(kind).SelfImpulse > 0 && GetStrike(kind).LaunchTick >= timing.End)
+                        || GetStrike(kind).SelfImpulse / Body.Mass > CombatImpulseTuning.MaxExternalSpeed
+                        || Unity.Mathematics.math.length(GetStrike(kind).OnHitImpulse) / Body.Mass > CombatImpulseTuning.MaxExternalSpeed)
                         return false;
                 }
 

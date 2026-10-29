@@ -92,6 +92,7 @@ namespace MLFLegends.Tests.EditMode
         public AppliedCombatCommand Applied;
         public CombatAttackState Attack;
         public CombatHealth Health;
+        public CombatBodyProfile Profile;
 
         /// <summary>CombatantId values in the current strike's hit ledger, in hit order.</summary>
         public uint[] Hits;
@@ -122,6 +123,7 @@ namespace MLFLegends.Tests.EditMode
 
         /// <summary>All combatants (defeated ones too), sorted by <see cref="CombatantId"/>.</summary>
         public CombatantRecord[] Combatants;
+        public CombatMotionSegment[] MotionPaths = Array.Empty<CombatMotionSegment>();
         public CombatSpatialBody[] Spatial = Array.Empty<CombatSpatialBody>();
 
         /// <summary>Impulse input still pending after this tick (submitted after Movement), with its battle epoch.</summary>
@@ -459,6 +461,7 @@ namespace MLFLegends.Tests.EditMode
                         Position = manager.GetComponentData<CombatPosition>(entity).Value,
                         Motion = manager.GetComponentData<CombatMotion>(entity),
                         Body = manager.GetComponentData<CombatBody>(entity),
+                        Profile = manager.HasComponent<CombatBodyProfile>(entity) ? manager.GetComponentData<CombatBodyProfile>(entity) : default,
                         Facing = manager.GetComponentData<CombatFacing>(entity).Value,
                         InCombat = manager.IsComponentEnabled<InCombat>(entity),
                         HasApplied = hasApplied,
@@ -486,6 +489,11 @@ namespace MLFLegends.Tests.EditMode
             using (var impulses = manager.CreateEntityQuery(typeof(CombatImpulseQueue)))
                 if (impulses.CalculateEntityCount() == 1)
                     record.Impulses = manager.GetBuffer<CombatImpulse>(impulses.GetSingletonEntity(), true).AsNativeArray().ToArray();
+            using (var paths = new NativeList<CombatMotionSegment>(Allocator.Temp))
+            {
+                var spatial = manager.World.GetExistingSystemManaged<CombatSpatialIndexSystem>();
+                if (spatial != null && spatial.CopyMotionSegments(paths)) record.MotionPaths = paths.AsArray().ToArray();
+            }
             record.Raw = Lines(record, record.Results, record.Pending, c => "#" + c.Combatant.Value, t => "t" + t);
             // The processor orders by raw CombatantId, and IDs differ between battles (a previous battle's fighter sorts
             // before the current ones, a never-issued ID after them): re-establish the order in role space. Stable, so
@@ -514,11 +522,12 @@ namespace MLFLegends.Tests.EditMode
                 var applied = !c.HasApplied ? "none"
                     : Command(c.Applied.Command) + (c.Applied.WasSubmitted ? "" : " implicit");
                 lines.Add($"{who(self)} team{c.Team} pos({Float(c.Position.x)},{Float(c.Position.y)},{Float(c.Position.z)}) "
-                    + $"body({Float(c.Body.Radius)},{Float(c.Body.Height)},{Float(c.Body.Mass)}) "
+                    + $"body({Float(c.Body.Radius)},{Float(c.Body.Height)},{Float(c.Body.Mass)}) profile:{Float(c.Profile.BaseHeight)}/{Float(c.Profile.RequestedHeight)}/{c.Profile.RestorePending} "
                     + $"motion(ground:{Float(c.Motion.GroundHeight)},vy:{Float(c.Motion.VerticalVelocity)},ext:{Float(c.Motion.ExternalVelocity.x)}/{Float(c.Motion.ExternalVelocity.y)},grounded:{c.Motion.Grounded},"
                     + $"land:{At(c.Motion.LandTick)},landingTicks:{c.Motion.LandingRecoveryTicks},moved:{At(c.Motion.LastMoveTick)},streak:{At(c.Motion.MoveStreakStartTick)}/{Float(c.Motion.MoveStreakDistance)}) "
                     + $"strike({c.Attack.Kind},start:{(c.Attack.IsAttacking ? At(c.Attack.StartTick) : "-")},series:{c.Attack.SeriesStep},"
                     + $"timing:{c.Attack.Timing.ActiveStart}/{c.Attack.Timing.RecoveryStart}/{c.Attack.Timing.End}/{c.Attack.Timing.ChainPoint},"
+                    + $"physical:{Float(c.Attack.Strike.SelfImpulse)}/{Float(c.Attack.Strike.ElevationDegrees)}/{c.Attack.Strike.LaunchTick},height:{Float(c.Attack.Strike.CompactHeight)}/{c.Attack.Strike.CompactStart}/{c.Attack.Strike.CompactEnd},offset:{Float(c.Attack.Strike.HitOffsetY)},impact:{c.Attack.Strike.OnHitImpulse},"
                     + $"buffered:{c.Attack.Buffered},end:{At(c.Attack.EndTick)},hits:[{string.Join(",", c.Hits.Select(Id))}]) hp:{c.Health.Current}/{c.Health.Max} "
                     + $"{c.Facing} {(c.InCombat ? "in-combat" : "out")} applied[{applied}]");
             }
@@ -527,6 +536,8 @@ namespace MLFLegends.Tests.EditMode
             lines.AddRange(pending.Select(p => $"pending {Command(p)}"));
             lines.AddRange(record.Impulses.Select(i => $"impulse {Id(i.Target.Value)} j({Float(i.Impulse.x)},{Float(i.Impulse.y)},{Float(i.Impulse.z)}) "
                 + (i.BattleNumber == record.BattleNumber ? "current" : "battle" + i.BattleNumber)));
+            lines.AddRange(record.MotionPaths.Select(p => $"path {Id(p.Actor.Id.Value)} {Float(p.Begin)}/{Float(p.End)} "
+                + $"({Float(p.From.x)},{Float(p.From.y)},{Float(p.From.z)})>({Float(p.To.x)},{Float(p.To.y)},{Float(p.To.z)}) h:{Float(p.Actor.Body.Height)}"));
             return lines.ToArray();
         }
     }

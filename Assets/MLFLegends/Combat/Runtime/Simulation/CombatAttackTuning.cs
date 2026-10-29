@@ -66,7 +66,13 @@ namespace MLFLegends.Combat
         public static bool IsValid(in CombatStrikeParameters strike) =>
             strike.Damage >= 0 && strike.Damage <= MaxDamage
             && InRange(strike.ReachMin, 0, MaxReach) && InRange(strike.ReachMax, strike.ReachMin, MaxReach)
-            && InRange(strike.DepthHalfWidth, 0, MaxDepthHalfWidth) && InRange(strike.HeightTolerance, 0, MaxHeightTolerance);
+            && InRange(strike.DepthHalfWidth, 0, MaxDepthHalfWidth) && InRange(strike.HeightTolerance, 0, MaxHeightTolerance)
+            && InRange(strike.HitOffsetY, -8, 8) && InRange(strike.SelfImpulse, 0, 2400)
+            && InRange(strike.ElevationDegrees, -90, 90)
+            && (strike.CompactHeight == 0 || InRange(strike.CompactHeight, MinHeight, MaxHeight))
+            && (strike.CompactHeight == 0 || strike.CompactEnd > strike.CompactStart)
+            && InRange(strike.OnHitImpulse.x, 0, 2400) && InRange(strike.OnHitImpulse.y, -2400, 2400)
+            && InRange(strike.OnHitImpulse.z, 0, 2400);
 
         // NaN fails both comparisons.
         static bool InRange(float value, float min, float max) => value >= min && value <= max;

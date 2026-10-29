@@ -420,3 +420,8 @@ Any change to accepted decisions requires explicit conversation and an entry her
 - Diagnostic actor names are the two constants `Combatant Human` and `Combatant AI`; allies have no name.
   Never encode IDs/counters into Entity names. `CombatantId` alone identifies actors; names are reusable
   display labels. This closes the implementation scope of former #26, subject to Unity verification.
+
+
+## Stage 05.2 — #73 physical ability
+
+Implementation and numerical contracts: [STAGE05_2.md](STAGE05_2.md). Order remains Action → Facing → Movement (accepted shape/path) → final SpatialIndex → Hit. Next: #74, then 05.3 VFX. Stage 04/05 owner manual acceptance is still open. Unity/Burst/GPU/benchmark execution for this change is NOT RUN; available source/model evidence does not replace it.

@@ -91,6 +91,15 @@ namespace MLFLegends.Combat
 
         /// <summary>Largest |ΔY| (altitude) between attacker and target, world units.</summary>
         public float HeightTolerance;
+
+        // Frozen with this execution. J is world-units * mass / second, elevation is above horizontal.
+        public float HitOffsetY;
+        public float SelfImpulse, ElevationDegrees;
+        public ushort LaunchTick;
+        public float CompactHeight; // 0 = keep the spawn height
+        public ushort CompactStart, CompactEnd; // [start,end), sampled at the tick boundary
+        public Unity.Mathematics.float3 OnHitImpulse; // local forward X, up Y, outward Z
+
     }
 
     /// <summary>Hit points. Written only by CombatHitSystem after spawn; 0 does not defeat yet (later stage).</summary>
