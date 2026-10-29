@@ -35,7 +35,7 @@ namespace MLFLegends.Combat
         EntityQuery m_Clock;
         EntityQuery m_RunningClock;
         EntityQuery m_Arena;
-        EntityQuery m_Table;
+        EntityQuery m_Table, m_EffectStream;
 
         public void OnCreate(ref SystemState state)
         {
@@ -48,13 +48,14 @@ namespace MLFLegends.Combat
             // starts free (default) and the hit ledger empty; both die with the entity, so no strike outlives its battle.
             m_CombatantArchetype = state.EntityManager.CreateArchetype(
                 typeof(CombatantId), typeof(CombatTeam), typeof(CombatPosition), typeof(CombatFacing), typeof(InCombat), typeof(CombatMotion), typeof(CombatBody),
-                typeof(CombatAttackState), typeof(CombatHealth), typeof(CombatHitRecord), typeof(CombatBodyProfile), typeof(CombatDamageFeedback));
+                typeof(CombatAttackState), typeof(CombatHealth), typeof(CombatHitRecord), typeof(CombatBodyProfile), typeof(CombatDamageFeedback), typeof(CombatAutoFocus));
             m_Combatants = SystemAPI.QueryBuilder().WithAll<CombatantId>()
                 .WithOptions(EntityQueryOptions.IgnoreComponentEnabledState | EntityQueryOptions.IncludeDisabledEntities).Build();
             m_Clock = SystemAPI.QueryBuilder().WithAll<SimulationClock>().Build();
             m_RunningClock = SystemAPI.QueryBuilder().WithAll<SimulationClock, SimulationClockRunning>().Build();
 
             m_Arena = SystemAPI.QueryBuilder().WithAll<CombatArenaState, CombatArenaShape>().Build();
+            m_EffectStream = SystemAPI.QueryBuilder().WithAll<CombatEffectStream>().Build();
             m_Table = SystemAPI.QueryBuilder().WithAll<CombatStrikeSchedule>().Build();
 
             state.RequireForUpdate<SimulationClock>();
@@ -164,6 +165,12 @@ namespace MLFLegends.Combat
                 entityManager.DestroyEntity(m_Combatants);
 
             CombatCommandQueue.ResetForBattle(entityManager, tick);
+            if (m_EffectStream.CalculateEntityCount() == 1)
+            {
+                var e = m_EffectStream.GetSingletonEntity();
+                var stream = entityManager.GetComponentData<CombatEffectStream>(e); stream.Reset();
+                entityManager.SetComponentData(e, stream);
+            }
         }
 
         /// <remarks>

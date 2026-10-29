@@ -57,6 +57,8 @@ namespace MLFLegends.Combat
         {
             public int Instances;
             public int ShadowInstances, ShadowSubmissions;
+            public CombatEffectsPresentation.Counters Effects;
+            public double EffectsMicroseconds;
             public double ShadowMicroseconds;
 
             /// <summary>RenderMeshPrimitives calls (= pages with instances); URP draws each in its forward and depth passes.</summary>
@@ -133,6 +135,13 @@ namespace MLFLegends.Combat
         [SerializeField, Range(0, .05f)] float m_ShadowBias = .003f;
         CombatGroundShadows m_GroundShadows;
         public CombatGroundShadows GroundShadows => m_GroundShadows;
+
+        [Header("Strike effects (technical demonstration or slot catalogs)")]
+        [SerializeField] Shader m_EffectShader;
+        [SerializeField] bool m_DrawEffects = true;
+        CombatEffectsPresentation m_Effects;
+        public CombatEffectsPresentation Effects => m_Effects;
+        public bool DrawEffects { get => m_DrawEffects; set => m_DrawEffects = value; }
 
         [Header("Debug")]
         [SerializeField] bool m_DrawAnchorGizmos = true;
@@ -215,7 +224,7 @@ namespace MLFLegends.Combat
 
         /// <summary>Owned GPU resources currently alive (material, mesh, instance buffer, atlas frame buffer); for leak checks.</summary>
         public int LiveGpuResources => (m_Material != null ? 1 : 0) + (m_Mesh != null ? 1 : 0) + (m_InstanceBuffer != null ? 1 : 0)
-            + (m_Atlas != null && m_Atlas.GpuBuffersCreated > 0 ? 1 : 0) + (m_GroundShadows?.LiveGpuResources ?? 0);
+            + (m_Atlas != null && m_Atlas.GpuBuffersCreated > 0 ? 1 : 0) + (m_GroundShadows?.LiveGpuResources ?? 0) + (m_Effects?.LiveGpuResources ?? 0);
 
         /// <summary>Whether this renderer draws: enabled and the latest enabled renderer of its World + Camera.</summary>
         public bool IsActiveOwner
@@ -251,6 +260,8 @@ namespace MLFLegends.Combat
             m_Extraction = new CombatSpriteExtraction(MinCapacity);
             m_Stats = default;
             m_GroundShadows = new CombatGroundShadows();
+            m_Effects = new CombatEffectsPresentation();
+            if (m_EffectShader == null) m_EffectShader = Shader.Find("MLF Legends/Combat Effect");
             if (m_ShadowShader == null) m_ShadowShader = Shader.Find("MLF Legends/Combat Ground Shadow");
             EnsureAtlas();
         }
@@ -263,6 +274,7 @@ namespace MLFLegends.Combat
             m_Extraction = null;
             UnloadAtlas();
             ReleaseGpu();
+            m_Effects?.Dispose(); m_Effects = null;
             m_GroundShadows?.Dispose(); m_GroundShadows = null;
             m_Stats = default;
         }
@@ -446,6 +458,16 @@ namespace MLFLegends.Combat
                 m_Stats.ShadowSubmissions = m_GroundShadows.Submit(camera, m_ShadowShader, m_ShadowColor, gameObject.layer);
             }
             m_Stats.ShadowMicroseconds = Microseconds(shadowStart);
+            var effectStart = Stopwatch.GetTimestamp();
+            if (m_Effects != null)
+            {
+                var active = IsActiveOwner && m_DrawEffects && camera != null && m_Atlas != null;
+                var gpu = active && SystemInfo.graphicsDeviceType != GraphicsDeviceType.Null && EnsureGpu();
+                m_Effects.Refresh(active ? ResolveWorld() : null, m_Extraction, m_Basis, m_NominalWorldHeight,
+                    m_DepthBias, camera, m_EffectShader, m_Mesh, gameObject.layer, gpu);
+                m_Stats.Effects = m_Effects.Stats;
+            }
+            m_Stats.EffectsMicroseconds = Microseconds(effectStart);
             if (m_Extraction.Count == 0) return;
             start = Stopwatch.GetTimestamp();
             Submit(camera);

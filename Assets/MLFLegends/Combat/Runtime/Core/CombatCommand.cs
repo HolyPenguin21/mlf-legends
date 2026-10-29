@@ -25,6 +25,9 @@ namespace MLFLegends.Combat
 
         /// <summary>Stand-alone physical ability (O); never part of a series, never buffered.</summary>
         PhysicalAbility = 1 << 9,
+
+        /// <summary>Toggle nearest-enemy orientation (F); Pressed only, retired bits 4..8 stay unused.</summary>
+        FocusToggle = 1 << 10,
     }
 
     /// <summary>

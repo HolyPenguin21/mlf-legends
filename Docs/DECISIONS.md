@@ -1,4 +1,18 @@
-## Current #70 — Stage 05.1a decisions (2026-10-29)
+## Current #77 — Stage 05.3 decisions (2026-10-29)
+
+- Use the existing character slots/table and frozen execution, with one damage interval, independent of visual phases.
+- Publish numerical Swing/Impact facts from the existing Hit owner after Facing/Movement and successful confirmation.
+- Retain 8192 facts in a World/battle epoch ring; overwrite oldest on overflow, count loss, never gate gameplay.
+- Render at the completed fixed-clock boundary; Swing follows its execution, Impact stays at the accepted contact waist.
+- Cache immutable VFX/anchor/frame tables by config/catalog revision. Keep valid older versions for running executions;
+  cap at 640 binding slots, disabling new VFX with diagnostics at capacity while gameplay publication continues.
+- F is Pressed bit10; retired bits4..8 remain retired. Desired mode is per fighter, zero/default means enabled. Facing is
+  still the one direction writer; same-tick F + strike/LaunchTick0 uses its one final pass.
+- One consumer/material/instance buffer in the existing renderer, batches per effect atlas/page, no event GameObjects.
+- [STAGE05_3.md](STAGE05_3.md) defines coordinates, anchors, ages, counters, lifecycle and exact limits. No runtime PASS
+  or Stage04/05 acceptance follows from source/model checks. Merge only on the owner's separate command.
+
+## History — #70 — Stage 05.1a decisions (2026-10-29)
 
 Only this section is current; #69 below is history where it disagrees. [Contract](STAGE05_1A_ATLAS_MIGRATION.md).
 - **D70-1 Wall velocity = exact cone projection.** Final velocity is the Euclidean projection onto {v : dot(v,n) ≥ 0} of a

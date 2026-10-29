@@ -22,4 +22,11 @@ namespace MLFLegends.Combat
     {
         public FacingDirection Value;
     }
+    /// <summary>Per-fighter desired mode; zero-initialized means ON. Sole runtime writer: Facing, from accepted Pressed.</summary>
+    public struct CombatAutoFocus : Unity.Entities.IComponentData
+    {
+        byte m_Disabled;
+        public bool Disabled { get => m_Disabled != 0; set => m_Disabled = value ? (byte)1 : (byte)0; }
+        public uint LastToggleTick;
+    }
 }

@@ -61,6 +61,10 @@ namespace MLFLegends.Tests.EditMode
                     Tick = 1, Pressed = CommandButtons.HandSeries, Source = CommandSource.AI });
             }
             w.Frame(3);
+            var effects = CombatStrikeEffectsTests.Facts(w);
+            Assert.That(effects.Count(f => f.Kind == CombatEffectKind.Swing), Is.EqualTo(2));
+            Assert.That(effects.Count(f => f.Kind == CombatEffectKind.Impact), Is.EqualTo(4));
+            Assert.That(effects.Where(f => f.Kind == CombatEffectKind.Impact).Select(f => (f.AttackerId, f.StartTick, f.TargetId)).Distinct().Count(), Is.EqualTo(4));
             foreach (var e in entities)
             {
                 var team = w.Manager.GetComponentData<CombatTeam>(e).Value;

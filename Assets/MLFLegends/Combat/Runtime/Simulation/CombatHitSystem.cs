@@ -21,7 +21,7 @@ namespace MLFLegends.Combat
     /// <summary>The single fixed-tick hit resolution owner: the only writer of <see cref="CombatHealth"/> and of hit ledgers.</summary>
     /// <remarks>
     /// Runs last in State, after movement and the final spatial snapshot, so it tests this tick's final positions. Every
-    /// in-combat attacker whose strike is in its Active phase on this tick (by the timing fixed in its CombatAttackState when
+    /// in-combat attacker whose frozen damage interval admits this tick (by the timing fixed in its CombatAttackState when
     /// the strike started) hits every in-combat combatant of another team that is not already in the strike's ledger and lies
     /// inside the strike's box: forward distance along the attacker's facing within [ReachMin, ReachMax], |ΔZ| ≤ DepthHalfWidth,
     /// |targetWaistY − attackerWaistY − HitOffsetY| ≤ HeightTolerance (closed point bounds), using the damage/box frozen in the attacker's
@@ -42,14 +42,15 @@ namespace MLFLegends.Combat
     {
         internal struct Attacker
         {
-            public uint Id;
+            public uint Id, StartTick;
+            public CombatStrikeTiming Timing;
             public Entity Entity;
             public byte Team;
             public float3 Position;
             public CombatAttackKind Kind;
             public CombatStrikeParameters Strike; // Frozen at strike start (CombatAttackState.Strike), never the live table.
             public float Facing, Height;
-            public float ActiveLo, ActiveHi;
+            public float DamageLo, DamageHi;
             public bool Swept;
         }
 
@@ -58,7 +59,8 @@ namespace MLFLegends.Combat
             public int Compare(Attacker a, Attacker b) => a.Id.CompareTo(b.Id);
         }
 
-        NativeList<Attacker> m_Attackers;
+        Entity m_Effects;
+        NativeList<Attacker> m_Attackers, m_Swings;
         NativeList<CombatSpatialBounds> m_Queries;
         NativeList<CombatSpatialBody> m_Candidates;
         NativeList<int2> m_Ranges;
@@ -71,8 +73,12 @@ namespace MLFLegends.Combat
 
         public void OnCreate(ref SystemState state)
         {
+            m_Effects = state.EntityManager.CreateSingleton(new CombatEffectStream { Epoch = 1 }, nameof(CombatEffectStream));
+            state.EntityManager.AddBuffer<CombatEffectFact>(m_Effects).ResizeUninitialized(CombatEffectStream.Capacity);
+            state.EntityManager.AddComponentObject(m_Effects, new CombatEffectResources());
             m_Confirmed = new NativeList<CombatHitConfirmation>(1, Allocator.Persistent);
             m_HitImpulses = new NativeList<CombatImpulse>(1, Allocator.Persistent);
+            m_Swings = new NativeList<Attacker>(64, Allocator.Persistent);
             m_Attackers = new NativeList<Attacker>(1, Allocator.Persistent);
             m_Queries = new NativeList<CombatSpatialBounds>(1, Allocator.Persistent);
             m_Candidates = new NativeList<CombatSpatialBody>(1, Allocator.Persistent);
@@ -84,12 +90,18 @@ namespace MLFLegends.Combat
 
         public void OnDestroy(ref SystemState state)
         {
+            if (state.EntityManager.Exists(m_Effects))
+            {
+                state.EntityManager.GetComponentObject<CombatEffectResources>(m_Effects).Dispose();
+                state.EntityManager.DestroyEntity(m_Effects);
+            }
             if (m_Confirmed.IsCreated) m_Confirmed.Dispose();
             if (m_HitImpulses.IsCreated) m_HitImpulses.Dispose();
             if (m_Diagnostics.IsCreated) m_Diagnostics.Dispose();
             if (m_Ranges.IsCreated) m_Ranges.Dispose();
             if (m_Candidates.IsCreated) m_Candidates.Dispose();
             if (m_Queries.IsCreated) m_Queries.Dispose();
+            if (m_Swings.IsCreated) m_Swings.Dispose();
             if (m_Attackers.IsCreated) m_Attackers.Dispose();
         }
 
@@ -138,6 +150,31 @@ namespace MLFLegends.Combat
         {
             state.Dependency.Complete();
             var tick = SystemAPI.GetSingleton<SimulationClock>().Tick;
+            var sessionNumber = SystemAPI.TryGetSingleton<BattleSession>(out var battle) ? battle.BattleNumber : 0u;
+            var stream = SystemAPI.GetComponent<CombatEffectStream>(m_Effects);
+            var facts = SystemAPI.GetBuffer<CombatEffectFact>(m_Effects);
+            stream.Trim(facts, tick);
+            // Accepted starts are observed after Action, the sole Facing pass, and Movement (including LaunchTick0).
+            if (stream.LastSwingTick != tick)
+            {
+                m_Swings.Clear();
+                foreach (var (attack, facing, id, position, entity) in SystemAPI.Query<RefRO<CombatAttackState>, RefRO<CombatFacing>, RefRO<CombatantId>, RefRO<CombatPosition>>()
+                    .WithAll<InCombat>().WithEntityAccess())
+                {
+                    var a = attack.ValueRO;
+                    if (a.IsAttacking && a.StartTick == tick)
+                        m_Swings.Add(new Attacker { Id = id.ValueRO.Value, StartTick = a.StartTick, Strike = a.Strike,
+                            Entity = entity, Facing = SpriteCardMath.Sign(facing.ValueRO.Value), Position = position.ValueRO.Value, Timing = a.Timing });
+                }
+                m_Swings.Sort(new ById());
+                foreach (var a in m_Swings)
+                    stream.Append(facts, new CombatEffectFact { Kind = CombatEffectKind.Swing, Attacker = a.Entity,
+                        AttackerId = a.Id, StartTick = a.StartTick, Binding = a.Strike.SwingEffect,
+                        BattleNumber = sessionNumber, Facing = a.Facing, Position = a.Position,
+                        Time = tick - 1d, End = tick - 1d + a.Timing.SwingEnd, Timing = a.Timing });
+                m_Swings.Clear(); stream.LastSwingTick = tick;
+            }
+            SystemAPI.SetComponent(m_Effects, stream);
             var bodies = SystemAPI.GetComponentLookup<CombatBody>(true);
             try
             {
@@ -146,16 +183,16 @@ namespace MLFLegends.Combat
                         .WithAll<InCombat, CombatHitRecord>().WithEntityAccess())
                 {
                     var kind = attack.ValueRO.Kind;
-                    if (kind == CombatAttackKind.None || attack.ValueRO.Timing.PhaseAt(tick - attack.ValueRO.StartTick) != CombatAttackPhase.Active)
+                    if (kind == CombatAttackKind.None || !attack.ValueRO.Timing.DealsDamageOn(tick - attack.ValueRO.StartTick))
                         continue;
-                    attack.ValueRO.Timing.ActiveWindow(tick - attack.ValueRO.StartTick, out var lo, out var hi);
+                    attack.ValueRO.Timing.DamageWindow(tick - attack.ValueRO.StartTick, out var lo, out var hi);
                     m_Attackers.Add(new Attacker
                     {
-                        Id = id.ValueRO.Value, Entity = entity, Team = team.ValueRO.Value, Position = position.ValueRO.Value, Kind = kind,
+                        Id = id.ValueRO.Value, StartTick = attack.ValueRO.StartTick, Timing = attack.ValueRO.Timing, Entity = entity, Team = team.ValueRO.Value, Position = position.ValueRO.Value, Kind = kind,
                         Strike = attack.ValueRO.Strike,
                         Facing = facing.ValueRO.Value == FacingDirection.Left ? -1f : 1f,
                         Height = bodies.TryGetComponent(entity, out var body) ? body.Height : CombatBodyTuning.Height,
-                        ActiveLo = lo, ActiveHi = hi, Swept = attack.ValueRO.Strike.SelfImpulse > 0,
+                        DamageLo = lo, DamageHi = hi, Swept = attack.ValueRO.Strike.SelfImpulse > 0,
                     });
                 }
                 if (m_Attackers.Length == 0)
@@ -171,11 +208,9 @@ namespace MLFLegends.Combat
                     if (a.Swept)
                     {
                         useMotion = true;
-                        if (index == null || !index.TryMotionBounds(a.Id, out var motion))
+                        if (index == null || !index.TryDamageBounds(a.Id, a.Strike, a.Facing, a.DamageLo, a.DamageHi, out var motion))
                             throw new InvalidOperationException("Missing accepted movement for a swept attack; no hits applied.");
-                        var start = StrikeQuery(a.Strike, motion.Min, a.Facing, a.Height);
-                        var end = StrikeQuery(a.Strike, motion.Max, a.Facing, a.Height);
-                        query.Min = math.min(start.Min, end.Min); query.Max = math.max(start.Max, end.Max);
+                        query = motion;
                     }
                     m_Queries.Add(query);
                 }
@@ -207,6 +242,20 @@ namespace MLFLegends.Combat
                 }.Schedule(state.Dependency);
                 state.Dependency.Complete();
                 LastHits = m_Diagnostics[0];
+                // No impacts are published until the confirmation/write job completes successfully.
+                stream = SystemAPI.GetComponent<CombatEffectStream>(m_Effects);
+                facts = SystemAPI.GetBuffer<CombatEffectFact>(m_Effects);
+                var resources = state.EntityManager.GetComponentObject<CombatEffectResources>(m_Effects);
+                for (var i = 0; i < m_Confirmed.Length; i++)
+                {
+                    var hit = m_Confirmed[i]; var a = m_Attackers[hit.AttackerIndex];
+                    var duration = resources.Get(a.Strike.ImpactEffect)?.DurationTicks ?? 1;
+                    stream.Append(facts, new CombatEffectFact { Kind = CombatEffectKind.Impact, Binding = a.Strike.ImpactEffect,
+                        Attacker = a.Entity, AttackerId = a.Id, TargetId = hit.Target.Id.Value, StartTick = a.StartTick,
+                        BattleNumber = session, Facing = a.Facing, Position = hit.Position,
+                        Time = tick - 1d + hit.Time, End = tick - 1d + hit.Time + duration, Timing = a.Timing });
+                }
+                SystemAPI.SetComponent(m_Effects, stream);
                 if (m_HitImpulses.Length > 0)
                 {
                     var queue = SystemAPI.GetSingletonEntity<CombatImpulseQueue>();
@@ -227,7 +276,7 @@ namespace MLFLegends.Combat
         public int AttackerIndex;
         public CombatSpatialBody Target;
         public float Time;
-        public float3 ImpactDelta;
+        public float3 ImpactDelta, Position;
     }
 
     // Explicit Burst kernel: no ECS queries or managed API; writes only HP and ledgers through the lookups.
@@ -280,13 +329,13 @@ namespace MLFLegends.Combat
                         continue;
                     d.InsideTests++;
                     if (Contains(ledger, target.Id.Value)) continue;
-                    var contact = 1f; var delta = target.Position - attacker.Position;
+                    var contact = attacker.DamageLo; var point = target.Position + new float3(0, target.Body.Height * .5f, 0); var delta = target.Position - attacker.Position;
                     if (attacker.Swept)
                     {
-                        if (!TrySwept(attacker, target, out contact, out delta)) continue;
+                        if (!TrySwept(attacker, target, out contact, out delta, out point)) continue;
                     }
                     else if (!CombatHitSystem.Inside(strike, attacker.Position, attacker.Facing, target.Position, attacker.Height, target.Body.Height)) continue;
-                    Confirmed.Add(new CombatHitConfirmation { AttackerIndex = a, Target = target, Time = contact, ImpactDelta = delta });
+                    Confirmed.Add(new CombatHitConfirmation { AttackerIndex = a, Target = target, Time = contact, ImpactDelta = delta, Position = point });
                 }
             }
             // No HP/ledger mutation before the complete bounded confirmation pass.
@@ -312,9 +361,9 @@ namespace MLFLegends.Combat
             Diagnostics[0] = d;
         }
 
-        bool TrySwept(in CombatHitSystem.Attacker attacker, in CombatSpatialBody target, out float contact, out float3 delta)
+        bool TrySwept(in CombatHitSystem.Attacker attacker, in CombatSpatialBody target, out float contact, out float3 delta, out float3 position)
         {
-            contact = float.PositiveInfinity; delta = default;
+            contact = float.PositiveInfinity; delta = default; position = default;
             var actorOffset = FindMotion(attacker.Id); var targetOffset = FindMotion(target.Id.Value);
             if (actorOffset < 0 || targetOffset < 0) return false;
             // The owner stores each slice in stable Id order. Both sides use precisely the same interval.
@@ -323,17 +372,18 @@ namespace MLFLegends.Combat
                 var ai = first + actorOffset; var bi = first + targetOffset;
                 var a = Segments[ai]; var b = Segments[bi];
                 var span = a.End - a.Begin;
-                var lo = math.max(0, (attacker.ActiveLo - a.Begin) / span);
-                var hi = math.min(1, (attacker.ActiveHi - a.Begin) / span);
+                var lo = math.max(0, (attacker.DamageLo - a.Begin) / span);
+                var hi = math.min(1, (attacker.DamageHi - a.Begin) / span);
                 var aw0 = a.From; var aw1 = a.To; var bw0 = b.From; var bw1 = b.To;
                 aw0.y += a.Actor.Body.Height * .5f; aw1.y += a.Actor.Body.Height * .5f;
                 bw0.y += b.Actor.Body.Height * .5f; bw1.y += b.Actor.Body.Height * .5f;
-                if (lo > hi || !CombatMotionGeometry.Sweep(attacker.Strike, attacker.Facing, aw0, aw1, bw0, bw1, lo, hi, out var local)) continue;
+                if (lo > hi || lo >= 1 || hi <= 0 || !CombatMotionGeometry.Sweep(attacker.Strike, attacker.Facing, aw0, aw1, bw0, bw1, lo, hi, out var local)) continue;
+                var time = a.Begin + local * span;
+                if (time >= attacker.DamageHi) continue; // excluding damage-end boundary, including start
                 var point = math.lerp(aw0, aw1, local); point.y += attacker.Strike.HitOffsetY;
                 var victim = math.lerp(bw0, bw1, local);
                 if (!CombatMotionGeometry.SegmentClear(Shapes, point, victim)) continue;
-                var time = a.Begin + local * span;
-                if (time < contact) { contact = time; delta = victim - point; }
+                if (time < contact) { contact = time; delta = victim - point; position = victim; }
             }
             return math.isfinite(contact);
         }

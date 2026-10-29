@@ -1,4 +1,14 @@
-## Current #69 — Stage 05.1 data flow (2026-10-29)
+## Current #77 — damage interval, focus and effect facts (2026-10-29)
+
+[Stage 05.3 contract](STAGE05_3.md) supersedes older timing/facing/VFX statements below. Existing order stays
+Lifecycle → Clock → accepted commands → Action → Facing → Movement → final SpatialIndex → Hit.
+Action freezes Timing/Strike (including damage interval and numeric VFX handles). Facing alone writes direction and the
+per-fighter desired auto-focus mode. Hit owns one bounded World/battle-scoped numerical fact ring and publishes starts
+only after final Facing/Movement, Impacts only after successful confirmation writes. Its managed immutable presentation
+resource versions never enter jobs. CombatSpriteRenderer owns one read-only batched consumer; effects do not write
+Position/Motion/Body/HP/ledger or use a second clock. Stream reset is part of the existing paused lifecycle boundary.
+
+## History — #69 — Stage 05.1 data flow (2026-10-29)
 
 Only this section is current; every older "History" section keeps its own SHA/scope and is superseded where it disagrees (old key layouts, exact-limb intentions, velocity = displacement/dt, series limit 4, stage states).
 

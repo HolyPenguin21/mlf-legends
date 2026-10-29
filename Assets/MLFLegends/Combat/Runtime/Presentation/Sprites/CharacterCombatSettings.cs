@@ -6,7 +6,8 @@ namespace MLFLegends.Combat
 {
     /// <summary>
     /// Editable combat values of one strike slot of a character (#69): which clip it plays and its damage/hit box. The clip's
-    /// Preparation/Active/Recovery frames, duration and curve stay in the character's Animations (the only timing source).
+    /// Preparation/Active/Recovery frames, duration and curve stay in Animations. An optional damage duration changes only
+    /// the admitting interval, starting at the same first Active boundary.
     /// </summary>
     [Serializable]
     public sealed class CharacterStrikeSettings
@@ -16,6 +17,12 @@ namespace MLFLegends.Combat
 
         [Tooltip("HP removed from each valid target, once per strike (0..1000).")]
         public int Damage;
+
+        [Tooltip("Off: damage uses the animation Active interval. On: starts at the same first Active frame and lasts Damage Duration Seconds, independent of Swing and graphic phases.")]
+        public bool OverrideDamageDuration;
+        public float DamageDurationSeconds = .1f;
+        public CharacterEffectSettings Swing = new CharacterEffectSettings();
+        public CharacterEffectSettings Impact = new CharacterEffectSettings();
 
         [Tooltip("Hit box start along the facing, world units from the fighter's position (inclusive, 0..8). Target point = accepted body waist.")]
         public float ReachMin;
@@ -60,7 +67,12 @@ namespace MLFLegends.Combat
             };
         }
 
-        internal CharacterStrikeSettings Copy() => (CharacterStrikeSettings)MemberwiseClone();
+        internal CharacterStrikeSettings Copy()
+        {
+            var copy = (CharacterStrikeSettings)MemberwiseClone();
+            copy.Swing = Swing?.Copy(); copy.Impact = Impact?.Copy();
+            return copy;
+        }
     }
 
     /// <summary>
@@ -146,6 +158,10 @@ namespace MLFLegends.Combat
                     errors.Add($"{path}.{kind}: Damage {strike.Damage} (0..{CombatCharacterLimits.MaxDamage}), Reach {strike.ReachMin}..{strike.ReachMax} " +
                         $"(0 <= min <= max <= {CombatCharacterLimits.MaxReach}), Depth ±{strike.DepthHalfWidth} (0..{CombatCharacterLimits.MaxDepthHalfWidth}), " +
                         $"Height ±{strike.HeightTolerance} (0..{CombatCharacterLimits.MaxHeightTolerance}) outside the supported range");
+                if (strike.OverrideDamageDuration && (!float.IsFinite(strike.DamageDurationSeconds) || strike.DamageDurationSeconds <= 0))
+                    errors.Add($"{path}.{kind}.DamageDurationSeconds: must be positive and finite");
+                strike.Swing?.Validate($"{path}.{kind}.Swing", errors);
+                strike.Impact?.Validate($"{path}.{kind}.Impact", errors);
                 if (CombatAnimationSet.IsMotionClip(ClipFor(kind)))
                     errors.Add($"{path}.{kind}.ClipId: '{ClipFor(kind)}' is a locomotion clip, not a strike");
             }
@@ -175,6 +191,17 @@ namespace MLFLegends.Combat
                         value.CompactStart = TickAt(settings.CompactFirstFrame);
                         value.CompactEnd = (ushort)Math.Max(value.CompactStart + 1, TickAt(settings.CompactEndFrame));
                     }
+                }
+                var execution = table.Get(kind);
+                if (settings.OverrideDamageDuration)
+                {
+                    var end = execution.DamageStart + settings.DamageDurationSeconds * SimulationTiming.TickRateHz;
+                    var duration = timing != null ? timing.DurationSeconds * SimulationTiming.TickRateHz : execution.End;
+                    if (!float.IsFinite(settings.DamageDurationSeconds) || settings.DamageDurationSeconds <= 0 || end > duration + 1e-6)
+                        throw new ArgumentException($"{kind}.DamageDurationSeconds: must be positive, finite and end by the clip's execution end ({duration / SimulationTiming.TickRateHz:0.######} s)");
+                    execution.OverrideDamageDuration = true;
+                    execution.DamageEndTicks = end;
+                    table.Set(kind, execution);
                 }
                 table.SetStrike(kind, value);
             }

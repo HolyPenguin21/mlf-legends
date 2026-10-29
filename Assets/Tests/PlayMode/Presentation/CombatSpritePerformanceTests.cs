@@ -9,6 +9,7 @@ using System.Linq;
 using MLFLegends.Combat;
 using NUnit.Framework;
 using Unity.Mathematics;
+using Unity.Entities;
 using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -294,6 +295,60 @@ namespace MLFLegends.Tests.PlayMode
                 if (camera != null) camera.targetTexture = null;
                 DestroyAll(renderer, camera, target);
             }
+        }
+
+        [UnityTest]
+        public IEnumerator StrikeEffectsCost2_100_400([Values(2, 100, 400)] int count,
+            [Values(false, true)] bool mass)
+        {
+            RequireGraphicsDevice();
+            var lines = new List<string> { "vfx\tframe\twarmup\tfull_tick_us\trefresh_us\textract_us\tbody_submit_us\teffects_us\ttotal_cpu_us\thost_frame_ms\tgc_bytes\tgc_samples\talive\teffect_submissions\teffect_capacity\taccepted_hits\thistory_dropped\tresource_dropped\tnative_motion_bytes\teffect_native_scratch_bytes\teffect_native_frame_bytes\teffect_gpu_frame_bytes\teffect_instance_gpu_bytes\thistory_capacity\tcontact_burst_managed\tfacing_burst_managed" };
+            var profilerWasEnabled = Profiler.enabled;
+            try
+            {
+                Profiler.enabled = true;
+                using var meter = new AllocationMeter(); meter.Calibrate(); meter.AssertControls();
+                TestContext.WriteLine(Controls(meter));
+                var allocationFailed = false;
+                foreach (var effects in new[] { false, true })
+                {
+                    using var world = StrikeEffectsPlayModeSupport.Create(count, out var actors, out _);
+                    var target = CreateTarget(512); var camera = CreateCamera("VFX benchmark", new Vector3(0, 1, count / 30f), 35, target);
+                    var renderer = CreateRenderer(camera); renderer.BindWorld(world); renderer.DrawEffects = effects;
+                    try
+                    {
+                        var owner = world.GetExistingSystemManaged<CombatSpatialIndexSystem>();
+                        using var effectQuery = world.EntityManager.CreateEntityQuery(typeof(CombatEffectResources));
+                        var resources = world.EntityManager.GetComponentObject<CombatEffectResources>(effectQuery.GetSingletonEntity());
+                        // Identical commands and settings in both cases. Warm-up is reported separately, never hidden in steady state.
+                        for (uint tick = 1; tick <= WarmupFrames + MeasuredFrames; tick++)
+                        {
+                            StrikeEffectsPlayModeSupport.Submit(world, actors, tick, mass);
+                            meter.Begin(); var beforeGc = GC.GetAllocatedBytesForCurrentThread();
+                            var start = Stopwatch.GetTimestamp(); StrikeEffectsPlayModeSupport.Step(world, tick);
+                            var afterTick = Stopwatch.GetTimestamp(); renderer.Refresh(); var afterRefresh = Stopwatch.GetTimestamp();
+                            var gc = GC.GetAllocatedBytesForCurrentThread() - beforeGc; var samples = meter.End();
+                            var stats = renderer.Stats; camera.Render(); var end = Stopwatch.GetTimestamp();
+                            var history = world.EntityManager.GetComponentData<CombatEffectStream>(effectQuery.GetSingletonEntity());
+                            var hits = world.Unmanaged.GetUnsafeSystemRef<CombatHitSystem>(world.GetExistingSystem<CombatHitSystem>()).LastHits;
+                            var confirmed = hits.Tick == tick ? hits.AcceptedHits : 0;
+                            var managedFacing = world.Unmanaged.GetUnsafeSystemRef<CombatFacingSystem>(world.GetExistingSystem<CombatFacingSystem>()).LastKernelRanManaged; var managedContact = owner.LastContacts.KernelRanManaged;
+                            var warmup = tick <= WarmupFrames;
+                            if (!warmup && ((meter.BytesWork && gc != 0) || (meter.SamplesWork && samples != 0))) allocationFailed = true;
+                            double Us(long ticks) => ticks * 1e6 / Stopwatch.Frequency;
+                            lines.Add(FormattableString.Invariant($"{effects}\t{tick}\t{warmup}\t{Us(afterTick-start):F3}\t{Us(afterRefresh-afterTick):F3}\t{stats.ExtractMicroseconds:F3}\t{stats.SubmitMicroseconds:F3}\t{stats.EffectsMicroseconds:F3}\t{Us(end-start):F3}\t{Time.unscaledDeltaTime*1000:F3}\t{(meter.BytesWork?gc:-1)}\t{(meter.SamplesWork?samples:-1)}\t{stats.Effects.Alive}\t{stats.Effects.Submissions}\t{stats.Effects.BufferCapacity}\t{confirmed}\t{history.Dropped}\t{resources.CapacityDropped}\t{owner.MotionCapacityBytes + owner.MovementScratchCapacityBytes}\t{renderer.Effects.NativeCapacityBytes}\t{resources.NativeFrameCapacityBytes}\t{resources.GpuFrameCapacityBytes}\t{stats.Effects.BufferCapacity * 32}\t{CombatEffectStream.Capacity}\t{managedContact}\t{managedFacing}"));
+                            Assert.That(managedContact || managedFacing, Is.False, "Actual synchronous kernels must report Burst ON for this benchmark.");
+                            yield return null;
+                        }
+                    }
+                    finally { DestroyAll(renderer, camera, target); }
+                }
+                File.WriteAllLines(OutputPath($"stage05-3-effects-n{count}-{(mass ? "mass" : "ordinary")}.tsv"), lines);
+                TestContext.WriteLine($"Hardware: {SystemInfo.processorType}; OS: {SystemInfo.operatingSystem}; Unity: {Application.unityVersion}; GPU: {SystemInfo.graphicsDeviceName}. GPU milliseconds NOT MEASURED. Host frame includes Editor/default World; total_cpu_us is isolated tick+Refresh+Camera.Render.");
+                if (!meter.BytesWork && !meter.SamplesWork) Assert.Inconclusive("NOT RUN: allocation counters failed positive control; timings retained.");
+                Assert.That(allocationFailed, Is.False, "Validated post-warmup full tick + Refresh allocation region; inspect raw TSV.");
+            }
+            finally { Profiler.enabled = profilerWasEnabled; }
         }
 
         static void AssertNoAllocation(long bytes, int samples)

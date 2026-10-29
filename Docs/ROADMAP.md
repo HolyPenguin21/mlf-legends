@@ -1,38 +1,26 @@
 # MLF Legends — Combat development roadmap
 
-## Current status — single entry point (updated 2026-10-29, #70)
+## Current status — single entry point (updated 2026-10-29, #77)
 
-This section is the only current status. Every dated section under **History** is a snapshot of its own SHA/scope and is
-superseded wherever it disagrees with this section (including its "Current" wording, old key layouts and stage states).
+This is the current status; dated History entries retain only their original SHA/evidence.
 
-- **main** `47013974c7773d2cdd565e6eabc3441003aeee0e` (PR #71 / #69). **Stage 03** OWNER-ACCEPTED. **Stage 04** IN PROGRESS:
-  everything merged, owner manual acceptance open. **Stage 05** IN PROGRESS.
-- **Delivered for review: [#70](https://github.com/HolyPenguin21/mlf-legends/issues/70) — Stage 05.1a** on branch
-  `feature/70-stage05-atlas-migration`, one PR, merge only on a separate owner command:
-  [contract, migration table, pivots/custom positions, policy](STAGE05_1A_ATLAS_MIGRATION.md) ·
-  [exact SHA and PASS/FAIL/NOT RUN](Evidence/70/README.md). First the #69 review corrections (exact wall-cone velocity,
-  guarded velocity-pass budget, the owner's second cube as an arena source), then the v2 atlas: 12 clips / 76 frames,
-  192×160, page 2000×2016, owner custom horizontal positions as pivots, physical_ability for O, explicit config migration.
-- Merged before: **#69 — Stage 05.1** (PR #71):
-  [contract, Inspector path, owners/versioning, rules, manual checklist](STAGE05_1_CHARACTER_SERIES.md) ·
-  [exact SHA and PASS/FAIL/NOT RUN](Evidence/69/README.md).
-  Base fixes (final contact velocity, whole-entity Disabled cleanup, ordered PlayMode isolation and the faults it hid),
-  per-character Radius/Height/Mass and per-slot clip/damage/reach/depth/height in the existing config and publication
-  table (frozen per strike), U/I series 1-1-2-1-2, O physical ability, Scene gizmos.
-- Open separately: #17/#25/#30 (QA debt), #46/#53 (presentation follow-ups).
+- Fresh implementation base **main `d5e97dea7326fa6bc6ccd28ebb44f823c601a92d`**, including owner
+  `tune/combat-smoke-values`. #70 / PR #72, **#73 / PR #75 and #74 / PR #76 are merged**.
+- **Stage 03 OWNER-ACCEPTED. Stage 04 and Stage 05 IN PROGRESS**; owner manual/visual acceptance remains open.
+  Review corrections in [REVIEW_73_74.md](REVIEW_73_74.md) are in main. Source/model evidence is not a Unity/Burst/GPU run.
+- **#77 / Stage 05.3 delivered for review** on `feature/77-strike-vfx-focus`: per-slot damage-duration override,
+  Swing from execution start through the end of the last graphic Active frame, independent confirmed-contact Impact,
+  and remappable F auto-focus toggle. [Contract and Inspector/manual procedure](STAGE05_3.md) ·
+  [tested source SHA and evidence limits](Evidence/77/README.md). One PR; merge needs a separate owner command.
+- No new Unity result is claimed for #73/#74/#77. Old 603/603 and 59/59 predate this base and do not certify it.
+- Open separately: #17/#25/#30 (QA), #46/#53 (presentation). No campaign/AI/physiology scope added.
 
-### Queue (owner/manager order from #67)
+### Queue
 
-1. #69 merged (PR #71).
-2. **#70 / Stage 05.1a** — delivered for review (see above; package verified on the installed page). Owner visual
-   acceptance of the new art in the Game view is open.
-3. **05.2** — self impulse of an action (example: 35° above the horizontal for one ability, not a global angle), contact
-   attenuation from numeric parameters of the participants, real crowd displacement with multi-target damage, an editable
-   Height profile with safe restore under a ceiling, hits along the actual Active path (ledger, impact targets), never
-   through a solid wall or by ghost collision. Formulas and landing/interruption policy need their own spec after #69 review.
-4. **05.3** — VFX: effect-on-swing separate from effect-on-confirmed-hit, shared resources/batching/culling; no renderer
-   callback ever deals damage.
-5. **Stage 06** — block (K), stability, timely defence, double-tap dash. **Stage 13** — magic slots 7/8/9/0.
+1. #69/#70/#73/#74 are merged. Keep their targeted regressions and owner O/crowd/wall scenarios outstanding until run.
+2. **05.3 / #77** — implementation review and the runtime/visual/performance checks documented above.
+3. **06.1** — block K / stability / timely defence, with its own specification against the accepted current base.
+4. **06.2** — double-tap WASD dash, with its own specification. Stage 13 later supplies magic slots 7/8/9/0.
 
 ### Owner agreements recorded from #67 (do not keep them only in the Issue)
 
@@ -69,9 +57,9 @@ superseded wherever it disagrees with this section (including its "Current" word
 | 01 | ECS simulation, fixed-step scheduler, entity data, command buffer, replay tests and 2/100/400 ECS baseline | Six main tasks delivered, Bootstrap debt #19 implemented; independent code audit #23 static PASS, owner accepted Stage 02 transition with missing Unity proof tracked in #30 and Windows Unicode/Burst #17 separate. No movement/AI/collisions/renderer yet. | ACCEPTED FOR NEXT STAGE (OWNER) — UNITY QA DEFERRED |
 | 02 | Movement and camera | Deterministic X/Z movement + jump Y, facing/action-state, tick-aligned input, fixed orthographic camera follow/zoom/pan, with one ECS authority | IMPLEMENTATION COMPLETE / MANAGER REVIEW PASS — #31/#33/#35 reviewed; #22 merged via PR #37, fixes and raw 244/244 ×2 + 21/21 ×2 + Performance 7/7 independently inspected; manual/hardware/full-frame QA remains qualified in QA.md |
 | 03 | GPU sprite rendering | Atlas animation, direction/frame selection, stable depth sorting, instancing | OWNER-ACCEPTED — direct owner message in #58; exact manual-test SHA/protocol unknown, no blanket Unity/GPU PASS. #46/#53 remain separate follow-ups; historical per-SHA evidence below is retained. |
-| 04 | Collisions | Custom actor/world collision, spatial index, masses, allies yield, enemies block, knockback | IN PROGRESS — 04.1–04.5 merged (#58/#61/#64/#66, PR #68). #69 fixes the final contact velocity and Disabled cleanup; owner manual acceptance of Stage 04 still OPEN. |
-| 05 | Attack resolution | Windup/active/recovery; fast/heavy/jump attacks; shapes, multi-hit rules, damage/impact/stagger | IN PROGRESS — 05.1 #69 delivered for review: per-character body/strike data, U/I series 1-1-2-1-2, O ability (kick_spin, no self impulse), on the current art. Next: #70 (05.1a atlas), 05.2 self impulse/dynamic Height/swept hits, 05.3 VFX. Rules are the manager's working interpretation pending owner review. |
-| 06 | Defense | Facing guard (K), stability, timely defense/counter opportunity, guard break; double-tap WASD dash | NOT STARTED |
+| 04 | Collisions | Custom actor/world collision, spatial index, masses, allies yield, knockback | IN PROGRESS — 04.1–04.5 and #69/#70/#73/#74 corrections merged. Owner crowd/wall/holds/discards acceptance and new Unity performance remain OPEN. |
+| 05 | Attack resolution | Per-character strikes, U/I series, O physical execution, damage windows and feedback | IN PROGRESS — #69/#70/#73/#74 merged; #77 (05.3 damage-duration override, Swing/Impact, F toggle) delivered for review. Unity/Burst/GPU and owner acceptance NOT RUN. |
+| 06 | Defense | 06.1 block K / stability / timely defence, then 06.2 double-tap WASD dash | NOT STARTED — separate specifications after 05.3 review. |
 | 07 | Duel AI | Range, observable windups, bounded reaction time, mistakes, defense/dash/counter via same command rules | NOT STARTED |
 | 08 | Physiology | SPECIAL, body regions, injury and broken limbs, eye loss, bleeding, death, capability filtering | NOT STARTED |
 | 09 | Complete 1v1 prototype | Combat feel/balance, UI, animation feedback, sound, robust regression suite | NOT STARTED |

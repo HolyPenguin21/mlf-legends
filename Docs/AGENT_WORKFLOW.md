@@ -1,4 +1,13 @@
-## Current #70 — Stage 05.1a (2026-10-29)
+## Current #77 — Stage 05.3 (2026-10-29)
+
+Fresh main `d5e97dea7326fa6bc6ccd28ebb44f823c601a92d`, including owner smoke tuning and merged PR #75/#76.
+One branch `feature/77-strike-vfx-focus`, one PR, **merge only on a separate owner command**.
+[Current contract / Inspector paths / checks / limits](STAGE05_3.md) · [evidence](Evidence/77/README.md).
+No new system/position writer, command queue, grid, clock, character-art change or gameplay owner. No confirmed base
+blocker found in source review; Unity unavailable, so compilation/runtime/GPU/performance remain NOT RUN. #73/#74
+review fixes and authored regression suites are retained. Next separately specified work: 06.1 then 06.2.
+
+## History — #70 — Stage 05.1a (2026-10-29)
 
 Only this section is current; the #69 section below is history. Fresh main `4701397` (PR #71). Branch
 `feature/70-stage05-atlas-migration`, one PR, **no merge by the implementer**. Commit order: #69 review corrections

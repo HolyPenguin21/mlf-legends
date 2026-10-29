@@ -396,6 +396,30 @@ MonoBehaviour:
       Hand1:
         ClipId: punch_left
         Damage: 4
+        OverrideDamageDuration: 0
+        DamageDurationSeconds: 0.1
+        Swing:
+          Source: 2
+          Catalog: {fileID: 0}
+          ClipId: swing
+          Scale: 0.6
+          Offset: {x: 0.65, y: 0.9, z: 0}
+          Mirror: 0
+          Anchor: 0
+          MissingAnchor: 0
+          Layer: 1
+          DurationSeconds: 0.12
+        Impact:
+          Source: 2
+          Catalog: {fileID: 0}
+          ClipId: impact
+          Scale: 0.35
+          Offset: {x: 0, y: 0, z: 0}
+          Mirror: 0
+          Anchor: 0
+          MissingAnchor: 0
+          Layer: 1
+          DurationSeconds: 0.12
         ReachMin: 0
         ReachMax: 1.3
         DepthHalfWidth: 0.4
@@ -403,6 +427,30 @@ MonoBehaviour:
       Hand2:
         ClipId: punch_right
         Damage: 4
+        OverrideDamageDuration: 0
+        DamageDurationSeconds: 0.1
+        Swing:
+          Source: 2
+          Catalog: {fileID: 0}
+          ClipId: swing
+          Scale: 0.6
+          Offset: {x: 0.65, y: 0.9, z: 0}
+          Mirror: 0
+          Anchor: 0
+          MissingAnchor: 0
+          Layer: 1
+          DurationSeconds: 0.12
+        Impact:
+          Source: 2
+          Catalog: {fileID: 0}
+          ClipId: impact
+          Scale: 0.35
+          Offset: {x: 0, y: 0, z: 0}
+          Mirror: 0
+          Anchor: 0
+          MissingAnchor: 0
+          Layer: 1
+          DurationSeconds: 0.12
         ReachMin: 0
         ReachMax: 1.3
         DepthHalfWidth: 0.4
@@ -410,6 +458,30 @@ MonoBehaviour:
       Foot1:
         ClipId: kick_left
         Damage: 7
+        OverrideDamageDuration: 0
+        DamageDurationSeconds: 0.1
+        Swing:
+          Source: 2
+          Catalog: {fileID: 0}
+          ClipId: swing
+          Scale: 0.6
+          Offset: {x: 0.65, y: 0.9, z: 0}
+          Mirror: 0
+          Anchor: 0
+          MissingAnchor: 0
+          Layer: 1
+          DurationSeconds: 0.12
+        Impact:
+          Source: 2
+          Catalog: {fileID: 0}
+          ClipId: impact
+          Scale: 0.35
+          Offset: {x: 0, y: 0, z: 0}
+          Mirror: 0
+          Anchor: 0
+          MissingAnchor: 0
+          Layer: 1
+          DurationSeconds: 0.12
         ReachMin: 0
         ReachMax: 1.5
         DepthHalfWidth: 0.4
@@ -417,6 +489,30 @@ MonoBehaviour:
       Foot2:
         ClipId: kick_right
         Damage: 7
+        OverrideDamageDuration: 0
+        DamageDurationSeconds: 0.1
+        Swing:
+          Source: 2
+          Catalog: {fileID: 0}
+          ClipId: swing
+          Scale: 0.6
+          Offset: {x: 0.65, y: 0.9, z: 0}
+          Mirror: 0
+          Anchor: 0
+          MissingAnchor: 0
+          Layer: 1
+          DurationSeconds: 0.12
+        Impact:
+          Source: 2
+          Catalog: {fileID: 0}
+          ClipId: impact
+          Scale: 0.35
+          Offset: {x: 0, y: 0, z: 0}
+          Mirror: 0
+          Anchor: 0
+          MissingAnchor: 0
+          Layer: 1
+          DurationSeconds: 0.12
         ReachMin: 0
         ReachMax: 1.5
         DepthHalfWidth: 0.4
@@ -432,6 +528,30 @@ MonoBehaviour:
         OnHitImpulse: {x: 1, y: 1, z: 2}
         HitOffsetY: -0.3
         Damage: 12
+        OverrideDamageDuration: 0
+        DamageDurationSeconds: 0.1
+        Swing:
+          Source: 2
+          Catalog: {fileID: 0}
+          ClipId: swing
+          Scale: 0.6
+          Offset: {x: 0.65, y: 0.9, z: 0}
+          Mirror: 0
+          Anchor: 0
+          MissingAnchor: 0
+          Layer: 1
+          DurationSeconds: 0.12
+        Impact:
+          Source: 2
+          Catalog: {fileID: 0}
+          ClipId: impact
+          Scale: 0.35
+          Offset: {x: 0, y: 0, z: 0}
+          Mirror: 0
+          Anchor: 0
+          MissingAnchor: 0
+          Layer: 1
+          DurationSeconds: 0.12
         ReachMin: 0
         ReachMax: 1.45
         DepthHalfWidth: 0.4
