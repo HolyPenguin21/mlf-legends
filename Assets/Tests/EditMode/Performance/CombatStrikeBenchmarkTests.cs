@@ -38,7 +38,7 @@ namespace MLFLegends.Tests.EditMode
                 buffer.Add(new CombatCommandSubmission(new CombatCommand
                 {
                     Combatant = ids[i], Tick = tick,
-                    Pressed = phase == 0 ? CommandButtons.Attack : phase == 3 ? CommandButtons.Kick : CommandButtons.None,
+                    Pressed = phase == 0 ? CommandButtons.HandSeries : phase == 3 ? CommandButtons.FootSeries : CommandButtons.None,
                     Source = CommandSource.AI,
                 }));
             }

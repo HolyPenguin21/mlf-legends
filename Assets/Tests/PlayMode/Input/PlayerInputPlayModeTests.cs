@@ -352,7 +352,7 @@ namespace MLFLegends.Tests.PlayMode
             Down(Key.D);
             yield return Until(() => Manager.GetComponentData<AppliedCombatCommand>(human).Command.MoveX == 1);
 
-            Down(Key.I);
+            Down(Key.U);
             adapter.SendMessage("OnApplicationFocus", false);
             Assert.That(adapter.Capture.PendingPressed, Is.EqualTo(CommandButtons.None));
             var tick = Tick;
@@ -368,16 +368,16 @@ namespace MLFLegends.Tests.PlayMode
             yield return Until(() => Tick > tick);
             var applied = Manager.GetComponentData<AppliedCombatCommand>(human).Command;
             Assert.That((applied.MoveX, applied.Held, applied.Pressed),
-                Is.EqualTo(((sbyte)1, CommandButtons.Attack, CommandButtons.None)), "Focus back: live hold, no old press.");
+                Is.EqualTo(((sbyte)1, CommandButtons.HandSeries, CommandButtons.None)), "Focus back: live hold, no old press.");
             Up(Key.D);
-            Up(Key.I);
+            Up(Key.U);
             yield return null;
         }
 
         /// <summary>
         /// Review regression (#22): the Input System's own focus cycle (runInBackground: disable + soft reset on loss,
         /// re-enable on regain; otherwise reset on regain), plus Unity's OnApplicationFocus, then the device re-reporting the
-        /// still-held Space/I/L: Held, never Pressed (no jump/attack); a fresh press after releasing works.
+        /// still-held Space/U/I: Held, never Pressed (no jump/attack); a fresh press after releasing works.
         /// </summary>
         [UnityTest]
         public IEnumerator RealFocusLossAndRegainWithDeviceResyncTurnsNoRestoredHoldIntoAPress([Values(true, false)] bool runInBackground)
@@ -388,10 +388,10 @@ namespace MLFLegends.Tests.PlayMode
             RunInBackground(runInBackground);
             Down(Key.Space);
             Down(Key.I);
-            Down(Key.L);
+            Down(Key.U);
             yield return null;
             yield return Until(() => !Manager.GetComponentData<CombatMotion>(human).Grounded);
-            yield return Until(() => Manager.GetComponentData<CombatMotion>(human).Grounded); // landed, Space/I/L still held
+            yield return Until(() => Manager.GetComponentData<CombatMotion>(human).Grounded); // landed, Space/U/I still held
 
             InputSystemFocus(false);
             adapter.SendMessage("OnApplicationFocus", false);
@@ -407,7 +407,7 @@ namespace MLFLegends.Tests.PlayMode
             tick = Tick;
             yield return Until(() => Tick > tick + 2);
             var applied = Manager.GetComponentData<AppliedCombatCommand>(human).Command;
-            Assert.That(applied.Held, Is.EqualTo(CommandButtons.Jump | CommandButtons.Attack | CommandButtons.Kick), "Restored hold.");
+            Assert.That(applied.Held, Is.EqualTo(CommandButtons.Jump | CommandButtons.HandSeries | CommandButtons.FootSeries), "Restored hold.");
             Assert.That(adapter.Capture.PendingPressed, Is.EqualTo(CommandButtons.None));
             Assert.That(Manager.GetComponentData<CombatMotion>(human).Grounded, Is.True, "The restored Space hold did not jump.");
             Assert.That(Results.Where(r => r.Command.Source == CommandSource.Player).Select(r => r.Command.Pressed),
@@ -423,7 +423,7 @@ namespace MLFLegends.Tests.PlayMode
             Assert.That(Manager.GetComponentData<CombatMotion>(human).Grounded, Is.False, "Release, then a fresh Space press jumps.");
             Up(Key.Space);
             Up(Key.I);
-            Up(Key.L);
+            Up(Key.U);
             yield return null;
         }
 

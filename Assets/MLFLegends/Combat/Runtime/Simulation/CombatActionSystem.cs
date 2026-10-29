@@ -6,14 +6,18 @@ namespace MLFLegends.Combat
     /// <summary>The sole fixed-tick writer of <see cref="CombatAttackState"/>: starts, chains and ends strikes.</summary>
     /// <remarks>
     /// Runs first in State, before facing and movement, so both see this tick's strike (turning and jump locks, phase-scaled
-    /// planar movement). Landing recovery suppresses new action starts and buffering. Per actor, from accepted commands only:
-    /// a fresh exact/general strike press (Held never repeats) starts a series when free and grounded at the start of
-    /// the tick and does not press Jump on the same tick (the jump wins); airborne presses are dropped. During Windup
-    /// presses are dropped; from Active to the end of Recovery the
-    /// latest press is buffered in one slot. Once ChainDelayTicks of Recovery have played, a buffered press starts the next
-    /// strike of the series on that tick (exact requests keep their side; general requests use the existing series), unless the strike
-    /// is a finisher or the series is full. Otherwise Recovery runs out, the buffer is dropped and the actor is free on
-    /// the following tick, where a fresh press may start a new series. Every strike start clears the hit ledger.
+    /// planar movement). Landing recovery suppresses new action starts and buffering. Per actor, from accepted commands only
+    /// (#69 layout): one press per tick by the priority U → I → O (<see cref="CombatAttackTuning.StrikeButton"/>). A fresh
+    /// press (Held never repeats) starts a strike when free and grounded at the start of the tick and does not press Jump on
+    /// the same tick (the jump wins); airborne presses are dropped. Hand (U) and foot (I) series run 1, 1, 2, 1, 2, …
+    /// (bounded <see cref="CombatAttackState.SeriesStep"/>, no length limit). During Windup presses are dropped; from Active
+    /// to the end of Recovery the latest SERIES press is buffered in one slot. Once ChainDelayTicks of Recovery have played,
+    /// a buffered press starts the next strike on that tick: the same series continues its sequence, the other series starts
+    /// its own at 1. The physical ability (O) only starts from the free state, is never buffered, never interrupts a strike
+    /// and is a finisher (full Recovery, no follow-up). Otherwise Recovery runs out, the buffer is dropped, the series resets
+    /// and the actor is free on the following tick, where a fresh press may start a new series (no hidden timeout). Dropped,
+    /// unexecuted or replaced presses never advance a sequence: the step changes only when a strike starts. Every strike
+    /// start clears the hit ledger.
     /// Every strike start copies its phase timing and its damage/hit box from the World's <see cref="CombatStrikeSchedule"/>
     /// (created here with the defaults; a scene publishes its character's table) into <see cref="CombatAttackState.Timing"/>
     /// and <see cref="CombatAttackState.Strike"/>; the rest of the strike reads only that copy, so publishing a new table
@@ -63,13 +67,14 @@ namespace MLFLegends.Combat
                 {
                     var timing = current.Timing;
                     var elapsed = tick - current.StartTick;
-                    if (pressed != CommandButtons.None && elapsed >= timing.ActiveStart)
+                    // Only series presses enter the one-slot buffer; the physical ability is never buffered and never cuts a strike.
+                    if (CombatAttackTuning.IsSeriesButton(pressed) && elapsed >= timing.ActiveStart)
                         current.Buffered = pressed;
-                    if (current.Buffered != CommandButtons.None && timing.CanChain
-                        && current.SeriesLength < CombatAttackTuning.MaxSeriesLength && elapsed >= timing.ChainPoint)
+                    if (current.Buffered != CommandButtons.None && timing.CanChain && elapsed >= timing.ChainPoint)
                     {
-                        Begin(ref current, CombatAttackTuning.Select(current.Buffered, current.Kind), tick, schedule, hits);
-                        current.SeriesLength++;
+                        var step = CombatAttackTuning.ChainStep(current.Buffered, current.Kind, current.SeriesStep);
+                        Begin(ref current, CombatAttackTuning.Select(current.Buffered, step), tick, schedule, hits);
+                        current.SeriesStep = step;
                     }
                     else if (elapsed >= timing.End)
                     {
@@ -87,8 +92,8 @@ namespace MLFLegends.Combat
                 var jumps = (applied.ValueRO.Command.Pressed & CommandButtons.Jump) != 0;
                 if (!current.IsAttacking && pressed != CommandButtons.None && motion.ValueRO.Grounded && !jumps)
                 {
-                    Begin(ref current, CombatAttackTuning.Select(pressed, CombatAttackKind.None), tick, schedule, hits);
-                    current.SeriesLength = 1;
+                    Begin(ref current, CombatAttackTuning.Select(pressed, 0), tick, schedule, hits);
+                    current.SeriesStep = 0;
                 }
 
                 attack.ValueRW = current;

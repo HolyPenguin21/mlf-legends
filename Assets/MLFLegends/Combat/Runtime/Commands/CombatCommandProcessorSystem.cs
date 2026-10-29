@@ -204,8 +204,9 @@ namespace MLFLegends.Combat
             return command.Tick - tick > CombatCommandQueue.MaxLeadTicks ? CommandOutcome.TooFarAhead : CommandOutcome.Deferred;
         }
 
-        const CommandButtons AllButtons = CommandButtons.Attack | CommandButtons.Jump | CommandButtons.Guard | CommandButtons.Kick
-            | CommandButtons.PunchLeft | CommandButtons.PunchRight | CommandButtons.KickLeft | CommandButtons.KickRight | CommandButtons.KickSpin;
+        // #69: the retired exact-limb bits 4..8 are no longer valid intentions (InvalidValue), never silently remapped.
+        const CommandButtons AllButtons = CommandButtons.HandSeries | CommandButtons.Jump | CommandButtons.Guard | CommandButtons.FootSeries
+            | CommandButtons.PhysicalAbility;
 
         static bool SameCommand(in CombatCommand a, in CombatCommand b) =>
             a.Combatant.Value == b.Combatant.Value && a.Tick == b.Tick && a.MoveX == b.MoveX && a.MoveZ == b.MoveZ

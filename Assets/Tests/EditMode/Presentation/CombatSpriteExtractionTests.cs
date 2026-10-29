@@ -425,7 +425,7 @@ namespace MLFLegends.Tests.EditMode
             m_Replay.Request(BattleRequest.Start(Setup(1))); m_Replay.Step();
             var human = m_Replay.Session.HumanCombatant;
             var strike = CombatAttackTuning.Get(CombatAttackKind.Hand1);
-            Submit(human, pressed: CommandButtons.Attack);
+            Submit(human, pressed: CommandButtons.HandSeries);
             for (var e = 0; e < strike.TotalTicks; e++)
             {
                 m_Replay.Step();
@@ -474,8 +474,8 @@ namespace MLFLegends.Tests.EditMode
                 world.Request(BattleRequest.Start(Setup(200)));
                 for (uint r = 1; r <= 40; r++)
                     world.Script.Player(r, r, ReplayRole.Human, moveX: (sbyte)(r % 3 - 1), moveZ: 1,
-                            pressed: r % 9 == 0 ? CommandButtons.Jump : r % 11 == 0 ? CommandButtons.Attack : CommandButtons.None)
-                        .Ai(r, r, ReplayRole.Ai, moveX: -1, pressed: r % 7 == 0 ? CommandButtons.Kick : CommandButtons.None);
+                            pressed: r % 9 == 0 ? CommandButtons.Jump : r % 11 == 0 ? CommandButtons.HandSeries : CommandButtons.None)
+                        .Ai(r, r, ReplayRole.Ai, moveX: -1, pressed: r % 7 == 0 ? CommandButtons.FootSeries : CommandButtons.None);
             }
 
             var entityCount = -1;

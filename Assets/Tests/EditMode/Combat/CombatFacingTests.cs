@@ -59,7 +59,7 @@ namespace MLFLegends.Tests.EditMode
             add(9, 9, 0, 0, CommandButtons.None, CommandButtons.Jump);                       // jump in place
             add(10, 10, -1, 0, CommandButtons.None, CommandButtons.None);                    // airborne turn
             add(11, 11, 0, -1, CommandButtons.None, CommandButtons.None);                    // airborne Z only
-            add(12, 12, 1, 0, CommandButtons.Guard | CommandButtons.Attack, CommandButtons.Attack); // no action lock yet
+            add(12, 12, 1, 0, CommandButtons.Guard | CommandButtons.HandSeries, CommandButtons.HandSeries); // no action lock yet
             add(13, 13, -1, 0, CommandButtons.Guard, CommandButtons.None);
             // r14+: nothing.
         }

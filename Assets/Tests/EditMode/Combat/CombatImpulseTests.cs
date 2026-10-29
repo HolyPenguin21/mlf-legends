@@ -159,7 +159,7 @@ namespace MLFLegends.Tests.EditMode
         {
             using var w = new ReplayWorld("impulse during strike"); var e = Start(w, new[] { Floor });
             var before = w.Manager.GetComponentData<CombatFacing>(e[0]);
-            Command(w, e[0], -1, CommandButtons.PunchLeft); Push(w, e[0], new float3(6, 0, 0));
+            Command(w, e[0], -1, CommandButtons.HandSeries); Push(w, e[0], new float3(6, 0, 0));
             w.Step();
             var strike = w.Manager.GetComponentData<CombatAttackState>(e[0]);
             Assert.That(strike.Kind, Is.EqualTo(CombatAttackKind.Hand1));
@@ -467,8 +467,8 @@ namespace MLFLegends.Tests.EditMode
                 producer.Script.Add((17, ReplayRole.Ai, new float3(-9, 0, 0))); producer.Script.Add((31, ReplayRole.Human, new float3(0, 0, -5)));
                 for (uint t = 1; t <= 60; t++)
                 {
-                    w.Script.Player(t, t, ReplayRole.Human, moveX: (sbyte)(t % 3 - 1), pressed: t % 13 == 0 ? CommandButtons.PunchLeft : CommandButtons.None);
-                    w.Script.Ai(t, t, ReplayRole.Ai, moveX: -1, pressed: t % 11 == 0 ? CommandButtons.Kick : CommandButtons.None);
+                    w.Script.Player(t, t, ReplayRole.Human, moveX: (sbyte)(t % 3 - 1), pressed: t % 13 == 0 ? CommandButtons.HandSeries : CommandButtons.None);
+                    w.Script.Ai(t, t, ReplayRole.Ai, moveX: -1, pressed: t % 11 == 0 ? CommandButtons.FootSeries : CommandButtons.None);
                 }
             }
             Start(a, new[] { Floor }, new float3(1.2f, 0, 0)); var eb = Start(b, new[] { Floor }, new float3(1.2f, 0, 0));

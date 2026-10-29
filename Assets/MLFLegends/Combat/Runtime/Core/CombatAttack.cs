@@ -45,11 +45,14 @@ namespace MLFLegends.Combat
         /// <summary>Current strike; <see cref="CombatAttackKind.None"/> when the fighter is free.</summary>
         public CombatAttackKind Kind;
 
-        /// <summary>One exact OR general strike intention accepted during Active/Recovery; resolved only at execution.</summary>
+        /// <summary>One series intention (hand or foot) accepted during Active/Recovery; resolved only at execution.</summary>
         public CommandButtons Buffered;
 
-        /// <summary>Strikes in the current series, the current one included; 0 when free.</summary>
-        public byte SeriesLength;
+        /// <summary>
+        /// Bounded position of the current strike in its series (#69): 0 first, 1 second, then 2 (slot-2 strike) and 3 (slot-1
+        /// strike) alternate, so the sequence is 1, 1, 2, 1, 2, … for any length; 0 when free or for the physical ability.
+        /// </summary>
+        public byte SeriesStep;
 
         /// <summary>First (windup) tick of the current strike.</summary>
         public uint StartTick;

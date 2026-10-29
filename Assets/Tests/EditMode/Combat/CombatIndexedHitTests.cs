@@ -57,10 +57,22 @@ namespace MLFLegends.Tests.EditMode
             foreach (var actor in e)
                 Place(w, actor, new float3(-.5f + Next() * spread, heights[rng.Next(heights.Length)], Next() * spread * .5f),
                     facing: rng.Next(2) == 0 ? FacingDirection.Left : FacingDirection.Right);
-            var buttons = new[] { CommandButtons.PunchLeft, CommandButtons.PunchRight, CommandButtons.KickLeft, CommandButtons.KickRight,
-                CommandButtons.KickSpin, CommandButtons.Attack, CommandButtons.Kick };
+            var buttons = new[] { CommandButtons.HandSeries, CommandButtons.FootSeries, CommandButtons.PhysicalAbility };
             for (var t = 0; t < 90; t++)
             {
+                if (t == 40)
+                {
+                    // #69: per-character values change mid-run; strikes already running keep their frozen version, and the
+                    // independent oracle checks each execution against the values it started with.
+                    var table = CombatStrikeSchedule.Default;
+                    for (var kind = CombatAttackKind.Hand1; kind <= CombatAttackKind.PhysicalAbility; kind++)
+                    {
+                        var strike = table.GetStrike(kind);
+                        strike.Damage += 3; strike.ReachMin = .2f; strike.ReachMax *= 1.4f; strike.DepthHalfWidth = .6f; strike.HeightTolerance = .5f;
+                        table.SetStrike(kind, strike);
+                    }
+                    CombatStrikeSchedule.Publish(w.Manager, table);
+                }
                 foreach (var actor in e)
                     Command(w, actor, (sbyte)(rng.Next(5) == 0 ? rng.Next(3) - 1 : 0),
                         rng.Next(6) == 0 ? buttons[rng.Next(buttons.Length)] : CommandButtons.None);
@@ -84,7 +96,7 @@ namespace MLFLegends.Tests.EditMode
             var origin = new float3(-6f, 0, 0); // dx = ±1 lands exactly on the cell boundaries x=-7 / x=-5; dz=-.4 in cell z=-1.
             Place(w, e[0], origin, facing: facing); Place(w, e[1], origin + new float3(dx, 0, dz));
             var oracle = HitOracle.Attach(w);
-            Command(w, e[0], pressed: CommandButtons.PunchLeft);
+            Command(w, e[0], pressed: CommandButtons.HandSeries);
             w.Step(CombatAttackTuning.Get(CombatAttackKind.Hand1).TotalTicks);
             Assert.That(w.Manager.GetComponentData<CombatHealth>(e[1]).Current, Is.EqualTo(hit ? 96 : 100));
             Assert.That(w.Manager.GetBuffer<CombatHitRecord>(e[0]).Length, Is.EqualTo(hit ? 1 : 0));
@@ -98,7 +110,7 @@ namespace MLFLegends.Tests.EditMode
             // Disjoint height intervals (no body contact), |ΔY| .6 within the tolerance, point 1.5 beyond reach 1.0.
             Place(w, e[0], float3.zero, radius: .01f, height: .5f, facing: FacingDirection.Right);
             Place(w, e[1], new float3(1.5f, .6f, 0), radius: 3f);
-            Command(w, e[0], pressed: CommandButtons.PunchLeft);
+            Command(w, e[0], pressed: CommandButtons.HandSeries);
             var timing = CombatAttackTuning.Get(CombatAttackKind.Hand1);
             w.Step(timing.WindupTicks + 1);
             var d = LastHits(w);
@@ -119,13 +131,13 @@ namespace MLFLegends.Tests.EditMode
             for (var i = 0; i < enemies.Length; i++) Place(w, enemies[i], new float3(.3f + i * .3f, 0, i * .1f - .1f));
             for (var i = 0; i < allies.Length; i++) Place(w, allies[i], new float3(.45f + i * .3f, 0, .2f));
             var punch = CombatAttackTuning.Get(CombatAttackKind.Hand1);
-            Command(w, e[0], pressed: CommandButtons.PunchLeft); w.Step(punch.TotalTicks);
+            Command(w, e[0], pressed: CommandButtons.HandSeries); w.Step(punch.TotalTicks);
             Assert.That(enemies.All(x => w.Manager.GetComponentData<CombatHealth>(x).Current == 100 - punch.Damage), Is.True,
                 "Each enemy once despite several Active ticks.");
             Assert.That(allies.All(x => w.Manager.GetComponentData<CombatHealth>(x).Current == 100), Is.True);
             Assert.That(w.Manager.GetBuffer<CombatHitRecord>(e[0]).AsNativeArray().ToArray().Select(h => h.Target.Value),
                 Is.EqualTo(enemies.Select(x => w.Manager.GetComponentData<CombatantId>(x).Value).OrderBy(v => v)), "Id order.");
-            Command(w, e[0], pressed: CommandButtons.PunchLeft); w.Step(punch.TotalTicks);
+            Command(w, e[0], pressed: CommandButtons.HandSeries); w.Step(punch.TotalTicks);
             Assert.That(enemies.All(x => w.Manager.GetComponentData<CombatHealth>(x).Current == 100 - 2 * punch.Damage), Is.True,
                 "A new strike starts with an empty ledger.");
             Assert.That(oracle.Mismatches, Is.Empty); Assert.That(oracle.CheckedHits, Is.EqualTo(2 * enemies.Length));
@@ -138,7 +150,7 @@ namespace MLFLegends.Tests.EditMode
             Place(w, e[0], float3.zero, facing: FacingDirection.Right); Place(w, e[1], new float3(.5f, 0, 0));
             Place(w, e[2], new float3(-5, 0, 0)); Place(w, e[3], new float3(5, 0, 0));
             var punch = CombatAttackTuning.Get(CombatAttackKind.Hand1);
-            Command(w, e[0], pressed: CommandButtons.PunchLeft); w.Step(punch.WindupTicks + 1);
+            Command(w, e[0], pressed: CommandButtons.HandSeries); w.Step(punch.WindupTicks + 1);
             Assert.That(w.Manager.GetComponentData<CombatHealth>(e[1]).Current, Is.EqualTo(96));
             var hit = w.World.GetExistingSystem<CombatHitSystem>();
             void Reset() { w.Manager.GetBuffer<CombatHitRecord>(e[0]).Clear(); w.Manager.SetComponentData(e[1], new CombatHealth { Current = 100, Max = 100 }); }

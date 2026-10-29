@@ -12,7 +12,7 @@ namespace MLFLegends.Tests.EditMode
     // through the real runtime chain in an isolated replay World. Expectations come from the published windows only.
     public class CombatStrikeScheduleTests
     {
-        const CommandButtons A = CommandButtons.Attack;
+        const CommandButtons A = CommandButtons.HandSeries;
 
         static BattleSetup Duel(float aiX) => new BattleSetup
         {
@@ -171,9 +171,9 @@ namespace MLFLegends.Tests.EditMode
             w.Request(BattleRequest.Start(Duel(5f)));
             w.Step(12);
             var records = w.BattleRecords(1);
-            Assert.That(H(records[6]).Attack.Kind, Is.EqualTo(CombatAttackKind.Hand2), "Follow-up on the strike's End tick (r7).");
+            Assert.That(H(records[6]).Attack.Kind, Is.EqualTo(CombatAttackKind.Hand1), "Follow-up (second of the series: Hand1) on the strike's End tick (r7).");
             Assert.That(H(records[6]).Attack.StartTick - records[6].BattleStartTick, Is.EqualTo(7u));
-            Assert.That(H(records[6]).Attack.SeriesLength, Is.EqualTo(2));
+            Assert.That(H(records[6]).Attack.SeriesStep, Is.EqualTo(1));
         }
 
         [TestCase(CombatAttackPhase.Windup)]

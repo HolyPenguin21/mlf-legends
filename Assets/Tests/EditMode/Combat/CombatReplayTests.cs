@@ -59,13 +59,13 @@ namespace MLFLegends.Tests.EditMode
             .Player(3, 2, ReplayRole.Human, moveX: 1)
             .Ai(3, 3, ReplayRole.Human, moveX: 1)
             .Ai(3, 0, ReplayRole.Ai)
-            .Ai(3, 5, ReplayRole.Ai, pressed: CommandButtons.Attack)
+            .Ai(3, 5, ReplayRole.Ai, pressed: CommandButtons.HandSeries)
             // r4: future command and its repeat, too far ahead, current command, conflict with a pending command.
             .Player(4, 5, ReplayRole.Human, moveX: 1)
             .Player(4, 5, ReplayRole.Human, moveX: 1)
             .Player(4, 4 + CombatCommandQueue.MaxLeadTicks + 1, ReplayRole.Human)
             .Player(4, 4, ReplayRole.Human, moveZ: 1)
-            .Ai(4, 5, ReplayRole.Ai, moveX: 1, pressed: CommandButtons.Attack)
+            .Ai(4, 5, ReplayRole.Ai, moveX: 1, pressed: CommandButtons.HandSeries)
             // r5: pending commands are due; a same-tick submission loses to them; another future AI command.
             .Player(5, 5, ReplayRole.Human, moveX: -1)
             .Ai(5, 7, ReplayRole.Ai, held: CommandButtons.Guard)
@@ -84,8 +84,8 @@ namespace MLFLegends.Tests.EditMode
             get
             {
                 var script = new ReplayScript()
-                    .Player(1, 4, ReplayRole.Human, pressed: CommandButtons.Attack)
-                    .Ai(1, 4, ReplayRole.Ai, pressed: CommandButtons.Attack);
+                    .Player(1, 4, ReplayRole.Human, pressed: CommandButtons.HandSeries)
+                    .Ai(1, 4, ReplayRole.Ai, pressed: CommandButtons.HandSeries);
                 for (var r = 1u; r <= 12; r++)
                     script.Player(r, r, ReplayRole.Human, moveX: 1).Ai(r, r, ReplayRole.Ai, moveX: -1);
                 return script;
@@ -228,8 +228,8 @@ namespace MLFLegends.Tests.EditMode
             Both(2, 2, moveX: 1);
             Both(3, 3, moveX: 1);
             Both(3, 3, moveX: -1);
-            Both(3, 6, pressed: CommandButtons.Attack);
-            Both(4, 6, pressed: CommandButtons.Attack);
+            Both(3, 6, pressed: CommandButtons.HandSeries);
+            Both(4, 6, pressed: CommandButtons.HandSeries);
             Both(4, 6, moveX: 1);
             Both(4, 4 + CombatCommandQueue.MaxLeadTicks + 1);
             // r5: nothing from either producer.
@@ -316,7 +316,7 @@ namespace MLFLegends.Tests.EditMode
                 "x0 z0 held:Guard pressed:None AI",
                 "x0 z0 held:None pressed:None None implicit",
                 "x0 z0 held:None pressed:None None implicit",
-                "x0 z0 held:None pressed:Attack AI",
+                "x0 z0 held:None pressed:HandSeries AI",
             };
             var expectedPending = new[]
             {

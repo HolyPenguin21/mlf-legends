@@ -89,9 +89,6 @@ namespace MLFLegends.Combat
         /// <summary>Hit points of every spawned combatant.</summary>
         public const int MaxHealth = 100;
 
-        /// <summary>Strikes in one series at most; the last one always plays its full recovery.</summary>
-        public const int MaxSeriesLength = 4;
-
         public static CombatAttackDefinition Get(CombatAttackKind kind)
         {
             switch (kind)
@@ -120,41 +117,52 @@ namespace MLFLegends.Combat
         /// <summary>Phase of the default windows on the tick <paramref name="elapsed"/> ticks after the strike's first tick; None once it ended.</summary>
         public static CombatAttackPhase PhaseAt(in CombatAttackDefinition strike, uint elapsed) => strike.DefaultTiming.PhaseAt(elapsed);
 
-        /// <summary>One deterministic intention for Player/AI: exact hand L/R, foot L/R/spin, then general hand/foot.</summary>
+        /// <summary>
+        /// One deterministic intention for Player/AI from the buttons pressed on one tick (#69): the explicit, stable technical
+        /// priority U → I → O, i.e. <see cref="CommandButtons.HandSeries"/>, then <see cref="CommandButtons.FootSeries"/>,
+        /// then <see cref="CommandButtons.PhysicalAbility"/>. The lower-priority presses of that tick are dropped.
+        /// </summary>
         public static CommandButtons StrikeButton(CommandButtons pressed) =>
-            (pressed & CommandButtons.PunchLeft) != 0 ? CommandButtons.PunchLeft
-            : (pressed & CommandButtons.PunchRight) != 0 ? CommandButtons.PunchRight
-            : (pressed & CommandButtons.KickLeft) != 0 ? CommandButtons.KickLeft
-            : (pressed & CommandButtons.KickRight) != 0 ? CommandButtons.KickRight
-            : (pressed & CommandButtons.KickSpin) != 0 ? CommandButtons.KickSpin
-            : (pressed & CommandButtons.Attack) != 0 ? CommandButtons.Attack
-            : (pressed & CommandButtons.Kick) != 0 ? CommandButtons.Kick
+            (pressed & CommandButtons.HandSeries) != 0 ? CommandButtons.HandSeries
+            : (pressed & CommandButtons.FootSeries) != 0 ? CommandButtons.FootSeries
+            : (pressed & CommandButtons.PhysicalAbility) != 0 ? CommandButtons.PhysicalAbility
             : CommandButtons.None;
 
+        /// <summary>A hand/foot series button: buffered in Active/Recovery, unlike the stand-alone physical ability.</summary>
+        public static bool IsSeriesButton(CommandButtons button) =>
+            button == CommandButtons.HandSeries || button == CommandButtons.FootSeries;
+
         /// <summary>
-        /// The strike <paramref name="button"/> performs after <paramref name="previous"/> (None = first of a series): the
-        /// first strike is left, each follow-up uses the other side, and a Kick after <see cref="CombatAttackKind.Foot2"/>
-        /// is the <see cref="CombatAttackKind.PhysicalAbility"/> finisher.
+        /// Bounded series step after <paramref name="step"/> (#69): 0 first strike, 1 second, then 2 and 3 alternate forever, so
+        /// a series of any length is 1, 1, 2, 1, 2, … (steps 0, 1, 3 play the slot-1 strike, step 2 the slot-2 strike) and the
+        /// state never grows or overflows.
         /// </summary>
-        public static CombatAttackKind Select(CommandButtons button, CombatAttackKind previous)
+        public static byte NextStep(byte step) => step < 3 ? (byte)(step + 1) : (byte)2;
+
+        /// <summary>
+        /// Step of the strike a buffered <paramref name="button"/> starts after <paramref name="current"/> at
+        /// <paramref name="step"/>: the same series continues; the other series (hand ↔ foot) starts its own sequence at 0.
+        /// </summary>
+        public static byte ChainStep(CommandButtons button, CombatAttackKind current, byte step) =>
+            button == SeriesOf(current) ? NextStep(step) : (byte)0;
+
+        /// <summary>The strike <paramref name="button"/> performs at series <paramref name="step"/>.</summary>
+        public static CombatAttackKind Select(CommandButtons button, byte step)
         {
-            // Exact requests survive buffering unchanged, including repeated right-side strikes and a free-state spin.
+            var second = step == 2;
             switch (button)
             {
-                case CommandButtons.PunchLeft: return CombatAttackKind.Hand1;
-                case CommandButtons.PunchRight: return CombatAttackKind.Hand2;
-                case CommandButtons.KickLeft: return CombatAttackKind.Foot1;
-                case CommandButtons.KickRight: return CombatAttackKind.Foot2;
-                case CommandButtons.KickSpin: return CombatAttackKind.PhysicalAbility;
+                case CommandButtons.HandSeries: return second ? CombatAttackKind.Hand2 : CombatAttackKind.Hand1;
+                case CommandButtons.FootSeries: return second ? CombatAttackKind.Foot2 : CombatAttackKind.Foot1;
+                case CommandButtons.PhysicalAbility: return CombatAttackKind.PhysicalAbility;
+                default: return CombatAttackKind.None;
             }
-            var left = previous != CombatAttackKind.Hand1 && previous != CombatAttackKind.Foot1;
-            if (button == CommandButtons.Attack)
-                return left ? CombatAttackKind.Hand1 : CombatAttackKind.Hand2;
-            if (button != CommandButtons.Kick)
-                return CombatAttackKind.None;
-            if (previous == CombatAttackKind.Foot2)
-                return CombatAttackKind.PhysicalAbility;
-            return left ? CombatAttackKind.Foot1 : CombatAttackKind.Foot2;
         }
+
+        /// <summary>The series a strike belongs to; None for the physical ability (never part of a series).</summary>
+        public static CommandButtons SeriesOf(CombatAttackKind kind) =>
+            kind == CombatAttackKind.Hand1 || kind == CombatAttackKind.Hand2 ? CommandButtons.HandSeries
+            : kind == CombatAttackKind.Foot1 || kind == CombatAttackKind.Foot2 ? CommandButtons.FootSeries
+            : CommandButtons.None;
     }
 }

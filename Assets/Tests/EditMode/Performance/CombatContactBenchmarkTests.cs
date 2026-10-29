@@ -37,7 +37,7 @@ namespace MLFLegends.Tests.EditMode
                 var direction = team.ValueRO.Value == 1 ? 1f : -1f;
                 buffer.Add(new CombatCommandSubmission(new CombatCommand { Combatant = id.ValueRO, Tick = tick,
                     MoveX = moving ? (sbyte)direction : (sbyte)0,
-                    Source = CommandSource.AI, Pressed = moving && tick % period == 1 ? CommandButtons.PunchLeft : CommandButtons.None }));
+                    Source = CommandSource.AI, Pressed = moving && tick % period == 1 ? CommandButtons.HandSeries : CommandButtons.None }));
                 if (tick % 30 == 5 && (Impulses == 2 || Impulses == 1 && id.ValueRO.Equals(controlled)))
                     impulses.Add(new CombatImpulse { Target = id.ValueRO, BattleNumber = session.BattleNumber,
                         Impulse = new float3(8 * direction, id.ValueRO.Value % 4 == 0 ? 3 : 0, id.ValueRO.Value % 2 == 0 ? 2 : -2) });

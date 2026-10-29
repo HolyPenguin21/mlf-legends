@@ -231,7 +231,7 @@ namespace MLFLegends.Tests.EditMode
             var previous = 0f;
             for (var t = 0; t < timing.End; t++)
             {
-                Command(w, e[0], 1, pressed: t == 0 ? CommandButtons.PunchLeft : CommandButtons.None); w.Step();
+                Command(w, e[0], 1, pressed: t == 0 ? CommandButtons.HandSeries : CommandButtons.None); w.Step();
                 var state = w.Manager.GetComponentData<CombatAttackState>(e[0]);
                 Assert.That(state.Kind, Is.EqualTo(CombatAttackKind.Hand1));
                 Assert.That(w.Manager.GetComponentData<CombatFacing>(e[0]).Value, Is.EqualTo(FacingDirection.Right));
@@ -389,7 +389,7 @@ namespace MLFLegends.Tests.EditMode
             table.Hand1 = CombatStrikeTiming.FromTicks(0, 60, 1, 4); // Explicit Active-speed fixture, not project tuning.
             table.LandingRecoveryTicks = 12;
             CombatStrikeSchedule.Publish(w.Manager, table);
-            Command(w, e[0], 1, pressed: CommandButtons.PunchLeft); w.Step();
+            Command(w, e[0], 1, pressed: CommandButtons.HandSeries); w.Step();
             var d = w.World.GetExistingSystemManaged<CombatSpatialIndexSystem>().LastContacts;
             Assert.That(d.FrozenBodies, Is.Zero, "This must exercise a solved island, not rollback to original grounded state.");
             Assert.That(d.Iterations, Is.GreaterThan(2));

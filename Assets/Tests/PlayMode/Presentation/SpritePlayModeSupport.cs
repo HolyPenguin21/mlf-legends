@@ -222,7 +222,7 @@ namespace MLFLegends.Tests.PlayMode
                 else if (strike && id.ValueRO.Value % StrikeModulo == 1)
                     submissions.Add(new CombatCommandSubmission(new CombatCommand
                     {
-                        Combatant = id.ValueRO, Tick = tick, Pressed = CommandButtons.Attack, Source = CommandSource.AI,
+                        Combatant = id.ValueRO, Tick = tick, Pressed = CommandButtons.HandSeries, Source = CommandSource.AI,
                     }));
         }
 

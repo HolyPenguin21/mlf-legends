@@ -14,7 +14,7 @@ namespace MLFLegends.Tests.EditMode
     // box and the body; values frozen per strike execution; body applied at spawn; validation, migration and slot clips.
     public class CombatCharacterDataTests
     {
-        const CommandButtons Hand = CommandButtons.Attack;
+        const CommandButtons Hand = CommandButtons.HandSeries;
 
         static BattleSetup Duel(float aiX) => new BattleSetup
         {

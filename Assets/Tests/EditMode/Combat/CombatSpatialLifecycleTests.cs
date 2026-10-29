@@ -200,7 +200,7 @@ namespace MLFLegends.Tests.EditMode
             var script = new ReplayScript();
             for (uint t = 1; t <= 120; t++)
             {
-                var buttons = t % 23 == 0 ? CommandButtons.Jump : t % 7 == 0 ? CommandButtons.PunchLeft : CommandButtons.None;
+                var buttons = t % 23 == 0 ? CommandButtons.Jump : t % 7 == 0 ? CommandButtons.HandSeries : CommandButtons.None;
                 script.Player(t, t, ReplayRole.Human, moveX: (sbyte)(t % 3 - 1), pressed: buttons);
                 script.Ai(t, t, ReplayRole.Ai, moveX: (sbyte)(1 - t % 3), pressed: buttons);
             }

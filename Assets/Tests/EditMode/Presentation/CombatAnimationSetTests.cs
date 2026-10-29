@@ -54,7 +54,7 @@ namespace MLFLegends.Tests.EditMode
 
         /// <summary>A strike started on <see cref="Start"/> with the windows <paramref name="set"/> derives (what the scene publishes).</summary>
         static CombatAttackState Striking(CombatAnimationSet set, CombatAttackKind kind) =>
-            new CombatAttackState { Kind = kind, StartTick = Start, SeriesLength = 1, Timing = set.StrikeSchedule.Get(kind) };
+            new CombatAttackState { Kind = kind, StartTick = Start, Timing = set.StrikeSchedule.Get(kind) };
 
         /// <summary>Phase a config local frame belongs to.</summary>
         static CombatAttackPhase PhaseOf(CharacterAnimationSettings settings, int local) =>
