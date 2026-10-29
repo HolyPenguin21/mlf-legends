@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-29 15:32:20Z" end-time="2026-10-29 15:34:15Z" duration="115,7555533">
+  <test-suite type="TestSuite" id="1000" name="mlf-legends" fullname="mlf-legends" runstate="Runnable" testcasecount="614" result="Passed" start-time="2026-10-29 15:32:20Z" end-time="2026-10-29 15:34:15Z" duration="115.755553" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1726" name="MLFLegends.Tests.EditMode.dll" fullname="D:/Unity/Project/mlf-w66/Library/ScriptAssemblies/MLFLegends.Tests.EditMode.dll" runstate="Runnable" testcasecount="614" result="Passed" start-time="2026-10-29 15:32:20Z" end-time="2026-10-29 15:34:15Z" duration="115.734827" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="16180" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1727" name="MLFLegends" fullname="MLFLegends" runstate="Runnable" testcasecount="614" result="Passed" start-time="2026-10-29 15:32:20Z" end-time="2026-10-29 15:34:15Z" duration="115.724713" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1728" name="Tests" fullname="MLFLegends.Tests" runstate="Runnable" testcasecount="614" result="Passed" start-time="2026-10-29 15:32:20Z" end-time="2026-10-29 15:34:15Z" duration="115.712701" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1729" name="EditMode" fullname="MLFLegends.Tests.EditMode" runstate="Runnable" testcasecount="614" result="Passed" start-time="2026-10-29 15:32:20Z" end-time="2026-10-29 15:34:15Z" duration="115.702407" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1528" name="CombatStrikeBenchmarkTests" fullname="MLFLegends.Tests.EditMode.CombatStrikeBenchmarkTests" classname="MLFLegends.Tests.EditMode.CombatStrikeBenchmarkTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-29 15:32:20Z" end-time="2026-10-29 15:34:15Z" duration="115.693270" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="Performance" />
+              </properties>
+              <test-case id="1530" name="BodyContactScenarios2_100_400ReportColdWarmWorkAndOwnerCosts" fullname="MLFLegends.Tests.EditMode.CombatStrikeBenchmarkTests.BodyContactScenarios2_100_400ReportColdWarmWorkAndOwnerCosts" methodname="BodyContactScenarios2_100_400ReportColdWarmWorkAndOwnerCosts" classname="MLFLegends.Tests.EditMode.CombatStrikeBenchmarkTests" runstate="Runnable" seed="1885585793" result="Passed" start-time="2026-10-29 15:32:20Z" end-time="2026-10-29 15:34:15Z" duration="115.676944" asserts="0">
+                <properties>
+                  <property name="Timeout" value="1800000" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: C:/Users/Стас/AppData/LocalLow/DefaultCompany/mlf-legends\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

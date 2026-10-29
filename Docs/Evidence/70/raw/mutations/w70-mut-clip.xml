@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="3" result="Failed(Child)" total="3" passed="1" failed="2" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-29 14:56:38Z" end-time="2026-10-29 14:56:47Z" duration="8,6512596">
+  <test-suite type="TestSuite" id="1000" name="mlf-legends" fullname="mlf-legends" runstate="Runnable" testcasecount="606" result="Failed" site="Child" start-time="2026-10-29 14:56:38Z" end-time="2026-10-29 14:56:47Z" duration="8.651260" total="3" passed="1" failed="2" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1717" name="MLFLegends.Tests.EditMode.dll" fullname="D:/Unity/Project/mlf-w66/Library/ScriptAssemblies/MLFLegends.Tests.EditMode.dll" runstate="Runnable" testcasecount="606" result="Failed" site="Child" start-time="2026-10-29 14:56:38Z" end-time="2026-10-29 14:56:47Z" duration="8.627268" total="3" passed="1" failed="2" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="21544" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1718" name="MLFLegends" fullname="MLFLegends" runstate="Runnable" testcasecount="606" result="Failed" site="Child" start-time="2026-10-29 14:56:38Z" end-time="2026-10-29 14:56:47Z" duration="8.613117" total="3" passed="1" failed="2" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1719" name="Tests" fullname="MLFLegends.Tests" runstate="Runnable" testcasecount="606" result="Failed" site="Child" start-time="2026-10-29 14:56:38Z" end-time="2026-10-29 14:56:47Z" duration="8.600003" total="3" passed="1" failed="2" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestSuite" id="1720" name="EditMode" fullname="MLFLegends.Tests.EditMode" runstate="Runnable" testcasecount="606" result="Failed" site="Child" start-time="2026-10-29 14:56:38Z" end-time="2026-10-29 14:56:47Z" duration="8.583908" total="3" passed="1" failed="2" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-suite type="TestFixture" id="1236" name="CombatImpulseTests" fullname="MLFLegends.Tests.EditMode.CombatImpulseTests" classname="MLFLegends.Tests.EditMode.CombatImpulseTests" runstate="Runnable" testcasecount="30" result="Failed" site="Child" start-time="2026-10-29 14:56:38Z" end-time="2026-10-29 14:56:47Z" duration="8.558614" total="2" passed="1" failed="1" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-suite type="ParameterizedMethod" id="1253" name="RotatedCornersPublishNoVelocityIntoAnyTouchedWallInEitherShapeOrder" fullname="MLFLegends.Tests.EditMode.CombatImpulseTests.RotatedCornersPublishNoVelocityIntoAnyTouchedWallInEitherShapeOrder" classname="MLFLegends.Tests.EditMode.CombatImpulseTests" runstate="Runnable" testcasecount="2" result="Failed" site="Child" start-time="2026-10-29 14:56:38Z" end-time="2026-10-29 14:56:47Z" duration="8.549296" total="2" passed="1" failed="1" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <failure>
+                  <message><![CDATA[One or more child tests had errors]]></message>
+                </failure>
+                <test-case id="1251" name="RotatedCornersPublishNoVelocityIntoAnyTouchedWallInEitherShapeOrder(False)" fullname="MLFLegends.Tests.EditMode.CombatImpulseTests.RotatedCornersPublishNoVelocityIntoAnyTouchedWallInEitherShapeOrder(False)" methodname="RotatedCornersPublishNoVelocityIntoAnyTouchedWallInEitherShapeOrder" classname="MLFLegends.Tests.EditMode.CombatImpulseTests" runstate="Runnable" seed="2089897607" result="Failed" start-time="2026-10-29 14:56:38Z" end-time="2026-10-29 14:56:47Z" duration="8.494549" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <failure>
+                    <message><![CDATA[  tick 7: hidden velocity float2(0f, -1,923077f) into wall float2(-0,7071068f, 0,7071068f)
+  Expected: greater than or equal to -9.99999975E-05f
+  But was:  -1.35982049f
+]]></message>
+                    <stack-trace><![CDATA[at MLFLegends.Tests.EditMode.CombatImpulseTests.RotatedCornersPublishNoVelocityIntoAnyTouchedWallInEitherShapeOrder (System.Boolean obtuse) [0x002f6] in D:\Unity\Project\mlf-w66\Assets\Tests\EditMode\Combat\CombatImpulseTests.cs:335
+]]></stack-trace>
+                  </failure>
+                </test-case>
+                <test-case id="1252" name="RotatedCornersPublishNoVelocityIntoAnyTouchedWallInEitherShapeOrder(True)" fullname="MLFLegends.Tests.EditMode.CombatImpulseTests.RotatedCornersPublishNoVelocityIntoAnyTouchedWallInEitherShapeOrder(True)" methodname="RotatedCornersPublishNoVelocityIntoAnyTouchedWallInEitherShapeOrder" classname="MLFLegends.Tests.EditMode.CombatImpulseTests" runstate="Runnable" seed="340899330" result="Passed" start-time="2026-10-29 14:56:47Z" end-time="2026-10-29 14:56:47Z" duration="0.040821" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestFixture" id="1425" name="CombatWallSetTests" fullname="MLFLegends.Tests.EditMode.CombatWallSetTests" classname="MLFLegends.Tests.EditMode.CombatWallSetTests" runstate="Runnable" testcasecount="9" result="Failed" site="Child" start-time="2026-10-29 14:56:47Z" end-time="2026-10-29 14:56:47Z" duration="0.004070" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1426" name="AcuteCornerLeavesNoVelocityIntoEitherWall" fullname="MLFLegends.Tests.EditMode.CombatWallSetTests.AcuteCornerLeavesNoVelocityIntoEitherWall" methodname="AcuteCornerLeavesNoVelocityIntoEitherWall" classname="MLFLegends.Tests.EditMode.CombatWallSetTests" runstate="Runnable" seed="1018077972" result="Failed" start-time="2026-10-29 14:56:47Z" end-time="2026-10-29 14:56:47Z" duration="0.002159" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  float2(-3f, -2,999999f) into float2(1f, 0f)
+  Expected: greater than or equal to -4.24263999E-05f
+  But was:  -3.0f
+]]></message>
+                  <stack-trace><![CDATA[at MLFLegends.Tests.EditMode.CombatWallSetTests.Satisfies (MLFLegends.Combat.CombatWallSet set, Unity.Mathematics.float2[] normals, Unity.Mathematics.float2 v) [0x0000e] in D:\Unity\Project\mlf-w66\Assets\Tests\EditMode\Combat\CombatWallSetTests.cs:24
+at MLFLegends.Tests.EditMode.CombatWallSetTests.AcuteCornerLeavesNoVelocityIntoEitherWall () [0x00052] in D:\Unity\Project\mlf-w66\Assets\Tests\EditMode\Combat\CombatWallSetTests.cs:34
+]]></stack-trace>
+                </failure>
+                <output><![CDATA[Saving results to: C:/Users/Стас/AppData/LocalLow/DefaultCompany/mlf-legends\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

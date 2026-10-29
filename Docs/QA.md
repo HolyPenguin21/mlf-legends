@@ -1,4 +1,12 @@
-## Current #69 — Stage 05.1 (2026-10-29)
+## Current #70 — Stage 05.1a (2026-10-29)
+
+Only this section is current; older sections are history. Results with exact SHA and raw XML/logs:
+[Evidence/70](Evidence/70/README.md). Summary: full EditMode (non-Performance) 603/603 and full PlayMode (D3D12) 59/59 on
+the clean tested commit; the two #69 corrections are covered by new regressions with mutation checks; the installed v2
+page and metadata pass the package checks (geometry, extrusion, alpha, markers, bindings); the real atlas renders in
+CombatSmoke (evidence image). Owner visual acceptance of the new art and the owner manual checklist: NOT RUN.
+
+## History — #69 — Stage 05.1 (2026-10-29)
 
 Only this section is current; every older "History" section keeps its own SHA/scope and is superseded where it disagrees (old key layouts, exact-limb intentions, velocity = displacement/dt, series limit 4, stage states).
 

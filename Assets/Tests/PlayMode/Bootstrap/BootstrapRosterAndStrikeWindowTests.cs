@@ -166,15 +166,15 @@ namespace MLFLegends.Tests.PlayMode
                 bootstrap.AnimationConfig = config;
                 bootstrap.StrikeCharacterId = "mage_female_01";
                 LogAssert.Expect(LogType.Log, new Regex("character table .*Hand1 punch_left 14/6/9 dmg 4 reach 0-1, Hand2 punch_right 14/6/9 dmg 4 reach 0-1, " +
-                    "Foot1 kick_left 12/6/12 dmg 7 reach 0-1.3, Foot2 kick_right 12/6/12 dmg 7 reach 0-1.3, PhysicalAbility kick_spin 20/5/5 dmg 12 reach 0-1.45.*Body r 0.3 h 2 m 1"));
+                    "Foot1 kick_left 15/5/10 dmg 7 reach 0-1.3, Foot2 kick_right 15/5/10 dmg 7 reach 0-1.3, PhysicalAbility physical_ability 15/4/11 dmg 12 reach 0-1.45.*Body r 0.3 h 2 m 1"));
                 bootstrap.gameObject.SetActive(true);
                 yield return NextTick();
                 var table = Singleton<CombatStrikeSchedule>();
                 Assert.That(table.Revision, Is.EqualTo(bootstrap.PublishedScheduleRevision));
                 Assert.That((table.Hand1.WindupTicks, table.Hand1.ActiveTicks, table.Hand1.RecoveryTicks), Is.EqualTo((14, 6, 9)));
-                Assert.That((table.Foot1.WindupTicks, table.Foot1.ActiveTicks, table.Foot1.RecoveryTicks), Is.EqualTo((12, 6, 12)));
-                Assert.That((table.Foot2.WindupTicks, table.Foot2.ActiveTicks, table.Foot2.RecoveryTicks), Is.EqualTo((12, 6, 12)));
-                Assert.That((table.PhysicalAbility.WindupTicks, table.PhysicalAbility.ActiveTicks, table.PhysicalAbility.RecoveryTicks), Is.EqualTo((20, 5, 5)));
+                Assert.That((table.Foot1.WindupTicks, table.Foot1.ActiveTicks, table.Foot1.RecoveryTicks), Is.EqualTo((15, 5, 10)));
+                Assert.That((table.Foot2.WindupTicks, table.Foot2.ActiveTicks, table.Foot2.RecoveryTicks), Is.EqualTo((15, 5, 10)));
+                Assert.That((table.PhysicalAbility.WindupTicks, table.PhysicalAbility.ActiveTicks, table.PhysicalAbility.RecoveryTicks), Is.EqualTo((15, 4, 11)));
                 Assert.That(table.LandingRecoveryTicks, Is.EqualTo(12u));
                 // #69 default-data regression: the project's migrated Combat block publishes the previous values and body.
                 for (var kind = CombatAttackKind.Hand1; kind <= CombatAttackKind.PhysicalAbility; kind++)

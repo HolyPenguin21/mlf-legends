@@ -1,3 +1,7 @@
+> **Superseded in part by #70** ([STAGE05_1A_ATLAS_MIGRATION.md](STAGE05_1A_ATLAS_MIGRATION.md)): wall normals are now a
+> minimal `CombatWallSet` with an exact cone projection (not two normals / two passes); the velocity pass has its own
+> work-limit policy; the PhysicalAbility clip is `physical_ability` of the v2 art; kick windows are 15/5/10.
+
 # Stage 05.1 / #69 — physics fixes, per-character data, U/I series and O ability
 
 Base: fresh main `86012a006b51f6295a855dbaa9b6bbf1d3d23133` (merge of PR #68 / #66). Branch

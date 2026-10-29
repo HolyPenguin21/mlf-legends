@@ -10,8 +10,11 @@
   the main thread outside fixed steps; Body is read by `BattleLifecycleSystem` at spawn. Validity includes
   `CombatCharacterLimits` (Radius .05..2, Height .25..8, Mass .05..100, Damage 0..1000, 0 ≤ ReachMin ≤ ReachMax ≤ 8,
   Depth 0..4, HeightTolerance 0..8).
-- `CombatArenaMove.Wall0/Wall1/Walls`: outward normals of surfaces that blocked planar travel in that move.
-- `CombatContactDiagnostics.VelocityContacts/VelocityIterations/VelocityResidual`: the final contact-velocity pass.
+- `CombatArenaMove.Walls` (`CombatWallSet`, #70): minimal set of outward normals of the last blocked substep of that move;
+  the contact owner adds the walls touched at the final position and projects the final velocity exactly onto their cone.
+- `CombatContactDiagnostics.VelocityContacts/VelocityIterations/VelocityResidual`: the final contact-velocity pass;
+  `VelocityComplete/VelocityDiscarded` (#70): budget exhaustion inside that pass zeroes contact velocities, positions stay;
+  `WallOverflowBodies`: bodies stopped by an overflowing wall set.
 - `CombatMotion.ExternalVelocity` is the physical final velocity after contacts (never displacement / dt) and is cleared
   for fighters with a disabled InCombat bit or a whole-entity `Disabled` tag.
 Contract and rules: [STAGE05_1_CHARACTER_SERIES.md](../../../../../Docs/STAGE05_1_CHARACTER_SERIES.md).

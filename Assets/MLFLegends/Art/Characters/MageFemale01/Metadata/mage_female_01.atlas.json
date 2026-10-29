@@ -3,359 +3,39 @@
   "character_id": "mage_female_01",
   "source_size": [
     192,
-    192
+    160
   ],
   "nominal_height_px": 128,
   "pivot": [
     96,
-    160
+    136
   ],
   "authored_facing": "right",
   "pages": [
     {
       "file": "mage_female_01_00.png",
-      "width": 1728,
-      "height": 1536
+      "width": 2000,
+      "height": 2016
     }
   ],
   "frames": {
     "idle_combat_000": {
       "page": 0,
       "rect": [
-        49,
-        35,
-        98,
-        127
+        4,
+        4,
+        192,
+        160
       ],
       "trim_offset": [
-        49,
-        35
+        0,
+        0
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            89.5,
-            75.5
-          ],
-          "direction": [
-            0.5,
-            -1
-          ],
-          "layer": "front",
-          "visible": true
-        },
-        "hand_right": {
-          "position": [
-            132.5,
-            94.5
-          ],
-          "direction": [
-            1,
-            0.5
-          ],
-          "layer": "back",
-          "visible": true
-        },
-        "cast_origin": null
-      }
-    },
-    "idle_combat_001": {
-      "page": 0,
-      "rect": [
-        241,
-        36,
-        96,
-        127
-      ],
-      "trim_offset": [
-        49,
-        36
-      ],
-      "anchors": {
-        "hand_left": {
-          "position": [
-            90.5,
-            76.5
-          ],
-          "direction": [
-            0.5,
-            -1
-          ],
-          "layer": "front",
-          "visible": true
-        },
-        "hand_right": {
-          "position": [
-            132.5,
-            97.5
-          ],
-          "direction": [
-            1,
-            0.5
-          ],
-          "layer": "back",
-          "visible": true
-        },
-        "cast_origin": null
-      }
-    },
-    "idle_combat_002": {
-      "page": 0,
-      "rect": [
-        433,
-        34,
-        95,
-        128
-      ],
-      "trim_offset": [
-        49,
-        34
-      ],
-      "anchors": {
-        "hand_left": {
-          "position": [
-            90.5,
-            73.5
-          ],
-          "direction": [
-            0.5,
-            -1
-          ],
-          "layer": "front",
-          "visible": true
-        },
-        "hand_right": {
-          "position": [
-            130.5,
-            94.5
-          ],
-          "direction": [
-            1,
-            0.5
-          ],
-          "layer": "back",
-          "visible": true
-        },
-        "cast_origin": null
-      }
-    },
-    "idle_combat_003": {
-      "page": 0,
-      "rect": [
-        625,
-        42,
-        92,
-        120
-      ],
-      "trim_offset": [
-        49,
-        42
-      ],
-      "anchors": {
-        "hand_left": {
-          "position": [
-            86.5,
-            82.5
-          ],
-          "direction": [
-            0.5,
-            -1
-          ],
-          "layer": "front",
-          "visible": true
-        },
-        "hand_right": {
-          "position": [
-            128.5,
-            99.5
-          ],
-          "direction": [
-            1,
-            0.5
-          ],
-          "layer": "back",
-          "visible": true
-        },
-        "cast_origin": null
-      }
-    },
-    "idle_combat_004": {
-      "page": 0,
-      "rect": [
-        816,
-        46,
-        95,
-        117
-      ],
-      "trim_offset": [
-        48,
-        46
-      ],
-      "anchors": {
-        "hand_left": {
-          "position": [
-            87.5,
-            88.5
-          ],
-          "direction": [
-            0.5,
-            -1
-          ],
-          "layer": "front",
-          "visible": true
-        },
-        "hand_right": {
-          "position": [
-            128.5,
-            103.5
-          ],
-          "direction": [
-            1,
-            0.5
-          ],
-          "layer": "back",
-          "visible": true
-        },
-        "cast_origin": null
-      }
-    },
-    "idle_combat_005": {
-      "page": 0,
-      "rect": [
-        1009,
-        41,
-        92,
-        121
-      ],
-      "trim_offset": [
-        49,
-        41
-      ],
-      "anchors": {
-        "hand_left": {
-          "position": [
-            87.5,
-            83.5
-          ],
-          "direction": [
-            0.5,
-            -1
-          ],
-          "layer": "front",
-          "visible": true
-        },
-        "hand_right": {
-          "position": [
-            128.5,
-            99.5
-          ],
-          "direction": [
-            1,
-            0.5
-          ],
-          "layer": "back",
-          "visible": true
-        },
-        "cast_origin": null
-      }
-    },
-    "run_000": {
-      "page": 0,
-      "rect": [
-        32,
-        225,
-        112,
-        131
-      ],
-      "trim_offset": [
-        32,
-        33
-      ],
-      "anchors": {
-        "hand_left": {
-          "position": [
-            128.5,
-            86.5
-          ],
-          "direction": [
-            0.8,
-            -0.6
-          ],
-          "layer": "front",
-          "visible": true
-        },
-        "hand_right": {
-          "position": [
-            85.5,
-            106.5
-          ],
-          "direction": [
-            -0.1,
-            1
-          ],
-          "layer": "back",
-          "visible": true
-        },
-        "cast_origin": null
-      }
-    },
-    "run_001": {
-      "page": 0,
-      "rect": [
-        234,
-        226,
-        99,
-        120
-      ],
-      "trim_offset": [
-        42,
-        34
-      ],
-      "anchors": {
-        "hand_left": {
-          "position": [
-            124.5,
-            85.5
-          ],
-          "direction": [
-            0.7,
-            -0.7
-          ],
-          "layer": "front",
-          "visible": true
-        },
-        "hand_right": {
-          "position": [
-            94.5,
-            104.5
-          ],
-          "direction": [
-            0.3,
-            1
-          ],
-          "layer": "back",
-          "visible": true
-        },
-        "cast_origin": null
-      }
-    },
-    "run_002": {
-      "page": 0,
-      "rect": [
-        427,
-        227,
-        89,
-        110
-      ],
-      "trim_offset": [
-        43,
-        35
-      ],
-      "anchors": {
-        "hand_left": {
-          "position": [
-            119.5,
-            84.5
+            124,
+            41
           ],
           "direction": [
             1,
@@ -366,14 +46,334 @@
         },
         "hand_right": {
           "position": [
-            99.5,
-            91.5
+            69,
+            63
           ],
           "direction": [
-            0.4,
-            0.8
+            1,
+            0
           ],
-          "layer": "back",
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "idle_combat_001": {
+      "page": 0,
+      "rect": [
+        204,
+        4,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            124,
+            41
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            69,
+            63
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "idle_combat_002": {
+      "page": 0,
+      "rect": [
+        404,
+        4,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            124,
+            41
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            69,
+            63
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "idle_combat_003": {
+      "page": 0,
+      "rect": [
+        604,
+        4,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            124,
+            41
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            69,
+            63
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "idle_combat_004": {
+      "page": 0,
+      "rect": [
+        804,
+        4,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            124,
+            41
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            69,
+            63
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "idle_combat_005": {
+      "page": 0,
+      "rect": [
+        1004,
+        4,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            124,
+            41
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            69,
+            63
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "run_000": {
+      "page": 0,
+      "rect": [
+        4,
+        172,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            124,
+            43
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            63,
+            62
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "run_001": {
+      "page": 0,
+      "rect": [
+        204,
+        172,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            125,
+            43
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            79,
+            60
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "run_002": {
+      "page": 0,
+      "rect": [
+        404,
+        172,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            124,
+            41
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            75,
+            66
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
           "visible": true
         },
         "cast_origin": null
@@ -382,36 +382,36 @@
     "run_003": {
       "page": 0,
       "rect": [
-        614,
-        227,
-        107,
-        118
+        604,
+        172,
+        192,
+        160
       ],
       "trim_offset": [
-        38,
-        35
+        0,
+        0
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            69.5,
-            86.5
+            126,
+            43
           ],
           "direction": [
-            -1,
-            0.1
+            1,
+            0
           ],
-          "layer": "back",
+          "layer": "front",
           "visible": true
         },
         "hand_right": {
           "position": [
-            131.5,
-            86.5
+            68,
+            62
           ],
           "direction": [
             1,
-            -0.2
+            0
           ],
           "layer": "front",
           "visible": true
@@ -422,38 +422,318 @@
     "run_004": {
       "page": 0,
       "rect": [
-        813,
-        228,
-        84,
-        113
+        804,
+        172,
+        192,
+        160
       ],
       "trim_offset": [
-        45,
-        36
+        0,
+        0
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            121.5,
-            85.5
+            124,
+            43
           ],
           "direction": [
-            0.7,
-            -0.7
+            1,
+            0
           ],
           "layer": "front",
           "visible": true
         },
         "hand_right": {
           "position": [
-            86.5,
-            99.5
+            69,
+            63
           ],
           "direction": [
-            0,
-            1
+            1,
+            0
           ],
-          "layer": "back",
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "run_005": {
+      "page": 0,
+      "rect": [
+        1004,
+        172,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            122,
+            43
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            70,
+            62
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "jump_000": {
+      "page": 0,
+      "rect": [
+        4,
+        340,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            126,
+            62
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            72,
+            76
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "jump_001": {
+      "page": 0,
+      "rect": [
+        204,
+        340,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            121,
+            43
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            65,
+            56
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "jump_002": {
+      "page": 0,
+      "rect": [
+        404,
+        340,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            119,
+            39
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            65,
+            55
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "jump_003": {
+      "page": 0,
+      "rect": [
+        604,
+        340,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            122,
+            45
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            67,
+            56
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "jump_004": {
+      "page": 0,
+      "rect": [
+        804,
+        340,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            123,
+            66
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            70,
+            80
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "jump_005": {
+      "page": 0,
+      "rect": [
+        1004,
+        340,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            123,
+            41
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            71,
+            63
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
           "visible": true
         },
         "cast_origin": null
@@ -462,38 +742,38 @@
     "punch_left_000": {
       "page": 0,
       "rect": [
-        50,
-        425,
-        96,
-        121
+        4,
+        508,
+        192,
+        160
       ],
       "trim_offset": [
-        50,
-        41
+        0,
+        0
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            96.5,
-            84.5
+            124,
+            40
           ],
           "direction": [
             1,
-            -0.2
+            0
           ],
           "layer": "front",
           "visible": true
         },
         "hand_right": {
           "position": [
-            130.5,
-            99.5
+            69,
+            62
           ],
           "direction": [
             1,
-            0.5
+            0
           ],
-          "layer": "back",
+          "layer": "front",
           "visible": true
         },
         "cast_origin": null
@@ -502,38 +782,38 @@
     "punch_left_001": {
       "page": 0,
       "rect": [
-        239,
-        426,
-        101,
-        120
+        204,
+        508,
+        192,
+        160
       ],
       "trim_offset": [
-        47,
-        42
+        0,
+        0
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            93.5,
-            80.5
+            122,
+            37
           ],
           "direction": [
             1,
-            -0.2
+            0
           ],
           "layer": "front",
           "visible": true
         },
         "hand_right": {
           "position": [
-            117.5,
-            83.5
+            69,
+            62
           ],
           "direction": [
-            -0.3,
-            -1
+            1,
+            0
           ],
-          "layer": "back",
+          "layer": "front",
           "visible": true
         },
         "cast_origin": null
@@ -542,20 +822,20 @@
     "punch_left_002": {
       "page": 0,
       "rect": [
-        431,
-        420,
-        108,
-        128
+        404,
+        508,
+        192,
+        160
       ],
       "trim_offset": [
-        47,
-        36
+        0,
+        0
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            113.5,
-            77.5
+            138,
+            39
           ],
           "direction": [
             1,
@@ -566,14 +846,14 @@
         },
         "hand_right": {
           "position": [
-            129.5,
-            77.5
+            67,
+            62
           ],
           "direction": [
-            -0.3,
-            -1
+            1,
+            0
           ],
-          "layer": "back",
+          "layer": "front",
           "visible": true
         },
         "cast_origin": null
@@ -582,20 +862,20 @@
     "punch_left_003": {
       "page": 0,
       "rect": [
-        612,
-        426,
-        122,
-        120
+        604,
+        508,
+        192,
+        160
       ],
       "trim_offset": [
-        36,
-        42
+        0,
+        0
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            151.5,
-            78.5
+            151,
+            39
           ],
           "direction": [
             1,
@@ -606,14 +886,14 @@
         },
         "hand_right": {
           "position": [
-            89.5,
-            89.5
+            69,
+            61
           ],
           "direction": [
-            -0.5,
-            -0.4
+            1,
+            0
           ],
-          "layer": "back",
+          "layer": "front",
           "visible": true
         },
         "cast_origin": null
@@ -622,20 +902,20 @@
     "punch_left_004": {
       "page": 0,
       "rect": [
-        817,
-        427,
-        94,
-        119
+        804,
+        508,
+        192,
+        160
       ],
       "trim_offset": [
-        49,
-        43
+        0,
+        0
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            104.5,
-            88.5
+            124,
+            42
           ],
           "direction": [
             1,
@@ -646,14 +926,14 @@
         },
         "hand_right": {
           "position": [
-            119.5,
-            87.5
+            70,
+            62
           ],
           "direction": [
-            0,
-            -1
+            1,
+            0
           ],
-          "layer": "back",
+          "layer": "front",
           "visible": true
         },
         "cast_origin": null
@@ -662,38 +942,38 @@
     "punch_left_005": {
       "page": 0,
       "rect": [
-        1010,
-        425,
-        92,
-        121
+        1004,
+        508,
+        192,
+        160
       ],
       "trim_offset": [
-        50,
-        41
+        0,
+        0
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            104.5,
-            82.5
+            124,
+            40
           ],
           "direction": [
             1,
-            -0.2
+            0
           ],
           "layer": "front",
           "visible": true
         },
         "hand_right": {
           "position": [
-            126.5,
-            100.5
+            69,
+            62
           ],
           "direction": [
             1,
-            0.5
+            0
           ],
-          "layer": "back",
+          "layer": "front",
           "visible": true
         },
         "cast_origin": null
@@ -702,38 +982,38 @@
     "punch_right_000": {
       "page": 0,
       "rect": [
-        45,
-        614,
-        98,
-        124
+        4,
+        676,
+        192,
+        160
       ],
       "trim_offset": [
-        45,
-        38
+        0,
+        0
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            90.5,
-            78.5
+            124,
+            41
           ],
           "direction": [
-            0.7,
-            -0.7
+            1,
+            0
           ],
           "layer": "front",
           "visible": true
         },
         "hand_right": {
           "position": [
-            129.5,
-            101.5
+            70,
+            62
           ],
           "direction": [
             1,
-            0.5
+            0
           ],
-          "layer": "back",
+          "layer": "front",
           "visible": true
         },
         "cast_origin": null
@@ -742,38 +1022,38 @@
     "punch_right_001": {
       "page": 0,
       "rect": [
-        239,
-        617,
-        99,
-        121
+        204,
+        676,
+        192,
+        160
       ],
       "trim_offset": [
-        47,
-        41
+        0,
+        0
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            93.5,
-            79.5
+            123,
+            41
           ],
           "direction": [
-            0.5,
-            -1
+            1,
+            0
           ],
           "layer": "front",
           "visible": true
         },
         "hand_right": {
           "position": [
-            133.5,
-            98.5
+            68,
+            62
           ],
           "direction": [
             1,
-            0.4
+            0
           ],
-          "layer": "back",
+          "layer": "front",
           "visible": true
         },
         "cast_origin": null
@@ -782,32 +1062,32 @@
     "punch_right_002": {
       "page": 0,
       "rect": [
-        430,
-        616,
-        109,
-        122
+        404,
+        676,
+        192,
+        160
       ],
       "trim_offset": [
-        46,
-        40
+        0,
+        0
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            100.5,
-            74.5
+            120,
+            41
           ],
           "direction": [
-            0.4,
-            -1
+            1,
+            0
           ],
-          "layer": "back",
+          "layer": "front",
           "visible": true
         },
         "hand_right": {
           "position": [
-            149.5,
-            76.5
+            120,
+            58
           ],
           "direction": [
             1,
@@ -822,32 +1102,32 @@
     "punch_right_003": {
       "page": 0,
       "rect": [
-        617,
-        617,
-        123,
-        121
+        604,
+        676,
+        192,
+        160
       ],
       "trim_offset": [
-        41,
-        41
+        0,
+        0
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            95.5,
-            79.5
+            120,
+            39
           ],
           "direction": [
-            0.5,
-            -1
+            1,
+            0
           ],
-          "layer": "back",
+          "layer": "front",
           "visible": true
         },
         "hand_right": {
           "position": [
-            152.5,
-            75.5
+            151,
+            41
           ],
           "direction": [
             1,
@@ -862,38 +1142,38 @@
     "punch_right_004": {
       "page": 0,
       "rect": [
-        819,
-        615,
-        93,
-        122
+        804,
+        676,
+        192,
+        160
       ],
       "trim_offset": [
-        51,
-        39
+        0,
+        0
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            104.5,
-            81.5
+            124,
+            42
           ],
           "direction": [
-            0.5,
-            -1
+            1,
+            0
           ],
           "layer": "front",
           "visible": true
         },
         "hand_right": {
           "position": [
-            129.5,
-            88.5
+            120,
+            58
           ],
           "direction": [
             1,
-            0.1
+            0
           ],
-          "layer": "back",
+          "layer": "front",
           "visible": true
         },
         "cast_origin": null
@@ -902,278 +1182,38 @@
     "punch_right_005": {
       "page": 0,
       "rect": [
-        1010,
-        614,
-        98,
-        123
+        1004,
+        676,
+        192,
+        160
       ],
       "trim_offset": [
-        50,
-        38
+        0,
+        0
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            91.5,
-            78.5
-          ],
-          "direction": [
-            0.5,
-            -1
-          ],
-          "layer": "front",
-          "visible": true
-        },
-        "hand_right": {
-          "position": [
-            130.5,
-            97.5
+            123,
+            41
           ],
           "direction": [
             1,
-            0.3
-          ],
-          "layer": "back",
-          "visible": true
-        },
-        "cast_origin": null
-      }
-    },
-    "jump_000": {
-      "page": 0,
-      "rect": [
-        47,
-        831,
-        100,
-        98
-      ],
-      "trim_offset": [
-        47,
-        63
-      ],
-      "anchors": {
-        "hand_left": {
-          "position": [
-            71.5,
-            111.5
-          ],
-          "direction": [
-            -0.6,
-            0.7
+            0
           ],
           "layer": "front",
           "visible": true
         },
         "hand_right": {
           "position": [
-            120.5,
-            115.5
-          ],
-          "direction": [
-            0.8,
-            0.5
-          ],
-          "layer": "back",
-          "visible": true
-        },
-        "cast_origin": null
-      }
-    },
-    "jump_001": {
-      "page": 0,
-      "rect": [
-        245,
-        799,
-        91,
-        131
-      ],
-      "trim_offset": [
-        53,
-        31
-      ],
-      "anchors": {
-        "hand_left": {
-          "position": [
-            96.5,
-            65.5
-          ],
-          "direction": [
-            0.5,
-            -1
-          ],
-          "layer": "front",
-          "visible": true
-        },
-        "hand_right": {
-          "position": [
-            130.5,
-            63.5
-          ],
-          "direction": [
-            -0.3,
-            -1
-          ],
-          "layer": "back",
-          "visible": true
-        },
-        "cast_origin": null
-      }
-    },
-    "jump_002": {
-      "page": 0,
-      "rect": [
-        422,
-        794,
-        99,
-        111
-      ],
-      "trim_offset": [
-        38,
-        26
-      ],
-      "anchors": {
-        "hand_left": {
-          "position": [
-            101.5,
-            66.5
-          ],
-          "direction": [
-            0.5,
-            -1
-          ],
-          "layer": "front",
-          "visible": true
-        },
-        "hand_right": {
-          "position": [
-            131.5,
-            71.5
-          ],
-          "direction": [
-            -0.3,
-            -1
-          ],
-          "layer": "back",
-          "visible": true
-        },
-        "cast_origin": null
-      }
-    },
-    "jump_003": {
-      "page": 0,
-      "rect": [
-        620,
-        798,
-        105,
-        122
-      ],
-      "trim_offset": [
-        44,
-        30
-      ],
-      "anchors": {
-        "hand_left": {
-          "position": [
-            93.5,
-            71.5
-          ],
-          "direction": [
-            0.8,
-            -0.6
-          ],
-          "layer": "front",
-          "visible": true
-        },
-        "hand_right": {
-          "position": [
-            141.5,
-            82.5
+            70,
+            62
           ],
           "direction": [
             1,
-            0.3
-          ],
-          "layer": "back",
-          "visible": true
-        },
-        "cast_origin": null
-      }
-    },
-    "jump_004": {
-      "page": 0,
-      "rect": [
-        813,
-        812,
-        113,
-        118
-      ],
-      "trim_offset": [
-        45,
-        44
-      ],
-      "anchors": {
-        "hand_left": {
-          "position": [
-            101.5,
-            126.5
-          ],
-          "direction": [
-            0.3,
-            1
+            0
           ],
           "layer": "front",
-          "visible": true
-        },
-        "hand_right": {
-          "position": [
-            148.5,
-            118.5
-          ],
-          "direction": [
-            0.7,
-            0.7
-          ],
-          "layer": "back",
-          "visible": true
-        },
-        "cast_origin": null
-      }
-    },
-    "jump_005": {
-      "page": 0,
-      "rect": [
-        1013,
-        803,
-        99,
-        127
-      ],
-      "trim_offset": [
-        53,
-        35
-      ],
-      "anchors": {
-        "hand_left": {
-          "position": [
-            94.5,
-            70.5
-          ],
-          "direction": [
-            0,
-            -1
-          ],
-          "layer": "front",
-          "visible": true
-        },
-        "hand_right": {
-          "position": [
-            139.5,
-            94.5
-          ],
-          "direction": [
-            1,
-            0.4
-          ],
-          "layer": "back",
           "visible": true
         },
         "cast_origin": null
@@ -1182,38 +1222,38 @@
     "kick_left_000": {
       "page": 0,
       "rect": [
-        42,
-        1003,
-        90,
-        119
+        4,
+        844,
+        192,
+        160
       ],
       "trim_offset": [
-        42,
-        43
+        0,
+        0
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            83.5,
-            78.5
+            121,
+            39
           ],
           "direction": [
-            0.5,
-            -1
+            1,
+            0
           ],
           "layer": "front",
           "visible": true
         },
         "hand_right": {
           "position": [
-            110.5,
-            83.5
+            72,
+            61
           ],
           "direction": [
-            -0.3,
-            -1
+            1,
+            0
           ],
-          "layer": "back",
+          "layer": "front",
           "visible": true
         },
         "cast_origin": null
@@ -1222,38 +1262,38 @@
     "kick_left_001": {
       "page": 0,
       "rect": [
-        216,
-        998,
-        102,
-        124
+        204,
+        844,
+        192,
+        160
       ],
       "trim_offset": [
-        24,
-        38
+        0,
+        0
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            80.5,
-            72.5
+            100,
+            34
           ],
           "direction": [
-            0.5,
-            -1
+            1,
+            0
           ],
           "layer": "front",
           "visible": true
         },
         "hand_right": {
           "position": [
-            104.5,
-            71.5
+            56,
+            54
           ],
           "direction": [
-            -0.3,
-            -1
+            1,
+            0
           ],
-          "layer": "back",
+          "layer": "front",
           "visible": true
         },
         "cast_origin": null
@@ -1262,38 +1302,38 @@
     "kick_left_002": {
       "page": 0,
       "rect": [
-        437,
-        998,
-        126,
-        125
+        404,
+        844,
+        192,
+        160
       ],
       "trim_offset": [
-        53,
-        38
+        0,
+        0
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            93.5,
-            69.5
+            102,
+            36
           ],
           "direction": [
-            0.5,
-            -1
+            1,
+            0
           ],
           "layer": "front",
           "visible": true
         },
         "hand_right": {
           "position": [
-            114.5,
-            72.5
+            57,
+            58
           ],
           "direction": [
-            -0.3,
-            -1
+            1,
+            0
           ],
-          "layer": "back",
+          "layer": "front",
           "visible": true
         },
         "cast_origin": null
@@ -1302,38 +1342,38 @@
     "kick_left_003": {
       "page": 0,
       "rect": [
-        608,
-        992,
-        91,
-        131
+        604,
+        844,
+        192,
+        160
       ],
       "trim_offset": [
-        32,
-        32
+        0,
+        0
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            77.5,
-            70.5
+            103,
+            35
           ],
           "direction": [
-            0.5,
-            -1
+            1,
+            0
           ],
           "layer": "front",
           "visible": true
         },
         "hand_right": {
           "position": [
-            101.5,
-            70.5
+            58,
+            58
           ],
           "direction": [
-            -0.3,
-            -1
+            1,
+            0
           ],
-          "layer": "back",
+          "layer": "front",
           "visible": true
         },
         "cast_origin": null
@@ -1342,38 +1382,38 @@
     "kick_left_004": {
       "page": 0,
       "rect": [
-        809,
-        1001,
-        102,
-        121
+        804,
+        844,
+        192,
+        160
       ],
       "trim_offset": [
-        41,
-        41
+        0,
+        0
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            85.5,
-            76.5
+            101,
+            35
           ],
           "direction": [
-            0.5,
-            -1
+            1,
+            0
           ],
           "layer": "front",
           "visible": true
         },
         "hand_right": {
           "position": [
-            114.5,
-            83.5
+            59,
+            57
           ],
           "direction": [
-            -0.3,
-            -1
+            1,
+            0
           ],
-          "layer": "back",
+          "layer": "front",
           "visible": true
         },
         "cast_origin": null
@@ -1382,38 +1422,38 @@
     "kick_left_005": {
       "page": 0,
       "rect": [
-        1009,
-        995,
-        98,
-        127
+        1004,
+        844,
+        192,
+        160
       ],
       "trim_offset": [
-        49,
-        35
+        0,
+        0
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            89.5,
-            75.5
+            121,
+            40
           ],
           "direction": [
-            0.5,
-            -1
+            1,
+            0
           ],
           "layer": "front",
           "visible": true
         },
         "hand_right": {
           "position": [
-            132.5,
-            94.5
+            72,
+            62
           ],
           "direction": [
             1,
-            0.5
+            0
           ],
-          "layer": "back",
+          "layer": "front",
           "visible": true
         },
         "cast_origin": null
@@ -1422,38 +1462,38 @@
     "kick_right_000": {
       "page": 0,
       "rect": [
-        41,
-        1182,
-        101,
-        132
+        4,
+        1012,
+        192,
+        160
       ],
       "trim_offset": [
-        41,
-        30
+        0,
+        0
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            90.5,
-            70.5
+            123,
+            40
           ],
           "direction": [
-            0.7,
-            -0.7
+            1,
+            0
           ],
           "layer": "front",
           "visible": true
         },
         "hand_right": {
           "position": [
-            134.5,
-            89.5
+            72,
+            61
           ],
           "direction": [
             1,
-            0.4
+            0
           ],
-          "layer": "back",
+          "layer": "front",
           "visible": true
         },
         "cast_origin": null
@@ -1462,38 +1502,38 @@
     "kick_right_001": {
       "page": 0,
       "rect": [
-        253,
-        1194,
-        79,
-        120
+        204,
+        1012,
+        192,
+        160
       ],
       "trim_offset": [
-        61,
-        42
+        0,
+        0
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            76.5,
-            101.5
+            129,
+            34
           ],
           "direction": [
-            -0.3,
-            1
+            1,
+            0
           ],
           "layer": "front",
           "visible": true
         },
         "hand_right": {
           "position": [
-            119.5,
-            77.5
+            79,
+            54
           ],
           "direction": [
-            -0.2,
-            -1
+            1,
+            0
           ],
-          "layer": "back",
+          "layer": "front",
           "visible": true
         },
         "cast_origin": null
@@ -1502,38 +1542,38 @@
     "kick_right_002": {
       "page": 0,
       "rect": [
-        449,
-        1194,
-        119,
-        121
+        404,
+        1012,
+        192,
+        160
       ],
       "trim_offset": [
-        65,
-        42
+        0,
+        0
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            72.5,
-            99.5
+            129,
+            34
           ],
           "direction": [
-            -0.6,
-            0.6
+            1,
+            0
           ],
           "layer": "front",
           "visible": true
         },
         "hand_right": {
           "position": [
-            121.5,
-            75.5
+            77,
+            55
           ],
           "direction": [
-            -0.2,
-            -1
+            1,
+            0
           ],
-          "layer": "back",
+          "layer": "front",
           "visible": true
         },
         "cast_origin": null
@@ -1542,38 +1582,38 @@
     "kick_right_003": {
       "page": 0,
       "rect": [
-        632,
-        1196,
-        87,
-        118
+        604,
+        1012,
+        192,
+        160
       ],
       "trim_offset": [
-        56,
-        44
+        0,
+        0
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            92.5,
-            77.5
+            137,
+            35
           ],
           "direction": [
-            0.3,
-            -1
+            1,
+            0
           ],
           "layer": "front",
           "visible": true
         },
         "hand_right": {
           "position": [
-            135.5,
-            93.5
+            83,
+            56
           ],
           "direction": [
             1,
-            0.3
+            0
           ],
-          "layer": "back",
+          "layer": "front",
           "visible": true
         },
         "cast_origin": null
@@ -1582,38 +1622,38 @@
     "kick_right_004": {
       "page": 0,
       "rect": [
-        822,
-        1183,
-        83,
-        131
+        804,
+        1012,
+        192,
+        160
       ],
       "trim_offset": [
-        54,
-        31
+        0,
+        0
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            93.5,
-            70.5
+            130,
+            34
           ],
           "direction": [
-            0.5,
-            -1
+            1,
+            0
           ],
           "layer": "front",
           "visible": true
         },
         "hand_right": {
           "position": [
-            131.5,
-            82.5
+            84,
+            55
           ],
           "direction": [
             1,
-            0.3
+            0
           ],
-          "layer": "back",
+          "layer": "front",
           "visible": true
         },
         "cast_origin": null
@@ -1622,156 +1662,36 @@
     "kick_right_005": {
       "page": 0,
       "rect": [
-        1009,
-        1187,
-        98,
-        127
+        1004,
+        1012,
+        192,
+        160
       ],
       "trim_offset": [
-        49,
-        35
+        0,
+        0
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            89.5,
-            75.5
-          ],
-          "direction": [
-            0.5,
-            -1
-          ],
-          "layer": "front",
-          "visible": true
-        },
-        "hand_right": {
-          "position": [
-            132.5,
-            94.5
+            123,
+            40
           ],
           "direction": [
             1,
-            0.5
-          ],
-          "layer": "back",
-          "visible": true
-        },
-        "cast_origin": null
-      }
-    },
-    "kick_spin_000": {
-      "page": 0,
-      "rect": [
-        39,
-        1375,
-        90,
-        131
-      ],
-      "trim_offset": [
-        39,
-        31
-      ],
-      "anchors": {
-        "hand_left": {
-          "position": [
-            79.5,
-            75.5
-          ],
-          "direction": [
-            0.5,
-            -1
+            0
           ],
           "layer": "front",
           "visible": true
         },
         "hand_right": {
           "position": [
-            99.5,
-            85.5
-          ],
-          "direction": [
-            -1,
-            0.2
-          ],
-          "layer": "back",
-          "visible": true
-        },
-        "cast_origin": null
-      }
-    },
-    "kick_spin_001": {
-      "page": 0,
-      "rect": [
-        262,
-        1388,
-        88,
-        118
-      ],
-      "trim_offset": [
-        70,
-        44
-      ],
-      "anchors": {
-        "hand_left": {
-          "position": [
-            129.5,
-            80.5
-          ],
-          "direction": [
-            -0.3,
-            -1
-          ],
-          "layer": "back",
-          "visible": true
-        },
-        "hand_right": {
-          "position": [
-            117.5,
-            83.5
+            72,
+            62
           ],
           "direction": [
             1,
-            -0.5
-          ],
-          "layer": "front",
-          "visible": false
-        },
-        "cast_origin": null
-      }
-    },
-    "kick_spin_002": {
-      "page": 0,
-      "rect": [
-        461,
-        1378,
-        96,
-        130
-      ],
-      "trim_offset": [
-        77,
-        34
-      ],
-      "anchors": {
-        "hand_left": {
-          "position": [
-            120.5,
-            79.5
-          ],
-          "direction": [
-            0.3,
-            -1
-          ],
-          "layer": "back",
-          "visible": false
-        },
-        "hand_right": {
-          "position": [
-            146.5,
-            76.5
-          ],
-          "direction": [
-            -0.4,
-            -1
+            0
           ],
           "layer": "front",
           "visible": true
@@ -1779,244 +1699,1540 @@
         "cast_origin": null
       }
     },
-    "kick_spin_003": {
+    "physical_ability_000": {
       "page": 0,
       "rect": [
-        649,
-        1386,
-        81,
-        120
+        4,
+        1180,
+        192,
+        160
       ],
       "trim_offset": [
-        73,
-        42
+        0,
+        0
       ],
       "anchors": {
         "hand_left": {
           "position": [
-            118.5,
-            87.5
-          ],
-          "direction": [
-            0.6,
-            -0.8
-          ],
-          "layer": "back",
-          "visible": false
-        },
-        "hand_right": {
-          "position": [
-            139.5,
-            81.5
-          ],
-          "direction": [
-            -0.3,
-            -1
-          ],
-          "layer": "front",
-          "visible": true
-        },
-        "cast_origin": null
-      }
-    },
-    "kick_spin_004": {
-      "page": 0,
-      "rect": [
-        828,
-        1388,
-        128,
-        118
-      ],
-      "trim_offset": [
-        60,
-        44
-      ],
-      "anchors": {
-        "hand_left": {
-          "position": [
-            89.5,
-            100.5
-          ],
-          "direction": [
-            0,
-            1
-          ],
-          "layer": "back",
-          "visible": true
-        },
-        "hand_right": {
-          "position": [
-            125.5,
-            75.5
-          ],
-          "direction": [
-            -0.3,
-            -1
-          ],
-          "layer": "front",
-          "visible": true
-        },
-        "cast_origin": null
-      }
-    },
-    "kick_spin_005": {
-      "page": 0,
-      "rect": [
-        1030,
-        1390,
-        86,
-        116
-      ],
-      "trim_offset": [
-        70,
-        46
-      ],
-      "anchors": {
-        "hand_left": {
-          "position": [
-            117.5,
-            87.5
-          ],
-          "direction": [
-            0.3,
-            -1
-          ],
-          "layer": "back",
-          "visible": false
-        },
-        "hand_right": {
-          "position": [
-            135.5,
-            82.5
-          ],
-          "direction": [
-            -0.3,
-            -1
-          ],
-          "layer": "front",
-          "visible": true
-        },
-        "cast_origin": null
-      }
-    },
-    "kick_spin_006": {
-      "page": 0,
-      "rect": [
-        1186,
-        1380,
-        94,
-        126
-      ],
-      "trim_offset": [
-        34,
-        36
-      ],
-      "anchors": {
-        "hand_left": {
-          "position": [
-            83.5,
-            71.5
-          ],
-          "direction": [
-            0.5,
-            -1
-          ],
-          "layer": "front",
-          "visible": true
-        },
-        "hand_right": {
-          "position": [
-            116.5,
-            77.5
-          ],
-          "direction": [
-            -0.3,
-            -1
-          ],
-          "layer": "back",
-          "visible": true
-        },
-        "cast_origin": null
-      }
-    },
-    "kick_spin_007": {
-      "page": 0,
-      "rect": [
-        1390,
-        1376,
-        93,
-        130
-      ],
-      "trim_offset": [
-        46,
-        32
-      ],
-      "anchors": {
-        "hand_left": {
-          "position": [
-            87.5,
-            66.5
-          ],
-          "direction": [
-            0.3,
-            -1
-          ],
-          "layer": "front",
-          "visible": true
-        },
-        "hand_right": {
-          "position": [
-            130.5,
-            87.5
+            122,
+            44
           ],
           "direction": [
             1,
-            0.4
-          ],
-          "layer": "back",
-          "visible": true
-        },
-        "cast_origin": null
-      }
-    },
-    "kick_spin_008": {
-      "page": 0,
-      "rect": [
-        1585,
-        1379,
-        98,
-        127
-      ],
-      "trim_offset": [
-        49,
-        35
-      ],
-      "anchors": {
-        "hand_left": {
-          "position": [
-            89.5,
-            75.5
-          ],
-          "direction": [
-            0.5,
-            -1
+            0
           ],
           "layer": "front",
           "visible": true
         },
         "hand_right": {
           "position": [
-            132.5,
-            94.5
+            79,
+            64
           ],
           "direction": [
             1,
-            0.5
+            0
           ],
-          "layer": "back",
+          "layer": "front",
           "visible": true
         },
         "cast_origin": null
+      }
+    },
+    "physical_ability_001": {
+      "page": 0,
+      "rect": [
+        204,
+        1180,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            122,
+            47
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            79,
+            67
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "physical_ability_002": {
+      "page": 0,
+      "rect": [
+        404,
+        1180,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            124,
+            47
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            105,
+            60
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "physical_ability_003": {
+      "page": 0,
+      "rect": [
+        604,
+        1180,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            130,
+            48
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            113,
+            58
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "physical_ability_004": {
+      "page": 0,
+      "rect": [
+        804,
+        1180,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            136,
+            53
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            124,
+            64
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "physical_ability_005": {
+      "page": 0,
+      "rect": [
+        1004,
+        1180,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            124,
+            48
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            107,
+            62
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "physical_ability_006": {
+      "page": 0,
+      "rect": [
+        1204,
+        1180,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            122,
+            45
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            79,
+            64
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "physical_ability_007": {
+      "page": 0,
+      "rect": [
+        1404,
+        1180,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            123,
+            44
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            80,
+            64
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "block_000": {
+      "page": 0,
+      "rect": [
+        4,
+        1348,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            124,
+            35
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            101,
+            43
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "block_001": {
+      "page": 0,
+      "rect": [
+        204,
+        1348,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            124,
+            34
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            108,
+            39
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "block_002": {
+      "page": 0,
+      "rect": [
+        404,
+        1348,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            123,
+            40
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            108,
+            45
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "block_003": {
+      "page": 0,
+      "rect": [
+        604,
+        1348,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            124,
+            36
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            76,
+            64
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "dash_000": {
+      "page": 0,
+      "rect": [
+        4,
+        1516,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            122,
+            41
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            70,
+            62
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "dash_001": {
+      "page": 0,
+      "rect": [
+        204,
+        1516,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            131,
+            55
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            78,
+            72
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "dash_002": {
+      "page": 0,
+      "rect": [
+        404,
+        1516,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            137,
+            62
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            89,
+            77
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "dash_003": {
+      "page": 0,
+      "rect": [
+        604,
+        1516,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            140,
+            74
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            103,
+            86
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "dash_004": {
+      "page": 0,
+      "rect": [
+        804,
+        1516,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            132,
+            51
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            88,
+            72
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "dash_005": {
+      "page": 0,
+      "rect": [
+        1004,
+        1516,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            124,
+            41
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            72,
+            63
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": null
+      }
+    },
+    "skill_light_000": {
+      "page": 0,
+      "rect": [
+        4,
+        1684,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            122,
+            39
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            71,
+            62
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": {
+          "position": [
+            122,
+            39
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        }
+      }
+    },
+    "skill_light_001": {
+      "page": 0,
+      "rect": [
+        204,
+        1684,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            110,
+            47
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            70,
+            62
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": {
+          "position": [
+            110,
+            47
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        }
+      }
+    },
+    "skill_light_002": {
+      "page": 0,
+      "rect": [
+        404,
+        1684,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            120,
+            42
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            70,
+            62
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": {
+          "position": [
+            120,
+            42
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        }
+      }
+    },
+    "skill_light_003": {
+      "page": 0,
+      "rect": [
+        604,
+        1684,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            145,
+            37
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            72,
+            62
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": {
+          "position": [
+            145,
+            37
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        }
+      }
+    },
+    "skill_light_004": {
+      "page": 0,
+      "rect": [
+        804,
+        1684,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            111,
+            49
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            72,
+            63
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": {
+          "position": [
+            111,
+            49
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        }
+      }
+    },
+    "skill_light_005": {
+      "page": 0,
+      "rect": [
+        1004,
+        1684,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            122,
+            40
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            72,
+            62
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": {
+          "position": [
+            122,
+            40
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        }
+      }
+    },
+    "skill_complex_000": {
+      "page": 0,
+      "rect": [
+        4,
+        1852,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            122,
+            43
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            78,
+            63
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": {
+          "position": [
+            100.0,
+            53.0
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        }
+      }
+    },
+    "skill_complex_001": {
+      "page": 0,
+      "rect": [
+        204,
+        1852,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            130,
+            43
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            100,
+            48
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": {
+          "position": [
+            115.0,
+            45.5
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        }
+      }
+    },
+    "skill_complex_002": {
+      "page": 0,
+      "rect": [
+        404,
+        1852,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            117,
+            43
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            100,
+            64
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": {
+          "position": [
+            108.5,
+            53.5
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        }
+      }
+    },
+    "skill_complex_003": {
+      "page": 0,
+      "rect": [
+        604,
+        1852,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            117,
+            42
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            101,
+            64
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": {
+          "position": [
+            109.0,
+            53.0
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        }
+      }
+    },
+    "skill_complex_004": {
+      "page": 0,
+      "rect": [
+        804,
+        1852,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            117,
+            44
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            101,
+            64
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": {
+          "position": [
+            109.0,
+            54.0
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        }
+      }
+    },
+    "skill_complex_005": {
+      "page": 0,
+      "rect": [
+        1004,
+        1852,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            143,
+            38
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            112,
+            57
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": {
+          "position": [
+            127.5,
+            47.5
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        }
+      }
+    },
+    "skill_complex_006": {
+      "page": 0,
+      "rect": [
+        1204,
+        1852,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            144,
+            38
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            134,
+            62
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": {
+          "position": [
+            139.0,
+            50.0
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        }
+      }
+    },
+    "skill_complex_007": {
+      "page": 0,
+      "rect": [
+        1404,
+        1852,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            128,
+            42
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            112,
+            58
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": {
+          "position": [
+            120.0,
+            50.0
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        }
+      }
+    },
+    "skill_complex_008": {
+      "page": 0,
+      "rect": [
+        1604,
+        1852,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            121,
+            43
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            79,
+            63
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": {
+          "position": [
+            100.0,
+            53.0
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        }
+      }
+    },
+    "skill_complex_009": {
+      "page": 0,
+      "rect": [
+        1804,
+        1852,
+        192,
+        160
+      ],
+      "trim_offset": [
+        0,
+        0
+      ],
+      "anchors": {
+        "hand_left": {
+          "position": [
+            122,
+            43
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "hand_right": {
+          "position": [
+            78,
+            63
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        },
+        "cast_origin": {
+          "position": [
+            100.0,
+            53.0
+          ],
+          "direction": [
+            1,
+            0
+          ],
+          "layer": "front",
+          "visible": true
+        }
       }
     }
   },
@@ -2025,143 +3241,72 @@
       "frames": [
         {
           "id": "idle_combat_000",
-          "duration_ms": 200
+          "duration_ms": 120
         },
         {
           "id": "idle_combat_001",
-          "duration_ms": 200
+          "duration_ms": 120
         },
         {
           "id": "idle_combat_002",
-          "duration_ms": 200
+          "duration_ms": 120
         },
         {
           "id": "idle_combat_003",
-          "duration_ms": 200
+          "duration_ms": 120
         },
         {
           "id": "idle_combat_004",
-          "duration_ms": 200
+          "duration_ms": 120
         },
         {
           "id": "idle_combat_005",
-          "duration_ms": 200
+          "duration_ms": 120
         }
       ],
       "loop": true,
-      "hold_last": false,
-      "markers": {}
-    },
-    "run": {
-      "frames": [
-        {
-          "id": "run_000",
-          "duration_ms": 100
-        },
-        {
-          "id": "run_001",
-          "duration_ms": 100
-        },
-        {
-          "id": "run_002",
-          "duration_ms": 100
-        },
-        {
-          "id": "run_003",
-          "duration_ms": 100
-        },
-        {
-          "id": "run_004",
-          "duration_ms": 100
-        }
-      ],
-      "loop": true,
-      "hold_last": false,
-      "markers": {}
-    },
-    "punch_left": {
-      "frames": [
-        {
-          "id": "punch_left_000",
-          "duration_ms": 80
-        },
-        {
-          "id": "punch_left_001",
-          "duration_ms": 70
-        },
-        {
-          "id": "punch_left_002",
-          "duration_ms": 70
-        },
-        {
-          "id": "punch_left_003",
-          "duration_ms": 80
-        },
-        {
-          "id": "punch_left_004",
-          "duration_ms": 80
-        },
-        {
-          "id": "punch_left_005",
-          "duration_ms": 100
-        }
-      ],
-      "loop": false,
       "hold_last": false,
       "markers": {
         "entry": [
           0
-        ],
-        "strike_pose": [
-          3
-        ],
-        "chain_exit": [
-          4
         ],
         "return": [
           5
         ]
       }
     },
-    "punch_right": {
+    "run": {
       "frames": [
         {
-          "id": "punch_right_000",
+          "id": "run_000",
           "duration_ms": 80
         },
         {
-          "id": "punch_right_001",
-          "duration_ms": 70
-        },
-        {
-          "id": "punch_right_002",
-          "duration_ms": 70
-        },
-        {
-          "id": "punch_right_003",
+          "id": "run_001",
           "duration_ms": 80
         },
         {
-          "id": "punch_right_004",
+          "id": "run_002",
+          "duration_ms": 90
+        },
+        {
+          "id": "run_003",
           "duration_ms": 80
         },
         {
-          "id": "punch_right_005",
-          "duration_ms": 100
+          "id": "run_004",
+          "duration_ms": 80
+        },
+        {
+          "id": "run_005",
+          "duration_ms": 90
         }
       ],
-      "loop": false,
+      "loop": true,
       "hold_last": false,
       "markers": {
         "entry": [
           0
-        ],
-        "strike_pose": [
-          2,
-          3
-        ],
-        "chain_exit": [
-          4
         ],
         "return": [
           5
@@ -2172,27 +3317,27 @@
       "frames": [
         {
           "id": "jump_000",
-          "duration_ms": 130
-        },
-        {
-          "id": "jump_001",
           "duration_ms": 100
         },
         {
+          "id": "jump_001",
+          "duration_ms": 80
+        },
+        {
           "id": "jump_002",
-          "duration_ms": 180
+          "duration_ms": 100
         },
         {
           "id": "jump_003",
-          "duration_ms": 110
+          "duration_ms": 80
         },
         {
           "id": "jump_004",
-          "duration_ms": 140
+          "duration_ms": 120
         },
         {
           "id": "jump_005",
-          "duration_ms": 140
+          "duration_ms": 120
         }
       ],
       "loop": false,
@@ -2217,30 +3362,30 @@
         ]
       }
     },
-    "kick_left": {
+    "punch_left": {
       "frames": [
         {
-          "id": "kick_left_000",
-          "duration_ms": 100
+          "id": "punch_left_000",
+          "duration_ms": 70
         },
         {
-          "id": "kick_left_001",
-          "duration_ms": 90
+          "id": "punch_left_001",
+          "duration_ms": 50
         },
         {
-          "id": "kick_left_002",
+          "id": "punch_left_002",
+          "duration_ms": 50
+        },
+        {
+          "id": "punch_left_003",
+          "duration_ms": 60
+        },
+        {
+          "id": "punch_left_004",
           "duration_ms": 80
         },
         {
-          "id": "kick_left_003",
-          "duration_ms": 90
-        },
-        {
-          "id": "kick_left_004",
-          "duration_ms": 90
-        },
-        {
-          "id": "kick_left_005",
+          "id": "punch_left_005",
           "duration_ms": 110
         }
       ],
@@ -2250,13 +3395,104 @@
         "entry": [
           0
         ],
-        "strike_pose": [
-          2
+        "return": [
+          5
         ],
-        "chain_exit": [
+        "strike_pose": [
           3
         ],
+        "chain_exit": [
+          4,
+          5
+        ]
+      }
+    },
+    "punch_right": {
+      "frames": [
+        {
+          "id": "punch_right_000",
+          "duration_ms": 80
+        },
+        {
+          "id": "punch_right_001",
+          "duration_ms": 60
+        },
+        {
+          "id": "punch_right_002",
+          "duration_ms": 60
+        },
+        {
+          "id": "punch_right_003",
+          "duration_ms": 80
+        },
+        {
+          "id": "punch_right_004",
+          "duration_ms": 90
+        },
+        {
+          "id": "punch_right_005",
+          "duration_ms": 110
+        }
+      ],
+      "loop": false,
+      "hold_last": false,
+      "markers": {
+        "entry": [
+          0
+        ],
         "return": [
+          5
+        ],
+        "strike_pose": [
+          3
+        ],
+        "chain_exit": [
+          4,
+          5
+        ]
+      }
+    },
+    "kick_left": {
+      "frames": [
+        {
+          "id": "kick_left_000",
+          "duration_ms": 100
+        },
+        {
+          "id": "kick_left_001",
+          "duration_ms": 80
+        },
+        {
+          "id": "kick_left_002",
+          "duration_ms": 90
+        },
+        {
+          "id": "kick_left_003",
+          "duration_ms": 100
+        },
+        {
+          "id": "kick_left_004",
+          "duration_ms": 100
+        },
+        {
+          "id": "kick_left_005",
+          "duration_ms": 130
+        }
+      ],
+      "loop": false,
+      "hold_last": false,
+      "markers": {
+        "entry": [
+          0
+        ],
+        "return": [
+          5
+        ],
+        "strike_pose": [
+          3
+        ],
+        "chain_exit": [
+          4,
           5
         ]
       }
@@ -2269,23 +3505,23 @@
         },
         {
           "id": "kick_right_001",
-          "duration_ms": 90
-        },
-        {
-          "id": "kick_right_002",
           "duration_ms": 80
         },
         {
-          "id": "kick_right_003",
+          "id": "kick_right_002",
           "duration_ms": 90
+        },
+        {
+          "id": "kick_right_003",
+          "duration_ms": 100
         },
         {
           "id": "kick_right_004",
-          "duration_ms": 90
+          "duration_ms": 100
         },
         {
           "id": "kick_right_005",
-          "duration_ms": 110
+          "duration_ms": 130
         }
       ],
       "loop": false,
@@ -2294,54 +3530,51 @@
         "entry": [
           0
         ],
-        "strike_pose": [
-          2
+        "return": [
+          5
         ],
-        "chain_exit": [
+        "strike_pose": [
           3
         ],
-        "return": [
+        "chain_exit": [
+          4,
           5
         ]
       }
     },
-    "kick_spin": {
+    "physical_ability": {
       "frames": [
         {
-          "id": "kick_spin_000",
+          "id": "physical_ability_000",
           "duration_ms": 100
         },
         {
-          "id": "kick_spin_001",
+          "id": "physical_ability_001",
           "duration_ms": 80
         },
         {
-          "id": "kick_spin_002",
-          "duration_ms": 70
-        },
-        {
-          "id": "kick_spin_003",
-          "duration_ms": 70
-        },
-        {
-          "id": "kick_spin_004",
-          "duration_ms": 90
-        },
-        {
-          "id": "kick_spin_005",
-          "duration_ms": 70
-        },
-        {
-          "id": "kick_spin_006",
+          "id": "physical_ability_002",
           "duration_ms": 80
         },
         {
-          "id": "kick_spin_007",
-          "duration_ms": 80
+          "id": "physical_ability_003",
+          "duration_ms": 100
         },
         {
-          "id": "kick_spin_008",
-          "duration_ms": 110
+          "id": "physical_ability_004",
+          "duration_ms": 120
+        },
+        {
+          "id": "physical_ability_005",
+          "duration_ms": 100
+        },
+        {
+          "id": "physical_ability_006",
+          "duration_ms": 100
+        },
+        {
+          "id": "physical_ability_007",
+          "duration_ms": 120
         }
       ],
       "loop": false,
@@ -2350,23 +3583,248 @@
         "entry": [
           0
         ],
+        "return": [
+          7
+        ],
         "strike_pose": [
           4
-        ],
-        "chain_exit": [
-          5
+        ]
+      }
+    },
+    "block": {
+      "frames": [
+        {
+          "id": "block_000",
+          "duration_ms": 100
+        },
+        {
+          "id": "block_001",
+          "duration_ms": 150
+        },
+        {
+          "id": "block_002",
+          "duration_ms": 200
+        },
+        {
+          "id": "block_003",
+          "duration_ms": 150
+        }
+      ],
+      "loop": false,
+      "hold_last": false,
+      "markers": {
+        "entry": [
+          0
         ],
         "return": [
-          8
+          3
+        ],
+        "hold": [
+          1,
+          2
+        ]
+      }
+    },
+    "dash": {
+      "frames": [
+        {
+          "id": "dash_000",
+          "duration_ms": 70
+        },
+        {
+          "id": "dash_001",
+          "duration_ms": 60
+        },
+        {
+          "id": "dash_002",
+          "duration_ms": 70
+        },
+        {
+          "id": "dash_003",
+          "duration_ms": 70
+        },
+        {
+          "id": "dash_004",
+          "duration_ms": 70
+        },
+        {
+          "id": "dash_005",
+          "duration_ms": 80
+        }
+      ],
+      "loop": false,
+      "hold_last": false,
+      "markers": {
+        "entry": [
+          0
+        ],
+        "return": [
+          5
+        ],
+        "travel": [
+          2,
+          3
+        ]
+      }
+    },
+    "skill_light": {
+      "frames": [
+        {
+          "id": "skill_light_000",
+          "duration_ms": 100
+        },
+        {
+          "id": "skill_light_001",
+          "duration_ms": 80
+        },
+        {
+          "id": "skill_light_002",
+          "duration_ms": 100
+        },
+        {
+          "id": "skill_light_003",
+          "duration_ms": 120
+        },
+        {
+          "id": "skill_light_004",
+          "duration_ms": 100
+        },
+        {
+          "id": "skill_light_005",
+          "duration_ms": 100
+        }
+      ],
+      "loop": false,
+      "hold_last": false,
+      "markers": {
+        "entry": [
+          0
+        ],
+        "return": [
+          5
+        ],
+        "release_pose": [
+          3
+        ]
+      }
+    },
+    "skill_complex": {
+      "frames": [
+        {
+          "id": "skill_complex_000",
+          "duration_ms": 100
+        },
+        {
+          "id": "skill_complex_001",
+          "duration_ms": 90
+        },
+        {
+          "id": "skill_complex_002",
+          "duration_ms": 90
+        },
+        {
+          "id": "skill_complex_003",
+          "duration_ms": 110
+        },
+        {
+          "id": "skill_complex_004",
+          "duration_ms": 110
+        },
+        {
+          "id": "skill_complex_005",
+          "duration_ms": 100
+        },
+        {
+          "id": "skill_complex_006",
+          "duration_ms": 130
+        },
+        {
+          "id": "skill_complex_007",
+          "duration_ms": 100
+        },
+        {
+          "id": "skill_complex_008",
+          "duration_ms": 110
+        },
+        {
+          "id": "skill_complex_009",
+          "duration_ms": 160
+        }
+      ],
+      "loop": false,
+      "hold_last": false,
+      "markers": {
+        "entry": [
+          0
+        ],
+        "return": [
+          9
+        ],
+        "release_pose": [
+          6
         ]
       }
     }
   },
   "compatible_transitions": [
     {
+      "from_clip": "run",
+      "exit_frame": 5,
+      "to_clip": "idle_combat",
+      "entry_frame": 0
+    },
+    {
+      "from_clip": "idle_combat",
+      "exit_frame": 0,
+      "to_clip": "run",
+      "entry_frame": 0
+    },
+    {
+      "from_clip": "jump",
+      "exit_frame": 5,
+      "to_clip": "idle_combat",
+      "entry_frame": 0
+    },
+    {
+      "from_clip": "idle_combat",
+      "exit_frame": 0,
+      "to_clip": "jump",
+      "entry_frame": 0
+    },
+    {
+      "from_clip": "punch_left",
+      "exit_frame": 5,
+      "to_clip": "idle_combat",
+      "entry_frame": 0
+    },
+    {
+      "from_clip": "idle_combat",
+      "exit_frame": 0,
+      "to_clip": "punch_left",
+      "entry_frame": 0
+    },
+    {
+      "from_clip": "punch_right",
+      "exit_frame": 5,
+      "to_clip": "idle_combat",
+      "entry_frame": 0
+    },
+    {
+      "from_clip": "idle_combat",
+      "exit_frame": 0,
+      "to_clip": "punch_right",
+      "entry_frame": 0
+    },
+    {
       "from_clip": "kick_left",
       "exit_frame": 5,
       "to_clip": "idle_combat",
+      "entry_frame": 0
+    },
+    {
+      "from_clip": "idle_combat",
+      "exit_frame": 0,
+      "to_clip": "kick_left",
       "entry_frame": 0
     },
     {
@@ -2376,75 +3834,80 @@
       "entry_frame": 0
     },
     {
-      "from_clip": "kick_spin",
-      "exit_frame": 8,
+      "from_clip": "idle_combat",
+      "exit_frame": 0,
+      "to_clip": "kick_right",
+      "entry_frame": 0
+    },
+    {
+      "from_clip": "physical_ability",
+      "exit_frame": 7,
       "to_clip": "idle_combat",
+      "entry_frame": 0
+    },
+    {
+      "from_clip": "idle_combat",
+      "exit_frame": 0,
+      "to_clip": "physical_ability",
+      "entry_frame": 0
+    },
+    {
+      "from_clip": "block",
+      "exit_frame": 3,
+      "to_clip": "idle_combat",
+      "entry_frame": 0
+    },
+    {
+      "from_clip": "idle_combat",
+      "exit_frame": 0,
+      "to_clip": "block",
+      "entry_frame": 0
+    },
+    {
+      "from_clip": "dash",
+      "exit_frame": 5,
+      "to_clip": "idle_combat",
+      "entry_frame": 0
+    },
+    {
+      "from_clip": "idle_combat",
+      "exit_frame": 0,
+      "to_clip": "dash",
+      "entry_frame": 0
+    },
+    {
+      "from_clip": "skill_light",
+      "exit_frame": 5,
+      "to_clip": "idle_combat",
+      "entry_frame": 0
+    },
+    {
+      "from_clip": "idle_combat",
+      "exit_frame": 0,
+      "to_clip": "skill_light",
+      "entry_frame": 0
+    },
+    {
+      "from_clip": "skill_complex",
+      "exit_frame": 9,
+      "to_clip": "idle_combat",
+      "entry_frame": 0
+    },
+    {
+      "from_clip": "idle_combat",
+      "exit_frame": 0,
+      "to_clip": "skill_complex",
       "entry_frame": 0
     }
   ],
   "meta": {
-    "status": "eight_approved_art_clips",
-    "page_png_sha256": "0dde20a9ced880592198c4883b320f3ac1b3433fce5a8f8ac3d1801022ea65fc",
-    "body_alpha": "binary",
-    "cell_size": [
-      192,
-      192
-    ],
-    "layout": [
-      {
-        "clip": "idle_combat",
-        "row": 0,
-        "y": 0,
-        "frames": 6
-      },
-      {
-        "clip": "run",
-        "row": 1,
-        "y": 192,
-        "frames": 5
-      },
-      {
-        "clip": "punch_left",
-        "row": 2,
-        "y": 384,
-        "frames": 6
-      },
-      {
-        "clip": "punch_right",
-        "row": 3,
-        "y": 576,
-        "frames": 6
-      },
-      {
-        "clip": "jump",
-        "row": 4,
-        "y": 768,
-        "frames": 6
-      },
-      {
-        "clip": "kick_left",
-        "row": 5,
-        "y": 960,
-        "frames": 6
-      },
-      {
-        "clip": "kick_right",
-        "row": 6,
-        "y": 1152,
-        "frames": 6
-      },
-      {
-        "clip": "kick_spin",
-        "row": 7,
-        "y": 1344,
-        "frames": 9
-      }
-    ],
-    "jump_phase_markers": "rise [1,2], fall [3], land [4,5] added by the code agent on 2026-10-28 from visual inspection of the delivered frames (1 push-off, 2 apex tuck, 3 descent, 4 landing crouch, 5 recovery); frame 0 (ground anticipation crouch) is not shown because ECS takeoff is immediate. Pending artist confirmation; frames and timing unchanged.",
-    "trim": "Opaque bounds plus 2 transparent pixels inside useful rect. Additional 2px extrusion repeats transparent RGBA edge; verified against existing unchanged PNG.",
-    "anchors_status": "Hand centres and forearm directions manually estimated from final raster frames and visually debugged; not skeletal/layered source. L/R convention follows repository example and named punch clips. Dashed anchors are hidden hands.",
-    "timing": "idle_combat 1200ms / run 500ms retained from repository export metadata. Punches 480ms each match existing combined preview; jump 800ms; kicks 560/560/750ms. Runtime CharacterAnimationConfig timing takes precedence and is unchanged.",
-    "transitions": "Only pixel-identical kick recovery to idle_combat_000 is declared.",
-    "unity_smoke_import": "NOT RUN"
+    "art_version": "v2_128",
+    "package_status": "art-delivery; Unity integration NOT RUN",
+    "body_alpha": "binary, threshold 128",
+    "single_airborne_clip": "jump",
+    "physical_ability": "grounded right shoulder lunge",
+    "anchor_status": "artist recommendations; verify attachments after Unity binding",
+    "source_note": "Fresh imagegen drawings; high-resolution flattened PNG source strips included. No editable layered PSD/Aseprite source exists.",
+    "project_install": "page installed as mage_female_01_00.png (package file mage_female_01_v2_00.png); pixels and all other fields unchanged"
   }
 }

@@ -89,7 +89,7 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(Project("idle_combat").EndFrame, Is.EqualTo(5));
             Assert.That(Project("idle_combat").FrameCount, Is.EqualTo(6));
             Assert.That(Project("idle_combat").TotalDurationSeconds, Is.EqualTo(0.75));
-            Assert.That(Project("run").FrameCount, Is.EqualTo(5));
+            Assert.That(Project("run").FrameCount, Is.EqualTo(6), "#70: the v2 run has 6 frames; the owner's T is kept.");
             Assert.That(Project("run").TotalDurationSeconds, Is.EqualTo(0.5));
             var definition = Parse(Json);
             Assert.That(CombatAnimationSet.ClipIds.All(c => definition.TryGetClipIndex(c, out _)), Is.True, "All eight clips are in the manifest.");
@@ -100,29 +100,28 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(warnings, Is.EqualTo(new[]
             {
                 "mage_female_01.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)",
-                "mage_female_01.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)",
-            }), "Current owner config: the unused anticipation and explicitly retuned right punch are reported.");
-            Assert.That(Project("jump").EndFrame, Is.EqualTo(4));
-            Assert.That(Project("jump").TotalDurationSeconds, Is.EqualTo(1.0));
+            }), "Migrated config (#70): only the unused takeoff anticipation is reported; no range hides frames, phases equal strike_pose.");
+            Assert.That(Project("jump").EndFrame, Is.EqualTo(5));
+            Assert.That(Project("jump").TotalDurationSeconds, Is.EqualTo(0.6));
             Assert.That(Project("jump").LandingStartFrame, Is.EqualTo(4));
-            Assert.That((set.LandingStartFrame, set.LandingEndFrame), Is.EqualTo((4, 4)));
-            Assert.That(set.LandingTicks, Is.EqualTo(12u), "Flat T=1 over five frames: one landing frame holds 1/5 s = 12 ticks.");
+            Assert.That((set.LandingStartFrame, set.LandingEndFrame), Is.EqualTo((4, 5)));
+            Assert.That(set.LandingTicks, Is.EqualTo(12u), "Flat T=0.6 over six frames: two landing frames of 0.1 s = the previous 12-tick lock.");
             for (uint e = 0; e < 12; e++)
                 Assert.That(Id(definition, set.FrameFor(Start + e, 0,
                     new CombatMotion { Grounded = true, LandTick = Start, LandingRecoveryTicks = 12 }, default)),
-                    Is.EqualTo("jump_004"), $"Project landing tick {e}: only configured frame 4.");
+                    Is.EqualTo(e < 6 ? "jump_004" : "jump_005"), $"Project landing tick {e}: both new landing frames.");
         }
 
         [TestCase(CombatAttackKind.Hand1, 14, 6, 9, 24)]
         [TestCase(CombatAttackKind.Hand2, 14, 6, 9, 24)]
-        [TestCase(CombatAttackKind.Foot1, 12, 6, 12, 24)]
-        [TestCase(CombatAttackKind.Foot2, 12, 6, 12, 24)]
-        [TestCase(CombatAttackKind.PhysicalAbility, 20, 5, 5, 65535)] // finisher: CombatStrikeTiming.NoChain
+        [TestCase(CombatAttackKind.Foot1, 15, 5, 10, 26)]
+        [TestCase(CombatAttackKind.Foot2, 15, 5, 10, 26)]
+        [TestCase(CombatAttackKind.PhysicalAbility, 15, 4, 11, 65535)] // finisher: CombatStrikeTiming.NoChain
         public void ConfigPhasesAreTheSimulatedWindowsAndEveryTickDrawsAFrameOfItsPhase(CombatAttackKind kind, int windup, int active,
             int recovery, int chainPoint)
         {
-            // 68c43c project config, flat curves: punches 29 ticks / 6 frames (phases 0..2 / 3 / 4..5),
-            // kicks 30 / 5 (0..1 / 2 / 3..4), spin 30 / 6 (0..3 / 4 / 5).
+            // #70 migrated config, flat curves: punches 29 ticks / 6 frames (phases 0..2 / 3 / 4..5),
+            // kicks 30 / 6 (0..2 / 3 / 4..5), physical_ability 30 / 8 (0..3 / 4 / 5..7).
             // Independently: Active starts at floor(T*60*(PreparationEnd+1)/N), Recovery at ceil(T*60*(ActiveEnd+1)/N).
             var set = Real(out var definition);
             var settings = Project(CombatAnimationSet.DefaultClip(kind));
@@ -216,7 +215,7 @@ namespace MLFLegends.Tests.EditMode
             var set = Build(definition, clip => clip == "jump" ? jump : Project(clip), out var errors, out _);
             Assert.That(set, Is.Not.Null, string.Join("\n", errors));
             Assert.That(set.LandingTicks, Is.EqualTo(projectLanding ? 12u : 16u),
-                "Project: one of five flat frames at T=1 (12 ticks); fixture: two of six at T=0.8 (16 ticks).");
+                "Project: two of six flat frames at T=0.6 (12 ticks); fixture: two of six at T=0.8 (16 ticks).");
             using var w = new ReplayWorld("jump frames");
             CombatStrikeSchedule.Publish(w.Manager, set.StrikeSchedule);
             w.Script = new ReplayScript().Player(1, 1, ReplayRole.Human, pressed: CommandButtons.Jump);
@@ -239,7 +238,7 @@ namespace MLFLegends.Tests.EditMode
                     Assert.That(c.Position.y, Is.GreaterThan(0f), "World height comes from CombatPosition.");
                 }
                 else if (i - landing < set.LandingTicks)
-                    Assert.That(id, Is.EqualTo(projectLanding || i - landing < 8 ? "jump_004" : "jump_005"), $"r{i + 1}: landing on the ground");
+                    Assert.That(id, Is.EqualTo(i - landing < (projectLanding ? 6 : 8) ? "jump_004" : "jump_005"), $"r{i + 1}: landing on the ground");
                 else
                     Assert.That(id, Does.StartWith("idle_combat_"), $"r{i + 1}");
             }
@@ -322,7 +321,7 @@ namespace MLFLegends.Tests.EditMode
             foreach (var kind in new[] { CombatAttackKind.Foot1, CombatAttackKind.Foot2, CombatAttackKind.PhysicalAbility })
             {
                 var last = Start + (uint)set.StrikeSchedule.Get(kind).End - 1;
-                Assert.That(Id(definition, set.FrameFor(last, 0, Grounded(), Striking(set, kind))), Does.EndWith(kind == CombatAttackKind.PhysicalAbility ? "_005" : "_004"));
+                Assert.That(Id(definition, set.FrameFor(last, 0, Grounded(), Striking(set, kind))), Does.EndWith(kind == CombatAttackKind.PhysicalAbility ? "_007" : "_005"));
                 var free = new CombatAttackState { EndTick = last + 1 };
                 Assert.That(Id(definition, set.FrameFor(last + 1, 0, Grounded(), free)), Is.EqualTo("idle_combat_000"));
             }
@@ -355,8 +354,7 @@ namespace MLFLegends.Tests.EditMode
                 out var schedule), Is.True, string.Join("\n", errors));
             Assert.That(schedule.IsValid, Is.True);
             Assert.That(schedule.Hand1.End, Is.EqualTo(29));
-            Assert.That(warnings, Has.Count.EqualTo(1));
-            Assert.That(warnings[0], Does.Contain("punch_right: Active frames 3..3 differ"));
+            Assert.That(warnings, Is.Empty, "Migrated phases equal the v2 strike_pose markers.");
 
             // T = 1/60 s over 6 frames: Preparation [0, 0.5) tick, Active [0.5, 0.667), Recovery [0.667, 1): one Active tick,
             // no Preparation and no Recovery tick (warned), never a skipped Active phase.
@@ -371,11 +369,11 @@ namespace MLFLegends.Tests.EditMode
 
             var moved = PunchFixture();
             moved.ClipId = "punch_right";
-            moved.PreparationEndFrame = 2;
+            moved.PreparationEndFrame = 1;
             warnings.Clear();
             Assert.That(CombatAnimationSet.TryCreateStrikeSchedule(definition, c => c == "punch_right" ? moved : Project(c), Character, errors, warnings,
                 out _), Is.True);
-            Assert.That(warnings, Has.Some.Contains("punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)"));
+            Assert.That(warnings, Has.Some.Contains("punch_right: Active frames 2..3 differ from the manifest's strike_pose 3..3 (the config decides)"));
         }
 
         static string Without(string json, string clip, string marker, string replacement)
@@ -401,7 +399,12 @@ namespace MLFLegends.Tests.EditMode
             Rejected(Without(Json, "jump", "land", "\"landing\": [4, 5]"),
                 c => c == "jump" ? legacyJump : Project(c), "mage_female_01.jump.markers.land: missing");
             Rejected(Without(Json, "jump", "fall", "\"fall\": [1]"), Project, "jump.markers: rise, fall and land must be disjoint and in this order");
-            Rejected(Json, c => c == "kick_spin" ? null : Project(c), "mage_female_01.kick_spin: animation settings missing");
+            Rejected(Json, c => c == "physical_ability" ? null : Project(c), "mage_female_01.physical_ability: animation settings missing");
+            // A slot still on the v1 clip names its explicit successor instead of silently playing it (#70).
+            var legacyErrors = new List<string>();
+            Assert.That(CombatAnimationSet.Create(Parse(Json), Project, Character, legacyErrors, null,
+                k => k == CombatAttackKind.PhysicalAbility ? "kick_spin" : CombatAnimationSet.DefaultClip(k)), Is.Null);
+            Assert.That(legacyErrors, Has.Some.Contains("mage_female_01.kick_spin: clip missing from manifest; this art renames it to 'physical_ability'"));
             CharacterAnimationSettings Punch(int end, int preparationEnd, int activeEnd)
             {
                 var punch = PunchFixture();
@@ -422,11 +425,12 @@ namespace MLFLegends.Tests.EditMode
             var legacy = new CharacterAnimationSettings { ClipId = "kick_left", EndFrame = 5, TotalDurationSeconds = 0.55 };
             Rejected(Json, c => c == "kick_left" ? legacy : Project(c), "kick_left.ActiveEndFrame: 0; Active 1..0 must hold at least one frame");
             // After an atlas update that shortens a clip, a stale EndFrame names the field and the clip's current range.
-            var spin = Copy(Project("kick_spin"));
-            spin.EndFrame = 12;
-            Rejected(Json, c => c == "kick_spin" ? spin : Project(c), "kick_spin.EndFrame: 12 is outside the clip's local frames 0..8 (0-based clip indices; was the atlas clip shortened?)");
+            var ability = Copy(Project("physical_ability"));
+            ability.EndFrame = 12;
+            Rejected(Json, c => c == "physical_ability" ? ability : Project(c), "physical_ability.EndFrame: 12 is outside the clip's local frames 0..7 (0-based clip indices; was the atlas clip shortened?)");
             var looping = new CharacterAnimationSettings { ClipId = "idle_combat", EndFrame = 5, TotalDurationSeconds = 1 };
-            var renamed = Json.Replace("\"idle_combat\": {", "\"idle_renamed\": {").Replace("\"to_clip\": \"idle_combat\"", "\"to_clip\": \"idle_renamed\"");
+            var renamed = Json.Replace("\"idle_combat\": {", "\"idle_renamed\": {").Replace("\"to_clip\": \"idle_combat\"", "\"to_clip\": \"idle_renamed\"")
+                .Replace("\"from_clip\": \"idle_combat\"", "\"from_clip\": \"idle_renamed\"");
             Rejected(renamed, c => c == "idle_combat" ? looping : Project(c), "mage_female_01.idle_combat: clip missing from manifest");
         }
     }

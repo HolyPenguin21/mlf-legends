@@ -57,7 +57,7 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(published, Is.EqualTo(CombatStrikeSchedule.Default));
             Assert.That(new[] { settings.ClipFor(CombatAttackKind.Hand1), settings.ClipFor(CombatAttackKind.Hand2), settings.ClipFor(CombatAttackKind.Foot1),
                 settings.ClipFor(CombatAttackKind.Foot2), settings.ClipFor(CombatAttackKind.PhysicalAbility) },
-                Is.EqualTo(new[] { "punch_left", "punch_right", "kick_left", "kick_right", "kick_spin" }), "Explicit migration of the 05.1 clip ids.");
+                Is.EqualTo(new[] { "punch_left", "punch_right", "kick_left", "kick_right", "physical_ability" }), "Default slot clips of the v2 art (#70).");
         }
 
         [Test]
@@ -161,6 +161,7 @@ namespace MLFLegends.Tests.EditMode
             var zero = JsonUtility.FromJson<CharacterAnimationEntry>("{\"CharacterId\":\"mage\",\"Combat\":{\"BodyRadius\":0,\"m_Version\":0}}");
             Assert.That(zero.Combat.Body, Is.EqualTo(CombatBodyTuning.Default));
             Assert.That(zero.Combat.Foot2.ClipId, Is.EqualTo("kick_right"));
+            Assert.That(zero.Combat.PhysicalAbility.ClipId, Is.EqualTo("kick_spin"), "Pre-#69 data keeps the v1 clip it was authored for; the v2 rename is the explicit atlas migration.");
 
             // Owner values at version 1 are never rewritten: idempotent across repeated load/save.
             entry.Combat.Hand1.Damage = 9; entry.Combat.BodyMass = 2.5f; entry.Combat.PhysicalAbility.ClipId = "kick_spin";

@@ -58,7 +58,7 @@ Physical keys, without Shift. Movement remains WASD in world X/Z. Combat binding
 |---|---|---|
 | U | HandSeries | Hand1, Hand1, Hand2, Hand1, Hand2, … |
 | I | FootSeries | Foot1, Foot1, Foot2, Foot1, Foot2, … |
-| O | PhysicalAbility | the character's physical ability (05.1: kick_spin clip, no self impulse) |
+| O | PhysicalAbility | the character's physical ability (v2 art #70: physical_ability clip; v1 kick_spin; no self impulse) |
 | Space | Jump | jump (kept until the owner explicitly cancels it) |
 | K | — | reserved for the Stage 06 block, unbound |
 | double-tap WASD | — | future Stage 06 dash, not implemented |
@@ -103,10 +103,10 @@ copies its timing AND damage/box at its start (frozen per execution); a body app
 | Hand1 | punch_left | 13/5/11 | 4 | 4 | 0 … 1.0 |
 | Hand2 | punch_right | 9/9/11 | 4 | 4 | 0 … 1.0 |
 | Foot1 / Foot2 | kick_left / kick_right | 11/5/17 | 6 | 7 | 0 … 1.3 |
-| PhysicalAbility (finisher) | kick_spin | 19/6/20 | — | 12 | 0 … 1.45 |
+| PhysicalAbility (finisher) | physical_ability (v1: kick_spin) | 19/6/20 | — | 12 | 0 … 1.45 |
 
-All default boxes: |ΔZ| ≤ 0.4, |ΔY| ≤ 0.9; target point = CombatPosition. Current project windows: punch 14/6/9, kicks
-12/6/12, kick_spin 20/5/5 ticks. Every combatant spawns with 100 HP. **Planar movement during a strike: 50% Preparation /
+All default boxes: |ΔZ| ≤ 0.4, |ΔY| ≤ 0.9; target point = CombatPosition. Current project windows (v2 art, #70): punch
+14/6/9, kicks 15/5/10, physical_ability 15/4/11 ticks ([migration table](STAGE05_1A_ATLAS_MIGRATION.md#4-config-migration-old--new-characteranimationconfigasset)). Every combatant spawns with 100 HP. **Planar movement during a strike: 50% Preparation /
 25% Active / 25% Recovery**, never a jump; facing locked except on each strike's first tick.
 
 - **Start:** a fresh press (Held never repeats) starts a strike when free and grounded at the start of the tick.

@@ -296,6 +296,119 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(P(p, f[0]).x, Is.EqualTo(x), "The released contact frees no old impulse.");
         }
 
+        // #70: rotated acute (45°) and obtuse (135°) corners. Two sequential clip passes pushed velocity back into the first
+        // wall of an acute corner; every published velocity must now leave each touched wall alone, in either shape order,
+        // and the walls hold nothing for the next tick.
+        [TestCase(false)] [TestCase(true)]
+        public void RotatedCornersPublishNoVelocityIntoAnyTouchedWallInEitherShapeOrder(bool obtuse)
+        {
+            var s = math.sqrt(.5f);
+            var wallA = CombatArenaTests.Box(-1.1f, 0, 1, .1f, 4, 3); // face x = -1, outward (1,0)
+            var normalB = obtuse ? new float2(s, s) : new float2(-s, s);
+            var faceB = obtuse ? new float2(0, -2) : float2.zero; // both faces meet wall A at (-1,-1)
+            var centerB = faceB - normalB * .1f;
+            var wallB = CombatArenaTests.Box(centerB.x, 0, centerB.y, 3, 4, .1f, obtuse ? -math.PI / 4 : math.PI / 4);
+            var start = obtuse ? new float3(.5f, 0, .5f) : new float3(-.4f, 0, 1);
+            var push = obtuse ? new float3(-12, 0, -12) : new float3(-5, 0, -12);
+            var walls = new[] { (new float2(-1, 0), new float2(1, 0)), (faceB, normalB) };
+            var trajectories = new float3[2][];
+            for (var order = 0; order < 2; order++)
+            {
+                using var w = new ReplayWorld("rotated corner");
+                var e = Start(w, order == 0 ? new[] { Floor, wallA, wallB } : new[] { Floor, wallB, wallA }, new float3(10, 0, 0));
+                w.Manager.SetComponentData(e[0], new CombatPosition { Value = start });
+                var radius = w.Manager.GetComponentData<CombatBody>(e[0]).Radius;
+                Push(w, e[0], push);
+                trajectories[order] = new float3[40];
+                int both = 0, touched = 0;
+                for (var t = 0; t < 40; t++)
+                {
+                    w.Step();
+                    var p = P(w, e[0]).xz; var v = M(w, e[0]).ExternalVelocity;
+                    var touching = 0;
+                    foreach (var (face, n) in walls)
+                    {
+                        var gap = math.dot(p - face, n) - radius;
+                        Assert.That(gap, Is.GreaterThanOrEqualTo(-.00021f), $"tick {t}: no body inside a wall");
+                        if (gap > 1e-3f) continue;
+                        touching++;
+                        Assert.That(math.dot(v, n), Is.GreaterThanOrEqualTo(-1e-4f), $"tick {t}: hidden velocity {v} into wall {n}");
+                    }
+                    if (touching == 2) both++;
+                    if (touching > 0) touched++;
+                    Assert.That(Contacts(w).WallOverflowBodies, Is.Zero);
+                    trajectories[order][t] = P(w, e[0]);
+                }
+                // Acute: the apex holds the body against both walls. Obtuse: it slides off along the second wall instead.
+                if (obtuse) Assert.That(touched, Is.GreaterThan(0), "The body reached the walls.");
+                else Assert.That(both, Is.GreaterThan(0), "The body reached the corner.");
+                Assert.That(M(w, e[0]).ExternalVelocity, Is.EqualTo(float2.zero));
+                // Release: a push out of the corner is not held back by anything stored from the blocked ticks.
+                var away = obtuse ? new float3(6, 0, 6) : new float3(5, 0, 12);
+                Push(w, e[0], away); w.Step();
+                var released = M(w, e[0]).ExternalVelocity;
+                Assert.That(math.length(released), Is.EqualTo(math.length(away.xz) - CombatImpulseTuning.GroundDeceleration * Dt).Within(1e-3));
+                Assert.That(math.dot(math.normalize(released), math.normalize(away.xz)), Is.GreaterThan(.9999f));
+            }
+            for (var t = 0; t < 40; t++)
+                Assert.That(math.distance(trajectories[0][t], trajectories[1][t]), Is.LessThan(1e-4f), $"tick {t}: shape order");
+        }
+
+        // #70: a body resting on wall A slides parallel to it into an acute wall B. Projecting only onto B would return (-6,-6),
+        // straight into A: A must stay active (B's depenetration re-touches it; the final touching-wall query also keeps it).
+        [Test]
+        public void SlidingAlongAWallIntoAnAcuteCornerKeepsTheRestingWallActive()
+        {
+            var s = math.sqrt(.5f);
+            var wallB = CombatArenaTests.Box(.1f * s, 0, -.1f * s, 3, 4, .1f, math.PI / 4); // face z = x, outward (-s, s)
+            using var w = new ReplayWorld("resting wall");
+            var e = Start(w, new[] { Floor, CombatArenaTests.Box(-1.1f, 0, 1, .1f, 4, 3), wallB }, new float3(10, 0, 0));
+            var radius = w.Manager.GetComponentData<CombatBody>(e[0]).Radius;
+            w.Manager.SetComponentData(e[0], new CombatPosition { Value = new float3(-1 + radius, 0, .2f) });
+            Push(w, e[0], new float3(0, 0, -12));
+            var reached = false;
+            for (var t = 0; t < 10; t++)
+            {
+                w.Step();
+                var v = M(w, e[0]).ExternalVelocity;
+                Assert.That(P(w, e[0]).x, Is.EqualTo(-1 + radius).Within(.00021f), $"tick {t}: still resting on wall A");
+                Assert.That(v.x, Is.GreaterThanOrEqualTo(-1e-4f), $"tick {t}: hidden velocity {v} into the resting wall");
+                reached |= math.dot(P(w, e[0]).xz, new float2(-s, s)) - radius < 1e-3f;
+            }
+            Assert.That(reached, Is.True, "The body reached wall B.");
+            Assert.That(M(w, e[0]).ExternalVelocity, Is.EqualTo(float2.zero));
+        }
+
+        // #70: running out of the shared pair-visit budget INSIDE the final-velocity pass is not a partial success: positions
+        // solved before the pass are published, contact velocities are zeroed and counted, no impulse is retried.
+        [Test]
+        public void VelocityPassWorkLimitKeepsSolvedPositionsAndPublishesNoPartialVelocity()
+        {
+            float3 a, b; long visits;
+            using (var w = new ReplayWorld("velocity budget reference"))
+            {
+                var e = Start(w, new[] { Floor }, new float3(.7f, 0, 0));
+                Push(w, e[0], new float3(12, 0, 0)); w.Step();
+                var d = Contacts(w);
+                Assert.That(d.VelocityContacts, Is.EqualTo(1)); Assert.That(d.VelocityComplete, Is.True); Assert.That(d.WorkLimit, Is.False);
+                visits = d.PairVisits; a = P(w, e[0]); b = P(w, e[1]);
+            }
+            using var g = new ReplayWorld("velocity budget guard");
+            var f = Start(g, new[] { Floor }, new float3(.7f, 0, 0));
+            var owner = g.World.GetExistingSystemManaged<CombatSpatialIndexSystem>();
+            owner.PairVisitBudgetOverride = visits - 1; // the velocity pass is the last consumer: its final visit is refused
+            Push(g, f[0], new float3(12, 0, 0)); g.Step();
+            var guard = Contacts(g);
+            Assert.That((guard.WorkLimit, guard.ResidualComplete, guard.VelocityComplete), Is.EqualTo((true, true, false)));
+            Assert.That(guard.VelocityDiscarded, Is.GreaterThan(0)); Assert.That(guard.FrozenBodies, Is.Zero);
+            Assert.That(P(g, f[0]), Is.EqualTo(a)); Assert.That(P(g, f[1]), Is.EqualTo(b), "Solved positions are published unchanged.");
+            Assert.That(M(g, f[0]).ExternalVelocity, Is.EqualTo(float2.zero)); Assert.That(M(g, f[1]).ExternalVelocity, Is.EqualTo(float2.zero));
+            Assert.That(Pending(g), Is.Zero, "The consumed impulse is not re-queued.");
+            owner.PairVisitBudgetOverride = 0; g.Step(3);
+            Assert.That(Contacts(g).VelocityComplete, Is.True);
+            Assert.That(P(g, f[0]), Is.EqualTo(a)); Assert.That(P(g, f[1]), Is.EqualTo(b), "Nothing discarded is released later.");
+        }
+
         // #69 counterexample: equal bodies .1 apart, 12/0 u/s: the old rule published 8.6/2.6 (average displacements); the
         // declared perfectly inelastic normal response gives the common velocity 6/6, i.e. 5.6/5.6 after ground friction.
         [TestCase(1f, 1f)] [TestCase(1f, 3f)] [TestCase(3f, 1f)]

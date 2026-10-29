@@ -49,7 +49,7 @@ MonoBehaviour:
       LandingStartFrame: -1
       m_LegacyFrameCount: 0
     - ClipId: run
-      EndFrame: 4
+      EndFrame: 5
       TotalDurationSeconds: 0.5
       SpeedCurve:
         serializedVersion: 2
@@ -80,8 +80,8 @@ MonoBehaviour:
       LandingStartFrame: -1
       m_LegacyFrameCount: 0
     - ClipId: jump
-      EndFrame: 4
-      TotalDurationSeconds: 1
+      EndFrame: 5
+      TotalDurationSeconds: 0.6
       SpeedCurve:
         serializedVersion: 2
         m_Curve:
@@ -173,7 +173,7 @@ MonoBehaviour:
       LandingStartFrame: -1
       m_LegacyFrameCount: 0
     - ClipId: kick_left
-      EndFrame: 4
+      EndFrame: 5
       TotalDurationSeconds: 0.5
       SpeedCurve:
         serializedVersion: 2
@@ -199,12 +199,12 @@ MonoBehaviour:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
-      PreparationEndFrame: 1
-      ActiveEndFrame: 2
+      PreparationEndFrame: 2
+      ActiveEndFrame: 3
       LandingStartFrame: -1
       m_LegacyFrameCount: 0
     - ClipId: kick_right
-      EndFrame: 4
+      EndFrame: 5
       TotalDurationSeconds: 0.5
       SpeedCurve:
         serializedVersion: 2
@@ -230,12 +230,12 @@ MonoBehaviour:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
-      PreparationEndFrame: 1
-      ActiveEndFrame: 2
+      PreparationEndFrame: 2
+      ActiveEndFrame: 3
       LandingStartFrame: -1
       m_LegacyFrameCount: 0
-    - ClipId: kick_spin
-      EndFrame: 5
+    - ClipId: physical_ability
+      EndFrame: 7
       TotalDurationSeconds: 0.5
       SpeedCurve:
         serializedVersion: 2
@@ -263,6 +263,130 @@ MonoBehaviour:
         m_RotationOrder: 4
       PreparationEndFrame: 3
       ActiveEndFrame: 4
+      LandingStartFrame: -1
+      m_LegacyFrameCount: 0
+    - ClipId: block
+      EndFrame: 3
+      TotalDurationSeconds: 0.6
+      SpeedCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 1
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 34
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 1
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 34
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      PreparationEndFrame: 0
+      ActiveEndFrame: 0
+      LandingStartFrame: -1
+      m_LegacyFrameCount: 0
+    - ClipId: dash
+      EndFrame: 5
+      TotalDurationSeconds: 0.42
+      SpeedCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 1
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 34
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 1
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 34
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      PreparationEndFrame: 0
+      ActiveEndFrame: 0
+      LandingStartFrame: -1
+      m_LegacyFrameCount: 0
+    - ClipId: skill_light
+      EndFrame: 5
+      TotalDurationSeconds: 0.6
+      SpeedCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 1
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 34
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 1
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 34
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      PreparationEndFrame: 0
+      ActiveEndFrame: 0
+      LandingStartFrame: -1
+      m_LegacyFrameCount: 0
+    - ClipId: skill_complex
+      EndFrame: 9
+      TotalDurationSeconds: 1.1
+      SpeedCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 1
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 34
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 1
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 34
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      PreparationEndFrame: 0
+      ActiveEndFrame: 0
       LandingStartFrame: -1
       m_LegacyFrameCount: 0
     Combat:
@@ -298,7 +422,7 @@ MonoBehaviour:
         DepthHalfWidth: 0.4
         HeightTolerance: 0.9
       PhysicalAbility:
-        ClipId: kick_spin
+        ClipId: physical_ability
         Damage: 12
         ReachMin: 0
         ReachMax: 1.45

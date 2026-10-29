@@ -291,16 +291,36 @@ namespace MLFLegends.Tests.PlayMode
             var config = UnityEditor.AssetDatabase.LoadAssetAtPath<CharacterAnimationConfig>("Assets/MLFLegends/Combat/PresentationData/CharacterAnimationConfig.asset");
             Assert.That(config.TryResolve("mage_female_01", "idle_combat", out _, out var idle, out _), Is.True);
             Assert.That(renderer.AnimationTiming.DurationSeconds, Is.EqualTo(idle.TotalDurationSeconds));
-            Assert.That(renderer.RunAnimationTiming.FrameCount, Is.EqualTo(5));
+            Assert.That(renderer.RunAnimationTiming.FrameCount, Is.EqualTo(6));
             Assert.That(renderer.RunAnimationTiming.DurationSeconds, Is.EqualTo(0.5));
-            Assert.That(renderer.Animations.Jump.FrameCount, Is.EqualTo(5), "Project jump range is 0..4; all eight clips remain bound.");
+            Assert.That(renderer.Animations.Jump.FrameCount, Is.EqualTo(6), "#70 project jump range is 0..5 (landing 4..5); all eight required clips are bound.");
             Assert.That(renderer.Animations.LandingTicks, Is.EqualTo(12u));
-            Assert.That(renderer.Animations.Attack(CombatAttackKind.PhysicalAbility).FrameCount, Is.EqualTo(6));
+            Assert.That(renderer.Animations.Attack(CombatAttackKind.PhysicalAbility).FrameCount, Is.EqualTo(8), "physical_ability (v2), not kick_spin.");
+            Assert.That(renderer.Atlas.Definition.SourceSize, Is.EqualTo(new int2(192, 160)));
             Assert.That(renderer.Animations.Attack(CombatAttackKind.Hand1).DurationSeconds, Is.EqualTo(29 / 60.0).Within(1e-9));
             Assert.That(renderer.PixelWorldSize, Is.EqualTo(2f / 128f));
             Assert.That(renderer.IsActiveOwner, Is.True);
             AssertMatchesEcs(renderer);
             Assert.That(renderer.Stats.Instances, Is.EqualTo(3), "CombatSmoke retains its authored roster: one human and two AI fighters.");
+            // #70 evidence only (no assertion): the real atlas in the scene's own camera, for the owner's visual check.
+            if (SystemInfo.graphicsDeviceType != UnityEngine.Rendering.GraphicsDeviceType.Null)
+            {
+                var camera = renderer.TargetCamera;
+                var target = RenderTexture.GetTemporary(1280, 720, 24);
+                var previous = camera.targetTexture;
+                camera.targetTexture = target;
+                renderer.Refresh();
+                camera.Render();
+                RenderTexture.active = target;
+                var image = new Texture2D(1280, 720, TextureFormat.RGBA32, false);
+                image.ReadPixels(new Rect(0, 0, 1280, 720), 0, 0);
+                RenderTexture.active = null;
+                camera.targetTexture = previous;
+                RenderTexture.ReleaseTemporary(target);
+                System.IO.Directory.CreateDirectory("TestResults");
+                System.IO.File.WriteAllBytes("TestResults/smoke-real-atlas.png", image.EncodeToPNG());
+                Object.DestroyImmediate(image);
+            }
         }
     }
 }

@@ -59,7 +59,8 @@ namespace MLFLegends.Combat
     /// <para>Migration: entries serialized before #69 have no Combat block. Their deserialized block is version 0 and is
     /// filled ONCE with the previous built-in values (<see cref="CombatAttackTuning"/>, <see cref="CombatBodyTuning"/>, the
     /// Stage 05.1 clips punch_left/punch_right/kick_left/kick_right/kick_spin); version 1 is never rewritten, so the
-    /// migration is idempotent and leaves animation timing, curves and pivots untouched.</para>
+    /// migration is idempotent and leaves animation timing, curves and pivots untouched. The v1 → v2 art rename
+    /// kick_spin → physical_ability is a separate, explicit atlas migration (<see cref="CharacterAtlasMigration"/>, #70).</para>
     /// </remarks>
     [Serializable]
     public sealed class CharacterCombatSettings : ISerializationCallbackReceiver
@@ -156,6 +157,7 @@ namespace MLFLegends.Combat
             BodyRadius = defaults.BodyRadius; BodyHeight = defaults.BodyHeight; BodyMass = defaults.BodyMass;
             Hand1 = defaults.Hand1; Hand2 = defaults.Hand2; Foot1 = defaults.Foot1; Foot2 = defaults.Foot2;
             PhysicalAbility = defaults.PhysicalAbility;
+            PhysicalAbility.ClipId = CombatAnimationSet.LegacyPhysicalAbilityClip; // the art such data was authored for
             m_Version = CurrentVersion;
         }
 

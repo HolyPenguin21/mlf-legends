@@ -94,21 +94,32 @@ namespace MLFLegends.Combat
 
         void OnValidate() => NotifyContentChanged();
 
-        /// <summary>Valid Sprite regions for a frame: its useful rect OR its complete source canvas (Unity Y up).</summary>
+        /// <summary>
+        /// Valid Sprite regions for a frame: its useful rect OR its complete source canvas (Unity Y up). With
+        /// <paramref name="customPosition"/> (#70) a region of either size may also be shifted on the page by at most half the
+        /// source canvas: the shift is the owner's custom image position, returned in <paramref name="origin"/> (it moves the
+        /// image pivot; the drawn pixels stay the manifest's frame region, so a shifted rect never samples a neighbour).
+        /// </summary>
         public static bool TrySpriteCanvasOrigin(SpriteAtlasDefinition definition, in SpriteAtlasFrame frame, Rect spriteRect,
-            out float2 origin)
+            out float2 origin, bool customPosition = false)
         {
             var pageHeight = definition.Pages[frame.Page].Size.y;
             var topLeft = new float2(spriteRect.x, pageHeight - spriteRect.yMax);
             var size = new float2(spriteRect.width, spriteRect.height);
             var canvasOrigin = frame.Rect.xy - frame.TrimOffset;
+            var useful = math.all(size == (float2)frame.Rect.zw);
+            var canvas = math.all(size == (float2)definition.SourceSize);
+            // The useful rect sits at trim_offset inside the canvas; the shift is measured from where that region belongs.
+            var expected = useful && !canvas ? (float2)frame.Rect.xy : canvasOrigin;
             origin = topLeft - canvasOrigin;
-            return (math.all(topLeft == (float2)frame.Rect.xy) && math.all(size == (float2)frame.Rect.zw))
-                || (math.all(topLeft == (float2)canvasOrigin) && math.all(size == (float2)definition.SourceSize));
+            if (!useful && !canvas) return false;
+            if (math.all(topLeft == expected)) return true;
+            return customPosition && math.all(math.abs(topLeft - expected) <= (float2)definition.SourceSize * .5f);
         }
 
         /// <summary>Resolve once before native/GPU allocation. Center is real data; only an absent entry uses JSON.</summary>
-        internal bool TryImagePivots(SpriteAtlasDefinition definition, Texture2D[] pages, List<string> errors, out float2[] pivots)
+        internal bool TryImagePivots(SpriteAtlasDefinition definition, Texture2D[] pages, List<string> errors, out float2[] pivots,
+            List<string> warnings = null)
         {
             pivots = new float2[definition.Frames.Count];
             for (var i = 0; i < pivots.Length; i++) pivots[i] = definition.Pivot;
@@ -129,11 +140,14 @@ namespace MLFLegends.Combat
                 var sprite = binding.Sprite;
                 var frame = definition.Frames[index];
                 if (sprite == null || sprite.texture != pages[frame.Page]
-                    || !TrySpriteCanvasOrigin(definition, frame, sprite.rect, out var origin))
+                    || !TrySpriteCanvasOrigin(definition, frame, sprite.rect, out var origin, customPosition: true))
                 {
-                    errors.Add($"image pivots.{binding.FrameId}: Sprite must belong to its page and match its useful rect or full source canvas; repair the binding. Legacy JSON fallback requires no imported Sprite binding for this frame");
+                    errors.Add($"image pivots.{binding.FrameId}: Sprite must belong to its page and have the size of its useful rect or full source canvas, at most half a canvas from it; repair the binding. Legacy JSON fallback requires no imported Sprite binding for this frame");
                     continue;
                 }
+                if (!TrySpriteCanvasOrigin(definition, frame, sprite.rect, out _))
+                    warnings?.Add($"image pivots.{binding.FrameId}: Sprite rect is shifted from its frame by {Shift(definition, frame, sprite.rect)} px: " +
+                        "used as a custom image position (pixels still come from the manifest region; prefer a custom pivot on the exact cell)");
                 // Sprite.pivot is already in rect-local PIXELS with Y up, regardless of PPU or importer alignment.
                 var pivot = origin + new float2(sprite.pivot.x, sprite.rect.height - sprite.pivot.y);
                 if (!math.all(math.isfinite(pivot)))
@@ -142,6 +156,13 @@ namespace MLFLegends.Combat
                     pivots[index] = pivot;
             }
             return errors.Count == before;
+        }
+
+        static float2 Shift(SpriteAtlasDefinition definition, in SpriteAtlasFrame frame, Rect rect)
+        {
+            var useful = math.all(new float2(rect.width, rect.height) == (float2)frame.Rect.zw) && !math.all(new float2(rect.width, rect.height) == (float2)definition.SourceSize);
+            var expected = useful ? (float2)frame.Rect.xy : (float2)(frame.Rect.xy - frame.TrimOffset);
+            return new float2(rect.x, definition.Pages[frame.Page].Size.y - rect.yMax) - expected;
         }
 
         /// <summary>Actual sampled page region and its placement on the virtual source canvas.</summary>

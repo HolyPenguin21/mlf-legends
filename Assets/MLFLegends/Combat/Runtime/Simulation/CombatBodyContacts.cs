@@ -33,6 +33,7 @@ namespace MLFLegends.Combat
         // pass stops when no velocity changes by more than VelocityTolerance (u/s) or after MaxIterations passes.
         public const float ContactGap = 4 * Skin;
         public const float VelocityTolerance = 1e-5f;
+        // One budget of pair visits per Movement call, shared by the position solve and the final-velocity pass.
         public const int MaxPairVisits = 4000000;
         public const long MaxCandidateVisits = 32000000;
         public const int MaxBodies = BattleSetup.MaxCombatantsPerTeam * 2;
@@ -78,6 +79,13 @@ namespace MLFLegends.Combat
         // Final-velocity pass (#69): recorded body contacts, passes run and the largest change of the last pass (u/s).
         public int VelocityContacts, VelocityIterations;
         public float VelocityResidual;
+        // #70: false when the shared pair-visit budget ran out inside the velocity pass; ResidualComplete describes positions
+        // only. Then every non-frozen body of a recorded contact publishes zero external velocity (VelocityDiscarded): the
+        // solved positions stay, no partly exchanged velocity is published, no impulse is re-applied, no time re-integrated.
+        public bool VelocityComplete;
+        public int VelocityDiscarded;
+        // #70: bodies whose blocking normals overflowed CombatWallSet (numerically degenerate input): their velocity is zero.
+        public int WallOverflowBodies;
     }
 
     // Scratch rows, not ECS components or an alternative position source. Lifetime: one synchronous Movement call.
@@ -94,9 +102,8 @@ namespace MLFLegends.Combat
         // Stage 04.4: External = ExternalVelocity·dt after this tick's impulses, Lift = vertical Δv of those impulses.
         // Physical accumulates the achieved displacement caused by physics (world move + physical contact shares only).
         public float2 Velocity, External, Physical, VelocityOut;
-        // Outward normals of world surfaces that blocked this body in any move of this call (see CombatArenaMove.Wall0).
-        public float2 Wall0, Wall1;
-        public byte Walls;
+        // Active blocking normals of every move of this call (see CombatArenaMove.Walls); rebuilt per call, never carried.
+        public CombatWallSet Walls;
         public float Lift;
         public bool HasPhysics;
         public CombatArenaMove Result;
@@ -175,6 +182,7 @@ namespace MLFLegends.Combat
         [ReadOnly] public NativeArray<CombatImpulse> Impulses;
         public NativeArray<CombatContactDiagnostics> Diagnostics;
         public uint Tick, LandingTicks, BattleNumber;
+        public long PairVisitBudget; // CombatContactTuning.MaxPairVisits; the owner lowers it only for guard checks.
         public bool Physics; // Any external motion or pending impulse in this call: selects the reserved physical budget.
 
         struct ByPair : IComparer<int2>
@@ -187,7 +195,7 @@ namespace MLFLegends.Combat
 
         public void Execute()
         {
-            var d = new CombatContactDiagnostics { Tick = Tick, BattleNumber = BattleNumber };
+            var d = new CombatContactDiagnostics { Tick = Tick, BattleNumber = BattleNumber, VelocityComplete = true };
             MarkManaged(ref d);
             ApplyImpulses(ref d);
             for (var i = 0; i < Actors.Length; i++)
@@ -202,7 +210,7 @@ namespace MLFLegends.Combat
                     a.Result = CombatArenaGeometry.Move(Shapes, a.MovementBody, a.Start, a.Desired,
                         a.Motion.VerticalVelocity, a.Motion.Grounded, a.Jump, LandingTicks, a.Legacy, a.Motion.GroundHeight);
                     if (a.Result.Failure != CombatArenaFailure.None) a.Frozen = true;
-                    else AddWalls(ref a, a.Result);
+                    else a.Walls.Add(a.Result.Walls);
                 }
                 else if (!a.Frozen)
                 {
@@ -218,7 +226,7 @@ namespace MLFLegends.Combat
                     {
                         a.Result.Landed = physics.Landed;
                         a.Physical = physics.Displacement; // Control travel (Result.ControlledDistance) is attributed separately.
-                        AddWalls(ref a, physics); AddWalls(ref a, a.Result);
+                        a.Walls.Add(physics.Walls); a.Walls.Add(a.Result.Walls);
                     }
                 }
                 // Solver iterates constraints, not elapsed time: a temporary loss of support must be reversible.
@@ -236,7 +244,7 @@ namespace MLFLegends.Combat
                 var actualResidual = 0f;
                 for (var p = 0; p < Pairs.Length; p++)
                 {
-                    if (++d.PairVisits > CombatContactTuning.MaxPairVisits) { d.WorkLimit = true; break; }
+                    if (++d.PairVisits > PairVisitBudget) { d.WorkLimit = true; break; }
                     var pair = Pairs[p];
                     var a = Actors[pair.x]; var b = Actors[pair.y];
                     actualResidual = math.max(actualResidual, CombatBodyContacts.Penetration(a.Result.Position, a.Body, b.Result.Position, b.Body));
@@ -366,7 +374,7 @@ namespace MLFLegends.Combat
                 if (!d.WorkLimit) BuildPairs(ref d);
                 for (var p = 0; !d.WorkLimit && p < Pairs.Length; p++)
                 {
-                    if (++d.PairVisits > CombatContactTuning.MaxPairVisits) { d.WorkLimit = true; break; }
+                    if (++d.PairVisits > PairVisitBudget) { d.WorkLimit = true; break; }
                     var pair = Pairs[p]; var a = Actors[pair.x]; var b = Actors[pair.y];
                     if (!CombatBodyContacts.Sweep(a.Start, a.Result.Position, a.Body, b.Start, b.Result.Position, b.Body,
                         a.Id, b.Id, out _, out var depth)) continue;
@@ -387,7 +395,7 @@ namespace MLFLegends.Combat
                 // also covers final penetrations. Keep diagnostics inside the same explicit work budget.
                 for (var p = 0; !d.WorkLimit && p < Pairs.Length; p++)
                 {
-                    if (++d.PairVisits > CombatContactTuning.MaxPairVisits) { d.WorkLimit = true; break; }
+                    if (++d.PairVisits > PairVisitBudget) { d.WorkLimit = true; break; }
                     var a = Actors[Pairs[p].x]; var b = Actors[Pairs[p].y];
                     d.ResidualPenetration = math.max(d.ResidualPenetration,
                         CombatBodyContacts.Penetration(a.Result.Position, a.Body, b.Result.Position, b.Body));
@@ -412,6 +420,8 @@ namespace MLFLegends.Combat
                     Actors[i] = a;
                     continue;
                 }
+                CombatArenaGeometry.AddTouchingWalls(Shapes, a.MovementBody, a.Result.Position, CombatContactTuning.ContactGap, ref a.Walls);
+                if (a.Walls.Overflow) d.WallOverflowBodies++;
                 a.VelocityOut = ClipWalls(a, a.Velocity); // Inward velocity into a surface that blocked the body is gone.
                 if (!a.Legacy && a.CanRestoreSupport)
                 {
@@ -445,9 +455,11 @@ namespace MLFLegends.Combat
         // each body's velocity loses its inward part along the surfaces that blocked it. Sequential passes in sorted pair
         // order (deterministic) until no change exceeds VelocityTolerance or MaxIterations. Bodies without velocity next to
         // partners without velocity are untouched, so control, yielding and depenetration never become velocity.
+        // Budget exhaustion is not a partial success: see CombatContactDiagnostics.VelocityComplete.
         void ContactVelocities(ref CombatContactDiagnostics d)
         {
-            if (Contacts.Length == 0) return;
+            // A positional work limit already froze every body with zero velocity: nothing is left to exchange.
+            if (Contacts.Length == 0 || d.WorkLimit) return;
             CompactContacts();
             d.VelocityContacts = Contacts.Length;
             for (var pass = 0; pass < CombatContactTuning.MaxIterations; pass++)
@@ -455,7 +467,7 @@ namespace MLFLegends.Combat
                 var change = 0f;
                 for (var c = 0; c < Contacts.Length; c++)
                 {
-                    if (++d.PairVisits > CombatContactTuning.MaxPairVisits) { d.WorkLimit = true; return; }
+                    if (++d.PairVisits > PairVisitBudget) { d.WorkLimit = true; DiscardContactVelocities(ref d); return; }
                     var pair = Contacts[c];
                     var a = Actors[pair.x]; var b = Actors[pair.y];
                     if (a.Frozen && b.Frozen) continue;
@@ -480,6 +492,25 @@ namespace MLFLegends.Combat
             }
         }
 
+        void DiscardContactVelocities(ref CombatContactDiagnostics d)
+        {
+            d.VelocityComplete = false;
+            for (var i = 0; i < Actors.Length; i++)
+            {
+                var a = Actors[i];
+                if (a.Frozen || !InContact(i)) continue;
+                if (math.any(a.VelocityOut != 0)) d.VelocityDiscarded++;
+                a.VelocityOut = float2.zero;
+                Actors[i] = a;
+            }
+        }
+
+        bool InContact(int i)
+        {
+            for (var c = 0; c < Contacts.Length; c++) if (Contacts[c].x == i || Contacts[c].y == i) return true;
+            return false;
+        }
+
         // The owner reserves capacity for every distinct pair (n(n-1)/2), so a full list of distinct pairs already holds any
         // new one: compaction on overflow keeps the call allocation-free.
         void RecordContact(int2 pair)
@@ -497,26 +528,9 @@ namespace MLFLegends.Combat
             Contacts.Length = unique;
         }
 
-        // Removes the inward component along each recorded blocking normal; two passes settle a corner of two surfaces.
-        static float2 ClipWalls(in CombatContactActor a, float2 v)
-        {
-            if (a.Frozen) return float2.zero;
-            for (var pass = 0; pass < 2 && a.Walls > 0; pass++)
-            {
-                v -= a.Wall0 * math.min(0, math.dot(v, a.Wall0));
-                if (a.Walls > 1) v -= a.Wall1 * math.min(0, math.dot(v, a.Wall1));
-            }
-            return v;
-        }
-
-        static void AddWalls(ref CombatContactActor a, in CombatArenaMove move)
-        {
-            if (move.Walls == 0) return;
-            var walls = new CombatArenaMove { Wall0 = a.Wall0, Wall1 = a.Wall1, Walls = a.Walls };
-            CombatArenaGeometry.AddWall(ref walls, move.Wall0);
-            if (move.Walls > 1) CombatArenaGeometry.AddWall(ref walls, move.Wall1);
-            a.Wall0 = walls.Wall0; a.Wall1 = walls.Wall1; a.Walls = walls.Walls;
-        }
+        // Exact projection onto the cone of every active blocking normal (#70): satisfies all of them at once and keeps the
+        // tangent along a single wall; replaces two sequential passes that pushed velocity back into an acute corner.
+        static float2 ClipWalls(in CombatContactActor a, float2 v) => a.Frozen ? float2.zero : a.Walls.Clip(v);
 
         // Coulomb deceleration on the final support; nothing is stored for later release.
         static float2 Decelerate(in CombatContactActor a, float2 velocity, ref CombatContactDiagnostics d)
@@ -556,7 +570,7 @@ namespace MLFLegends.Combat
             var held = false;
             for (var p = 0; p < Pairs.Length; p++)
             {
-                if (++d.PairVisits > CombatContactTuning.MaxPairVisits) { d.WorkLimit = true; return false; }
+                if (++d.PairVisits > PairVisitBudget) { d.WorkLimit = true; return false; }
                 var pair = Pairs[p]; var a = Actors[pair.x]; var b = Actors[pair.y];
                 if (!CombatBodyContacts.Sweep(a.Start, a.Result.Position, a.Body, b.Start, b.Result.Position, b.Body,
                     a.Id, b.Id, out _, out var depth)
@@ -615,7 +629,7 @@ namespace MLFLegends.Combat
             var after = CombatArenaGeometry.Move(Shapes, a.MovementBody, before.Position, correction,
                 before.Velocity, before.Grounded, false, 0, a.Legacy, before.GroundHeight, integrateTime: false);
             if (after.Failure != CombatArenaFailure.None) { d.WorldRejections++; return float2.zero; }
-            AddWalls(ref a, after);
+            a.Walls.Add(after.Walls);
             var achieved = (after.Position - before.Position).xz;
             a.CorrectionUsed += math.length(achieved);
             // Passive displacement can never create running distance, even during landing or an attack.

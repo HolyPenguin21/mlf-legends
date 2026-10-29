@@ -1,6 +1,25 @@
-## Current #69 — Stage 05.1 decisions (2026-10-29)
+## Current #70 — Stage 05.1a decisions (2026-10-29)
 
-Only this section is current; every older "History" section keeps its own SHA/scope and is superseded where it disagrees (old key layouts, exact-limb intentions, velocity = displacement/dt, series limit 4, stage states).
+Only this section is current; #69 below is history where it disagrees. [Contract](STAGE05_1A_ATLAS_MIGRATION.md).
+- **D70-1 Wall velocity = exact cone projection.** Final velocity is the Euclidean projection onto {v : dot(v,n) ≥ 0} of a
+  minimal set of active normals (last blocked substep of every move + walls touched at the final position); redundant
+  normals are dropped exactly, overflow stops the body with a diagnostic. Replaces two passes over at most two normals.
+- **D70-2 Velocity-pass budget.** Exhaustion inside the velocity pass publishes the solved positions with zero contact
+  velocity (`VelocityComplete = false`, `VelocityDiscarded`); no impulse retry, no re-integration.
+- **D70-3 Scene obstacle.** The owner's `Arena Cube (1)` is an explicit arena source; no automatic collider scanning.
+- **D70-4 v2 art as data.** source_size/page/pivots come from the manifest and the imported Sprites; no square or 192×192
+  assumption. PhysicalAbility default clip `physical_ability`; `kick_spin` is a legacy id with a declared successor, used
+  only by the explicit migration and diagnostics.
+- **D70-5 Pivots and custom positions.** Feet line [96,136] for every frame plus the owner's per-frame horizontal custom
+  positions; a same-size Sprite rect shifted ≤ half a canvas is a custom image position (pivot shift, manifest pixels).
+- **D70-6 Explicit config migration.** Renamed slot clips and new clips are migrated by an owner command with a report;
+  valid T/curves/phases/Combat values are never reset; the project asset was migrated in Git with an old → new table.
+- **D70-7 Change policy.** Atlas/config changes apply on the next frame; a running strike keeps its windows and is drawn
+  only with frames of its simulated phase; new art is installed between battles / Restart.
+
+## History — #69 — Stage 05.1 decisions (2026-10-29)
+
+Only this section was current; every older "History" section keeps its own SHA/scope and is superseded where it disagrees (old key layouts, exact-limb intentions, velocity = displacement/dt, series limit 4, stage states).
 
 - **D69-1 Final contact velocity.** Velocity after contact is the physical final velocity, never achieved displacement / dt:
   inward normal parts against surfaces that blocked the body are removed (time of impact implicit in the move), touching

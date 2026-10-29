@@ -181,7 +181,8 @@ namespace MLFLegends.Combat
             var start = Stopwatch.GetTimestamp();
             new CombatContactJob { Actors = m_Movement, Cells = m_Cells, Seen = m_Seen, Pairs = m_ContactPairs, Contacts = m_Contacts,
                 Shapes = shapes, Impulses = m_Impulses.AsArray(), Diagnostics = m_ContactDiagnostics, Tick = tick, LandingTicks = landingTicks,
-                BattleNumber = session.BattleNumber, Physics = physics }.Schedule().Complete();
+                BattleNumber = session.BattleNumber, Physics = physics, PairVisitBudget = PairVisitBudgetOverride > 0 ? PairVisitBudgetOverride
+                    : CombatContactTuning.MaxPairVisits }.Schedule().Complete();
             LastMovementKernelMicroseconds = MicrosSince(start);
             LastContacts = m_ContactDiagnostics[0];
         }
@@ -197,6 +198,8 @@ namespace MLFLegends.Combat
         uint m_LastBuildTick;
         uint m_LastBuildBattle;
 
+        // Guard checks only (#70): a positive value replaces CombatContactTuning.MaxPairVisits for the following calls.
+        internal long PairVisitBudgetOverride;
         public long BuildCount { get; private set; }
         public double LastBuildMicroseconds { get; private set; }
         public double LastQueryMicroseconds { get; private set; }

@@ -97,1103 +97,1675 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: mage_female_01_00_0
+      name: idle_combat_000
       rect:
         serializedVersion: 2
-        x: 0
-        y: 1344
+        x: 4
+        y: 1852
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.5, y: 0.225}
+      pivot: {x: 0.479167, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: b05fba2c2ca7b734db4663f24c46fe62
-      internalID: 969546624
+      spriteID: 27619e7b29402d3d902eb47e9be5e1bf
+      internalID: -2060597600
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_1
+      name: idle_combat_001
       rect:
         serializedVersion: 2
-        x: 192
-        y: 1344
+        x: 204
+        y: 1852
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.5, y: 0.225}
+      pivot: {x: 0.46875, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: a9a9d6d07899d204483525218d11b6af
-      internalID: -1180552439
+      spriteID: 88e1622927cb7844e3ae2bcd091e93b8
+      internalID: -778035517
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_2
+      name: idle_combat_002
       rect:
         serializedVersion: 2
-        x: 384
-        y: 1344
+        x: 404
+        y: 1852
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.5, y: 0.225}
+      pivot: {x: 0.473958, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: c50f7cdddc62caf4ab09805d3a302c5c
-      internalID: -1902473016
+      spriteID: 46e038e35c7db25db3fa9efb2c4aef85
+      internalID: 1762626816
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_3
+      name: idle_combat_003
       rect:
         serializedVersion: 2
-        x: 576
-        y: 1344
+        x: 604
+        y: 1852
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.5, y: 0.225}
+      pivot: {x: 0.484375, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 6f1b7e17d0e95284baf11cada32077a6
-      internalID: -405403146
+      spriteID: 0bb122cd3391ebddafea3e07ecda72fa
+      internalID: 2059510390
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_4
+      name: idle_combat_004
       rect:
         serializedVersion: 2
-        x: 768
-        y: 1344
+        x: 804
+        y: 1852
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.5, y: 0.225}
+      pivot: {x: 0.473958, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 18304d044846a71429185b40f4027d5b
-      internalID: 373637236
+      spriteID: 696409729b8d17b9648b97a351c95826
+      internalID: 1470116647
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_5
+      name: idle_combat_005
       rect:
         serializedVersion: 2
-        x: 960
-        y: 1344
+        x: 1004
+        y: 1852
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.5, y: 0.225}
+      pivot: {x: 0.473958, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: fae9575f23c24b54c8d25405876b5e60
-      internalID: 291941157
+      spriteID: 5decf9089c0d88b9f3a8bde8b2e3a26b
+      internalID: 1186116917
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_6
+      name: run_000
       rect:
         serializedVersion: 2
-        x: 0
-        y: 1152
+        x: 4
+        y: 1684
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.6, y: 0.25}
+      pivot: {x: 0.479167, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 6a25090a8de00d7448e90469c174047c
-      internalID: -204077458
+      spriteID: 7630eff87c4d04f17a332198b042c151
+      internalID: 794902839
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_7
+      name: run_001
       rect:
         serializedVersion: 2
-        x: 192
-        y: 1152
+        x: 204
+        y: 1684
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.6, y: 0.25}
+      pivot: {x: 0.473958, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: e28bb2ef38e2d1d418dbd1446388af5a
-      internalID: -1703019354
+      spriteID: 89f34a6b42834b6c341e29b290f1be4e
+      internalID: 1844440162
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_8
+      name: run_002
       rect:
         serializedVersion: 2
-        x: 384
-        y: 1152
+        x: 404
+        y: 1684
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.54, y: 0.25}
+      pivot: {x: 0.473958, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: a12a8436d271ba14099c91becf474493
-      internalID: 354816379
+      spriteID: 48e50eab2aa32e33da560e3108579943
+      internalID: 1939172593
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_9
+      name: run_003
       rect:
         serializedVersion: 2
-        x: 576
-        y: 1152
+        x: 604
+        y: 1684
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.54, y: 0.25}
+      pivot: {x: 0.484375, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: d2307ed1a4b441149a43236af2cb203f
-      internalID: 435853849
+      spriteID: 4397a3f4dfd7255c1b9c07d3d643ae88
+      internalID: -426966388
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_10
+      name: run_004
       rect:
         serializedVersion: 2
-        x: 768
-        y: 1152
+        x: 804
+        y: 1684
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.54, y: 0.25}
+      pivot: {x: 0.479167, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 361affba1839db2428984dc35fc69ab6
-      internalID: 827793321
+      spriteID: c9d07d8338d3c50997579411eb298bb6
+      internalID: 751240494
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_11
+      name: run_005
       rect:
         serializedVersion: 2
-        x: 0
-        y: 960
+        x: 1004
+        y: 1684
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.5, y: 0.225}
+      pivot: {x: 0.473958, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 2558c32b68a45364e9f20d61066b039b
-      internalID: -51851814
+      spriteID: 9538cec37dbf6f0fe9c5b3f18a30c1f6
+      internalID: -248168634
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_12
+      name: jump_000
       rect:
         serializedVersion: 2
-        x: 192
-        y: 960
+        x: 4
+        y: 1516
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.5, y: 0.225}
+      pivot: {x: 0.479167, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 3d475030969d92849a452878cfe057d3
-      internalID: 636707295
+      spriteID: 3e7f811ad1accbc574a1731dc27fffbb
+      internalID: -535430225
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_13
+      name: jump_001
       rect:
         serializedVersion: 2
-        x: 384
-        y: 960
+        x: 204
+        y: 1516
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.5, y: 0.225}
+      pivot: {x: 0.473958, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 57d90227868369a47819ee7b7ee00688
-      internalID: 1284815293
+      spriteID: 235774c3dc841051a22879ca69e11c73
+      internalID: 942816153
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_14
+      name: jump_002
       rect:
         serializedVersion: 2
-        x: 576
-        y: 960
+        x: 404
+        y: 1516
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.5, y: 0.225}
+      pivot: {x: 0.473958, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 6e4d7ac147fdf074cae02e7d411a857f
-      internalID: -1208386382
+      spriteID: c2585b8c79e00b9dbf8a6d2d9a227428
+      internalID: -2136334889
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_15
+      name: jump_003
       rect:
         serializedVersion: 2
-        x: 768
-        y: 960
+        x: 604
+        y: 1516
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.5, y: 0.225}
+      pivot: {x: 0.484375, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 04d3892fa22abb041b06c9607e36b82d
-      internalID: -660559152
+      spriteID: 38709bd3d6ddd939047390e1cfa43603
+      internalID: -660104986
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_16
+      name: jump_004
       rect:
         serializedVersion: 2
-        x: 960
-        y: 960
+        x: 804
+        y: 1516
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.5, y: 0.225}
+      pivot: {x: 0.479167, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 35fb626efea8f564dba6cad42402af68
-      internalID: -1794790205
+      spriteID: 808b5837bac92dedb5808eb03fc96cf2
+      internalID: -1772205063
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_17
+      name: jump_005
       rect:
         serializedVersion: 2
-        x: 0
-        y: 768
+        x: 1004
+        y: 1516
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.50000006, y: 0.225}
+      pivot: {x: 0.473958, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: d2897dcde599f814daa61e997320f8aa
-      internalID: -876850695
+      spriteID: edd502db377096a2a0991fb7b2407006
+      internalID: 1041659777
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_18
+      name: punch_left_000
       rect:
         serializedVersion: 2
-        x: 192
-        y: 768
+        x: 4
+        y: 1348
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.5, y: 0.225}
+      pivot: {x: 0.479167, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 08cf8e943d452d340907906944bd9638
-      internalID: 50526527
+      spriteID: 28800e8292fbc7cdabcc2924d3c65119
+      internalID: -2055819223
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_19
+      name: punch_left_001
       rect:
         serializedVersion: 2
-        x: 384
-        y: 768
+        x: 204
+        y: 1348
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.5, y: 0.225}
+      pivot: {x: 0.473958, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 34af9a76ccd6f0e469709d9fcaaec7a6
-      internalID: -910266423
+      spriteID: 00b21c4519bf75130b8c080c1cc8e14b
+      internalID: 477689472
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_20
+      name: punch_left_002
       rect:
         serializedVersion: 2
-        x: 576
-        y: 768
+        x: 404
+        y: 1348
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.5, y: 0.225}
+      pivot: {x: 0.473958, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 8d8774cc2d139004bb2f39fe4622f4db
-      internalID: 1832980769
+      spriteID: b9450602df220566dca35f9e08bf369e
+      internalID: -180846694
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_21
+      name: punch_left_003
       rect:
         serializedVersion: 2
-        x: 768
-        y: 768
+        x: 604
+        y: 1348
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.5, y: 0.225}
+      pivot: {x: 0.484375, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 6638047a13d7059479d8ba78022ef41b
-      internalID: 679243668
+      spriteID: 76d96662dd60927b20aacc5ad0ccd223
+      internalID: 609268769
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_22
+      name: punch_left_004
       rect:
         serializedVersion: 2
-        x: 960
-        y: 768
+        x: 804
+        y: 1348
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.5, y: 0.225}
+      pivot: {x: 0.479167, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 66e698623c2422a428d6b63dbf3d3a92
-      internalID: 1682359028
+      spriteID: 3c37434c1b037a14108260bb1f694931
+      internalID: 1989887830
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_23
+      name: punch_left_005
       rect:
         serializedVersion: 2
-        x: 0
-        y: 576
+        x: 1004
+        y: 1348
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.5, y: 0.21}
+      pivot: {x: 0.46875, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 9400493546793174bb7e1bcded846b69
-      internalID: 81780272
+      spriteID: 0af20c4fbfb19d82ec89077a6b8610fe
+      internalID: -285581915
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_24
+      name: punch_right_000
       rect:
         serializedVersion: 2
-        x: 192
-        y: 576
+        x: 4
+        y: 1180
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.4969058, y: 0.13}
+      pivot: {x: 0.479167, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 71be1201ebf8e684e8be2d90282997cb
-      internalID: 706799761
+      spriteID: 11b5ae2d2c1bf0fdbab4ed009d33dc8d
+      internalID: 1051185368
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_25
+      name: punch_right_001
       rect:
         serializedVersion: 2
-        x: 384
-        y: 576
+        x: 204
+        y: 1180
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.5, y: 0.13}
+      pivot: {x: 0.473958, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 8e18bbf8222b98f4388745c74a43009f
-      internalID: -1630428471
+      spriteID: 315f1afbde0acaf3e1dcd4846b7061e3
+      internalID: 247750715
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_26
+      name: punch_right_002
       rect:
         serializedVersion: 2
-        x: 576
-        y: 576
+        x: 404
+        y: 1180
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.5, y: 0.13}
+      pivot: {x: 0.46875, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: f1c7f954483bfe844ac717c0d89690f9
-      internalID: -1016802482
+      spriteID: f4cf86cb2a0c1329124004eaba4ba196
+      internalID: 1929378425
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_27
+      name: punch_right_003
       rect:
         serializedVersion: 2
-        x: 768
-        y: 576
+        x: 604
+        y: 1180
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.5, y: 0.21}
+      pivot: {x: 0.484375, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: db8b303478300e24cae5202486a99979
-      internalID: -249933110
+      spriteID: abf68a2290877e926016255ef6ebaf19
+      internalID: 234600541
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_28
+      name: punch_right_004
       rect:
         serializedVersion: 2
-        x: 960
-        y: 576
+        x: 804
+        y: 1180
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.52, y: 0.225}
+      pivot: {x: 0.479167, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 4938249c58897ba448db57eb7b0047f1
-      internalID: 911598914
+      spriteID: 0a4930dd40a564102158b0e0d3b1c8ad
+      internalID: -1738566499
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_29
+      name: punch_right_005
       rect:
         serializedVersion: 2
-        x: 0
-        y: 384
+        x: 1004
+        y: 1180
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.4952034, y: 0.18}
+      pivot: {x: 0.479167, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 54366eb14673289408940ea7e8e0da61
-      internalID: -1198229085
+      spriteID: 5768dad70a0ff73bf2ecef8e65d49ddf
+      internalID: 1195057942
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_30
+      name: kick_left_000
       rect:
         serializedVersion: 2
-        x: 192
-        y: 384
+        x: 4
+        y: 1012
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.4961578, y: 0.18}
+      pivot: {x: 0.479167, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: c23cd3ba7a0982d45a0ef307004f3b5c
-      internalID: -97733966
+      spriteID: 0aa96caccae4d828dc76e11c7c20bc63
+      internalID: -430965316
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_31
+      name: kick_left_001
       rect:
         serializedVersion: 2
-        x: 384
-        y: 384
+        x: 204
+        y: 1012
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.5188368, y: 0.18}
+      pivot: {x: 0.442708, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: ca412dc026c380340aefcaca04a2f173
-      internalID: -1392510226
+      spriteID: c4bf583ea3d7b6d9721bb0538fc3abf2
+      internalID: -530544894
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_32
+      name: kick_left_002
       rect:
         serializedVersion: 2
-        x: 576
-        y: 384
+        x: 404
+        y: 1012
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.4896091, y: 0.18}
+      pivot: {x: 0.416667, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 77ad241ff9e4991418c827d78e8ed96d
-      internalID: -1026897495
+      spriteID: 4cda5d12b9c3c988577db41d4067657c
+      internalID: 1673350979
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_33
+      name: kick_left_003
       rect:
         serializedVersion: 2
-        x: 768
-        y: 384
+        x: 604
+        y: 1012
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.4913273, y: 0.18}
+      pivot: {x: 0.411458, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 7a0ac6010a7171f469ab8185ddcc5a58
-      internalID: 82756776
+      spriteID: 17308d088bc01889ac2dde44c95ec70e
+      internalID: -2124696280
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_34
+      name: kick_left_004
       rect:
         serializedVersion: 2
-        x: 960
-        y: 384
+        x: 804
+        y: 1012
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.49908575, y: 0.225}
+      pivot: {x: 0.411458, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: d1893445b88fd8d40b6aca64322b2376
-      internalID: 829070609
+      spriteID: e2d13873821af0713f17443c34d53b30
+      internalID: 1096414407
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_35
+      name: kick_left_005
       rect:
         serializedVersion: 2
-        x: 0
-        y: 192
+        x: 1004
+        y: 1012
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.49761066, y: 0.1623667}
+      pivot: {x: 0.489583, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 289eb5f4529309344a4e8302f572c5e6
-      internalID: -113433996
+      spriteID: ebe9d8f8bd455164791696ee40d0ba90
+      internalID: 1685417215
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_36
+      name: kick_right_000
       rect:
         serializedVersion: 2
-        x: 192
-        y: 192
+        x: 4
+        y: 844
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.57106954, y: 0.19040513}
+      pivot: {x: 0.479167, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 3f25c477b3ae3e146b54712ff8091792
-      internalID: -1050537395
+      spriteID: 6029c2a741153a796dfefb2f36ce8481
+      internalID: 115913419
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_37
+      name: kick_right_001
       rect:
         serializedVersion: 2
-        x: 384
-        y: 192
+        x: 204
+        y: 844
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.48612785, y: 0.17083018}
+      pivot: {x: 0.484375, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: bf4f77dadfe79944190ecbc2df66d959
-      internalID: -966043214
+      spriteID: 902f669fd54cd333d5c0b946c25d04e0
+      internalID: -932264392
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_38
+      name: kick_right_002
       rect:
         serializedVersion: 2
-        x: 576
-        y: 192
+        x: 404
+        y: 844
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.47972965, y: 0.17880535}
+      pivot: {x: 0.484375, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 444059952d755a540b073d7ac180102d
-      internalID: 1098540890
+      spriteID: 66d3eac321b8f0a7f18b6419ddf78617
+      internalID: 109064249
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_39
+      name: kick_right_003
       rect:
         serializedVersion: 2
-        x: 768
-        y: 192
+        x: 604
+        y: 844
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.414183, y: 0.18172614}
+      pivot: {x: 0.557292, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: e02447ef4230b5a4e8cbd7eff05598c2
-      internalID: -1593930085
+      spriteID: 5df5b31c0bb398f2f84b618ff90c5bc6
+      internalID: -1466488097
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_40
+      name: kick_right_004
       rect:
         serializedVersion: 2
-        x: 960
-        y: 192
+        x: 804
+        y: 844
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.5163307, y: 0.2335021}
+      pivot: {x: 0.526042, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: a10e86d6b1bca094a911f446208220fd
-      internalID: 1056861281
+      spriteID: 6f482786067ed5d50c338ff5d6af4b36
+      internalID: -1983321638
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_41
+      name: kick_right_005
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
+        x: 1004
+        y: 844
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.5091636, y: 0.19143765}
+      pivot: {x: 0.494792, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 2dc27db32af7e76488da6bbc5319d207
-      internalID: -1763426475
+      spriteID: fdfcdddeac109f667568ad646dd84056
+      internalID: -373363856
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_42
+      name: physical_ability_000
       rect:
         serializedVersion: 2
-        x: 192
-        y: 0
+        x: 4
+        y: 676
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.69542533, y: 0.17864168}
+      pivot: {x: 0.505208, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 4090cc614007d6f4388a6523348ae283
-      internalID: 180821396
+      spriteID: 7abf23c33c6d6191f35714df525787b0
+      internalID: 597489784
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_43
+      name: physical_ability_001
       rect:
         serializedVersion: 2
-        x: 384
-        y: 0
+        x: 204
+        y: 676
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.6707385, y: 0.1824863}
+      pivot: {x: 0.510417, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 3101ff0c1ef773c4a96efceb096ed3ea
-      internalID: 1745538212
+      spriteID: 478405d121228fb34cf1c41d0b44be6d
+      internalID: -1933318910
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_44
+      name: physical_ability_002
       rect:
         serializedVersion: 2
-        x: 576
-        y: 0
+        x: 404
+        y: 676
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.6857379, y: 0.12559934}
+      pivot: {x: 0.505208, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 7720241fcf1701443bc9ba001bc114da
-      internalID: -83345047
+      spriteID: f8a59722b9dec6e8cbe81ed0bd52288e
+      internalID: 744928366
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_45
+      name: physical_ability_003
       rect:
         serializedVersion: 2
-        x: 768
-        y: 0
+        x: 604
+        y: 676
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.6177883, y: 0.17917983}
+      pivot: {x: 0.546875, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 0888345588f48c74a9da7b21bf49072d
-      internalID: -1324339279
+      spriteID: f6ffb024a5037ae0a742aa9bc36115ed
+      internalID: -1783669149
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_46
+      name: physical_ability_004
       rect:
         serializedVersion: 2
-        x: 960
-        y: 0
+        x: 804
+        y: 676
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.6663615, y: 0.18232666}
+      pivot: {x: 0.541667, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 3abee7572d048894a84e3df7d0205aac
-      internalID: 1223285458
+      spriteID: 9408b80e8fed86a3bba4dc595df423f2
+      internalID: 1965482147
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_47
+      name: physical_ability_005
       rect:
         serializedVersion: 2
-        x: 1152
-        y: 0
+        x: 1004
+        y: 676
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.70972824, y: 0.1811762}
+      pivot: {x: 0.520833, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 021dfd23d1772184ebe3f8331496816f
-      internalID: 338775994
+      spriteID: 08494b6cfb2a8544c1fa68d8b540b6a4
+      internalID: -1627657369
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_48
+      name: physical_ability_006
       rect:
         serializedVersion: 2
-        x: 1344
-        y: 0
+        x: 1204
+        y: 676
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.4583505, y: 0.2425369}
+      pivot: {x: 0.5, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: f3e7d9d65aa828d4884a4f469a9ac687
-      internalID: -1192074697
+      spriteID: 1683ce7df7908dfff5bf1432cbdf7c03
+      internalID: 60354474
       vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: mage_female_01_00_49
+      name: physical_ability_007
       rect:
         serializedVersion: 2
-        x: 1536
-        y: 0
+        x: 1404
+        y: 676
         width: 192
-        height: 192
+        height: 160
       alignment: 9
-      pivot: {x: 0.49999937, y: 0.23596065}
+      pivot: {x: 0.515625, y: 0.15}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: a63755ad2ea2e1649b78fe8f736e7bdf
-      internalID: 913476178
+      spriteID: d7893f46bbed9c9855c51dbf4c0ff1a7
+      internalID: 639296383
       vertices: []
-      indices: 
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: block_000
+      rect:
+        serializedVersion: 2
+        x: 4
+        y: 508
+        width: 192
+        height: 160
+      alignment: 9
+      pivot: {x: 0.479167, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 067bc766f31ec7dfdd997df53f6a507e
+      internalID: -350439949
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: block_001
+      rect:
+        serializedVersion: 2
+        x: 204
+        y: 508
+        width: 192
+        height: 160
+      alignment: 9
+      pivot: {x: 0.489583, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 08cd87c8db58dc9b2cc10ac564f4beeb
+      internalID: 382072523
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: block_002
+      rect:
+        serializedVersion: 2
+        x: 404
+        y: 508
+        width: 192
+        height: 160
+      alignment: 9
+      pivot: {x: 0.505208, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f60318f41deaf06a2509dfa8d569c75f
+      internalID: 873329512
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: block_003
+      rect:
+        serializedVersion: 2
+        x: 604
+        y: 508
+        width: 192
+        height: 160
+      alignment: 9
+      pivot: {x: 0.505208, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6149299faa605d6b0a0dcef9e1a67293
+      internalID: -1756084416
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dash_000
+      rect:
+        serializedVersion: 2
+        x: 4
+        y: 340
+        width: 192
+        height: 160
+      alignment: 9
+      pivot: {x: 0.479167, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5e442fce8678c0cc813c7e35f6faa3e2
+      internalID: 1746647578
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dash_001
+      rect:
+        serializedVersion: 2
+        x: 204
+        y: 340
+        width: 192
+        height: 160
+      alignment: 9
+      pivot: {x: 0.489583, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cacab53691ee33bf55f772dc76082843
+      internalID: -1689403916
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dash_002
+      rect:
+        serializedVersion: 2
+        x: 404
+        y: 340
+        width: 192
+        height: 160
+      alignment: 9
+      pivot: {x: 0.505208, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e83c44dc6782baa6de8e9790b01b4610
+      internalID: -1107151910
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dash_003
+      rect:
+        serializedVersion: 2
+        x: 604
+        y: 340
+        width: 192
+        height: 160
+      alignment: 9
+      pivot: {x: 0.505208, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4a452c20007b9ef80d666081423286f2
+      internalID: -1845715561
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dash_004
+      rect:
+        serializedVersion: 2
+        x: 804
+        y: 340
+        width: 192
+        height: 160
+      alignment: 9
+      pivot: {x: 0.515625, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9fadad97e29fd4b6774b9505b369989a
+      internalID: 412562641
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dash_005
+      rect:
+        serializedVersion: 2
+        x: 1004
+        y: 340
+        width: 192
+        height: 160
+      alignment: 9
+      pivot: {x: 0.489583, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4ca19584dd4d42a251b592fb29df62bc
+      internalID: 952458298
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skill_light_000
+      rect:
+        serializedVersion: 2
+        x: 4
+        y: 172
+        width: 192
+        height: 160
+      alignment: 9
+      pivot: {x: 0.489583, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8c34df37d3bf3f8ea8758d7b13fa0186
+      internalID: -634194616
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skill_light_001
+      rect:
+        serializedVersion: 2
+        x: 204
+        y: 172
+        width: 192
+        height: 160
+      alignment: 9
+      pivot: {x: 0.489583, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 184e19cd0025edd1516049755961bc3a
+      internalID: -592869736
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skill_light_002
+      rect:
+        serializedVersion: 2
+        x: 404
+        y: 172
+        width: 192
+        height: 160
+      alignment: 9
+      pivot: {x: 0.484375, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c97c8300d7944f078d15f77f5688edf1
+      internalID: -178272792
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skill_light_003
+      rect:
+        serializedVersion: 2
+        x: 604
+        y: 172
+        width: 192
+        height: 160
+      alignment: 9
+      pivot: {x: 0.479167, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: adbc20f4754b756dd052f533c326badb
+      internalID: 1591909206
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skill_light_004
+      rect:
+        serializedVersion: 2
+        x: 804
+        y: 172
+        width: 192
+        height: 160
+      alignment: 9
+      pivot: {x: 0.489583, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a4b91265c272c8fc39bab36ea2b32346
+      internalID: -912486114
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skill_light_005
+      rect:
+        serializedVersion: 2
+        x: 1004
+        y: 172
+        width: 192
+        height: 160
+      alignment: 9
+      pivot: {x: 0.489583, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8ec861af18fcf49d97a333079e70f161
+      internalID: 747386400
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skill_complex_000
+      rect:
+        serializedVersion: 2
+        x: 4
+        y: 4
+        width: 192
+        height: 160
+      alignment: 9
+      pivot: {x: 0.5, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 59cee42370b862041fb8ff9b4e286bde
+      internalID: 1831968445
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skill_complex_001
+      rect:
+        serializedVersion: 2
+        x: 204
+        y: 4
+        width: 192
+        height: 160
+      alignment: 9
+      pivot: {x: 0.494792, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 585dcb712a738663b2023c8061d1c3a8
+      internalID: -731526313
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skill_complex_002
+      rect:
+        serializedVersion: 2
+        x: 404
+        y: 4
+        width: 192
+        height: 160
+      alignment: 9
+      pivot: {x: 0.494792, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ea8cc25fea5e9bbe9314707a3c80f6d5
+      internalID: -1024230938
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skill_complex_003
+      rect:
+        serializedVersion: 2
+        x: 604
+        y: 4
+        width: 192
+        height: 160
+      alignment: 9
+      pivot: {x: 0.5, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 21a2b2c3a4d047342f987052292640d4
+      internalID: -1123996035
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skill_complex_004
+      rect:
+        serializedVersion: 2
+        x: 804
+        y: 4
+        width: 192
+        height: 160
+      alignment: 9
+      pivot: {x: 0.505208, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8d08df3d6cb7c137366709a893111f0c
+      internalID: -1948279491
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skill_complex_005
+      rect:
+        serializedVersion: 2
+        x: 1004
+        y: 4
+        width: 192
+        height: 160
+      alignment: 9
+      pivot: {x: 0.494792, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d2da6367a7e10bf090081bcfe9b7be01
+      internalID: -834257080
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skill_complex_006
+      rect:
+        serializedVersion: 2
+        x: 1204
+        y: 4
+        width: 192
+        height: 160
+      alignment: 9
+      pivot: {x: 0.505208, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 84a5d804507d853b78267a2a6958825e
+      internalID: -597297613
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skill_complex_007
+      rect:
+        serializedVersion: 2
+        x: 1404
+        y: 4
+        width: 192
+        height: 160
+      alignment: 9
+      pivot: {x: 0.505208, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4e86fc346323c03edddf133ad68b3ed3
+      internalID: -869867152
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skill_complex_008
+      rect:
+        serializedVersion: 2
+        x: 1604
+        y: 4
+        width: 192
+        height: 160
+      alignment: 9
+      pivot: {x: 0.505208, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4a4345a28c971bf6de94e4346a4d9e2f
+      internalID: -1037472879
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: skill_complex_009
+      rect:
+        serializedVersion: 2
+        x: 1804
+        y: 4
+        width: 192
+        height: 160
+      alignment: 9
+      pivot: {x: 0.5, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b2eea1cc8c43764bbd8534b78c2793c5
+      internalID: 326289261
+      vertices: []
+      indices:
       edges: []
       weights: []
     outline: []
@@ -1212,56 +1784,82 @@ TextureImporter:
       - key: SpriteEditor.SliceSettings
         value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":192.0,"y":192.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":1,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
-      mage_female_01_00_0: 969546624
-      mage_female_01_00_1: -1180552439
-      mage_female_01_00_10: 827793321
-      mage_female_01_00_11: -51851814
-      mage_female_01_00_12: 636707295
-      mage_female_01_00_13: 1284815293
-      mage_female_01_00_14: -1208386382
-      mage_female_01_00_15: -660559152
-      mage_female_01_00_16: -1794790205
-      mage_female_01_00_17: -876850695
-      mage_female_01_00_18: 50526527
-      mage_female_01_00_19: -910266423
-      mage_female_01_00_2: -1902473016
-      mage_female_01_00_20: 1832980769
-      mage_female_01_00_21: 679243668
-      mage_female_01_00_22: 1682359028
-      mage_female_01_00_23: 81780272
-      mage_female_01_00_24: 706799761
-      mage_female_01_00_25: -1630428471
-      mage_female_01_00_26: -1016802482
-      mage_female_01_00_27: -249933110
-      mage_female_01_00_28: 911598914
-      mage_female_01_00_29: -1198229085
-      mage_female_01_00_3: -405403146
-      mage_female_01_00_30: -97733966
-      mage_female_01_00_31: -1392510226
-      mage_female_01_00_32: -1026897495
-      mage_female_01_00_33: 82756776
-      mage_female_01_00_34: 829070609
-      mage_female_01_00_35: -113433996
-      mage_female_01_00_36: -1050537395
-      mage_female_01_00_37: -966043214
-      mage_female_01_00_38: 1098540890
-      mage_female_01_00_39: -1593930085
-      mage_female_01_00_4: 373637236
-      mage_female_01_00_40: 1056861281
-      mage_female_01_00_41: -1763426475
-      mage_female_01_00_42: 180821396
-      mage_female_01_00_43: 1745538212
-      mage_female_01_00_44: -83345047
-      mage_female_01_00_45: -1324339279
-      mage_female_01_00_46: 1223285458
-      mage_female_01_00_47: 338775994
-      mage_female_01_00_48: -1192074697
-      mage_female_01_00_49: 913476178
-      mage_female_01_00_5: 291941157
-      mage_female_01_00_6: -204077458
-      mage_female_01_00_7: -1703019354
-      mage_female_01_00_8: 354816379
-      mage_female_01_00_9: 435853849
+      block_000: -350439949
+      block_001: 382072523
+      block_002: 873329512
+      block_003: -1756084416
+      dash_000: 1746647578
+      dash_001: -1689403916
+      dash_002: -1107151910
+      dash_003: -1845715561
+      dash_004: 412562641
+      dash_005: 952458298
+      idle_combat_000: -2060597600
+      idle_combat_001: -778035517
+      idle_combat_002: 1762626816
+      idle_combat_003: 2059510390
+      idle_combat_004: 1470116647
+      idle_combat_005: 1186116917
+      jump_000: -535430225
+      jump_001: 942816153
+      jump_002: -2136334889
+      jump_003: -660104986
+      jump_004: -1772205063
+      jump_005: 1041659777
+      kick_left_000: -430965316
+      kick_left_001: -530544894
+      kick_left_002: 1673350979
+      kick_left_003: -2124696280
+      kick_left_004: 1096414407
+      kick_left_005: 1685417215
+      kick_right_000: 115913419
+      kick_right_001: -932264392
+      kick_right_002: 109064249
+      kick_right_003: -1466488097
+      kick_right_004: -1983321638
+      kick_right_005: -373363856
+      physical_ability_000: 597489784
+      physical_ability_001: -1933318910
+      physical_ability_002: 744928366
+      physical_ability_003: -1783669149
+      physical_ability_004: 1965482147
+      physical_ability_005: -1627657369
+      physical_ability_006: 60354474
+      physical_ability_007: 639296383
+      punch_left_000: -2055819223
+      punch_left_001: 477689472
+      punch_left_002: -180846694
+      punch_left_003: 609268769
+      punch_left_004: 1989887830
+      punch_left_005: -285581915
+      punch_right_000: 1051185368
+      punch_right_001: 247750715
+      punch_right_002: 1929378425
+      punch_right_003: 234600541
+      punch_right_004: -1738566499
+      punch_right_005: 1195057942
+      run_000: 794902839
+      run_001: 1844440162
+      run_002: 1939172593
+      run_003: -426966388
+      run_004: 751240494
+      run_005: -248168634
+      skill_complex_000: 1831968445
+      skill_complex_001: -731526313
+      skill_complex_002: -1024230938
+      skill_complex_003: -1123996035
+      skill_complex_004: -1948279491
+      skill_complex_005: -834257080
+      skill_complex_006: -597297613
+      skill_complex_007: -869867152
+      skill_complex_008: -1037472879
+      skill_complex_009: 326289261
+      skill_light_000: -634194616
+      skill_light_001: -592869736
+      skill_light_002: -178272792
+      skill_light_003: 1591909206
+      skill_light_004: -912486114
+      skill_light_005: 747386400
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -5,7 +5,7 @@ namespace MLFLegends.Combat
     /// <summary>
     /// Semantic strike slots (#69). Values are stable: they appear in replays and logs. Explicit migration of the Stage 05.1
     /// ids: 1 PunchLeft → Hand1, 2 PunchRight → Hand2, 3 KickLeft → Foot1, 4 KickRight → Foot2, 5 KickSpin → PhysicalAbility
-    /// (kick_spin is only the compatibility clip of that slot). Which clip a slot plays is per-character data.
+    /// (physical_ability in the v2 art, kick_spin in v1). Which clip a slot plays is per-character data.
     /// </summary>
     public enum CombatAttackKind : byte
     {
