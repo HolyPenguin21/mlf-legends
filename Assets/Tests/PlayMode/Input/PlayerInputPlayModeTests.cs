@@ -34,6 +34,12 @@ namespace MLFLegends.Tests.PlayMode
         float m_TimeScale;
         int m_CaptureFramerate;
 
+        // A test that replaces the default World records the original here; the fixture's UnityTearDown restores it and
+        // disposes the replacement even when the test fails (#69: a failed coroutine never ran its own finally, and every
+        // later test of the ordered run inherited the incomplete World).
+        World m_OriginalWorld;
+        World m_ReplacementWorld;
+
         static World DefaultWorld => World.DefaultGameObjectInjectionWorld;
 
         static EntityManager Manager => DefaultWorld.EntityManager;
@@ -109,6 +115,11 @@ namespace MLFLegends.Tests.PlayMode
         [UnityTearDown]
         public IEnumerator UnloadScenesAndEndTheBattle()
         {
+            if (m_OriginalWorld != null)
+                World.DefaultGameObjectInjectionWorld = m_OriginalWorld;
+            if (m_ReplacementWorld != null && m_ReplacementWorld.IsCreated)
+                m_ReplacementWorld.Dispose();
+            m_OriginalWorld = m_ReplacementWorld = null;
             foreach (var scene in SmokeScenes())
                 SceneManager.UnloadSceneAsync(scene);
             yield return Until(() => SmokeScenes().Length == 0);
@@ -415,66 +426,59 @@ namespace MLFLegends.Tests.PlayMode
             yield return null;
             var a = DefaultWorld;
             var producerA = Producer;
-            World b = null;
-            try
+            m_OriginalWorld = a;
+            World.DefaultGameObjectInjectionWorld = null; // the scene is enabled before any World exists
+            yield return LoadSmokeScene();
+            var firstScene = SmokeScenes().Single();
+            var first = Adapter(firstScene);
+            Assert.That(first.Capture, Is.Not.Null);
+            Assert.That(first.BoundWorld, Is.Null);
+            Down(Key.Space);
+            Up(Key.Space);
+            yield return null;
+            Assert.That(first.Capture.PendingPressed, Is.EqualTo(CommandButtons.Jump), "Recorded while no World exists...");
+
+            World.DefaultGameObjectInjectionWorld = a;
+            yield return null;
+            Assert.That(producerA.Source, Is.SameAs(first.Capture), "...attached once the World appears...");
+            Assert.That(first.Capture.PendingPressed, Is.EqualTo(CommandButtons.None), "...without the stale press.");
+
+            // A combat World the CombatSmoke scene accepts: its bootstrap requires the World's arena owner (#69). Without
+            // it the second scene's start is rightly rejected with an error, which failed this test.
+            var b = m_ReplacementWorld = new World("Player input test World B");
+            DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups(b, new[]
             {
-                World.DefaultGameObjectInjectionWorld = null; // the scene is enabled before any World exists
-                yield return LoadSmokeScene();
-                var firstScene = SmokeScenes().Single();
-                var first = Adapter(firstScene);
-                Assert.That(first.Capture, Is.Not.Null);
-                Assert.That(first.BoundWorld, Is.Null);
-                Down(Key.Space);
-                Up(Key.Space);
-                yield return null;
-                Assert.That(first.Capture.PendingPressed, Is.EqualTo(CommandButtons.Jump), "Recorded while no World exists...");
+                typeof(BeginSimulationEntityCommandBufferSystem), typeof(FixedStepSimulationSystemGroup),
+                typeof(CombatArenaSystem), typeof(BattleLifecycleSystem), typeof(CombatClockSystem),
+                typeof(CombatCommandCollectionSystemGroup), typeof(CombatCommandProcessorSystem), typeof(PlayerInputCommandSystem),
+            });
+            var producerB = b.GetExistingSystemManaged<PlayerInputCommandSystem>();
+            Down(Key.I);
+            Up(Key.I);
+            yield return null;
+            World.DefaultGameObjectInjectionWorld = b;
+            yield return null;
+            Assert.That(producerB.Source, Is.SameAs(first.Capture), "A -> B without disable/enable.");
+            Assert.That(producerA.Source, Is.Null, "Detached from A.");
+            Assert.That(first.Capture.PendingPressed, Is.EqualTo(CommandButtons.None));
 
-                World.DefaultGameObjectInjectionWorld = a;
-                yield return null;
-                Assert.That(producerA.Source, Is.SameAs(first.Capture), "...attached once the World appears...");
-                Assert.That(first.Capture.PendingPressed, Is.EqualTo(CommandButtons.None), "...without the stale press.");
+            yield return LoadSmokeScene(); // a later adapter in B
+            var second = Adapter(SmokeScenes().Single(s => s != firstScene));
+            Assert.That(producerB.Source, Is.SameAs(second.Capture));
+            yield return null;
+            yield return null;
+            Assert.That(producerB.Source, Is.SameAs(second.Capture), "The replaced adapter does not retake control.");
 
-                b = new World("Player input test World B");
-                DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups(b, new[]
-                {
-                    typeof(BeginSimulationEntityCommandBufferSystem), typeof(FixedStepSimulationSystemGroup),
-                    typeof(BattleLifecycleSystem), typeof(CombatClockSystem), typeof(CombatCommandCollectionSystemGroup),
-                    typeof(CombatCommandProcessorSystem), typeof(PlayerInputCommandSystem),
-                });
-                var producerB = b.GetExistingSystemManaged<PlayerInputCommandSystem>();
-                Down(Key.I);
-                Up(Key.I);
-                yield return null;
-                World.DefaultGameObjectInjectionWorld = b;
-                yield return null;
-                Assert.That(producerB.Source, Is.SameAs(first.Capture), "A -> B without disable/enable.");
-                Assert.That(producerA.Source, Is.Null, "Detached from A.");
-                Assert.That(first.Capture.PendingPressed, Is.EqualTo(CommandButtons.None));
+            World.DefaultGameObjectInjectionWorld = a;
+            yield return null;
+            Assert.That(producerA.Source, Is.SameAs(second.Capture), "B -> A: the later adapter wins whatever the update order.");
+            Assert.That(producerB.Source, Is.Null);
+            Assert.That(first.BoundWorld, Is.SameAs(a));
 
-                yield return LoadSmokeScene(); // a later adapter in B
-                var second = Adapter(SmokeScenes().Single(s => s != firstScene));
-                Assert.That(producerB.Source, Is.SameAs(second.Capture));
-                yield return null;
-                yield return null;
-                Assert.That(producerB.Source, Is.SameAs(second.Capture), "The replaced adapter does not retake control.");
-
-                World.DefaultGameObjectInjectionWorld = a;
-                yield return null;
-                Assert.That(producerA.Source, Is.SameAs(second.Capture), "B -> A: the later adapter wins whatever the update order.");
-                Assert.That(producerB.Source, Is.Null);
-                Assert.That(first.BoundWorld, Is.SameAs(a));
-
-                Object.Destroy(second);
-                yield return null;
-                Assert.That(producerA.Source, Is.Null, "Destroying the active adapter detaches it.");
-                Assert.That(second.Capture == null || second == null, Is.True);
-            }
-            finally
-            {
-                World.DefaultGameObjectInjectionWorld = a;
-                if (b != null && b.IsCreated)
-                    b.Dispose();
-            }
+            Object.Destroy(second);
+            yield return null;
+            Assert.That(producerA.Source, Is.Null, "Destroying the active adapter detaches it.");
+            Assert.That(second.Capture == null || second == null, Is.True);
         }
 
         [UnityTest]

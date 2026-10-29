@@ -96,13 +96,14 @@ namespace MLFLegends.Combat
         NativeList<uint> m_Seen;
         NativeList<CombatContactActor> m_Movement;
         NativeList<int2> m_ContactPairs;
+        NativeList<int2> m_Contacts;
         NativeArray<CombatContactDiagnostics> m_ContactDiagnostics;
         NativeList<CombatArenaShape> m_EmptyShapes;
         NativeList<CombatImpulse> m_Impulses;
         public CombatContactDiagnostics LastContacts { get; private set; }
         public double LastMovementKernelMicroseconds { get; private set; }
         public long MovementScratchCapacityBytes => !m_Allocated ? 0 : (long)m_Movement.Capacity * UnsafeUtility.SizeOf<CombatContactActor>()
-            + (long)m_ContactPairs.Capacity * UnsafeUtility.SizeOf<int2>() + UnsafeUtility.SizeOf<CombatContactDiagnostics>()
+            + (long)(m_ContactPairs.Capacity + m_Contacts.Capacity) * UnsafeUtility.SizeOf<int2>() + UnsafeUtility.SizeOf<CombatContactDiagnostics>()
             + (long)m_EmptyShapes.Capacity * UnsafeUtility.SizeOf<CombatArenaShape>()
             + (long)m_Impulses.Capacity * UnsafeUtility.SizeOf<CombatImpulse>();
         internal NativeArray<CombatArenaShape> EmptyShapes => m_EmptyShapes.AsArray();
@@ -116,14 +117,14 @@ namespace MLFLegends.Combat
         internal NativeList<CombatContactActor> BeginMovement()
         {
             m_Published = false;
-            m_Movement.Clear(); m_ContactPairs.Clear();
+            m_Movement.Clear(); m_ContactPairs.Clear(); m_Contacts.Clear();
             return m_Movement;
         }
 
         internal void EndMovement()
         {
             // Do not retain Entity/pair rows across pause, Despawn, End, Restart or World replacement.
-            m_Movement.Clear(); m_ContactPairs.Clear(); m_Cells.Clear(); m_Impulses.Clear();
+            m_Movement.Clear(); m_ContactPairs.Clear(); m_Contacts.Clear(); m_Cells.Clear(); m_Impulses.Clear();
         }
 
         // impulses: Movement's pending input of this tick, copied into owner scratch for the job (consumed by the caller).
@@ -175,9 +176,10 @@ namespace MLFLegends.Combat
             var n = m_Movement.Length;
             var maxPairs = n * (n - 1) / 2;
             if (maxPairs > m_ContactPairs.Capacity) m_ContactPairs.Capacity = math.max(maxPairs, m_ContactPairs.Capacity * 2);
+            if (maxPairs > m_Contacts.Capacity) m_Contacts.Capacity = math.max(maxPairs, m_Contacts.Capacity * 2);
             m_Seen.Resize(n, NativeArrayOptions.ClearMemory);
             var start = Stopwatch.GetTimestamp();
-            new CombatContactJob { Actors = m_Movement, Cells = m_Cells, Seen = m_Seen, Pairs = m_ContactPairs,
+            new CombatContactJob { Actors = m_Movement, Cells = m_Cells, Seen = m_Seen, Pairs = m_ContactPairs, Contacts = m_Contacts,
                 Shapes = shapes, Impulses = m_Impulses.AsArray(), Diagnostics = m_ContactDiagnostics, Tick = tick, LandingTicks = landingTicks,
                 BattleNumber = session.BattleNumber, Physics = physics }.Schedule().Complete();
             LastMovementKernelMicroseconds = MicrosSince(start);
@@ -226,6 +228,7 @@ namespace MLFLegends.Combat
                 m_Seen = new NativeList<uint>(1, Allocator.Persistent);
                 m_Movement = new NativeList<CombatContactActor>(1, Allocator.Persistent);
                 m_ContactPairs = new NativeList<int2>(1, Allocator.Persistent);
+                m_Contacts = new NativeList<int2>(1, Allocator.Persistent);
                 m_ContactDiagnostics = new NativeArray<CombatContactDiagnostics>(1, Allocator.Persistent);
                 m_EmptyShapes = new NativeList<CombatArenaShape>(1, Allocator.Persistent);
                 m_Impulses = new NativeList<CombatImpulse>(1, Allocator.Persistent);
@@ -251,6 +254,7 @@ namespace MLFLegends.Combat
             if (m_EmptyShapes.IsCreated) m_EmptyShapes.Dispose();
             if (m_ContactDiagnostics.IsCreated) m_ContactDiagnostics.Dispose();
             if (m_ContactPairs.IsCreated) m_ContactPairs.Dispose();
+            if (m_Contacts.IsCreated) m_Contacts.Dispose();
             if (m_Movement.IsCreated) m_Movement.Dispose();
             if (m_Seen.IsCreated) m_Seen.Dispose();
             if (m_Cells.IsCreated) m_Cells.Dispose();

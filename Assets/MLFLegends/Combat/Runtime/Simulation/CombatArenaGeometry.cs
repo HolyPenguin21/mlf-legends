@@ -52,6 +52,10 @@ namespace MLFLegends.Combat
         public float3 Position;
         public float Velocity, GroundHeight, ControlledDistance;
         public float2 Displacement; // Achieved X/Z travel, excluding initial depenetration.
+        // Up to two distinct outward X/Z normals of world surfaces that blocked planar travel during this move (Walls of
+        // them valid). The contact solver removes the inward velocity along them: velocity follows actual contacts.
+        public float2 Wall0, Wall1;
+        public byte Walls;
         public bool Grounded, Landed;
         public CombatArenaFailure Failure;
     }
@@ -248,6 +252,18 @@ namespace MLFLegends.Combat
             return clipped;
         }
 
+        /// <summary>Records a distinct outward blocking normal (at most two; a third distinct one is rare and not kept).</summary>
+        public static void AddWall(ref CombatArenaMove move, float2 normal)
+        {
+            if (!math.all(math.isfinite(normal)) || math.lengthsq(normal) < .5f) return;
+            if (move.Walls > 0 && math.dot(move.Wall0, normal) > .9999f) return;
+            if (move.Walls > 1 && math.dot(move.Wall1, normal) > .9999f) return;
+            if (move.Walls == 0) move.Wall0 = normal;
+            else if (move.Walls == 1) move.Wall1 = normal;
+            else return;
+            move.Walls++;
+        }
+
         static bool Clear(NativeArray<CombatArenaShape> shapes, in CombatBody body, float3 p)
         {
             if (shapes.IsCreated) foreach (var s in shapes) if (Overlap(s, p, body, out _)) return false;
@@ -316,7 +332,10 @@ namespace MLFLegends.Combat
                     var touched = false;
                     if (shapes.IsCreated) foreach (var s in shapes)
                         if (Side(s, candidate, body, out var correction))
-                        { candidate = WithXz(candidate, Xz(candidate) + correction); touched = true; }
+                        {
+                            candidate = WithXz(candidate, Xz(candidate) + correction); touched = true;
+                            AddWall(ref result, math.normalize(correction));
+                        }
                     if (!touched) { resolved = true; break; }
                 }
                 if (!resolved) { result.Failure = CombatArenaFailure.UnresolvedContact; return result; }
@@ -326,7 +345,11 @@ namespace MLFLegends.Combat
                 {
                     var supported = FollowGround(shapes, body, p, Xz(candidate) - Xz(p), legacy, legacyHeight);
                     if (!HeadBlocked(shapes, body, p, supported) && Clear(shapes, body, supported)) candidate = supported;
-                    else candidate = p;
+                    else
+                    {
+                        candidate = p;
+                        if (math.lengthsq(control) > 0) AddWall(ref result, -math.normalize(control)); // Blocked step.
+                    }
                 }
                 if (!Clear(shapes, body, candidate)) { result.Failure = CombatArenaFailure.UnresolvedContact; return result; }
                 p = candidate;

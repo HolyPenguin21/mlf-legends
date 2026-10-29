@@ -18,8 +18,8 @@ namespace MLFLegends.Combat
     /// Stage 04.4: it also owns the World's single <see cref="CombatImpulse"/> input buffer and the physical X/Z
     /// <see cref="CombatMotion.ExternalVelocity"/>. Every entry present at this call is consumed exactly once (applied, dropped
     /// or rejected, see CombatContactDiagnostics) after a successful solve; one integrator, no second clock or queue owner.
-    /// A fighter whose InCombat is disabled loses its external velocity here; impulses addressed to it are dropped, so
-    /// re-enabling never releases an old impulse.
+    /// A fighter whose InCombat is disabled, or whose whole entity is Disabled, loses its external velocity here; impulses
+    /// addressed to it are dropped, so re-enabling never releases an old impulse.
     /// </remarks>
     [UpdateInGroup(typeof(CombatStateUpdateSystemGroup))]
     public partial struct CombatMovementSystem : ISystem
@@ -167,6 +167,11 @@ namespace MLFLegends.Combat
                 SystemAPI.GetBuffer<CombatImpulse>(m_Impulses).Clear();
                 foreach (var outOfCombat in SystemAPI.Query<RefRW<CombatMotion>>().WithDisabled<InCombat>())
                     if (math.any(outOfCombat.ValueRO.ExternalVelocity != 0)) outOfCombat.ValueRW.ExternalVelocity = float2.zero;
+                // A whole-entity Disabled fighter is invisible to every default query (including the one above): clear it
+                // explicitly, so removing Disabled never releases a stored impulse either (#69). Vertical state unchanged.
+                foreach (var disabled in SystemAPI.Query<RefRW<CombatMotion>>().WithAll<Disabled>()
+                    .WithOptions(EntityQueryOptions.IncludeDisabledEntities | EntityQueryOptions.IgnoreComponentEnabledState))
+                    if (math.any(disabled.ValueRO.ExternalVelocity != 0)) disabled.ValueRW.ExternalVelocity = float2.zero;
             }
             finally { owner.EndMovement(); }
         }
