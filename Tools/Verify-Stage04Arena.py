@@ -117,6 +117,40 @@ for radius in (.01,.3,1,10,32):
     length = min(radius/4, math.sqrt(4*radius*skin))
     assert radius - math.sqrt(radius*radius-length*length/4) < skin
 
+# Focused SOURCE / MODEL counterexamples of reviewed head, not Unity/C# failures.
+reviewed = '16056b409723e7191897ba3bb75c5b7e56d11c87'
+old_geometry = subprocess.check_output(['git','show',reviewed+':Assets/MLFLegends/Combat/Runtime/Simulation/CombatArenaGeometry.cs'],cwd=ROOT,text=True)
+old_owner = subprocess.check_output(['git','show',reviewed+':Assets/MLFLegends/Combat/Runtime/Simulation/CombatArenaSystem.cs'],cwd=ROOT,text=True)
+assert 'var dy = vertical / count;' in old_geometry and 'ReleasedBattleNumber' in old_owner
+vertical = abs((-1 - 20/60) / 60)
+old_steps = math.ceil((.06 + vertical) / math.sqrt(4*.3*skin))
+old_early_control = sum(.06/old_steps for i in range(old_steps)
+                        if .01 - vertical*(i+1)/old_steps > 0)
+assert abs(old_early_control - .02) < 1e-9
+old_roof_ejection_x = -.27 - (5 - .27) - .3
+assert abs(old_roof_ejection_x + 5.3) < 1e-9
+roof_foot_limit = 3.01 - 2 + skin
+roof_x_limit = roof_foot_limit / .5 - 2 - .3
+assert abs(roof_x_limit + .2796) < 1e-9
+clip_models = 0
+for _ in range(1000):
+    slope = rng.uniform(.1,1); dx = rng.uniform(.001,.16)
+    clearance = rng.uniform(0,slope*dx)
+    exact = clearance/(slope*dx); lo, hi = 0., 1.
+    for i in range(12):
+        middle = (lo+hi)/2
+        if slope*dx*middle > clearance: hi = middle
+        else: lo = middle
+    assert lo <= exact + 1e-12 and exact-lo <= 1/4096 + 1e-12
+    clip_models += 1
+adapter = (base_runtime/'Bootstrap/CombatArenaAuthoring.cs').read_text()
+update = adapter.split('void Update()',1)[1].split('void Bind(',1)[0]
+assert 'CreateEntityQuery' not in update and 'm_Diagnostics.Dispose()' in adapter
+assert 'ReleasedBattleNumber' not in owner + movement
+assert 'arena.Required && !arena.Released' not in lifecycle
+assert 'ClipGroundRise' in geometry and 'VerticalStep' in geometry and 'legacy ? 1' in geometry
+assert 'm_ArenaOwner' in adapter and 'EnsureForBattle' in adapter
+
 report = {'scope':'SOURCE / INDEPENDENT PYTHON MODEL ONLY; never C#/Unity execution',
     'base_corrected_issue60_head':BASE, 'main_at_dispatch':MAIN_AT_DISPATCH,
     'tested_sha':head, 'tested_tree':git('rev-parse','HEAD^{tree}'), 'clean_worktree_at_start':True,
@@ -124,8 +158,10 @@ report = {'scope':'SOURCE / INDEPENDENT PYTHON MODEL ONLY; never C#/Unity execut
     'motion_layout_unchanged':'PASS (source text excluding XML comments)',
     'csharp_syntax_only_files':len(cs), 'unique_guids':len(guids), 'scene_local_references':'PASS',
     'model_disk_rectangle_vs_segment_checks':disk_checks, 'model_ramp_extrema_checks':ramp_checks,
+    'reviewed_head_source_only':reviewed, 'reviewed_contact_control_counterexample_meters':old_early_control,
+    'reviewed_roof_ejection_counterexample_x':old_roof_ejection_x, 'roof_clip_interval_models':clip_models,
     'source_hashes_sha256':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in cs
-        if 'Arena' in p.name or p.name in {'CombatMovementSystem.cs','BattleLifecycleSystem.cs','CombatReplayDriver.cs','CombatAnimationSetTests.cs'}},
+        if str(p.relative_to(ROOT)) in changed or 'Arena' in p.name or p.name in {'CombatMovementSystem.cs','BattleLifecycleSystem.cs','CombatReplayDriver.cs','CombatAnimationSetTests.cs'}},
     'results':{'source':'PASS','independent_python_models':'PASS','observed_failures':[],
                'csharp_geometry_integration_lifecycle_suites':'NOT RUN', 'unity_import_compile_entities_burst':'NOT RUN',
                'unity_scene_gpu_domain_reload_build':'NOT RUN','runtime_cpu_gc_native_benchmarks':'NOT RUN'}}

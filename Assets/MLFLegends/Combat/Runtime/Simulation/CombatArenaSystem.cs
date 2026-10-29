@@ -9,7 +9,6 @@ namespace MLFLegends.Combat
         public ulong Lease, NextLease;
         public uint Revision;
         public bool Required, Valid, Pending, PendingValid, Released;
-        public uint ReleasedBattleNumber;
     }
     [InternalBufferCapacity(0)]
     public struct PendingCombatArenaShape : IBufferElementData { public CombatArenaShape Shape; }
@@ -26,6 +25,7 @@ namespace MLFLegends.Combat
     public partial class CombatArenaSystem : SystemBase
     {
         Entity m_Data;
+        bool m_Alive;
         EntityQuery m_Session;
         protected override void OnCreate()
         {
@@ -35,12 +35,12 @@ namespace MLFLegends.Combat
             m_Session = GetEntityQuery(typeof(BattleSession));
             EntityManager.AddBuffer<CombatArenaShape>(m_Data);
             EntityManager.AddBuffer<PendingCombatArenaShape>(m_Data);
+            m_Alive = true;
         }
         protected override void OnUpdate()
         {
             var state = EntityManager.GetComponentData<CombatArenaState>(m_Data);
-            if (state.Released && (m_Session.CalculateEntityCount() == 0 || !m_Session.GetSingleton<BattleSession>().IsActive
-                || m_Session.GetSingleton<BattleSession>().BattleNumber != state.ReleasedBattleNumber))
+            if (state.Released && (m_Session.CalculateEntityCount() == 0 || !m_Session.GetSingleton<BattleSession>().IsActive))
             {
                 state.Required = false; state.Released = false; state.Pending = true; state.PendingValid = false;
             }
@@ -59,18 +59,15 @@ namespace MLFLegends.Combat
         }
         protected override void OnDestroy()
         {
+            m_Alive = false;
             if (EntityManager.Exists(m_Data)) EntityManager.DestroyEntity(m_Data);
         }
-        static Entity Data(EntityManager manager)
-        {
-            using var query = manager.CreateEntityQuery(typeof(CombatArenaState));
-            if (query.CalculateEntityCount() != 1) throw new InvalidOperationException("CombatArenaSystem required.");
-            return query.GetSingletonEntity();
-        }
         // Call outside fixed steps on the main thread. A new adapter acquires a new lease, not a static World registry.
-        public static ulong Acquire(EntityManager manager)
+        public ulong Acquire()
         {
-            var entity = Data(manager);
+            if (!m_Alive) throw new InvalidOperationException("Arena owner is disposed.");
+            var manager = EntityManager;
+            var entity = m_Data;
             var state = manager.GetComponentData<CombatArenaState>(entity);
             if (state.NextLease == ulong.MaxValue) throw new InvalidOperationException("Arena lease exhausted.");
             state.Lease = ++state.NextLease;
@@ -81,9 +78,11 @@ namespace MLFLegends.Combat
             manager.SetComponentData(entity, state);
             return state.Lease;
         }
-        public static bool Stage(EntityManager manager, ulong lease, CombatArenaShape[] shapes)
+        public bool Stage(ulong lease, CombatArenaShape[] shapes)
         {
-            var entity = Data(manager);
+            if (!m_Alive) return false;
+            var manager = EntityManager;
+            var entity = m_Data;
             var state = manager.GetComponentData<CombatArenaState>(entity);
             if (lease == 0 || state.Lease != lease) return false;
             var valid = shapes != null && shapes.Length > 0 && shapes.Length <= CombatArenaTuning.MaxShapes;
@@ -95,13 +94,13 @@ namespace MLFLegends.Combat
             manager.SetComponentData(entity, state);
             return valid;
         }
-        public static bool Release(EntityManager manager, ulong lease)
+        public bool Release(ulong lease)
         {
-            var entity = Data(manager);
+            if (!m_Alive) return false;
+            var manager = EntityManager;
+            var entity = m_Data;
             var state = manager.GetComponentData<CombatArenaState>(entity);
             if (lease == 0 || state.Lease != lease) return false;
-            using var session = manager.CreateEntityQuery(typeof(BattleSession));
-            state.ReleasedBattleNumber = session.CalculateEntityCount() == 1 ? session.GetSingleton<BattleSession>().BattleNumber : 0;
             state.Lease = 0; state.Released = true; // Retire the token; late Rebuild cannot revive it.
             state.Pending = true; state.PendingValid = false;
             manager.GetBuffer<PendingCombatArenaShape>(entity).Clear();

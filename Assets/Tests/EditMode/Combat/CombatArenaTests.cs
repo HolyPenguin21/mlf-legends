@@ -36,6 +36,24 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(result.Position.y, Is.EqualTo(3.5f)); Assert.That(result.Position.x, Is.EqualTo(.05f).Within(.0001));
         }
 
+        [Test]
+        public void BareFixturesRetainGroundedEditsAndActualIndexBodyWithoutTerrainNormalization()
+        {
+            var result = CombatArenaGeometry.Move(default, Body, new float3(0, 3, 0), new float2(.05f, 0),
+                0, true, false, 0, legacy: true, legacyHeight: 0);
+            Good(result); Assert.That(result.Grounded, Is.True); Assert.That(result.Position.y, Is.EqualTo(3));
+            using var w = new ReplayWorld("bare body compatibility");
+            var script = new ReplayScript();
+            for (uint i = 1; i <= 10; i++) script.Player(i, i, ReplayRole.Human, moveX: 1);
+            w.Script = script; w.Request(BattleRequest.Start(BattleSetup.Default)); w.Step();
+            using var fighters = w.Manager.CreateEntityQuery(typeof(CombatBody), typeof(CombatPosition));
+            using (var entities = fighters.ToEntityArray(Allocator.Temp))
+                foreach (var entity in entities) w.Manager.SetComponentData(entity, new CombatBody { Radius = .0001f, Height = 2, Mass = 1 });
+            w.Step(9);
+            var actor = w.BattleRecords(1).Last().Combatant(w.Session.HumanCombatant.Value);
+            Assert.That(actor.Position.x, Is.EqualTo(-2 + 10 * 4f / 60).Within(.0001));
+            Assert.That(actor.Body.Radius, Is.EqualTo(.0001f), "The actual indexed Body is never rewritten.");
+        }
         [TestCase(1)] [TestCase(-1)]
         public void HeadOnStopsAtRadiusButParallelAndAwayRemainFree(int side)
         {
@@ -133,11 +151,55 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(CombatArenaGeometry.Support(shapes, new float3(0, 4, 0), .3f, 4, 0, true, out _), Is.False);
         }
 
+        [Test]
+        public void ACompletelyBlockedTakeoffDoesNotInventAirOrLandingRecovery()
+        {
+            var rows = new[] { Floor, Box(0, 2, 0, 5, 2.1f, 5) };
+            var r = Move(rows, float3.zero, new float2(.05f, 0), true, 0, true); Good(r);
+            Assert.That(r.Position.y, Is.Zero); Assert.That(r.Position.x, Is.EqualTo(.05f).Within(.0001));
+            Assert.That(r.Velocity, Is.Zero); Assert.That(r.Grounded, Is.True); Assert.That(r.Landed, Is.False);
+            r = Move(rows, r.Position, new float2(.05f, 0), r.Grounded, r.Velocity); Good(r);
+            Assert.That(r.Grounded, Is.True); Assert.That(r.Landed, Is.False);
+        }
+        [Test]
+        public void ContactTickSuppressesControlBeforeAnyPlanarSubstep()
+        {
+            var r = Move(new[] { Floor }, new float3(0, .01f, 0), new float2(.06f, 0), false, -1);
+            Good(r); Assert.That(r.Landed, Is.True); Assert.That(r.Grounded, Is.True);
+            Assert.That(r.Position, Is.EqualTo(float3.zero)); Assert.That(r.ControlledDistance, Is.Zero);
+        }
+        [Test]
+        public void RampIntoRoofStopsUphillKeepsTangentAndNeverEjectsSideways()
+        {
+            var ramp = Box(0, 0, 0, 2, 2, 2); ramp.Kind = CombatArenaKind.Ramp;
+            var rows = new[] { Floor, ramp, Box(0, 3.01f, 0, 5, 3.11f, 5) };
+            var r = Move(rows, new float3(-.3f, 1, 0), new float2(.05f, .04f)); Good(r);
+            Assert.That(r.Position.x, Is.InRange(-.3001f, -.279f));
+            Assert.That(r.Position.z, Is.EqualTo(.04f).Within(.001));
+            Assert.That(r.Position.y + Body.Height, Is.LessThanOrEqualTo(3.0104f));
+            Assert.That(r.Grounded, Is.True); Assert.That(r.Landed, Is.False);
+            for (var i = 0; i < 100; i++)
+            {
+                r = Move(rows, r.Position, new float2(.05f, 0)); Good(r);
+                Assert.That(r.Position.x, Is.InRange(-.3001f, -.279f));
+                Assert.That(r.Grounded, Is.True); Assert.That(r.Landed, Is.False);
+            }
+        }
+        [Test]
+        public void SteepSurfaceBlocksAFallWithoutSideEjectionOrWalkableLanding()
+        {
+            var ramp = Box(0, 0, 0, 1, 4, 2); ramp.Kind = CombatArenaKind.Ramp;
+            // Highest disk contact at x=.3: y=(.3+1)*2=2.6. Cross it within one tick.
+            var r = Move(new[] { Floor, ramp }, new float3(0, 2.61f, 0), float2.zero, false, -1);
+            Good(r); Assert.That(r.Position.x, Is.Zero); Assert.That(r.Position.y, Is.EqualTo(2.6f).Within(.001));
+            Assert.That(r.Grounded, Is.False); Assert.That(r.Landed, Is.False);
+        }
+
         static CombatArenaSystem Arena(ReplayWorld world) => world.World.GetExistingSystemManaged<CombatArenaSystem>();
         static ulong Install(ReplayWorld w, params CombatArenaShape[] shapes)
         {
-            var lease = CombatArenaSystem.Acquire(w.Manager);
-            Assert.That(CombatArenaSystem.Stage(w.Manager, lease, shapes), Is.True);
+            var lease = Arena(w).Acquire();
+            Assert.That(Arena(w).Stage( lease, shapes), Is.True);
             return lease;
         }
         [TestCase(1)] [TestCase(2)] [TestCase(3)] [TestCase(10)]
@@ -196,7 +258,7 @@ namespace MLFLegends.Tests.EditMode
             using var other = new ReplayWorld("another arena");
             var old = Install(w, Floor);
             var current = Install(w, Floor, Box(0, 0, 0, .1f, 3, 3));
-            Assert.That(CombatArenaSystem.Release(w.Manager, old), Is.False);
+            Assert.That(Arena(w).Release( old), Is.False);
             using var stateQuery = w.Manager.CreateEntityQuery(typeof(CombatArenaState));
             Assert.That(stateQuery.GetSingleton<CombatArenaState>().Revision, Is.Zero, "Staging never changes active geometry.");
             Arena(w).Update();
@@ -205,11 +267,11 @@ namespace MLFLegends.Tests.EditMode
             w.Request(BattleRequest.Start(setup)); w.Step(2);
             w.Request(BattleRequest.Restart(setup)); w.Step(2);
             Assert.That(w.BattleRecords(2).Last().Combatants.Length, Is.EqualTo(count));
-            Assert.That(CombatArenaSystem.Stage(w.Manager, current, new[] { Box(0, 0, 0, -1, 2, 1) }), Is.False);
+            Assert.That(Arena(w).Stage( current, new[] { Box(0, 0, 0, -1, 2, 1) }), Is.False);
             Arena(w).Update(); Assert.That(stateQuery.GetSingleton<CombatArenaState>().Valid, Is.False);
             using var otherQuery = other.Manager.CreateEntityQuery(typeof(CombatArenaState));
             Assert.That(otherQuery.GetSingleton<CombatArenaState>().Required, Is.False);
-            Assert.That(CombatArenaSystem.Release(w.Manager, current), Is.True);
+            Assert.That(Arena(w).Release( current), Is.True);
         }
         [Test]
         public void LandingCopiesTwelveTicksOnceDropsPressesAndResumesWithoutRunGraceDelay()
@@ -304,21 +366,26 @@ namespace MLFLegends.Tests.EditMode
             using var w = new ReplayWorld("released arena scope");
             var lease = Install(w, Floor);
             w.Request(BattleRequest.Start(BattleSetup.Default)); w.Step();
-            Assert.That(CombatArenaSystem.Release(w.Manager, lease), Is.True);
-            Assert.That(CombatArenaSystem.Stage(w.Manager, lease, new[] { Floor }), Is.False, "Released token is retired.");
+            Assert.That(Arena(w).Release( lease), Is.True);
+            Assert.That(Arena(w).Stage( lease, new[] { Floor }), Is.False, "Released token is retired.");
             w.Step();
             using var query = w.Manager.CreateEntityQuery(typeof(CombatArenaState));
             Assert.That(query.GetSingleton<CombatArenaState>().Required, Is.True);
             Assert.That(query.GetSingleton<CombatArenaState>().Valid, Is.False, "Same production battle stays fail-closed.");
             w.Script = new ReplayScript().Player(1, 1, ReplayRole.Human, pressed: CommandButtons.Attack);
             w.Request(BattleRequest.Restart(BattleSetup.Default)); w.Step();
-            var actor = w.BattleRecords(2).Single().Combatant(w.Session.HumanCombatant.Value);
-            Assert.That(actor.Attack.IsAttacking, Is.True, "Next bare fixture can start on its original flat support.");
-            w.Step(); Assert.That(query.GetSingleton<CombatArenaState>().Required, Is.False);
+            var restarted = w.BattleRecords(2).Single().Combatant(w.Session.HumanCombatant.Value);
+            Assert.That(restarted.Motion.Grounded, Is.False); Assert.That(restarted.Attack.IsAttacking, Is.False);
+            Assert.That(query.GetSingleton<CombatArenaState>().Required, Is.True, "Restart cannot bypass missing production geometry.");
+            w.Request(BattleRequest.End()); w.World.GetExistingSystemManaged<InitializationSystemGroup>().Update();
+            Arena(w).Update(); Assert.That(query.GetSingleton<CombatArenaState>().Required, Is.False);
+            w.Request(BattleRequest.Start(BattleSetup.Default)); w.Step();
+            var actor = w.BattleRecords(3).Single().Combatant(w.Session.HumanCombatant.Value);
+            Assert.That(actor.Attack.IsAttacking, Is.True, "After an actual idle boundary the next bare fixture has flat support.");
             var successor = Install(w, Floor);
             Assert.That(successor, Is.GreaterThan(lease));
-            Assert.That(CombatArenaSystem.Stage(w.Manager, lease, new[] { Floor }), Is.False);
-            Assert.That(CombatArenaSystem.Release(w.Manager, lease), Is.False);
+            Assert.That(Arena(w).Stage( lease, new[] { Floor }), Is.False);
+            Assert.That(Arena(w).Release( lease), Is.False);
         }
         [Test]
         public void PendingRowsAreCopiedAndInvalidProductionSourceNeverCreatesAFlatFloor()
@@ -328,7 +395,7 @@ namespace MLFLegends.Tests.EditMode
             Arena(w).Update();
             using var query = w.Manager.CreateEntityQuery(typeof(CombatArenaState));
             Assert.That(w.Manager.GetBuffer<CombatArenaShape>(query.GetSingletonEntity())[0].Top, Is.Zero);
-            Assert.That(CombatArenaSystem.Stage(w.Manager, lease, null), Is.False);
+            Assert.That(Arena(w).Stage( lease, null), Is.False);
             var setup = BattleSetup.Default; setup.Human.Position = new float3(-2, 3, 0);
             w.Request(BattleRequest.Start(setup)); w.Step(4);
             var actor = w.BattleRecords(1).Last().Combatant(w.Session.HumanCombatant.Value);
@@ -336,6 +403,101 @@ namespace MLFLegends.Tests.EditMode
             using var diagnostics = w.Manager.CreateEntityQuery(typeof(CombatArenaDiagnostics));
             Assert.That(diagnostics.GetSingleton<CombatArenaDiagnostics>().LastFailure, Is.EqualTo(CombatArenaFailure.ArenaUnavailable));
             Assert.That(actor.Motion.Grounded, Is.False);
+        }
+        [Test]
+        public void AuthoringRebindsItsCachedQueryAndReleasesOnlyItsOwnWorld()
+        {
+            using var first = new ReplayWorld("authoring first"); using var second = new ReplayWorld("authoring second");
+            var saved = World.DefaultGameObjectInjectionWorld;
+            var root = new GameObject("arena adapter"); root.SetActive(false);
+            var floor = new GameObject("explicit floor"); floor.transform.position = new Vector3(0, -.25f, 0);
+            floor.transform.localScale = new Vector3(60, .5f, 30);
+            try
+            {
+                var adapter = root.AddComponent<CombatArenaAuthoring>();
+                adapter.Sources = new[] { new CombatArenaSource { Transform = floor.transform } };
+                World.DefaultGameObjectInjectionWorld = first.World;
+                root.SetActive(true); root.SendMessage("OnEnable"); Arena(first).Update();
+                using var a = first.Manager.CreateEntityQuery(typeof(CombatArenaState));
+                Assert.That(a.GetSingleton<CombatArenaState>().Valid, Is.True);
+                World.DefaultGameObjectInjectionWorld = second.World;
+                for (var i = 0; i < 10; i++) root.SendMessage("Update");
+                Arena(first).Update(); Arena(second).Update();
+                using var b = second.Manager.CreateEntityQuery(typeof(CombatArenaState));
+                Assert.That(a.GetSingleton<CombatArenaState>().Required, Is.False);
+                Assert.That(b.GetSingleton<CombatArenaState>().Valid, Is.True);
+                root.SendMessage("OnDisable"); Arena(second).Update();
+                Assert.That(b.GetSingleton<CombatArenaState>().Required, Is.False);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root); UnityEngine.Object.DestroyImmediate(floor);
+                World.DefaultGameObjectInjectionWorld = saved;
+            }
+        }
+        [Test]
+        public void OldAdapterCannotStealAReplacementSystemEvenWhenRawLeaseNumbersRepeat()
+        {
+            using var w = new ReplayWorld("arena owner replacement");
+            var saved = World.DefaultGameObjectInjectionWorld;
+            var root = new GameObject("old adapter"); root.SetActive(false);
+            var floor = new GameObject("old floor"); floor.transform.position = new Vector3(0, -.25f, 0);
+            floor.transform.localScale = new Vector3(60, .5f, 30);
+            try
+            {
+                World.DefaultGameObjectInjectionWorld = w.World;
+                var adapter = root.AddComponent<CombatArenaAuthoring>();
+                adapter.Sources = new[] { new CombatArenaSource { Transform = floor.transform } };
+                root.SetActive(true); root.SendMessage("OnEnable"); Arena(w).Update();
+                var old = Arena(w); var group = w.World.GetExistingSystemManaged<FixedStepSimulationSystemGroup>();
+                group.RemoveSystemFromUpdateList(old); w.World.DestroySystemManaged(old);
+                var replacement = w.World.CreateSystemManaged<CombatArenaSystem>(); group.AddSystemToUpdateList(replacement); group.SortSystems();
+                var lease = Arena(w).Acquire();
+                Assert.That(Arena(w).Stage( lease, new[] { Box(0, 2, 0, 10, 3, 10) }), Is.True);
+                replacement.Update();
+                Assert.That(old.Release(lease), Is.False);
+                Assert.That(old.Stage(lease, new[] { Floor }), Is.False);
+                root.SendMessage("Update");
+                using var query = w.Manager.CreateEntityQuery(typeof(CombatArenaState));
+                Assert.That(query.GetSingleton<CombatArenaState>().Lease, Is.EqualTo(lease));
+                Assert.That(query.GetSingleton<CombatArenaState>().Pending, Is.False);
+                Assert.That(w.Manager.GetBuffer<CombatArenaShape>(query.GetSingletonEntity())[0].Top, Is.EqualTo(3));
+                // Only an explicit owned Start/Restart is allowed to claim the replacement for this scene.
+                adapter.EnsureForBattle(w.World); replacement.Update();
+                Assert.That(query.GetSingleton<CombatArenaState>().Lease, Is.GreaterThan(lease));
+                Assert.That(w.Manager.GetBuffer<CombatArenaShape>(query.GetSingletonEntity())[0].Top, Is.Zero);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root); UnityEngine.Object.DestroyImmediate(floor);
+                World.DefaultGameObjectInjectionWorld = saved;
+            }
+        }
+        [Test]
+        public void DelayedEnableCallbackCannotReclaimAfterBootstrapAlreadyBoundThisActivation()
+        {
+            using var w = new ReplayWorld("arena delayed enable"); var saved = World.DefaultGameObjectInjectionWorld;
+            var root = new GameObject("delayed adapter"); root.SetActive(false);
+            var floor = new GameObject("delayed floor"); floor.transform.position = new Vector3(0, -.25f, 0);
+            floor.transform.localScale = new Vector3(60, .5f, 30);
+            try
+            {
+                World.DefaultGameObjectInjectionWorld = w.World;
+                var adapter = root.AddComponent<CombatArenaAuthoring>();
+                adapter.Sources = new[] { new CombatArenaSource { Transform = floor.transform } };
+                root.SetActive(true); root.SendMessage("OnDisable"); adapter.EnsureForBattle(w.World);
+                var successor = Arena(w).Acquire();
+                Assert.That(Arena(w).Stage( successor, new[] { Floor }), Is.True); Arena(w).Update();
+                root.SendMessage("OnEnable");
+                using var query = w.Manager.CreateEntityQuery(typeof(CombatArenaState));
+                Assert.That(query.GetSingleton<CombatArenaState>().Lease, Is.EqualTo(successor));
+                Assert.That(query.GetSingleton<CombatArenaState>().Pending, Is.False);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root); UnityEngine.Object.DestroyImmediate(floor);
+                World.DefaultGameObjectInjectionWorld = saved;
+            }
         }
         [Test]
         public void AuthoringRejectsPitchShearMissingAndMeshesInsteadOfApproximatingThem()
@@ -358,7 +520,22 @@ namespace MLFLegends.Tests.EditMode
                     Assert.That(CombatArenaAuthoring.TryBuild(source, out _, out _), Is.False);
                 }
                 finally { go.transform.SetParent(null, false); UnityEngine.Object.DestroyImmediate(parent); }
-                go.transform.rotation = Quaternion.identity; go.AddComponent<MeshCollider>();
+                go.transform.rotation = Quaternion.Euler(.1f, 0, 0); go.transform.localScale = Vector3.one * .01f;
+                Assert.That(CombatArenaAuthoring.TryBuild(source, out _, out _), Is.False, "Small scale cannot hide pitch.");
+                go.transform.rotation = Quaternion.identity; go.transform.localScale = Vector3.one;
+                var sphere = go.AddComponent<SphereCollider>();
+                Assert.That(CombatArenaAuthoring.TryBuild(source, out _, out _), Is.False);
+                UnityEngine.Object.DestroyImmediate(sphere);
+                var rigidParent = new GameObject("rigid parent");
+                try
+                {
+                    rigidParent.AddComponent<Rigidbody>(); go.transform.SetParent(rigidParent.transform, false);
+                    Assert.That(CombatArenaAuthoring.TryBuild(source, out _, out _), Is.False);
+                }
+                finally { go.transform.SetParent(null, false); UnityEngine.Object.DestroyImmediate(rigidParent); }
+                go.SetActive(false);
+                Assert.That(CombatArenaAuthoring.TryBuild(source, out _, out _), Is.False);
+                go.SetActive(true); go.AddComponent<MeshCollider>();
                 Assert.That(CombatArenaAuthoring.TryBuild(source, out _, out _), Is.False);
                 Assert.That(CombatArenaAuthoring.TryBuild(null, out _, out _), Is.False);
             }

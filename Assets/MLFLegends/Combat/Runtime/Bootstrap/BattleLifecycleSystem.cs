@@ -181,7 +181,7 @@ namespace MLFLegends.Combat
             {
                 var arenaEntity = m_Arena.GetSingletonEntity();
                 var arena = entityManager.GetComponentData<CombatArenaState>(arenaEntity);
-                if (arena.Required && !arena.Released)
+                if (arena.Required)
                 {
                     motion.Grounded = arena.Valid && CombatArenaGeometry.Support(
                         entityManager.GetBuffer<CombatArenaShape>(arenaEntity, true).AsNativeArray(), setup.Position,

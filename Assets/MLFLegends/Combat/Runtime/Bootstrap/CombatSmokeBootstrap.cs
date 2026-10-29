@@ -59,6 +59,7 @@ namespace MLFLegends.Combat
         World m_BattleWorld;
         World m_MissingArenaWorld;
         ulong m_MissingArenaLease;
+        CombatArenaSystem m_MissingArenaOwner;
         bool m_ArenaMissingReported;
         BattleSetup m_PendingSetup;
         bool m_StartPending;
@@ -243,12 +244,18 @@ namespace MLFLegends.Combat
             {
                 ReleaseMissingArena();
                 m_MissingArenaWorld = World.DefaultGameObjectInjectionWorld;
-                m_MissingArenaLease = CombatArenaSystem.Acquire(entityManager);
-                CombatArenaSystem.Stage(entityManager, m_MissingArenaLease, null);
+                m_MissingArenaOwner = m_MissingArenaWorld.GetExistingSystemManaged<CombatArenaSystem>();
+                m_MissingArenaLease = m_MissingArenaOwner.Acquire();
+                m_MissingArenaOwner.Stage(m_MissingArenaLease, null);
                 m_ArenaMissingReported = true;
                 Debug.LogError("CombatSmoke requires an enabled CombatArenaAuthoring; movement frozen.", this);
             }
 
+            if (m_RequireArena)
+            {
+                var arena = GetComponent<CombatArenaAuthoring>();
+                if (arena != null && arena.isActiveAndEnabled) arena.EnsureForBattle(World.DefaultGameObjectInjectionWorld);
+            }
             var world = World.DefaultGameObjectInjectionWorld;
             if (m_BattleWorld != world)
                 EndOwnedBattle();
@@ -260,9 +267,9 @@ namespace MLFLegends.Combat
         void ReleaseMissingArena()
         {
             if (m_MissingArenaLease != 0 && m_MissingArenaWorld != null && m_MissingArenaWorld.IsCreated
-                && m_MissingArenaWorld.GetExistingSystemManaged<CombatArenaSystem>() != null)
-                CombatArenaSystem.Release(m_MissingArenaWorld.EntityManager, m_MissingArenaLease);
-            m_MissingArenaLease = 0; m_MissingArenaWorld = null;
+                && m_MissingArenaWorld.GetExistingSystemManaged<CombatArenaSystem>() == m_MissingArenaOwner)
+                m_MissingArenaOwner.Release(m_MissingArenaLease);
+            m_MissingArenaLease = 0; m_MissingArenaWorld = null; m_MissingArenaOwner = null;
         }
 
         static bool TryGetSchedule(EntityManager entityManager, out CombatStrikeSchedule schedule)

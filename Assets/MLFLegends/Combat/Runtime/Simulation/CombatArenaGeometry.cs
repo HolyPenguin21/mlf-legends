@@ -114,7 +114,7 @@ namespace MLFLegends.Combat
         {
             if (!legacy) return Support(shapes, p, radius, maxHeight, minHeight, true, out height);
             height = legacyHeight;
-            return height <= maxHeight + CombatArenaTuning.Skin && height >= minHeight - CombatArenaTuning.Skin;
+            return height >= minHeight; // Historical flat-plane clamp, including fixtures edited below their support.
         }
 
         static bool Side(in CombatArenaShape s, float3 p, in CombatBody body, out float2 correction)
@@ -161,6 +161,98 @@ namespace MLFLegends.Combat
             return false;
         }
 
+        // A vertical interval sweep at the tick's initial footprint preserves the original vertical-before-control order.
+        static bool VerticalStep(NativeArray<CombatArenaShape> shapes, in CombatBody body, ref float3 p,
+            float amount, ref float velocity, ref bool grounded, bool legacy, float legacyHeight)
+        {
+            var nextY = p.y + amount;
+            var found = legacy
+                ? Ground(shapes, p, body.Radius, p.y, nextY, true, legacyHeight, out var floor)
+                : Support(shapes, p, body.Radius, p.y, nextY, false, out floor);
+            if ((amount <= 0 || legacy) && found)
+            {
+                p.y = floor; velocity = 0;
+                // A steep ramp blocks penetration but is not a walkable/jump/landing support.
+                grounded = Ground(shapes, p, body.Radius, p.y, p.y, legacy, legacyHeight, out _);
+                return grounded;
+            }
+            if (amount > 0 && shapes.IsCreated)
+            {
+                var ceiling = float.PositiveInfinity;
+                foreach (var s in shapes)
+                    if (p.y + body.Height <= s.Bottom + CombatArenaTuning.Skin
+                        && nextY + body.Height >= s.Bottom && TopAt(s, Xz(p), body.Radius, out _))
+                        ceiling = math.min(ceiling, s.Bottom - body.Height);
+                if (math.isfinite(ceiling))
+                {
+                    p.y = ceiling; velocity = 0;
+                    grounded = Ground(shapes, p, body.Radius, p.y, p.y, legacy, legacyHeight, out _);
+                    return grounded;
+                }
+            }
+            p.y = nextY;
+            return false;
+        }
+
+        static float3 FollowGround(NativeArray<CombatArenaShape> shapes, in CombatBody body, float3 p,
+            float2 control, bool legacy, float legacyHeight)
+        {
+            var candidate = WithXz(p, Xz(p) + control);
+            if (legacy) return candidate; // Trust the historical grounded fixture; no terrain-following correction.
+            var rise = math.length(control) * CombatArenaTuning.MaxSlope;
+            if (Ground(shapes, candidate, body.Radius, p.y + rise, p.y - rise, legacy, legacyHeight, out var ground))
+            {
+                var mayRise = ground <= p.y + CombatArenaTuning.Skin;
+                if (shapes.IsCreated) foreach (var s in shapes)
+                    if (s.Kind == CombatArenaKind.Ramp && s.Slope <= CombatArenaTuning.MaxSlope
+                        && TopAt(s, Xz(candidate), body.Radius, out var top) && math.abs(top - ground) <= CombatArenaTuning.Skin) mayRise = true;
+                if (mayRise) candidate.y = ground;
+            }
+            return candidate;
+        }
+
+        static bool HeadBlocked(NativeArray<CombatArenaShape> shapes, in CombatBody body, float3 from, float3 to)
+        {
+            if (!shapes.IsCreated) return false;
+            foreach (var s in shapes)
+                if (from.y + body.Height <= s.Bottom + 2 * CombatArenaTuning.Skin
+                    && to.y + body.Height > s.Bottom + CombatArenaTuning.Skin
+                    && TopAt(s, Xz(to), body.Radius, out _)) return true;
+            return false;
+        }
+
+        static float3 ClipGroundRise(NativeArray<CombatArenaShape> shapes, in CombatBody body, float3 p,
+            float2 control, float3 candidate, bool legacy, float legacyHeight)
+        {
+            if (!HeadBlocked(shapes, body, p, candidate)) return candidate;
+            var lo = 0f; var hi = 1f;
+            for (var i = 0; i < CombatArenaTuning.MaxIterations; i++)
+            {
+                var middle = (lo + hi) * .5f;
+                var trial = FollowGround(shapes, body, p, control * middle, legacy, legacyHeight);
+                if (HeadBlocked(shapes, body, p, trial)) hi = middle; else lo = middle;
+            }
+            var clipped = FollowGround(shapes, body, p, control * lo, legacy, legacyHeight);
+            // Keep available motion across the slope when uphill motion is blocked by a roof.
+            foreach (var s in shapes)
+                if (s.Kind == CombatArenaKind.Ramp && s.Slope <= CombatArenaTuning.MaxSlope
+                    && TopAt(s, Xz(candidate), body.Radius, out var top) && math.abs(top - candidate.y) <= CombatArenaTuning.Skin)
+                {
+                    var tangent = new float2(-s.AxisX.y, s.AxisX.x);
+                    var remaining = tangent * math.dot(control * (1 - lo), tangent);
+                    var trial = FollowGround(shapes, body, clipped, remaining, legacy, legacyHeight);
+                    if (!HeadBlocked(shapes, body, p, trial)) return trial;
+                    break;
+                }
+            return clipped;
+        }
+
+        static bool Clear(NativeArray<CombatArenaShape> shapes, in CombatBody body, float3 p)
+        {
+            if (shapes.IsCreated) foreach (var s in shapes) if (Overlap(s, p, body, out _)) return false;
+            return true;
+        }
+
         // Bounded displacement substeps: each is <= 1/4 of BOTH body dimensions AND every solid feature.
         // A failed budget freezes the entire tick, never silently truncates displacement or crosses geometry.
         public static CombatArenaMove Move(NativeArray<CombatArenaShape> shapes, in CombatBody body, float3 start,
@@ -175,8 +267,10 @@ namespace MLFLegends.Combat
             { result.Failure = CombatArenaFailure.InvalidBody; return result; }
             var p = start;
             if (!Depenetrate(shapes, body, ref p)) { result.Failure = CombatArenaFailure.InitialOverlap; return result; }
-            grounded = grounded && Ground(shapes, p, body.Radius, p.y, p.y, legacy, legacyHeight, out _);
-            if (grounded && jump) { velocity = CombatMovementTuning.JumpImpulse; grounded = false; }
+            grounded = grounded && (legacy || Ground(shapes, p, body.Radius, p.y, p.y, false, legacyHeight, out _));
+            var takeoff = grounded && jump;
+            var takeoffHeight = p.y;
+            if (takeoff) { velocity = CombatMovementTuning.JumpImpulse; grounded = false; }
             if (!grounded) velocity -= CombatMovementTuning.Gravity * SimulationTiming.TickDuration;
             else velocity = 0;
             var vertical = velocity * SimulationTiming.TickDuration;
@@ -187,47 +281,26 @@ namespace MLFLegends.Combat
             var work = math.ceil((math.length(desired) + math.abs(vertical)) / stepSize);
             if (!math.isfinite(work) || work > CombatArenaTuning.MaxSubsteps)
             { result.Failure = CombatArenaFailure.WorkLimit; return result; }
-            var count = math.max(1, (int)work);
+            var count = legacy ? 1 : math.max(1, (int)work); // A flat plane needs no planar collision substeps.
             var planar = desired / count;
-            var dy = vertical / count;
+            var dy = 0f;
             var traveled = 0f;
-            var landed = false;
+            var landed = !grounded && VerticalStep(shapes, body, ref p, vertical, ref velocity, ref grounded, legacy, legacyHeight);
+            if (takeoff && grounded && math.abs(p.y - takeoffHeight) <= CombatArenaTuning.Skin) landed = false;
+            if (!Clear(shapes, body, p)) { result.Failure = CombatArenaFailure.UnresolvedContact; return result; }
             for (var step = 0; step < count; step++)
             {
                 var before = p;
-                // Resolve vertical contact before control, preserving no-slide on the contact tick.
-                if (!grounded)
+                // Only edge-fall remainder needs additional vertical fractions; commands/gravity are not replayed.
+                if (!grounded && dy != 0)
                 {
-                    var nextY = p.y + dy;
-                    if (dy <= 0 && Ground(shapes, p, body.Radius, p.y, nextY, legacy, legacyHeight, out var floor))
-                    { p.y = floor; grounded = true; velocity = 0; dy = 0; landed = true; }
-                    else if (dy > 0)
-                    {
-                        var ceiling = float.PositiveInfinity;
-                        if (shapes.IsCreated) foreach (var s in shapes)
-                            if (p.y + body.Height <= s.Bottom + CombatArenaTuning.Skin
-                                && nextY + body.Height >= s.Bottom && TopAt(s, Xz(p), body.Radius, out _))
-                                ceiling = math.min(ceiling, s.Bottom - body.Height);
-                        if (math.isfinite(ceiling)) { p.y = ceiling; velocity = 0; dy = 0; }
-                        else p.y = nextY;
-                    }
-                    else p.y = nextY;
+                    landed |= VerticalStep(shapes, body, ref p, dy, ref velocity, ref grounded, legacy, legacyHeight);
+                    if (grounded || velocity == 0) dy = 0;
+                    if (!Clear(shapes, body, p)) { result.Failure = CombatArenaFailure.UnresolvedContact; return result; }
                 }
                 var control = landed && landingTicks > 0 ? float2.zero : planar;
-                var candidate = WithXz(p, Xz(p) + control);
-                // Only continuous walkable slopes may raise the foot; boxes never step up.
-                if (grounded)
-                {
-                    var rise = math.length(control) * CombatArenaTuning.MaxSlope;
-                    if (Ground(shapes, candidate, body.Radius, p.y + rise, p.y - rise, legacy, legacyHeight, out var ground))
-                    {
-                        var mayRise = ground <= p.y + CombatArenaTuning.Skin;
-                        if (shapes.IsCreated) foreach (var s in shapes)
-                            if (s.Kind == CombatArenaKind.Ramp && s.Slope <= CombatArenaTuning.MaxSlope
-                                && TopAt(s, Xz(candidate), body.Radius, out var top) && math.abs(top - ground) <= CombatArenaTuning.Skin) mayRise = true;
-                        if (mayRise) candidate.y = ground;
-                    }
-                }
+                var candidate = grounded ? FollowGround(shapes, body, p, control, legacy, legacyHeight) : WithXz(p, Xz(p) + control);
+                if (grounded) candidate = ClipGroundRise(shapes, body, p, control, candidate, legacy, legacyHeight);
                 var resolved = false;
                 for (var iteration = 0; iteration < CombatArenaTuning.MaxIterations; iteration++)
                 {
@@ -238,9 +311,18 @@ namespace MLFLegends.Combat
                     if (!touched) { resolved = true; break; }
                 }
                 if (!resolved) { result.Failure = CombatArenaFailure.UnresolvedContact; return result; }
+                if (math.distance(Xz(p), Xz(candidate)) > math.length(control) + 2 * CombatArenaTuning.Skin)
+                { result.Failure = CombatArenaFailure.UnresolvedContact; return result; }
+                if (grounded)
+                {
+                    var supported = FollowGround(shapes, body, p, Xz(candidate) - Xz(p), legacy, legacyHeight);
+                    if (!HeadBlocked(shapes, body, p, supported) && Clear(shapes, body, supported)) candidate = supported;
+                    else candidate = p;
+                }
+                if (!Clear(shapes, body, candidate)) { result.Failure = CombatArenaFailure.UnresolvedContact; return result; }
                 p = candidate;
                 traveled += math.distance(Xz(before), Xz(p));
-                if (grounded && !Ground(shapes, p, body.Radius, p.y, p.y, legacy, legacyHeight, out _))
+                if (grounded && !legacy && !Ground(shapes, p, body.Radius, p.y, p.y, false, legacyHeight, out _))
                 {
                     grounded = false;
                     velocity = -CombatMovementTuning.Gravity * SimulationTiming.TickDuration;

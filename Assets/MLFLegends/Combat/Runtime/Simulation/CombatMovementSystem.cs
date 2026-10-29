@@ -37,9 +37,7 @@ namespace MLFLegends.Combat
             var landingTicks = SystemAPI.TryGetSingleton<CombatStrikeSchedule>(out var schedule) ? schedule.LandingRecoveryTicks : 0u;
             var bodies = SystemAPI.GetComponentLookup<CombatBody>(true);
             var hasArena = SystemAPI.TryGetSingleton<CombatArenaState>(out var arena);
-            var newUnboundBattle = hasArena && arena.Released && SystemAPI.TryGetSingleton<BattleSession>(out var session)
-                && session.BattleNumber != arena.ReleasedBattleNumber;
-            var legacy = !hasArena || !arena.Required || newUnboundBattle;
+            var legacy = !hasArena || !arena.Required;
             var shapes = hasArena ? SystemAPI.GetSingletonBuffer<CombatArenaShape>(true).AsNativeArray() : default;
             var diagnostics = new CombatArenaDiagnostics { Tick = tick, Revision = hasArena ? arena.Revision : 0 };
             foreach (var (position, motion, applied, entity) in
@@ -61,7 +59,7 @@ namespace MLFLegends.Combat
                 if (kinetic.IsLandingRecovery(tick)) { command.MoveX = 0; command.MoveZ = 0; }
                 var distance = CombatMovementTuning.MoveSpeed * dt * moveMultiplier;
                 if (command.MoveX != 0 && command.MoveZ != 0) distance *= diagonalScale;
-                var body = bodies.TryGetComponent(entity, out var actualBody) ? actualBody : CombatBodyTuning.Default;
+                var body = !legacy && bodies.TryGetComponent(entity, out var actualBody) ? actualBody : CombatBodyTuning.Default;
                 if (!legacy && (!arena.Valid || !bodies.HasComponent(entity)))
                 {
                     diagnostics.FailedBodies++; diagnostics.LastFailure = !arena.Valid ? CombatArenaFailure.ArenaUnavailable : CombatArenaFailure.InvalidBody;

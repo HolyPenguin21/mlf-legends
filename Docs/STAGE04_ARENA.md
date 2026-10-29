@@ -7,6 +7,8 @@ branch, not merging #62 or bypassing its manager review. Branch `feature/61-stat
 `fix/60-animation-checks-evidence` until #60 is merged on the owner's instruction, then must be retargeted to fresh main.
 No merge is performed. Stage 03 remains OWNER-ACCEPTED; Stage 04 remains IN PROGRESS.
 
+[Second bottom-up review and corrections](STAGE04_ARENA_REVIEW.md) supersede the earlier solver/lifecycle details below where noted. Unity/C# remains NOT RUN.
+
 ## Responsibilities and boundaries
 
 - `CombatArenaShape`: numeric static box/ramp, no GameObject or actor references. `CombatArenaGeometry`: allocation-free
@@ -57,10 +59,12 @@ Walkable ramp slope ≤1 (45°), inclusive. Steeper ramp is a blocker, not climb
 pushing, impulses, dash/cast/crouch or new hit-through-wall rule. Following a continuous walkable slope preserves Grounded
 and does not manufacture a landing every tick. Leaving finite support makes the actor airborne; spawn height is never a
 production support. Ceiling uses body Height and cancels only upward velocity; gravity resumes on the next tick.
+If a ceiling prevents takeoff completely, support remains grounded and no air/landing recovery transition is invented.
 
 `DrawGeometry` is an optional Scene gizmo switch; no heavy Inspector preview. Actual source transform edits require
 **Rebuild static arena**. Visual transforms can change before a new numeric revision is staged; moving obstacles are not
-supported by this static contract. Rebuild caches numeric data; fixed updates never enumerate scene objects or Unity Physics.
+supported by this static contract. Rebuild caches numeric data; fixed updates never enumerate scene objects or Unity Physics. The adapter caches its diagnostic
+EntityQuery per World bind and disposes it on a live-World release; Update and Rebuild do not create replacement queries.
 
 ## Numeric policy and limitations
 
@@ -70,7 +74,11 @@ foot height is a clipped rectangle; head contact uses the flat underside. Stable
 
 Substep length ≤one quarter of the smallest body dimension and every obstacle thickness/width; additionally
 ≤sqrt(4 × Radius × Skin), bounding rounded-corner grazing chord error conservatively below skin. Vertical and planar
-travel share one count, ≤256 substeps per tick; ≤12 contact/depenetration iterations. This is the existing 60 Hz tick,
+travel share one work budget, ≤256 planar substeps per tick; ≤12 contact/depenetration/roof-clip refinement iterations.
+A vertical interval sweep precedes control, preserving contact-tick movement suppression. Ground-follow rise is clipped
+against ceilings before side resolution; support is rechecked after horizontal corrections. Excess per-step correction or
+an uncleared volume rejects the tick instead of ejecting the actor sideways. Steep tops block a fall but do not grant
+walkable Grounded/landing recovery. This is the existing 60 Hz tick,
 not extra commands, hits, Pressed edges, clocks or landing events. A complete wall cannot be skipped; tangency within skin
 is numerical contact tolerance. Huge displacement/velocity rejects the entire tick with WorkLimit, never clips a path
 through geometry. This is a deliberately bounded solver, not arbitrary-speed CCD or an unbounded void-fall simulation.
@@ -82,8 +90,8 @@ production geometry also freezes rather than falling back. No resolved result is
 
 LandingRecovery is copied from the existing table **once per physical air→support transition**. Existing Action/Facing
 landing gates still drop new presses and buffering. Movement drops controlled movement during recovery, then resumes from
-live input without a new delay. Contact clears the run streak; pre-contact travel during a subdivided landing tick is not
-carried into a new recovery run streak. No post-contact slide occurs. The contact solver does not restart a strike or
+live input without a new delay. Contact clears the run streak; the initial vertical sweep suppresses the whole landing tick's planar control when recovery
+is positive. Edge-fall fractions remain bounded inside the tick; they never replay commands or gravity. The contact solver does not restart a strike or
 change facing. GroundHeight is current support when grounded, last recorded support when airborne.
 
 Run distance now sums actually achieved X/Z segment lengths, excluding depenetration. Wall pressure adds no distance and
@@ -96,16 +104,20 @@ actual distance; physical speed itself is unchanged. No spatial/reference assert
 Acquire increments a **per-World** lease; only that lease can stage/release. Stage validates/copies into the pending buffer;
 active rows/revision change only when the owner publishes at a safe boundary. Invalid/released sources stage an invalid
 revision and retain Required=true for the current battle, without resurrecting a spawn floor. Released leases are retired
-and cannot stage again. After that battle ends (or a new unbound isolated-test battle starts), the owner releases the
-requirement so a reused default World can host legacy fixtures again. A production bootstrap always acquires a required
+and cannot stage again. Only after an actual End/idle boundary does the owner release the
+requirement so a reused default World can host legacy fixtures again. Restart alone cannot bypass an unavailable arena. A production bootstrap always acquires a required
 arena before its new Start, including an invalid lease/error if its adapter is missing; it cannot inherit this opt-out. Old adapters cannot release/rebuild a successor's
-geometry; callbacks retain their own World and check disposal before touching its EntityManager. Replacement World
-rebinds through setup; no Entity/native view is transferred. Pending and active capacities are reused, freed by ECS on
+geometry; callbacks retain their own World and check disposal before touching its EntityManager. Replacement World/system
+rebinds through setup; scene holders also check owner-instance identity, so repeated raw tokens cannot authorize an old
+callback. Automatic rebind does not steal a successor; an explicit owned Start/Restart may claim the correct scene data.
+No Entity/native view is transferred. Acquire/Stage/Release are methods of that owner instance; disposed owners reject Stage/Release without touching an
+EntityManager, even when raw numbers repeat in a replacement. Raw lease numbers are scoped to their acquired owner and World. Pending and active capacities are reused, freed by ECS on
 owner/World destruction; Stage never exports buffers. Geometry can survive battle End/Restart in the same scene/World.
 
 Bare/partial Worlds or new isolated battles with no required arena retain their legacy GroundHeight flat support **inside the same math/
-Movement path**. Missing Body in those historical fixtures uses the normal technical default for contact math; real
-production actors require their actual Body. The production CombatSmoke bootstrap explicitly requires an enabled arena
+Movement path**. Historical flat-only fixtures trust their supplied Grounded/edited Y and use one planar step with technical work dimensions;
+this does not rewrite their actual indexed Body or apply contact-size limits to unrelated bare fixtures. Real production
+actors require their actual Body and real support. The production CombatSmoke bootstrap explicitly requires an enabled arena
 adapter; missing source emits a visible error and freezes movement. This compatibility fallback is not a duel-only path.
 
 ## Checks and evidence

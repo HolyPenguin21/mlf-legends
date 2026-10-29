@@ -1,3 +1,10 @@
+## #63 bottom-up review corrections (2026-10-29)
+
+[Concrete source findings, corrections and authored regressions](STAGE04_ARENA_REVIEW.md): roof/ramp ejection,
+contact-tick drift, steep-surface fall, missing-arena restart bypass, cached-query lifecycle, unsupported authoring and
+bare-fixture compatibility. These are source/model counterexamples, **not executed Unity FAIL**. The final updated
+source report records its own exact tested SHA/tree. C# suites/Unity/Entities/Burst/GPU/performance remain **NOT RUN**.
+
 ## Current #61 — Stage 04.2 static arena (2026-10-29)
 
 Dependent branch `feature/61-static-arena` starts from corrected #60 PR #62 head

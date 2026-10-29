@@ -50,8 +50,8 @@ namespace MLFLegends.Tests.EditMode
                 var rows = new List<CombatArenaShape> { CombatArenaTests.Box(0, -.5f, 0, 1000, 0, 1000),
                     CombatArenaTests.Box(0, 0, 0, .1f, 4, 1000) };
                 for (var i = 1; i < walls; i++) rows.Add(CombatArenaTests.Box(10 + i * 2, 0, 0, .1f, 4, 1000));
-                var lease = CombatArenaSystem.Acquire(bench.Manager);
-                Assert.That(CombatArenaSystem.Stage(bench.Manager, lease, rows.ToArray()), Is.True);
+                var lease = bench.World.GetExistingSystemManaged<CombatArenaSystem>().Acquire();
+                Assert.That(bench.World.GetExistingSystemManaged<CombatArenaSystem>().Stage( lease, rows.ToArray()), Is.True);
                 var schedule = CombatStrikeSchedule.Default; schedule.LandingRecoveryTicks = 12;
                 CombatStrikeSchedule.Publish(bench.Manager, schedule);
                 var setup = BattleSetup.Default; setup.HumanAllies = setup.AiAllies = (ushort)(count / 2 - 1);
