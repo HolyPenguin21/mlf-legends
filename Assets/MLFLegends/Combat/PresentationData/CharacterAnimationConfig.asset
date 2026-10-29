@@ -236,7 +236,7 @@ MonoBehaviour:
       m_LegacyFrameCount: 0
     - ClipId: physical_ability
       EndFrame: 7
-      TotalDurationSeconds: 0.5
+      TotalDurationSeconds: 2
       SpeedCurve:
         serializedVersion: 2
         m_Curve:
@@ -267,7 +267,7 @@ MonoBehaviour:
       m_LegacyFrameCount: 0
     - ClipId: block
       EndFrame: 3
-      TotalDurationSeconds: 0.6
+      TotalDurationSeconds: 1
       SpeedCurve:
         serializedVersion: 2
         m_Curve:
@@ -390,37 +390,37 @@ MonoBehaviour:
       LandingStartFrame: -1
       m_LegacyFrameCount: 0
     Combat:
-      BodyRadius: 0.3
+      BodyRadius: 0.4
       BodyHeight: 2
       BodyMass: 1
       Hand1:
         ClipId: punch_left
         Damage: 4
         ReachMin: 0
-        ReachMax: 1
+        ReachMax: 1.3
         DepthHalfWidth: 0.4
-        HeightTolerance: 0.9
+        HeightTolerance: 2
       Hand2:
         ClipId: punch_right
         Damage: 4
         ReachMin: 0
-        ReachMax: 1
+        ReachMax: 1.3
         DepthHalfWidth: 0.4
-        HeightTolerance: 0.9
+        HeightTolerance: 2
       Foot1:
         ClipId: kick_left
         Damage: 7
         ReachMin: 0
-        ReachMax: 1.3
+        ReachMax: 1.5
         DepthHalfWidth: 0.4
-        HeightTolerance: 0.9
+        HeightTolerance: 2
       Foot2:
         ClipId: kick_right
         Damage: 7
         ReachMin: 0
-        ReachMax: 1.3
+        ReachMax: 1.5
         DepthHalfWidth: 0.4
-        HeightTolerance: 0.9
+        HeightTolerance: 2
       PhysicalAbility:
         ClipId: physical_ability
         SelfImpulse: 12
