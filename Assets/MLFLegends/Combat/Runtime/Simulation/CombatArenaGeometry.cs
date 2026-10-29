@@ -51,6 +51,7 @@ namespace MLFLegends.Combat
     {
         public float3 Position;
         public float Velocity, GroundHeight, ControlledDistance;
+        public float2 Displacement; // Achieved X/Z travel, excluding initial depenetration.
         public bool Grounded, Landed;
         public CombatArenaFailure Failure;
     }
@@ -257,21 +258,25 @@ namespace MLFLegends.Combat
         // A failed budget freezes the entire tick, never silently truncates displacement or crosses geometry.
         public static CombatArenaMove Move(NativeArray<CombatArenaShape> shapes, in CombatBody body, float3 start,
             float2 desired, float velocity, bool grounded, bool jump, uint landingTicks, bool legacy = false, float legacyHeight = 0,
-            bool integrateTime = true)
+            bool integrateTime = true, float lift = 0)
         {
             var result = new CombatArenaMove { Position = start, Velocity = velocity, Grounded = grounded };
             if (!math.all(math.isfinite(start)) || math.cmax(math.abs(start)) > CombatArenaTuning.MaxCoordinate
                 || !math.isfinite(body.Radius) || !math.isfinite(body.Height) || !math.isfinite(body.Mass) || body.Mass <= 0
                 || body.Radius < CombatArenaTuning.MinFeature
                 || body.Height < CombatArenaTuning.MinFeature || body.Radius > CombatArenaTuning.MaxBodyDimension
-                || body.Height > CombatArenaTuning.MaxBodyDimension || !math.all(math.isfinite(desired)) || !math.isfinite(velocity))
+                || body.Height > CombatArenaTuning.MaxBodyDimension || !math.all(math.isfinite(desired)) || !math.isfinite(velocity)
+                || !math.isfinite(lift))
             { result.Failure = CombatArenaFailure.InvalidBody; return result; }
             var p = start;
             if (!Depenetrate(shapes, body, ref p)) { result.Failure = CombatArenaFailure.InitialOverlap; return result; }
             grounded = grounded && (legacy || Ground(shapes, p, body.Radius, p.y, p.y, false, legacyHeight, out _));
-            var takeoff = integrateTime && grounded && jump;
+            // A positive external lift leaves support like a jump, without Jump Pressed; support absorbs a downward one.
+            var takeoff = integrateTime && grounded && (jump || lift > 0);
             var takeoffHeight = p.y;
-            if (takeoff) { velocity = CombatMovementTuning.JumpImpulse; grounded = false; }
+            var origin = Xz(p);
+            if (takeoff) { velocity = (jump ? CombatMovementTuning.JumpImpulse : 0) + math.max(0, lift); grounded = false; }
+            else if (integrateTime && !grounded) velocity += lift;
             if (integrateTime)
             {
                 if (!grounded) velocity -= CombatMovementTuning.Gravity * SimulationTiming.TickDuration;
@@ -342,6 +347,7 @@ namespace MLFLegends.Combat
             result.Position = p; result.Velocity = velocity; result.Grounded = grounded; result.Landed = landed;
             result.GroundHeight = grounded ? p.y : legacyHeight;
             result.ControlledDistance = landed && landingTicks > 0 ? 0 : traveled;
+            result.Displacement = Xz(p) - origin;
             return result;
         }
     }

@@ -15,13 +15,32 @@ namespace MLFLegends.Combat
     /// the streak, a landing restarts it.
     /// Managed orchestration of one synchronous Burst job, using the existing spatial owner's reusable native scratch.
     /// Stage 04 collision corrections must extend this owner rather than introduce another position writer.
+    /// Stage 04.4: it also owns the World's single <see cref="CombatImpulse"/> input buffer and the physical X/Z
+    /// <see cref="CombatMotion.ExternalVelocity"/>. Every entry present at this call is consumed exactly once (applied, dropped
+    /// or rejected, see CombatContactDiagnostics) after a successful solve; one integrator, no second clock or queue owner.
+    /// A fighter whose InCombat is disabled loses its external velocity here; impulses addressed to it are dropped, so
+    /// re-enabling never releases an old impulse.
     /// </remarks>
     [UpdateInGroup(typeof(CombatStateUpdateSystemGroup))]
     public partial struct CombatMovementSystem : ISystem
     {
+        Entity m_Impulses;
+
         public void OnCreate(ref SystemState state)
         {
+            // One impulse input per World; a tag component cannot go through CreateSingleton(value).
+            using (var existing = state.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<CombatImpulseQueue>()))
+                if (!existing.IsEmptyIgnoreFilter)
+                    throw new System.InvalidOperationException("Only one CombatMovementSystem may own a World impulse input.");
+            m_Impulses = state.EntityManager.CreateEntity(typeof(CombatImpulseQueue), typeof(CombatImpulse));
+            state.EntityManager.SetName(m_Impulses, nameof(CombatImpulseQueue));
             state.RequireForUpdate<SimulationClockRunning>();
+        }
+
+        public void OnDestroy(ref SystemState state)
+        {
+            if (state.EntityManager.Exists(m_Impulses))
+                state.EntityManager.DestroyEntity(m_Impulses);
         }
 
         public void OnUpdate(ref SystemState state)
@@ -75,12 +94,14 @@ namespace MLFLegends.Combat
                         Controlled = ids.HasComponent(entity) && id.Value == controlled,
                         Legacy = legacy, Frozen = frozen, Body = actualBody, MovementBody = body,
                         Start = next, Motion = kinetic, Desired = new float2(command.MoveX * distance, command.MoveZ * distance),
+                        Velocity = kinetic.ExternalVelocity,
                         Jump = (command.Pressed & CommandButtons.Jump) != 0,
                         Result = new CombatArenaMove { Position = next, Velocity = kinetic.VerticalVelocity,
                             Grounded = kinetic.Grounded, GroundHeight = kinetic.GroundHeight, Failure = failure },
                     });
                 }
-                owner.CalculateMovement(shapes, tick, landingTicks);
+                var pending = SystemAPI.GetBuffer<CombatImpulse>(m_Impulses);
+                owner.CalculateMovement(shapes, pending.AsNativeArray(), tick, landingTicks);
                 var positions = SystemAPI.GetComponentLookup<CombatPosition>();
                 var motions = SystemAPI.GetComponentLookup<CombatMotion>();
                 for (var i = 0; i < rows.Length; i++)
@@ -91,10 +112,17 @@ namespace MLFLegends.Combat
                     {
                         if (result.Failure != CombatArenaFailure.None)
                         { diagnostics.FailedBodies++; diagnostics.LastFailure = result.Failure; }
+                        if (math.any(row.Motion.ExternalVelocity != 0))
+                        {
+                            var rolledBack = row.Motion;
+                            rolledBack.ExternalVelocity = float2.zero; // Rollback publishes no stored velocity for later release.
+                            motions[row.Entity] = rolledBack;
+                        }
                         continue;
                     }
                     var next = result.Position;
                     var kinetic = row.Motion;
+                    kinetic.ExternalVelocity = row.VelocityOut;
                     kinetic.VerticalVelocity = result.Velocity;
                     kinetic.Grounded = result.Grounded;
                     if (!legacy) kinetic.GroundHeight = result.GroundHeight;
@@ -135,6 +163,10 @@ namespace MLFLegends.Combat
                     motions[row.Entity] = kinetic;
                 }
                 if (hasArena) SystemAPI.SetSingleton(diagnostics);
+                // Consumption boundary: only after a complete solve and write. An exception above leaves the input unconsumed.
+                SystemAPI.GetBuffer<CombatImpulse>(m_Impulses).Clear();
+                foreach (var outOfCombat in SystemAPI.Query<RefRW<CombatMotion>>().WithDisabled<InCombat>())
+                    if (math.any(outOfCombat.ValueRO.ExternalVelocity != 0)) outOfCombat.ValueRW.ExternalVelocity = float2.zero;
             }
             finally { owner.EndMovement(); }
         }

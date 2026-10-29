@@ -7,6 +7,7 @@ using NUnit.Framework;
 using Unity.Collections;
 using Unity.Core;
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace MLFLegends.Tests.EditMode
 {
@@ -122,6 +123,9 @@ namespace MLFLegends.Tests.EditMode
         /// <summary>All combatants (defeated ones too), sorted by <see cref="CombatantId"/>.</summary>
         public CombatantRecord[] Combatants;
         public CombatSpatialBody[] Spatial = Array.Empty<CombatSpatialBody>();
+
+        /// <summary>Impulse input still pending after this tick (submitted after Movement), with its battle epoch.</summary>
+        public CombatImpulse[] Impulses = Array.Empty<CombatImpulse>();
         public bool SpatialValid;
         public uint SpatialTick;
 
@@ -411,7 +415,7 @@ namespace MLFLegends.Tests.EditMode
             }
         }
 
-        T AddToPhase<T>(Type phase, bool sort = true) where T : SystemBase, new()
+        public T AddToPhase<T>(Type phase, bool sort = true) where T : SystemBase, new()
         {
             var system = World.CreateSystemManaged<T>();
             var group = (ComponentSystemGroup)World.GetExistingSystemManaged(phase);
@@ -479,6 +483,9 @@ namespace MLFLegends.Tests.EditMode
             record.Pending = manager.GetBuffer<PendingCombatCommand>(queueEntity, true).AsNativeArray().ToArray()
                 .Select(p => p.Command).OrderBy(c => c.Combatant.Value).ThenBy(c => c.Tick).ToArray();
 
+            using (var impulses = manager.CreateEntityQuery(typeof(CombatImpulseQueue)))
+                if (impulses.CalculateEntityCount() == 1)
+                    record.Impulses = manager.GetBuffer<CombatImpulse>(impulses.GetSingletonEntity(), true).AsNativeArray().ToArray();
             record.Raw = Lines(record, record.Results, record.Pending, c => "#" + c.Combatant.Value, t => "t" + t);
             // The processor orders by raw CombatantId, and IDs differ between battles (a previous battle's fighter sorts
             // before the current ones, a never-issued ID after them): re-establish the order in role space. Stable, so
@@ -508,7 +515,7 @@ namespace MLFLegends.Tests.EditMode
                     : Command(c.Applied.Command) + (c.Applied.WasSubmitted ? "" : " implicit");
                 lines.Add($"{who(self)} team{c.Team} pos({Float(c.Position.x)},{Float(c.Position.y)},{Float(c.Position.z)}) "
                     + $"body({Float(c.Body.Radius)},{Float(c.Body.Height)},{Float(c.Body.Mass)}) "
-                    + $"motion(ground:{Float(c.Motion.GroundHeight)},vy:{Float(c.Motion.VerticalVelocity)},grounded:{c.Motion.Grounded},"
+                    + $"motion(ground:{Float(c.Motion.GroundHeight)},vy:{Float(c.Motion.VerticalVelocity)},ext:{Float(c.Motion.ExternalVelocity.x)}/{Float(c.Motion.ExternalVelocity.y)},grounded:{c.Motion.Grounded},"
                     + $"land:{At(c.Motion.LandTick)},landingTicks:{c.Motion.LandingRecoveryTicks},moved:{At(c.Motion.LastMoveTick)},streak:{At(c.Motion.MoveStreakStartTick)}/{Float(c.Motion.MoveStreakDistance)}) "
                     + $"strike({c.Attack.Kind},start:{(c.Attack.IsAttacking ? At(c.Attack.StartTick) : "-")},series:{c.Attack.SeriesLength},"
                     + $"timing:{c.Attack.Timing.ActiveStart}/{c.Attack.Timing.RecoveryStart}/{c.Attack.Timing.End}/{c.Attack.Timing.ChainPoint},"
@@ -518,6 +525,8 @@ namespace MLFLegends.Tests.EditMode
 
             lines.AddRange(results.Select(r => $"result {Command(r.Command)} -> {r.Outcome}"));
             lines.AddRange(pending.Select(p => $"pending {Command(p)}"));
+            lines.AddRange(record.Impulses.Select(i => $"impulse {Id(i.Target.Value)} j({Float(i.Impulse.x)},{Float(i.Impulse.y)},{Float(i.Impulse.z)}) "
+                + (i.BattleNumber == record.BattleNumber ? "current" : "battle" + i.BattleNumber)));
             return lines.ToArray();
         }
     }

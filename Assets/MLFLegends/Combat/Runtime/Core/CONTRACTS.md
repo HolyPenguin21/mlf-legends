@@ -1,3 +1,14 @@
+## Stage 04.4–04.5 / #66 current contract
+
+`CombatMotion.ExternalVelocity` (float2 X/Z, units/s) is the only stored physical horizontal velocity; VerticalVelocity
+stays the only vertical one. Both are written only by CombatMovementSystem. `CombatImpulse` (Target, J, BattleNumber) is
+a buffer on the single `CombatImpulseQueue` singleton that Movement creates and destroys; producers only append
+(`CombatImpulse.Submit`). Movement consumes every entry present at its call exactly once (applied Δv=J/CombatBody.Mass,
+dropped for another battle/unknown or out-of-combat target, rejected if non-finite or above the speed limit); an entry
+appended after Movement T applies in T+1. Disabled InCombat clears ExternalVelocity. CombatHitSystem remains the only HP/
+ledger writer and now reads candidates from the World's single CombatSpatialIndexSystem batch; a stale snapshot with
+Active attackers throws before writes. Full contract: Docs/STAGE04_IMPULSES_HIT.md.
+
 ## Stage 04.3 / #64 current contract
 
 CombatMovementSystem is the sole runtime Position/Motion writer. Its managed input/output orchestration calls one

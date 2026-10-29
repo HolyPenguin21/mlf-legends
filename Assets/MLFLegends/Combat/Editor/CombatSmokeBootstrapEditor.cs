@@ -1,4 +1,7 @@
 using MLFLegends.Combat;
+using Unity.Collections;
+using Unity.Entities;
+using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
 
@@ -33,6 +36,51 @@ namespace MLFLegends.Editor
             {
                 if (GUILayout.Button("Restart battle (apply team sizes)"))
                     bootstrap.RestartBattle();
+            }
+            DrawTestImpulses();
+        }
+
+        // Explicit test-only impulse source for manual Stage 04.4 checks (#66): no key binding, no runtime producer.
+        // It appends to the World's single CombatImpulse input; Movement of the next tick applies it.
+        static void DrawTestImpulses()
+        {
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Test-only impulses (manual physics check)", EditorStyles.boldLabel);
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("Push controlled +X")) Submit(false, new float3(8, 0, 0));
+                if (GUILayout.Button("Push controlled -X")) Submit(false, new float3(-8, 0, 0));
+                if (GUILayout.Button("Lift controlled")) Submit(false, new float3(0, 7, 0));
+            }
+            if (GUILayout.Button("Blast: everyone away from the controlled fighter"))
+                Submit(true, new float3(8, 3, 0));
+        }
+
+        static void Submit(bool everyone, float3 impulse)
+        {
+            var world = World.DefaultGameObjectInjectionWorld;
+            if (world == null || !world.IsCreated) return;
+            var manager = world.EntityManager;
+            using var sessions = manager.CreateEntityQuery(ComponentType.ReadOnly<BattleSession>());
+            if (sessions.CalculateEntityCount() != 1 || !sessions.GetSingleton<BattleSession>().IsActive) return;
+            var human = sessions.GetSingleton<BattleSession>().HumanCombatant;
+            using var fighters = manager.CreateEntityQuery(ComponentType.ReadOnly<CombatantId>(), ComponentType.ReadOnly<CombatPosition>(),
+                ComponentType.ReadOnly<CombatBody>(), ComponentType.ReadOnly<InCombat>());
+            using var ids = fighters.ToComponentDataArray<CombatantId>(Allocator.Temp);
+            using var positions = fighters.ToComponentDataArray<CombatPosition>(Allocator.Temp);
+            using var bodies = fighters.ToComponentDataArray<CombatBody>(Allocator.Temp);
+            var center = float3.zero;
+            for (var i = 0; i < ids.Length; i++) if (ids[i].Equals(human)) center = positions[i].Value;
+            for (var i = 0; i < ids.Length; i++)
+            {
+                if (everyone == ids[i].Equals(human)) continue;
+                var j = impulse;
+                if (everyone)
+                {
+                    var away = math.normalizesafe((positions[i].Value - center).xz, new float2(1, 0));
+                    j = new float3(away.x * impulse.x, impulse.y, away.y * impulse.x);
+                }
+                CombatImpulse.Submit(manager, ids[i], j * bodies[i].Mass); // Same Δv for every mass.
             }
         }
 

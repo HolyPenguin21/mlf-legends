@@ -59,6 +59,10 @@ namespace MLFLegends.Tests.PlayMode
         public IEnumerator SetUp()
         {
             RequireGraphicsDevice();
+            // Renderer-only suite: its numeric poses deliberately overlap or coincide (equal depth, 400 coincident). Since
+            // 04.3 body contacts would separate them before the readback, so Movement is paused for these static poses;
+            // contact/impulse physics is covered by the EditMode suites. Restored in TearDown.
+            SetMovementEnabled(false);
             m_Target = CreateTarget(Size);
             m_Readback = new Texture2D(Size, Size, TextureFormat.RGBA32, false, false);
             SetCamera(float3.zero, 2f);
@@ -72,6 +76,7 @@ namespace MLFLegends.Tests.PlayMode
             DestroyAll(m_Renderer, m_Camera, m_Target, m_Readback);
             DestroyAll(m_Owned.ToArray());
             m_Owned.Clear();
+            SetMovementEnabled(true);
             yield return EndBattle();
         }
 
@@ -316,6 +321,7 @@ namespace MLFLegends.Tests.PlayMode
         [UnityTest]
         public IEnumerator CloseWallOcclusionIsIndependentOfDistantRoster([Values(0, 49, 199)] int allies)
         {
+            SetMovementEnabled(true); // This case checks that an offscreen fighter still moves through the simulation.
             yield return RestartBattle(Duel(float3.zero, FacingDirection.Right, new float3(50f, 0f, 0f), FacingDirection.Left, allies));
             using var query = Manager.CreateEntityQuery(typeof(CombatantId), typeof(CombatPosition), typeof(InCombat));
             // Do not keep Temp allocations over any yield.

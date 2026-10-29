@@ -1,4 +1,5 @@
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace MLFLegends.Combat
 {
@@ -13,7 +14,15 @@ namespace MLFLegends.Combat
     public struct CombatMotion : IComponentData
     {
         public float GroundHeight;
+
+        /// <summary>The only vertical velocity: jump, gravity and the vertical part of external impulses.</summary>
         public float VerticalVelocity;
+
+        /// <summary>
+        /// Physical X/Z velocity from external impulses (world units/s), separate from commanded locomotion. Zero keeps
+        /// Stage 04.3 behaviour. Never scaled by strike phases or landing; decays by <see cref="CombatImpulseTuning"/>.
+        /// </summary>
+        public float2 ExternalVelocity;
         byte m_Grounded;
 
         /// <summary>Tick on which the fighter last touched down after a jump.</summary>

@@ -193,8 +193,10 @@ namespace MLFLegends.Tests.EditMode
         public void IndexPreservesAllPreviousCombatStateForBothSourcesAndPacing(int pacing)
         {
             using var indexed = new ReplayWorld("indexed replay");
-            using var control = new ReplayWorld("pre-index behaviour control");
-            Index(control).Enabled = false;
+            using var control = new ReplayWorld("single-step indexed control");
+            // Since 04.5 Hit consumes the snapshot, so a disabled index is no longer a valid control. The pre-index
+            // behaviour is instead checked per tick by the independent brute-force oracle on the same final positions.
+            var oracle = HitOracle.Attach(indexed);
             var script = new ReplayScript();
             for (uint t = 1; t <= 120; t++)
             {
@@ -212,6 +214,8 @@ namespace MLFLegends.Tests.EditMode
                 indexed.Frame(pacing);
             control.Step(120);
             Assert.That(indexed.RawLog, Is.EqualTo(control.RawLog), "Position, motion, HP, strike, facing, commands and body replay are identical.");
+            Assert.That(oracle.Mismatches, Is.Empty, "Indexed Hit equals the brute-force pre-index result on every tick.");
+            Assert.That(oracle.CheckedTicks, Is.GreaterThan(100)); Assert.That(oracle.CheckedHits, Is.GreaterThan(0));
             Assert.That(indexed.Records.SelectMany(r => r.Combatants).All(c => c.Body.Equals(CombatBodyTuning.Default)), Is.True);
         }
 

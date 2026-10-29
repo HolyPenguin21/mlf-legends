@@ -461,6 +461,60 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(d.PeakPairs, Is.EqualTo(3));
         }
 
+        [TestCase(100, false)] [TestCase(100, true)] [TestCase(400, false)] [TestCase(400, true)]
+        public void PressingFrontsKeepMovingWithoutRollbackOrBulldozing(int count, bool impulse)
+        {
+            // Two touching formations walk into each other (the benchmark's opposing front). Before #66 the iteration
+            // budget left a tiny swept violation and the whole island rolled back every tick (400) or after one impulse (100).
+            using var w = new ReplayWorld("pressing fronts");
+            var arena = w.World.GetExistingSystemManaged<CombatArenaSystem>();
+            Assert.That(arena.Stage(arena.Acquire(), new[] { CombatArenaTests.Box(0, -.5f, 0, 100, 0, 100) }), Is.True);
+            var setup = BattleSetup.Default; setup.HumanAllies = setup.AiAllies = (ushort)(count / 2 - 1);
+            w.Request(BattleRequest.Start(setup)); w.World.GetExistingSystemManaged<InitializationSystemGroup>().Update();
+            var e = Actors(w);
+            for (var i = 0; i < e.Length; i++)
+            {
+                var team = i < count / 2 ? (byte)1 : (byte)2; var k = team == 1 ? i : i - count / 2;
+                w.Manager.SetComponentData(e[i], new CombatTeam { Value = team });
+                w.Manager.SetComponentData(e[i], new CombatPosition { Value = new float3(team == 1 ? -.3f - (k / 20) * .6f : .3f + (k / 20) * .6f, 0, (k % 20) * .6f) });
+            }
+            var owner = w.World.GetExistingSystemManaged<CombatSpatialIndexSystem>();
+            var start = e.Select(x => Position(w, x)).ToArray();
+            for (var t = 0; t < 60; t++)
+            {
+                foreach (var actor in e) Command(w, actor, (sbyte)(w.Manager.GetComponentData<CombatTeam>(actor).Value == 1 ? 1 : -1));
+                if (impulse && t == 5) CombatImpulse.Submit(w.Manager, w.Manager.GetComponentData<CombatantId>(e[0]), new float3(8, 0, 2));
+                w.Step();
+                var c = owner.LastContacts;
+                Assert.That(c.RolledBackBodies, Is.Zero, $"tick {t}: no island rollback (holds {c.LocalHolds}, iterations {c.Iterations}, constraint {c.ResidualConstraint}, unresolved {c.UnresolvedPenetration}, slop {c.SlopAcceptedPairs}, work limit {c.WorkLimit}, world rejections {c.WorldRejections}, physical {c.PhysicalBodies})");
+                Assert.That(c.LocalHolds, Is.LessThanOrEqualTo(count / 5), $"tick {t}: only jammed bodies wait this tick");
+            }
+            var slop = CombatContactTuning.SlopRadiusFraction * .3f;
+            for (var i = 0; i < e.Length; i++)
+            {
+                var p = Position(w, e[i]);
+                Assert.That(math.all(math.isfinite(p)), Is.True);
+                // Walking alone never shoves the other front; the single impulse may move a few bodies physically.
+                if (!impulse) Assert.That(math.abs(p.x - start[i].x), Is.LessThan(.06f), "No bulldozing through accepted slop.");
+            }
+            using var rows = new NativeList<CombatSpatialBody>(Allocator.Temp);
+            for (var i = 0; i < e.Length; i++)
+            {
+                Assert.That(owner.TryQueryAabb(new CombatSpatialBounds { Min = Position(w, e[i]) - .7f, Max = Position(w, e[i]) + .7f }, rows), Is.True);
+                foreach (var other in rows) if (other.Id.Value > w.Manager.GetComponentData<CombatantId>(e[i]).Value)
+                    Assert.That(math.distance(Position(w, e[i]).xz, other.Position.xz), Is.GreaterThanOrEqualTo(.6f - slop - .00021f));
+            }
+            // Held bodies wait only while jammed: the controlled fighter's front retreats when it stops pressing.
+            var before = Position(w, e[0]).x;
+            for (var t = 0; t < 20; t++)
+            {
+                foreach (var actor in e) Command(w, actor, (sbyte)(w.Manager.GetComponentData<CombatTeam>(actor).Value == 1 ? -1 : 0));
+                w.Step();
+                Assert.That(owner.LastContacts.RolledBackBodies, Is.Zero);
+            }
+            Assert.That(Position(w, e[0]).x, Is.LessThan(before - .3f), "The controlled fighter can retreat out of the press.");
+        }
+
         [Test]
         public void PausedRestartKeepsOldContactDiagnosticsExplicitlyInTheirOldBattle()
         {

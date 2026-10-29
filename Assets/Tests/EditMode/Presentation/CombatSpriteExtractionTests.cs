@@ -182,12 +182,13 @@ namespace MLFLegends.Tests.EditMode
         [Test]
         public void FightersCrossingInDepthOrAlongXSwapFrontOnlyWhenTheirDepthOrderChanges()
         {
-            // Real movement on fixed ticks: the human walks +Z and the AI −Z through each other (same X), then the human
-            // walks along X past the AI at equal depth. Front = smaller Z; at equal Z the lower ID (human); never flickers.
+            // Real movement on fixed ticks: the human walks +Z and the AI −Z past each other, then the human walks along X
+            // past the AI's depth row. Front = smaller Z; at equal Z the lower ID (human); never flickers. Since 04.3 enemy
+            // bodies block, so the lanes are .7 apart in X (more than the summed .3 radii) instead of the same X.
             var setup = new BattleSetup
             {
                 Human = new CombatantSetup { Team = 1, Position = new float3(0f, 0f, -1f), Facing = FacingDirection.Right },
-                Ai = new CombatantSetup { Team = 2, Position = new float3(0f, 0f, 1f), Facing = FacingDirection.Left },
+                Ai = new CombatantSetup { Team = 2, Position = new float3(0.7f, 0f, 1f), Facing = FacingDirection.Left },
             };
             m_Replay.Request(BattleRequest.Start(setup));
             const uint crossing = 30, alongX = 30;

@@ -415,8 +415,8 @@ namespace MLFLegends.Tests.EditMode
                 var pass = RunPass(setup, checks, combatants, rep, rep == 0 ? null : report, sceneObjectsBefore);
                 while (pass.MoveNext())
                     yield return pass.Current;
-                // Session, clock, queue, the strike timing table and the WorldTime singleton that the first World.SetTime creates.
-                Assert.That(m_Bench.Manager.UniversalQuery.CalculateEntityCount(), Is.EqualTo(5),
+                // Session, clock, queue, the strike timing table, the impulse input (#66) and the WorldTime singleton that the first World.SetTime creates.
+                Assert.That(m_Bench.Manager.UniversalQuery.CalculateEntityCount(), Is.EqualTo(6),
                     $"After the End of repetition {rep} only the World's own entities remain.");
             }
 

@@ -1,3 +1,15 @@
+## Current #66 — Stage 04.4–04.5 impulses, indexed Hit, 2/100/400 (2026-10-29)
+
+Fresh main base `cf2b5bcf57c2b81b635074a0322a85ecf50879b3` (PR #65); branch `feature/66-impulses-indexed-hit`, one PR.
+[Contract: impulse input/epoch, integration, mass/contacts, rollback, Hit migration, checks, manual checklist](STAGE04_IMPULSES_HIT.md);
+[exact SHA and PASS/FAIL/NOT RUN results](Evidence/66/README.md).
+Movement remains the only Position/Motion writer and integrator: pending `CombatImpulse` → Δv=J/Mass → physics then
+control proposals → contacts (physical share = mass-weighted inelastic response for any teams, 04.3 rules for the rest)
+→ velocity from achieved physics → deceleration → final index → Hit via one atomic index batch + Burst kernel.
+The first real Unity compile of the 04.3 base failed (CS0246 in the replay driver); fixed first, with two test-side
+EditMode fixes. Per-attack Impact/stagger/guard remain Stage 05/06. Stage 03 OWNER-ACCEPTED; Stage 04 IN PROGRESS —
+manager review and owner manual acceptance pending; merge only on owner instruction.
+
 ## #64 bottom-up source review update (2026-10-29)
 
 [Findings/corrections](STAGE04_BODY_CONTACTS_REVIEW.md) and [exact evidence](Evidence/64/README.md): final support/landing,

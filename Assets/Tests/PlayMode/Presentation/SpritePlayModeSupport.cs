@@ -36,6 +36,30 @@ namespace MLFLegends.Tests.PlayMode
 
         public static uint Tick => Singleton<SimulationClock>().Tick;
 
+        /// <summary>Pauses/resumes the default World's movement owner (static renderer poses only).</summary>
+        public static void SetMovementEnabled(bool enabled)
+        {
+            if (DefaultWorld == null || !DefaultWorld.IsCreated) return;
+            var movement = DefaultWorld.GetExistingSystem<CombatMovementSystem>();
+            if (movement != SystemHandle.Null) DefaultWorld.Unmanaged.ResolveSystemStateRef(movement).Enabled = enabled;
+        }
+
+        /// <summary>
+        /// Since 04.3 bodies collide. The run/idle fixtures move even IDs along +Z inside the 1-unit ally formation, so put
+        /// idle (odd) fighters .5 to the side and use small bodies: every mover gets a free lane without passing anyone.
+        /// </summary>
+        public static void SeparateRunLanes()
+        {
+            using var query = Manager.CreateEntityQuery(typeof(CombatantId), typeof(CombatPosition), typeof(CombatBody));
+            using var entities = query.ToEntityArray(Allocator.Temp);
+            foreach (var e in entities)
+            {
+                Manager.SetComponentData(e, new CombatBody { Radius = .1f, Height = 2, Mass = 1 });
+                if ((Manager.GetComponentData<CombatantId>(e).Value & 1) == 1)
+                    Manager.SetComponentData(e, new CombatPosition { Value = Manager.GetComponentData<CombatPosition>(e).Value + new float3(.5f, 0, 0) });
+            }
+        }
+
         public static bool HasGraphicsDevice => SystemInfo.graphicsDeviceType != GraphicsDeviceType.Null;
 
         /// <summary>Graphics checks are NOT RUN without a device (-nographics); a headless PASS must not stand in for them.</summary>

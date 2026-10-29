@@ -1,3 +1,13 @@
+## Stage 04.4–04.5 / #66 current contract
+
+Movement (sole Position/Motion writer, one integrator) consumes the single CombatImpulse input at its tick boundary,
+integrates ExternalVelocity·dt through the same world substeps before the commanded step (strike phase factors and
+landing lock apply to control only), resolves the physical share of body contacts as a mass-weighted inelastic normal
+response for any teams (04.3 locomotion/yield/depenetration rules keep the rest), derives the next velocity from the
+achieved physical displacement and applies CombatImpulseTuning deceleration. Rolled-back islands publish zero external
+velocity (counted). Hit: managed gather → one atomic TryQueryAabbBatch on the final snapshot → Burst CombatHitJob; no
+brute-force fallback. Contract, limits and checks: Docs/STAGE04_IMPULSES_HIT.md.
+
 ## Stage 04.3 / #64 current contract
 
 CombatMovementSystem is the sole runtime Position/Motion writer. Its managed input/output orchestration calls one
