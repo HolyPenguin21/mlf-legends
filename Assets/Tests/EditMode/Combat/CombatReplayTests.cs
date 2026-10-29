@@ -262,7 +262,7 @@ namespace MLFLegends.Tests.EditMode
                 // The AI spawns Left, the human Right: the accepted x+1 of r1 turns the AI on that same tick, and no
                 // rejected x-1 (r3 conflict, r6 conflict, r7 stale) turns either of them back.
                 Assert.That((record.Combatant(record.HumanId).Facing, record.Combatant(record.AiId).Facing),
-                    Is.EqualTo((FacingDirection.Right, FacingDirection.Right)), $"Same facing on relative tick {record.RelativeTick}.");
+                    Is.EqualTo((FacingDirection.Right, FacingDirection.Left)), $"Both face the opposing team on relative tick {record.RelativeTick}.");
                 outcomes.UnionWith(human.Select(r => r.Outcome));
             }
 

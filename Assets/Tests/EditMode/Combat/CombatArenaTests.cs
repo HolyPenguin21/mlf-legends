@@ -280,7 +280,7 @@ namespace MLFLegends.Tests.EditMode
                 var human = row.Combatant(row.HumanId); var ai = row.Combatant(row.AiId);
                 Assert.That(ai.Position.x, Is.EqualTo(human.Position.x)); Assert.That(ai.Position.y, Is.EqualTo(human.Position.y));
                 Assert.That(ai.Motion, Is.EqualTo(human.Motion)); Assert.That(ai.Attack, Is.EqualTo(human.Attack));
-                Assert.That(ai.Facing, Is.EqualTo(human.Facing)); Assert.That(ai.Health.Current, Is.EqualTo(human.Health.Current));
+                Assert.That((human.Facing, ai.Facing), Is.EqualTo((FacingDirection.Right, FacingDirection.Left)), "Z-only opponents preserve their respective sides."); Assert.That(ai.Health.Current, Is.EqualTo(human.Health.Current));
             }
         }
         [TestCase(2)] [TestCase(100)] [TestCase(400)]

@@ -362,7 +362,7 @@ namespace MLFLegends.Tests.EditMode
             var diagonal = Step * 0.70710677f;
             Assert.That(Human(Last).Position.x, Is.EqualTo(start.x - diagonal).Within(1e-5f), "1/√2 per axis, from CombatMovementSystem.");
             Assert.That(Human(Last).Position.z, Is.EqualTo(start.z + diagonal).Within(1e-5f));
-            Assert.That(Human(Last).Facing, Is.EqualTo(FacingDirection.Left));
+            Assert.That(Human(Last).Facing, Is.EqualTo(FacingDirection.Right));
             Frame(1, () =>
             {
                 Up(Key.W);
@@ -816,7 +816,7 @@ namespace MLFLegends.Tests.EditMode
             }
 
             Assert.That(player.Any(r => !Human(r).Motion.Grounded), Is.True, "The sequence includes a jump.");
-            Assert.That(player.Select(r => Human(r).Facing).Distinct().Count(), Is.EqualTo(2), "…and both facings.");
+            Assert.That(player.Select(r => Human(r).Facing).Distinct().Count(), Is.EqualTo(1), "Retreat input preserves the enemy-facing side.");
         }
 
         /// <summary>200 vs 200: one producer, one command for the human; every other fighter still gets every tick.</summary>

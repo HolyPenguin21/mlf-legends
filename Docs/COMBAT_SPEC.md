@@ -174,3 +174,8 @@ Fixed simulation tick, combat responsiveness, stability capacity/recovery, perfe
 ## Stage 05.2 — #73 physical ability
 
 Implementation and numerical contracts: [STAGE05_2.md](STAGE05_2.md). Order remains Action → Facing → Movement (accepted shape/path) → final SpatialIndex → Hit. Next: #74, then 05.3 VFX. Stage 04/05 owner manual acceptance is still open. Unity/Burst/GPU/benchmark execution for this change is NOT RUN; available source/model evidence does not replace it.
+
+
+## Stage 05.2a — #74
+
+After #73 / PR #75 (main 78b473b), the current hit reference is the **accepted body waist on both sides**, Facing selects the nearest opponent before Movement, and presentation reads Hit-owner feedback plus numeric ground projection. See [STAGE05_2A.md](STAGE05_2A.md) for defaults, ownership, intentional rule changes and exact NOT RUN limits. Next: 05.3 VFX. Stage 04/05 owner visual/manual acceptance remains open.

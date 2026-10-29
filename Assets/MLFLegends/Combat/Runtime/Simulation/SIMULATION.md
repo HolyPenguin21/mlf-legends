@@ -217,7 +217,14 @@ Strict float mode avoids fast-math reassociation; replay assertions target the s
 **not a promise of bit-identical floating-point across CPUs or platforms**. Stage 04 must replace the
 spawn-height support and add collision corrections inside this owner, not write a second position.
 
-## Stage 02.2 facing (#33)
+## Historical Stage 02.2 facing (#33; policy superseded by #74)
+
+Current policy is Stage 05.2a / #74: gather start-of-tick Id/Team/Position once and face the nearest enabled opponent
+in X/Z, with stable Id ties and the strike/landing locks. Accepted MoveX is only the no-opponent/partial-fixture fallback.
+This is a bounded O(participants × roster) Burst kernel, not the historical O(N) rule below. Action → Facing → Movement
+→ final index → Hit remains the ordering. See Docs/STAGE05_2A.md and Docs/REVIEW_73_74.md for the current contracts.
+
+The following paragraphs describe the original #33 delivery, not the current default orientation policy.
 
 `CombatFacingSystem` is the sole runtime writer of `CombatFacing` after `BattleLifecycleSystem.Spawn` set it
 from `BattleSetup`. It belongs only to `CombatStateUpdateSystemGroup` with `[UpdateBefore(CombatMovementSystem)]`,

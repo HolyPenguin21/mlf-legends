@@ -86,7 +86,7 @@ namespace MLFLegends.Tests.EditMode
             }
 
             var human = record.Combatant(record.HumanId);
-            Assert.That(human.Facing, Is.EqualTo(FacingDirection.Left), "Moved −X: CombatFacingSystem turned it; the renderer only shows it.");
+            Assert.That(human.Facing, Is.EqualTo(FacingDirection.Right), "Retreating −X keeps facing the enemy; renderer reads the same facing.");
             Assert.That(human.Position.y, Is.GreaterThan(0f), "Airborne.");
             Assert.That(m_Extraction.PageInstances(0), Is.EqualTo(perTeam * 2));
             Assert.That(m_Extraction.PageInstances(1), Is.EqualTo(0));
@@ -410,7 +410,7 @@ namespace MLFLegends.Tests.EditMode
                 Extract(set);
                 var motion = m_Replay.Manager.GetComponentData<CombatMotion>(entity);
                 var instance = ById()[human.Value];
-                Assert.That(instance.Facing, Is.EqualTo(-1f), "Airborne facing remains authoritative.");
+                Assert.That(instance.Facing, Is.EqualTo(1f), "Airborne retreat still faces the nearest enemy.");
                 Assert.That(instance.Position, Is.EqualTo(m_Replay.Manager.GetComponentData<CombatPosition>(entity).Value), "Height from ECS only.");
                 Assert.That(instance.Frame, Is.EqualTo(motion.Grounded ? CombatAnimationFixture.TechC : CombatAnimationFixture.TechB));
                 if (motion.Grounded) { landed = true; break; }

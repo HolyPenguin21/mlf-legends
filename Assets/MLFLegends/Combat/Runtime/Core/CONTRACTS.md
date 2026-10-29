@@ -190,3 +190,8 @@ Rules (the processor #4 implements them; their outcome must be observable for te
 ## Stage 05.2 physical executions
 
 Strike parameters additionally freeze self J/elevation/launch tick, compact height interval, HitOffsetY and authored on-hit J. Movement alone accepts actual Body.Height; CombatBodyProfile stores spawn base/request/pending restore. Same tick Facing precedes launch direction. Hit T appends on-hit input for Movement T+1; no position/shape writes after final publication. Motion segments belong to the existing spatial owner and require its final epoch/membership guard. See Docs/STAGE05_2.md.
+
+
+## Stage 05.2a changes
+
+Current hit point = accepted body waist (Position.y + Height/2) for attacker AND target, plus one frozen attacker HitOffsetY. Inside/query/swept intervals/debug agree. CombatFacingSystem alone selects nearest opposing-team Id from gathered start-of-tick positions; current strike lock remains. Hit alone writes CombatDamageFeedback.LastDamageTick for positive-damage confirmations; lifecycle starts it at zero. Renderer only reads it and numeric arena support, including through pause/restart/World replacement. Details in Docs/STAGE05_2A.md.

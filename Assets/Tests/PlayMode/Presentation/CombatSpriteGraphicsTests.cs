@@ -44,6 +44,9 @@ namespace MLFLegends.Tests.PlayMode
         Texture2D m_Readback;
         Camera m_Camera;
         CombatSpriteRenderer m_Renderer;
+        World m_FacingWorld;
+        SystemHandle m_FacingSystem;
+        bool m_FacingWasEnabled;
         float m_PixelsPerUnit;
         float3 m_LookAt;
         readonly List<Object> m_Owned = new List<Object>();
@@ -63,6 +66,15 @@ namespace MLFLegends.Tests.PlayMode
             // 04.3 body contacts would separate them before the readback, so Movement is paused for these static poses;
             // contact/impulse physics is covered by the EditMode suites. Restored in TearDown.
             SetMovementEnabled(false);
+            // These tests prescribe arbitrary sprite poses, including looking away from the opponent. Since #74 the
+            // orientation owner must also be paused; otherwise a fixed tick changes the fixture during a yield.
+            m_FacingWorld = DefaultWorld;
+            m_FacingSystem = m_FacingWorld.GetExistingSystem<CombatFacingSystem>();
+            if (m_FacingSystem != SystemHandle.Null)
+            {
+                m_FacingWasEnabled = m_FacingWorld.Unmanaged.ResolveSystemStateRef(m_FacingSystem).Enabled;
+                m_FacingWorld.Unmanaged.ResolveSystemStateRef(m_FacingSystem).Enabled = false;
+            }
             m_Target = CreateTarget(Size);
             m_Readback = new Texture2D(Size, Size, TextureFormat.RGBA32, false, false);
             SetCamera(float3.zero, 2f);
@@ -77,6 +89,9 @@ namespace MLFLegends.Tests.PlayMode
             DestroyAll(m_Owned.ToArray());
             m_Owned.Clear();
             SetMovementEnabled(true);
+            if (m_FacingWorld != null && m_FacingWorld.IsCreated && m_FacingSystem != SystemHandle.Null)
+                m_FacingWorld.Unmanaged.ResolveSystemStateRef(m_FacingSystem).Enabled = m_FacingWasEnabled;
+            m_FacingWorld = null; m_FacingSystem = SystemHandle.Null;
             yield return EndBattle();
         }
 
@@ -194,6 +209,29 @@ namespace MLFLegends.Tests.PlayMode
         CombatantId Ai => Session.AiCombatant;
 
         // ---------------------------------------------------------------- shader, UV, trim, flip, frames, pages
+
+        [UnityTest]
+        public IEnumerator DamageTintAffectsOnlyTheReceiverInOneSharedBatch()
+        {
+            yield return RestartBattle(Duel(new float3(-.6f, 0, 0), FacingDirection.Right,
+                new float3(.6f, 0, 0), FacingDirection.Left));
+            var baseline = Render();
+            using var q = Manager.CreateEntityQuery(typeof(CombatantId), typeof(CombatDamageFeedback));
+            using var entities = q.ToEntityArray(Allocator.Temp);
+            foreach (var e in entities)
+                if (Manager.GetComponentData<CombatantId>(e).Equals(Ai))
+                    Manager.SetComponentData(e, new CombatDamageFeedback { LastDamageTick = Tick });
+            var tinted = Render(); var changedReceiver = 0;
+            for (var i = 0; i < baseline.Length; i++)
+            {
+                if (Near(baseline[i], tinted[i])) continue;
+                Assert.That(i % Size, Is.GreaterThan(Size / 2), "Attacker and transparent background remain unchanged.");
+                changedReceiver++;
+            }
+            Assert.That(changedReceiver, Is.GreaterThan(100));
+            Assert.That(m_Renderer.Stats.Submissions, Is.EqualTo(1));
+            SaveEvidence(m_Readback, "74-damage-receiver-only");
+        }
 
         [UnityTest]
         public IEnumerator TrimFlipColoursHolesAndFramesLandOnTheExpectedPixels()
@@ -449,6 +487,35 @@ namespace MLFLegends.Tests.PlayMode
 
         static void AssertColor(Color32 actual, Color32 expected, string message) =>
             Assert.That(Near(actual, expected), Is.True, $"{message} expected {expected}, got {actual}");
+
+        [UnityTest]
+        public IEnumerator OffscreenAirborneBodyStillDrawsItsGroundProjectionInOneSharedBatch()
+        {
+            // Both sprite cards are outside the camera. Their projected floor, independently bounded, is visible.
+            yield return RestartBattle(Duel(new float3(0, 6, 0), FacingDirection.Right,
+                new float3(50, 6, 0), FacingDirection.Left));
+            Box("Shadow floor", new Vector3(0, -.05f, 0), new Vector3(200, .1f, 200), Floor);
+            var baseline = Render();
+            var arena = DefaultWorld.GetExistingSystemManaged<CombatArenaSystem>(); var lease = arena.Acquire();
+            try
+            {
+                Assert.That(arena.Stage(lease, new[] { new CombatArenaShape { Kind = CombatArenaKind.Box,
+                    Center = float2.zero, AxisX = new float2(1, 0), HalfSize = new float2(100), Bottom = -.1f, Top = 0 } }), Is.True);
+                yield return null; // publish numeric geometry through its existing initialization proxy
+                var projected = Render();
+                var center = ScreenOf(float3.zero); var x = (int)center.x; var y = (int)center.y;
+                Assert.That(projected[y * Size + x].g, Is.LessThan(baseline[y * Size + x].g - 2), "The shared shadow darkens the visible floor.");
+                Assert.That(Near(projected[y * Size + x + 60], baseline[y * Size + x + 60]), Is.True, "Outside the disk the floor stays unchanged.");
+                Assert.That(m_Renderer.Stats.ShadowInstances, Is.EqualTo(2));
+                Assert.That(m_Renderer.Stats.ShadowSubmissions, Is.EqualTo(1));
+                SaveEvidence(m_Readback, "74-offscreen-body-ground-shadow");
+                arena.Release(lease); yield return null;
+                var released = Render();
+                Assert.That(m_Renderer.Stats.ShadowInstances, Is.Zero);
+                Assert.That(Near(released[y * Size + x], baseline[y * Size + x]), Is.True, "A retired arena cannot retain stale projected support.");
+            }
+            finally { arena.Release(lease); }
+        }
 
         [UnityTest]
         public IEnumerator OpaqueGeometryOccludesInFrontAndNotBehindAndFeetStayOnTheFloor()

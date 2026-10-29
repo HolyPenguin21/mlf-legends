@@ -2,7 +2,6 @@ using Unity.Entities;
 
 namespace MLFLegends.Combat
 {
-    /// <summary>Logical vertical cylinder, independent of art: X/Z radius and height above the position at its base.</summary>
     /// <summary>Spawn height and Movement's requested height; accepted height lives only in CombatBody.Height.</summary>
     public struct CombatBodyProfile : IComponentData
     {
@@ -11,6 +10,7 @@ namespace MLFLegends.Combat
         public bool RestorePending { get => m_RestorePending != 0; set => m_RestorePending = value ? (byte)1 : (byte)0; }
     }
 
+    /// <summary>Accepted vertical cylinder, independent of art, above the position at its base.</summary>
     public struct CombatBody : IComponentData
     {
         public float Radius;

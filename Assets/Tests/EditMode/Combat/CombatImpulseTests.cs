@@ -165,7 +165,7 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(strike.Kind, Is.EqualTo(CombatAttackKind.Hand1));
             Assert.That(P(w, e[0]).x, Is.EqualTo(6 * Dt - CombatMovementTuning.MoveSpeed * Dt * .5f).Within(.00021),
                 "Full external step plus 50% Windup control in the opposite direction.");
-            Assert.That(w.Manager.GetComponentData<CombatFacing>(e[0]).Value, Is.EqualTo(FacingDirection.Left), "Only the command turns.");
+            Assert.That(w.Manager.GetComponentData<CombatFacing>(e[0]).Value, Is.EqualTo(FacingDirection.Right), "Retreat control and impulse do not turn away from the nearest enemy.");
             Assert.That(before.Value, Is.EqualTo(FacingDirection.Right));
             Assert.That(w.Manager.GetComponentData<CombatAttackState>(e[0]).StartTick, Is.EqualTo(strike.StartTick));
 
@@ -407,6 +407,28 @@ namespace MLFLegends.Tests.EditMode
             owner.PairVisitBudgetOverride = 0; g.Step(3);
             Assert.That(Contacts(g).VelocityComplete, Is.True);
             Assert.That(P(g, f[0]), Is.EqualTo(a)); Assert.That(P(g, f[1]), Is.EqualTo(b), "Nothing discarded is released later.");
+        }
+
+        [Test]
+        public void ExactlySpentPairBudgetStillPublishesTheCompletedSolve()
+        {
+            float3 a, b; float2 va, vb; long visits;
+            using (var w = new ReplayWorld("exact budget reference"))
+            {
+                var e = Start(w, new[] { Floor }, new float3(.7f, 0, 0));
+                Push(w, e[0], new float3(12, 0, 0)); w.Step();
+                visits = Contacts(w).PairVisits;
+                a = P(w, e[0]); b = P(w, e[1]); va = M(w, e[0]).ExternalVelocity; vb = M(w, e[1]).ExternalVelocity;
+            }
+            using var g = new ReplayWorld("exact budget boundary");
+            var f = Start(g, new[] { Floor }, new float3(.7f, 0, 0));
+            g.World.GetExistingSystemManaged<CombatSpatialIndexSystem>().PairVisitBudgetOverride = visits;
+            Push(g, f[0], new float3(12, 0, 0)); g.Step();
+            Assert.That(Contacts(g).WorkLimit, Is.False);
+            Assert.That(Contacts(g).TraceHolds, Is.Zero);
+            Assert.That(P(g, f[0]), Is.EqualTo(a)); Assert.That(P(g, f[1]), Is.EqualTo(b));
+            Assert.That(M(g, f[0]).ExternalVelocity, Is.EqualTo(va)); Assert.That(M(g, f[1]).ExternalVelocity, Is.EqualTo(vb));
+            Assert.That(Pending(g), Is.Zero);
         }
 
         // #69 counterexample: equal bodies .1 apart, 12/0 u/s: the old rule published 8.6/2.6 (average displacements); the

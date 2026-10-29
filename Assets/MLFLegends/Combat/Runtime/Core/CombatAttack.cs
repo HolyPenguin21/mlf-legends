@@ -75,7 +75,7 @@ namespace MLFLegends.Combat
     /// <summary>
     /// Per-character combat values of one strike slot (#69): damage and the point-target hit box along the facing. Edited in
     /// the character's config entry, published in <see cref="CombatStrikeSchedule"/>, frozen per execution in
-    /// <see cref="CombatAttackState.Strike"/>. The target point is its CombatPosition; body radius never widens the box.
+    /// <see cref="CombatAttackState.Strike"/>. The target point is its accepted body waist; body radius never widens the box.
     /// </summary>
     public struct CombatStrikeParameters
     {
@@ -100,6 +100,12 @@ namespace MLFLegends.Combat
         public ushort CompactStart, CompactEnd; // [start,end), sampled at the tick boundary
         public Unity.Mathematics.float3 OnHitImpulse; // local forward X, up Y, outward Z
 
+    }
+
+    /// <summary>Minimal Hit-owner feedback fact. 0 = no positive-damage confirmation in this battle.</summary>
+    public struct CombatDamageFeedback : IComponentData
+    {
+        public uint LastDamageTick;
     }
 
     /// <summary>Hit points. Written only by CombatHitSystem after spawn; 0 does not defeat yet (later stage).</summary>

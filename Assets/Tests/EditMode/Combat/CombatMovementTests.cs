@@ -59,8 +59,8 @@ namespace MLFLegends.Tests.EditMode
                 Is.EqualTo(x == 0 && z == 0 ? 0f : CombatMovementTuning.MoveSpeed).Within(1e-4f));
             w.Step(3); // implicit None must stop horizontal movement immediately
             Assert.That(Human(w).Position, Is.EqualTo(p));
-            Assert.That(Human(w).Facing, Is.EqualTo(x < 0 ? FacingDirection.Left : FacingDirection.Right),
-                "Facing follows the sign of X; X = 0 (idle, Z-only) keeps the spawned Right, also after the None ticks.");
+            Assert.That(Human(w).Facing, Is.EqualTo(FacingDirection.Right),
+                "The enemy remains to the right; world-space movement and stopping do not turn away from it.");
         }
 
         // Writer separation, each system alone in a World with a running-clock tag: movement never turns, facing never moves.

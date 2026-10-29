@@ -56,6 +56,8 @@ namespace MLFLegends.Combat
         public struct RenderStats
         {
             public int Instances;
+            public int ShadowInstances, ShadowSubmissions;
+            public double ShadowMicroseconds;
 
             /// <summary>RenderMeshPrimitives calls (= pages with instances); URP draws each in its forward and depth passes.</summary>
             public int Submissions;
@@ -85,6 +87,7 @@ namespace MLFLegends.Combat
         static readonly int s_PixelWorldSize = Shader.PropertyToID("_PixelWorldSize");
         static readonly int s_DepthBias = Shader.PropertyToID("_DepthBias");
         static readonly int s_AlphaCutoff = Shader.PropertyToID("_AlphaCutoff");
+        static readonly int s_DamageTint = Shader.PropertyToID("_DamageTint");
         static readonly int s_ImageOffsetCard = Shader.PropertyToID("_ImageOffsetCard");
 
         static readonly ProfilerMarker s_SubmitMarker = new ProfilerMarker("CombatSpriteRenderer.Submit");
@@ -116,6 +119,20 @@ namespace MLFLegends.Combat
         [SerializeField, Range(0f, 0.25f)] float m_DepthBias = 0.02f;
         [Tooltip("Requested view-depth gap within overlapping cards; compressed to a fixed 1/16-world-unit total budget.")]
         [SerializeField, Range(0.0001f, 0.05f)] float m_DepthSeparation = 0.002f;
+
+        [Header("Damage feedback (simulation ticks; paused with combat)")]
+        [SerializeField] Color m_DamageColor = Color.red;
+        [SerializeField, Range(0, 1)] float m_DamageIntensity = .25f;
+        [SerializeField, Min(1)] int m_DamageDurationTicks = 9;
+
+        [Header("Ground shadow")]
+        [SerializeField] Shader m_ShadowShader;
+        [SerializeField] bool m_DrawGroundShadows = true;
+        [SerializeField, Min(0)] float m_ShadowRadiusMultiplier = 1.25f;
+        [SerializeField] Color m_ShadowColor = new Color(0, 0, 0, .35f);
+        [SerializeField, Range(0, .05f)] float m_ShadowBias = .003f;
+        CombatGroundShadows m_GroundShadows;
+        public CombatGroundShadows GroundShadows => m_GroundShadows;
 
         [Header("Debug")]
         [SerializeField] bool m_DrawAnchorGizmos = true;
@@ -198,7 +215,7 @@ namespace MLFLegends.Combat
 
         /// <summary>Owned GPU resources currently alive (material, mesh, instance buffer, atlas frame buffer); for leak checks.</summary>
         public int LiveGpuResources => (m_Material != null ? 1 : 0) + (m_Mesh != null ? 1 : 0) + (m_InstanceBuffer != null ? 1 : 0)
-            + (m_Atlas != null && m_Atlas.GpuBuffersCreated > 0 ? 1 : 0);
+            + (m_Atlas != null && m_Atlas.GpuBuffersCreated > 0 ? 1 : 0) + (m_GroundShadows?.LiveGpuResources ?? 0);
 
         /// <summary>Whether this renderer draws: enabled and the latest enabled renderer of its World + Camera.</summary>
         public bool IsActiveOwner
@@ -233,6 +250,8 @@ namespace MLFLegends.Combat
             s_Enabled.Add(this);
             m_Extraction = new CombatSpriteExtraction(MinCapacity);
             m_Stats = default;
+            m_GroundShadows = new CombatGroundShadows();
+            if (m_ShadowShader == null) m_ShadowShader = Shader.Find("MLF Legends/Combat Ground Shadow");
             EnsureAtlas();
         }
 
@@ -244,6 +263,7 @@ namespace MLFLegends.Combat
             m_Extraction = null;
             UnloadAtlas();
             ReleaseGpu();
+            m_GroundShadows?.Dispose(); m_GroundShadows = null;
             m_Stats = default;
         }
 
@@ -403,20 +423,30 @@ namespace MLFLegends.Combat
             if (camera != null)
                 m_Basis = SpriteCardBasis.FromCamera(camera.transform.forward, camera.transform.up);
             m_Stats.Submissions = 0;
+            m_Stats.ShadowSubmissions = m_Stats.ShadowInstances = 0;
+            m_Stats.ShadowMicroseconds = 0;
             m_Stats.SubmitMicroseconds = 0;
             var start = Stopwatch.GetTimestamp();
             // A superseded renderer neither reads ECS nor draws (its World binding and selections are kept).
             if (IsActiveOwner)
                 m_Extraction.Run(camera != null ? ResolveWorld() : null,
                     UsesCharacterAnimation && m_Animations == null ? null : m_Atlas, m_Basis, m_DepthSeparation,
-                    m_DefaultFrame, PixelWorldSize, UsesCharacterAnimation ? m_Animations : null, ImageOffsetCard);
+                    m_DefaultFrame, PixelWorldSize, UsesCharacterAnimation ? m_Animations : null, ImageOffsetCard, (uint)math.max(1, m_DamageDurationTicks));
             else
                 m_Extraction.Clear();
             m_Stats.ExtractMicroseconds = Microseconds(start);
             m_Stats.Instances = m_Extraction.Count;
             m_Stats.MaxDepthOffset = m_Extraction.MaxDepthOffset;
-            if (m_Extraction.Count == 0)
-                return;
+            var shadowStart = Stopwatch.GetTimestamp();
+            m_GroundShadows?.Extract(IsActiveOwner && m_DrawGroundShadows && camera != null && m_Atlas != null ? ResolveWorld() : null,
+                m_ShadowRadiusMultiplier, m_ShadowBias);
+            if (m_GroundShadows != null)
+            {
+                m_Stats.ShadowInstances = m_GroundShadows.Count;
+                m_Stats.ShadowSubmissions = m_GroundShadows.Submit(camera, m_ShadowShader, m_ShadowColor, gameObject.layer);
+            }
+            m_Stats.ShadowMicroseconds = Microseconds(shadowStart);
+            if (m_Extraction.Count == 0) return;
             start = Stopwatch.GetTimestamp();
             Submit(camera);
             m_Stats.SubmitMicroseconds = Microseconds(start);
@@ -622,6 +652,7 @@ namespace MLFLegends.Combat
             var s = PixelWorldSize;
             var extents = CardExtents(s);
             m_Material.SetFloat(s_AlphaCutoff, m_AlphaCutoff);
+            m_Material.SetColor(s_DamageTint, new Color(m_DamageColor.r, m_DamageColor.g, m_DamageColor.b, m_DamageIntensity));
 
             for (var p = 0; p < m_Extraction.PageCount; p++)
             {
@@ -755,7 +786,7 @@ namespace MLFLegends.Combat
 
         void OnDrawGizmos()
         {
-            if (!m_DrawAnchorGizmos || m_Atlas == null || m_Extraction == null)
+            if (!Application.isPlaying || !m_DrawAnchorGizmos || m_Atlas == null || m_Extraction == null)
                 return;
             var ids = m_Extraction.InstanceIds;
             for (var i = 0; i < ids.Length; i++)

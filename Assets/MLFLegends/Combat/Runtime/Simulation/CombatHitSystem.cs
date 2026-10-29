@@ -24,11 +24,11 @@ namespace MLFLegends.Combat
     /// in-combat attacker whose strike is in its Active phase on this tick (by the timing fixed in its CombatAttackState when
     /// the strike started) hits every in-combat combatant of another team that is not already in the strike's ledger and lies
     /// inside the strike's box: forward distance along the attacker's facing within [ReachMin, ReachMax], |ΔZ| ≤ DepthHalfWidth,
-    /// |ΔY| ≤ HeightTolerance (closed bounds, target point = CombatPosition), using the damage/box frozen in the attacker's
+    /// |targetWaistY − attackerWaistY − HitOffsetY| ≤ HeightTolerance (closed point bounds), using the damage/box frozen in the attacker's
     /// CombatAttackState.Strike when the strike started (#69: per-character values). Each such target loses Damage HP (clamped at 0)
     /// once and joins the ledger, so several Active ticks of one strike never hit it twice; the next strike starts with an
     /// empty ledger. Allies and the attacker itself are never valid targets. Attackers and targets are visited in CombatantId
-    /// order, so the result never depends on chunk order. No defeat, stagger, knockback or guard yet.
+    /// order, so the result never depends on chunk order. No defeat or guard; authored on-hit impulses use the next Movement boundary.
     /// Stage 04.5: managed orchestration gathers Active attackers, builds one conservative point-target AABB per attacker and
     /// asks the World's only CombatSpatialIndexSystem for one atomic batch (membership validated once). A Burst job then runs
     /// the unchanged Inside/filter/ledger/HP rules on the Id-sorted candidates. Body radius only widens the broadphase, never
@@ -48,7 +48,7 @@ namespace MLFLegends.Combat
             public float3 Position;
             public CombatAttackKind Kind;
             public CombatStrikeParameters Strike; // Frozen at strike start (CombatAttackState.Strike), never the live table.
-            public float Facing;
+            public float Facing, Height;
             public float ActiveLo, ActiveHi;
             public bool Swept;
         }
@@ -103,8 +103,13 @@ namespace MLFLegends.Combat
 
         /// <summary>Exact closed strike box around a point target; Hit and its oracles share this rule.</summary>
         public static bool Inside(in CombatStrikeParameters strike, float3 attacker, float facing, float3 target)
+            => Inside(strike, attacker, facing, target, CombatBodyTuning.Height, CombatBodyTuning.Height);
+
+        public static bool Inside(in CombatStrikeParameters strike, float3 attacker, float facing, float3 target,
+            float attackerHeight, float targetHeight)
         {
-            var delta = target - attacker; delta.y -= strike.HitOffsetY;
+            var delta = target - attacker;
+            delta.y += (targetHeight - attackerHeight) * .5f - strike.HitOffsetY;
             var forward = delta.x * facing;
             return forward >= strike.ReachMin && forward <= strike.ReachMax
                 && math.abs(delta.z) <= strike.DepthHalfWidth && math.abs(delta.y) <= strike.HeightTolerance;
@@ -114,9 +119,9 @@ namespace MLFLegends.Combat
         /// Conservative broadphase of <see cref="Inside"/>: every target point inside the box lies in this AABB, hence in any
         /// body AABB containing that point. Padded by a few float ulps so subtraction rounding in Inside cannot escape it.
         /// </summary>
-        public static CombatSpatialBounds StrikeQuery(in CombatStrikeParameters strike, float3 attacker, float facing)
+        public static CombatSpatialBounds StrikeQuery(in CombatStrikeParameters strike, float3 attacker, float facing, float attackerHeight = CombatBodyTuning.Height)
         {
-            attacker.y += strike.HitOffsetY;
+            attacker.y += attackerHeight * .5f + strike.HitOffsetY;
             var lo = facing > 0 ? attacker.x + strike.ReachMin : attacker.x - strike.ReachMax;
             var hi = facing > 0 ? attacker.x + strike.ReachMax : attacker.x - strike.ReachMin;
             var extent = new float3(math.max(math.abs(strike.ReachMin), math.abs(strike.ReachMax)), strike.HeightTolerance, strike.DepthHalfWidth);
@@ -133,6 +138,7 @@ namespace MLFLegends.Combat
         {
             state.Dependency.Complete();
             var tick = SystemAPI.GetSingleton<SimulationClock>().Tick;
+            var bodies = SystemAPI.GetComponentLookup<CombatBody>(true);
             try
             {
                 foreach (var (attack, facing, position, team, id, entity) in
@@ -148,6 +154,7 @@ namespace MLFLegends.Combat
                         Id = id.ValueRO.Value, Entity = entity, Team = team.ValueRO.Value, Position = position.ValueRO.Value, Kind = kind,
                         Strike = attack.ValueRO.Strike,
                         Facing = facing.ValueRO.Value == FacingDirection.Left ? -1f : 1f,
+                        Height = bodies.TryGetComponent(entity, out var body) ? body.Height : CombatBodyTuning.Height,
                         ActiveLo = lo, ActiveHi = hi, Swept = attack.ValueRO.Strike.SelfImpulse > 0,
                     });
                 }
@@ -160,14 +167,14 @@ namespace MLFLegends.Combat
                 for (var i = 0; i < m_Attackers.Length; i++)
                 {
                     var a = m_Attackers[i];
-                    var query = StrikeQuery(a.Strike, a.Position, a.Facing);
+                    var query = StrikeQuery(a.Strike, a.Position, a.Facing, a.Height);
                     if (a.Swept)
                     {
                         useMotion = true;
                         if (index == null || !index.TryMotionBounds(a.Id, out var motion))
                             throw new InvalidOperationException("Missing accepted movement for a swept attack; no hits applied.");
-                        var start = StrikeQuery(a.Strike, motion.Min, a.Facing);
-                        var end = StrikeQuery(a.Strike, motion.Max, a.Facing);
+                        var start = StrikeQuery(a.Strike, motion.Min, a.Facing, a.Height);
+                        var end = StrikeQuery(a.Strike, motion.Max, a.Facing, a.Height);
                         query.Min = math.min(start.Min, end.Min); query.Max = math.max(start.Max, end.Max);
                     }
                     m_Queries.Add(query);
@@ -179,6 +186,7 @@ namespace MLFLegends.Combat
                     : index.TryQueryAabbBatch(m_Queries.AsArray(), m_Candidates, m_Ranges)))
                     throw new InvalidOperationException(
                         "Hit needs this tick's final spatial snapshot for its Active attackers; no HP or ledger was written.");
+                if (!useMotion) segments = index.EmptyMotionSegments;
 
                 var session = SystemAPI.TryGetSingleton<BattleSession>(out var current) ? current.BattleNumber : 0u;
                 m_Diagnostics[0] = new CombatHitDiagnostics
@@ -193,7 +201,7 @@ namespace MLFLegends.Combat
                 state.Dependency = new CombatHitJob
                 {
                     Attackers = m_Attackers.AsArray(), Candidates = m_Candidates.AsArray(), Ranges = m_Ranges.AsArray(),
-                    Health = SystemAPI.GetComponentLookup<CombatHealth>(), Ledgers = SystemAPI.GetBufferLookup<CombatHitRecord>(),
+                    Health = SystemAPI.GetComponentLookup<CombatHealth>(), Feedback = SystemAPI.GetComponentLookup<CombatDamageFeedback>(), Ledgers = SystemAPI.GetBufferLookup<CombatHitRecord>(),
                     Diagnostics = m_Diagnostics, Segments = segments, BodyCount = bodyCount, Shapes = shapes,
                     Confirmed = m_Confirmed, Impulses = m_HitImpulses, BattleNumber = session,
                 }.Schedule(state.Dependency);
@@ -230,6 +238,7 @@ namespace MLFLegends.Combat
         [ReadOnly] public NativeArray<CombatSpatialBody> Candidates;
         [ReadOnly] public NativeArray<int2> Ranges;
         public ComponentLookup<CombatHealth> Health;
+        public ComponentLookup<CombatDamageFeedback> Feedback;
         public BufferLookup<CombatHitRecord> Ledgers;
         public NativeArray<CombatHitDiagnostics> Diagnostics;
 
@@ -276,7 +285,7 @@ namespace MLFLegends.Combat
                     {
                         if (!TrySwept(attacker, target, out contact, out delta)) continue;
                     }
-                    else if (!CombatHitSystem.Inside(strike, attacker.Position, attacker.Facing, target.Position)) continue;
+                    else if (!CombatHitSystem.Inside(strike, attacker.Position, attacker.Facing, target.Position, attacker.Height, target.Body.Height)) continue;
                     Confirmed.Add(new CombatHitConfirmation { AttackerIndex = a, Target = target, Time = contact, ImpactDelta = delta });
                 }
             }
@@ -288,6 +297,8 @@ namespace MLFLegends.Combat
                 var ledger = Ledgers[attacker.Entity];
                 ledger.Add(new CombatHitRecord { Target = hit.Target.Id });
                 var hp = Health[hit.Target.Entity]; hp.Current = math.max(0, hp.Current - strike.Damage); Health[hit.Target.Entity] = hp;
+                if (strike.Damage > 0 && Feedback.HasComponent(hit.Target.Entity))
+                    Feedback[hit.Target.Entity] = new CombatDamageFeedback { LastDamageTick = d.Tick };
                 if (math.any(strike.OnHitImpulse != 0))
                 {
                     var outward = math.abs(hit.ImpactDelta.z) > 1e-6f ? math.sign(hit.ImpactDelta.z)
@@ -314,9 +325,12 @@ namespace MLFLegends.Combat
                 var span = a.End - a.Begin;
                 var lo = math.max(0, (attacker.ActiveLo - a.Begin) / span);
                 var hi = math.min(1, (attacker.ActiveHi - a.Begin) / span);
-                if (lo > hi || !CombatMotionGeometry.Sweep(attacker.Strike, attacker.Facing, a.From, a.To, b.From, b.To, lo, hi, out var local)) continue;
-                var point = math.lerp(a.From, a.To, local); point.y += attacker.Strike.HitOffsetY;
-                var victim = math.lerp(b.From, b.To, local);
+                var aw0 = a.From; var aw1 = a.To; var bw0 = b.From; var bw1 = b.To;
+                aw0.y += a.Actor.Body.Height * .5f; aw1.y += a.Actor.Body.Height * .5f;
+                bw0.y += b.Actor.Body.Height * .5f; bw1.y += b.Actor.Body.Height * .5f;
+                if (lo > hi || !CombatMotionGeometry.Sweep(attacker.Strike, attacker.Facing, aw0, aw1, bw0, bw1, lo, hi, out var local)) continue;
+                var point = math.lerp(aw0, aw1, local); point.y += attacker.Strike.HitOffsetY;
+                var victim = math.lerp(bw0, bw1, local);
                 if (!CombatMotionGeometry.SegmentClear(Shapes, point, victim)) continue;
                 var time = a.Begin + local * span;
                 if (time < contact) { contact = time; delta = victim - point; }

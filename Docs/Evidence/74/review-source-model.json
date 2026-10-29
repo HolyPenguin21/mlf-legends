@@ -1,0 +1,46 @@
+{
+  "review_base": "124e6505c581b748b3c5c73076934a89d390fc15",
+  "tested_local_commit": "0738f0571b7aa2d1a1fa16506d4111b9997ada06",
+  "remote_equivalent_code_commit": "d73e9e001081cd82593ab5a058509f00fd3e074a",
+  "source_tree": "cff261f03f01cfbf55bf088cb49eac9271cf1f8f",
+  "tree_equivalence": "Exact git tree equality verified before remote commit creation",
+  "ability": {
+    "sha": "0738f0571b7aa2d1a1fa16506d4111b9997ada06",
+    "dirty": false,
+    "source_syntax_files": 113,
+    "source": "PASS",
+    "independent_equation_cases": 10000,
+    "model": "PASS",
+    "unity_compilation": "NOT RUN",
+    "EditMode": "NOT RUN",
+    "PlayMode": "NOT RUN",
+    "Burst": "NOT RUN",
+    "benchmark": "NOT RUN",
+    "GPU": "NOT RUN"
+  },
+  "feedback": {
+    "sha": "0738f0571b7aa2d1a1fa16506d4111b9997ada06",
+    "tree": "cff261f03f01cfbf55bf088cb49eac9271cf1f8f",
+    "dirty": false,
+    "source": "PASS",
+    "CSharp_syntax_files": 113,
+    "instance_stride_model": 32,
+    "shadow_stride_model": 80,
+    "independent_model_cases": 10000,
+    "model": "PASS",
+    "Unity_compilation": "NOT RUN",
+    "EditMode": "NOT RUN",
+    "PlayMode": "NOT RUN",
+    "Burst": "NOT RUN",
+    "GPU_visual": "NOT RUN",
+    "CPU_GPU_performance": "NOT RUN",
+    "owner_manual_acceptance": "NOT RUN"
+  },
+  "review_report": "Docs/REVIEW_73_74.md",
+  "tests": {
+    "new_cases_authored": 7,
+    "status": "NOT RUN",
+    "existing_regressions_reexecuted": "NOT RUN"
+  },
+  "runtime_limit": "Unity and .NET compiler unavailable; source syntax and independent models are not C# compilation or execution"
+}

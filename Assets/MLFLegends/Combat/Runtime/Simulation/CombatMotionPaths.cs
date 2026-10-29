@@ -79,6 +79,8 @@ namespace MLFLegends.Combat
         NativeList<CombatSpatialBody> m_MotionBodies;
         uint m_MotionTick, m_MotionBattle;
         int m_MotionSlices;
+        // Jobs require a valid safety handle even when no swept attacker will read this field.
+        internal NativeArray<CombatMotionSegment> EmptyMotionSegments => m_MotionSegments.AsArray().GetSubArray(0, 0);
         public int MotionSegmentCount => m_MotionSegments.Length;
         public long MotionCapacityBytes => (long)m_MotionSegments.Capacity * Unity.Collections.LowLevel.Unsafe.UnsafeUtility.SizeOf<CombatMotionSegment>()
             + (long)m_TickInputs.Capacity * Unity.Collections.LowLevel.Unsafe.UnsafeUtility.SizeOf<CombatContactActor>()
@@ -113,16 +115,22 @@ namespace MLFLegends.Combat
                     a.Physical = a.External = float2.zero; a.Lift = 0; a.Walls = default;
                     m_Movement[i] = a;
                 }
-                new CombatContactJob { Actors = m_Movement, Cells = m_Cells, Seen = m_Seen, Pairs = m_ContactPairs, Contacts = m_Contacts,
-                    Shapes = shapes, Impulses = slice == 0 ? m_Impulses.AsArray() : m_Impulses.AsArray().GetSubArray(0, 0),
-                    Diagnostics = m_ContactDiagnostics, Tick = tick, LandingTicks = landingTicks, BattleNumber = battle,
-                    DeltaTime = SimulationTiming.TickDuration / m_MotionSlices, Physics = physics, PairVisitBudget = Math.Max(1L, remaining)
-                }.Schedule().Complete();
-                var d = m_ContactDiagnostics[0]; remaining -= d.PairVisits;
+                var skipped = remaining <= 0;
+                var d = new CombatContactDiagnostics { Tick = tick, BattleNumber = battle, WorkLimit = true };
+                if (!skipped)
+                {
+                    new CombatContactJob { Actors = m_Movement, Cells = m_Cells, Seen = m_Seen, Pairs = m_ContactPairs, Contacts = m_Contacts,
+                        Shapes = shapes, Impulses = slice == 0 ? m_Impulses.AsArray() : m_Impulses.AsArray().GetSubArray(0, 0),
+                        Diagnostics = m_ContactDiagnostics, Tick = tick, LandingTicks = landingTicks, BattleNumber = battle,
+                        DeltaTime = SimulationTiming.TickDuration / m_MotionSlices, Physics = physics, PairVisitBudget = remaining
+                    }.Schedule().Complete();
+                    d = m_ContactDiagnostics[0]; remaining -= d.PairVisits;
+                }
                 // Freeze an unrepresentable chord as one atomic slice. Previously accepted slices remain real travel;
                 // solver iterations and failed proposals are never appended to the path.
-                var hold = d.WorkLimit || remaining <= 0;
-                if (remaining <= 0) d.WorkLimit = true;
+                // A velocity-only budget failure already discards velocity, but its positions are solved. Preserve them,
+                // including on the ordinary single-step path. Spending the exact budget is not itself a failed solve.
+                var hold = skipped || (d.WorkLimit && !d.ResidualComplete);
                 if (m_MotionSlices > 1)
                     for (var i = 0; i < m_Movement.Length && !hold; i++)
                     {
@@ -145,7 +153,9 @@ namespace MLFLegends.Combat
                     var original = m_TickInputs[i];
                     original.Result.ControlledDistance += a.Result.ControlledDistance;
                     original.Result.Landed |= a.Result.Landed;
-                    a.Frozen = original.Frozen;
+                    // A solver freeze remains authoritative on the ordinary path. In a sliced solve it holds this slice;
+                    // later slices may retry from that accepted start (never from the rejected proposal).
+                    if (m_MotionSlices > 1) a.Frozen = original.Frozen;
                     m_TickInputs[i] = original; m_Movement[i] = a;
                 }
                 Add(ref combined, d); if (hold) combined.TraceHolds++;
@@ -178,18 +188,26 @@ namespace MLFLegends.Combat
         internal bool TryMotionBatch(NativeArray<CombatSpatialBounds> queries, NativeList<CombatSpatialBody> results,
             NativeList<int2> ranges, out NativeArray<CombatMotionSegment> segments, out int bodyCount)
         {
+            var started = System.Diagnostics.Stopwatch.GetTimestamp();
+            ResetQueryDiagnostics();
             results.Clear(); ranges.Clear(); segments = default; bodyCount = 0;
             if (!IsCurrent() || m_Info.Tick != m_MotionTick || m_Info.BattleNumber != m_MotionBattle
                 || m_MotionBodies.Length != m_Bodies.Length) return false;
             foreach (var query in queries) ValidateQuery(query);
+            LastQueryUsedFullScan = queries.Length > 0;
             for (var q = 0; q < queries.Length; q++)
             {
                 var start = results.Length;
                 for (var i = 0; i < m_MotionBodies.Length; i++)
+                {
+                    LastQueryEntriesVisited++;
                     if (queries[q].Overlaps(m_MotionBodies[i].Bounds)) results.Add(m_MotionBodies[i]);
+                }
                 ranges.Add(new int2(start, results.Length - start));
             }
             segments = m_MotionSegments.AsArray(); bodyCount = m_MotionBodies.Length;
+            LastQueryCandidates = results.Length;
+            LastQueryMicroseconds = MicrosSince(started);
             return true;
         }
 
