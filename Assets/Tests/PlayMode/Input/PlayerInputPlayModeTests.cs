@@ -143,6 +143,16 @@ namespace MLFLegends.Tests.PlayMode
             }
         }
 
+        /// <summary>
+        /// Grounded AND out of the ECS landing lock on the next simulated tick (#50: after touch-down the published landing
+        /// frames lock control and Jump). Waiting for Grounded alone let taps/holds fall into the lock (#69 findings).
+        /// </summary>
+        static IEnumerator UntilFree(Entity human) => Until(() =>
+        {
+            var motion = Manager.GetComponentData<CombatMotion>(human);
+            return motion.Grounded && !motion.IsLandingRecovery(Tick + 1);
+        });
+
         static IEnumerator LoadSmokeScene()
         {
             var load = EditorSceneManager.LoadSceneAsyncInPlayMode(SmokeScenePath, new LoadSceneParameters(LoadSceneMode.Additive));
@@ -229,7 +239,7 @@ namespace MLFLegends.Tests.PlayMode
 
             for (var attempt = 0; attempt < (fps == 120 ? 4 : 1); attempt++)
             {
-                yield return Until(() => Manager.GetComponentData<CombatMotion>(human).Grounded);
+                yield return UntilFree(human);
                 for (var i = 0; i < attempt; i++)
                     yield return null; // shift the tap by a frame: both tick parities at 120 FPS
 
@@ -258,24 +268,25 @@ namespace MLFLegends.Tests.PlayMode
             if (fps == 120)
                 Assert.That(sawZeroTickFrame && sawTickFrame, Is.True, "Taps landed in both 0-tick and 1-tick frames.");
 
-            // Hold D from frame f+1 to g.
-            yield return Until(() => Manager.GetComponentData<CombatMotion>(human).Grounded);
+            // Hold A from frame f+1 to g: leftwards, away from the scene's central Cube obstacle (26 ticks at 30 FPS would
+            // reach it moving right).
+            yield return UntilFree(human);
             var x0 = Manager.GetComponentData<CombatPosition>(human).Value.x;
-            Down(Key.D);
+            Down(Key.A);
             yield return null;
             var first = Tick;
             for (var i = 0; i < 12; i++)
                 yield return null;
-            Up(Key.D);
+            Up(Key.A);
             yield return null;
             var last = Tick;
             yield return null;
             yield return Until(() => Tick > last);
             var moved = last - first;
             Assert.That(moved, Is.GreaterThan(0));
-            Assert.That(Manager.GetComponentData<CombatPosition>(human).Value.x, Is.EqualTo(x0 + moved * Step).Within(1e-4f),
+            Assert.That(Manager.GetComponentData<CombatPosition>(human).Value.x, Is.EqualTo(x0 - moved * Step).Within(1e-4f),
                 $"fps {fps}: moved on exactly the {moved} ticks of the held frames");
-            Assert.That(Manager.GetComponentData<CombatFacing>(human).Value, Is.EqualTo(FacingDirection.Right));
+            Assert.That(Manager.GetComponentData<CombatFacing>(human).Value, Is.EqualTo(FacingDirection.Left));
 
             // The camera's LateUpdate of the previous frame followed the ECS position of that frame's last tick.
             var position = Manager.GetComponentData<CombatPosition>(human).Value;
@@ -402,13 +413,14 @@ namespace MLFLegends.Tests.PlayMode
             Assert.That(Results.Where(r => r.Command.Source == CommandSource.Player).Select(r => r.Command.Pressed),
                 Is.All.EqualTo(CommandButtons.None), "No Pressed from the restored holds.");
 
+            yield return UntilFree(human);
             Up(Key.Space);
             yield return null;
             Down(Key.Space);
             yield return null; // processed in this frame's PreUpdate, consumed by its first tick
             tick = Tick;
             yield return Until(() => Tick > tick);
-            Assert.That(Manager.GetComponentData<CombatMotion>(human).Grounded, Is.False, "Release, then a fresh K press jumps.");
+            Assert.That(Manager.GetComponentData<CombatMotion>(human).Grounded, Is.False, "Release, then a fresh Space press jumps.");
             Up(Key.Space);
             Up(Key.I);
             Up(Key.L);

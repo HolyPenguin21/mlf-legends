@@ -46,7 +46,9 @@ namespace MLFLegends.Combat
             var state = m_Diagnostics.GetSingleton<CombatArenaState>();
             var diagnostics = m_Diagnostics.GetSingleton<CombatArenaDiagnostics>();
             if (state.Lease != m_Lease) m_CanAutoRebind = false;
-            if (state.Lease == m_Lease && diagnostics.Revision == state.Revision && diagnostics.FailedBodies > 0
+            // While our staged geometry is not yet published, Revision/diagnostics still describe the previous source (e.g.
+            // the interval after another lease released this World): they are not failures of this lease (#69).
+            if (state.Lease == m_Lease && !state.Pending && diagnostics.Revision == state.Revision && diagnostics.FailedBodies > 0
                 && (!m_ReportedFailure || state.Revision != m_ReportedRevision))
             {
                 Debug.LogError($"Arena movement frozen for {diagnostics.FailedBodies} bodies: {diagnostics.LastFailure}, revision {state.Revision}.", this);
