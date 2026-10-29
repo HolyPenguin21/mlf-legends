@@ -1,0 +1,882 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="66" result="Failed(Child)" total="66" passed="60" failed="6" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-29 13:35:28Z" end-time="2026-10-29 13:36:18Z" duration="50,4705465">
+  <test-suite type="TestSuite" id="1094" name="mlf-legends" fullname="mlf-legends" runstate="Runnable" testcasecount="66" result="Failed" site="Child" start-time="2026-10-29 13:35:28Z" end-time="2026-10-29 13:36:18Z" duration="50.470547" total="66" passed="60" failed="6" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1087" name="MLFLegends.Tests.PlayMode.dll" fullname="D:/Unity/Project/mlf-w66/Library/ScriptAssemblies/MLFLegends.Tests.PlayMode.dll" runstate="Runnable" testcasecount="66" result="Failed" site="Child" start-time="2026-10-29 13:35:28Z" end-time="2026-10-29 13:36:18Z" duration="50.459680" total="66" passed="60" failed="6" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="21292" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1088" name="MLFLegends" fullname="MLFLegends" runstate="Runnable" testcasecount="66" result="Failed" site="Child" start-time="2026-10-29 13:35:28Z" end-time="2026-10-29 13:36:18Z" duration="50.458113" total="66" passed="60" failed="6" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1089" name="Tests" fullname="MLFLegends.Tests" runstate="Runnable" testcasecount="66" result="Failed" site="Child" start-time="2026-10-29 13:35:28Z" end-time="2026-10-29 13:36:18Z" duration="50.456837" total="66" passed="60" failed="6" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestSuite" id="1090" name="PlayMode" fullname="MLFLegends.Tests.PlayMode" runstate="Runnable" testcasecount="66" result="Failed" site="Child" start-time="2026-10-29 13:35:28Z" end-time="2026-10-29 13:36:18Z" duration="50.455433" total="66" passed="60" failed="6" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-suite type="TestFixture" id="1001" name="BootstrapRosterAndStrikeWindowTests" fullname="MLFLegends.Tests.PlayMode.BootstrapRosterAndStrikeWindowTests" classname="MLFLegends.Tests.PlayMode.BootstrapRosterAndStrikeWindowTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-29 13:35:28Z" end-time="2026-10-29 13:35:28Z" duration="0.283895" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1003" name="InvalidTeamSizesAreRejectedNotClampedAndKeepTheRunningBattle" fullname="MLFLegends.Tests.PlayMode.BootstrapRosterAndStrikeWindowTests.InvalidTeamSizesAreRejectedNotClampedAndKeepTheRunningBattle" methodname="InvalidTeamSizesAreRejectedNotClampedAndKeepTheRunningBattle" classname="MLFLegends.Tests.PlayMode.BootstrapRosterAndStrikeWindowTests" runstate="Runnable" seed="994082044" result="Passed" start-time="2026-10-29 13:35:28Z" end-time="2026-10-29 13:35:28Z" duration="0.088189" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[CombatSmokeBootstrap on 'Roster bootstrap': no CharacterAnimationConfig assigned; strikes keep the World's current windows (CombatAttackTuning defaults unless published elsewhere), and a new World's landing recovery is ZERO. For character animation assign the same config and CharacterId as the renderer.
+CombatSmokeBootstrap on 'Roster bootstrap': Human team size 0 is outside 1..200 (leader included); the running battle is kept.
+CombatSmokeBootstrap on 'Roster bootstrap': AI team size 201 is outside 1..200 (leader included); the running battle is kept.
+CombatSmokeBootstrap on 'Roster bootstrap': Human team size -3 is outside 1..200 (leader included); the running battle is kept.
+CombatSmokeBootstrap on 'Roster bootstrap': Human team size 201 is outside 1..200 (leader included); the running battle is kept.
+]]></output>
+              </test-case>
+              <test-case id="1002" name="TeamSizesSpawnOnStartAndRestartWithoutOldFightersAndEditsWaitForARestart" fullname="MLFLegends.Tests.PlayMode.BootstrapRosterAndStrikeWindowTests.TeamSizesSpawnOnStartAndRestartWithoutOldFightersAndEditsWaitForARestart" methodname="TeamSizesSpawnOnStartAndRestartWithoutOldFightersAndEditsWaitForARestart" classname="MLFLegends.Tests.PlayMode.BootstrapRosterAndStrikeWindowTests" runstate="Runnable" seed="958963891" result="Passed" start-time="2026-10-29 13:35:28Z" end-time="2026-10-29 13:35:28Z" duration="0.142620" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[CombatSmokeBootstrap on 'Roster bootstrap': no CharacterAnimationConfig assigned; strikes keep the World's current windows (CombatAttackTuning defaults unless published elsewhere), and a new World's landing recovery is ZERO. For character animation assign the same config and CharacterId as the renderer.
+CombatSmokeBootstrap on 'Roster bootstrap': no CharacterAnimationConfig assigned; strikes keep the World's current windows (CombatAttackTuning defaults unless published elsewhere), and a new World's landing recovery is ZERO. For character animation assign the same config and CharacterId as the renderer.
+]]></output>
+              </test-case>
+              <test-case id="1004" name="TheProjectConfigPublishesItsStrikeWindowsAndEditsReachOnlyNewStrikes" fullname="MLFLegends.Tests.PlayMode.BootstrapRosterAndStrikeWindowTests.TheProjectConfigPublishesItsStrikeWindowsAndEditsReachOnlyNewStrikes" methodname="TheProjectConfigPublishesItsStrikeWindowsAndEditsReachOnlyNewStrikes" classname="MLFLegends.Tests.PlayMode.BootstrapRosterAndStrikeWindowTests" runstate="Runnable" seed="1225847969" result="Passed" start-time="2026-10-29 13:35:28Z" end-time="2026-10-29 13:35:28Z" duration="0.038276" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[CombatSmokeBootstrap on 'Roster bootstrap': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSmokeBootstrap on 'Roster bootstrap': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+CombatSmokeBootstrap on 'Roster bootstrap': strike windows (ticks @60 Hz, Preparation/Active/Recovery) revision 1: punch_left 14/6/9, punch_right 14/6/9, kick_left 12/6/12, kick_right 12/6/12, kick_spin 20/5/5. Landing recovery 12 ticks. New strikes/landings use them; running states keep their duration.
+CombatSmokeBootstrap on 'Roster bootstrap': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSmokeBootstrap on 'Roster bootstrap': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+CombatSmokeBootstrap on 'Roster bootstrap': strike windows (ticks @60 Hz, Preparation/Active/Recovery) revision 2: punch_left 30/10/20, punch_right 14/6/9, kick_left 12/6/12, kick_right 12/6/12, kick_spin 20/5/5. Landing recovery 12 ticks. New strikes/landings use them; running states keep their duration.
+CombatSmokeBootstrap on 'Roster bootstrap': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSmokeBootstrap on 'Roster bootstrap': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+CombatSmokeBootstrap on 'Roster bootstrap': strike windows rejected, strikes keep the previous windows.
+  characters.mage_female_01.animations.punch_left.ActiveEndFrame: 5; Recovery 6..5 must hold at least one frame (EndFrame 5)
+]]></output>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1029" name="CombatSpriteAnimationPlayModeTests" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" testcasecount="17" result="Passed" start-time="2026-10-29 13:35:28Z" end-time="2026-10-29 13:35:57Z" duration="28.761629" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="ParameterizedMethod" id="1045" name="AnimatedPageChangesMatchTheIndependentlySelectedManualFrame" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.AnimatedPageChangesMatchTheIndependentlySelectedManualFrame" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-29 13:35:28Z" end-time="2026-10-29 13:35:31Z" duration="2.555395" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="Category" value="Graphics" />
+                </properties>
+                <test-case id="1042" name="AnimatedPageChangesMatchTheIndependentlySelectedManualFrame(1)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.AnimatedPageChangesMatchTheIndependentlySelectedManualFrame(1)" methodname="AnimatedPageChangesMatchTheIndependentlySelectedManualFrame" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" seed="318269119" result="Passed" start-time="2026-10-29 13:35:28Z" end-time="2026-10-29 13:35:29Z" duration="1.157126" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+]]></output>
+                </test-case>
+                <test-case id="1043" name="AnimatedPageChangesMatchTheIndependentlySelectedManualFrame(2)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.AnimatedPageChangesMatchTheIndependentlySelectedManualFrame(2)" methodname="AnimatedPageChangesMatchTheIndependentlySelectedManualFrame" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" seed="1125051943" result="Passed" start-time="2026-10-29 13:35:29Z" end-time="2026-10-29 13:35:30Z" duration="0.730605" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+]]></output>
+                </test-case>
+                <test-case id="1044" name="AnimatedPageChangesMatchTheIndependentlySelectedManualFrame(3)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.AnimatedPageChangesMatchTheIndependentlySelectedManualFrame(3)" methodname="AnimatedPageChangesMatchTheIndependentlySelectedManualFrame" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" seed="466024373" result="Passed" start-time="2026-10-29 13:35:30Z" end-time="2026-10-29 13:35:31Z" duration="0.666556" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+]]></output>
+                </test-case>
+              </test-suite>
+              <test-suite type="ParameterizedMethod" id="1033" name="BattleClockDrivesIdleFor2_100_400AcrossPauseVisibilityAndRendererDisable" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.BattleClockDrivesIdleFor2_100_400AcrossPauseVisibilityAndRendererDisable" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-29 13:35:31Z" end-time="2026-10-29 13:35:41Z" duration="10.070130" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                </properties>
+                <test-case id="1030" name="BattleClockDrivesIdleFor2_100_400AcrossPauseVisibilityAndRendererDisable(0)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.BattleClockDrivesIdleFor2_100_400AcrossPauseVisibilityAndRendererDisable(0)" methodname="BattleClockDrivesIdleFor2_100_400AcrossPauseVisibilityAndRendererDisable" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" seed="874350670" result="Passed" start-time="2026-10-29 13:35:31Z" end-time="2026-10-29 13:35:34Z" duration="3.348589" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+]]></output>
+                </test-case>
+                <test-case id="1031" name="BattleClockDrivesIdleFor2_100_400AcrossPauseVisibilityAndRendererDisable(49)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.BattleClockDrivesIdleFor2_100_400AcrossPauseVisibilityAndRendererDisable(49)" methodname="BattleClockDrivesIdleFor2_100_400AcrossPauseVisibilityAndRendererDisable" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" seed="183795586" result="Passed" start-time="2026-10-29 13:35:34Z" end-time="2026-10-29 13:35:37Z" duration="3.356956" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+]]></output>
+                </test-case>
+                <test-case id="1032" name="BattleClockDrivesIdleFor2_100_400AcrossPauseVisibilityAndRendererDisable(199)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.BattleClockDrivesIdleFor2_100_400AcrossPauseVisibilityAndRendererDisable(199)" methodname="BattleClockDrivesIdleFor2_100_400AcrossPauseVisibilityAndRendererDisable" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" seed="81125390" result="Passed" start-time="2026-10-29 13:35:37Z" end-time="2026-10-29 13:35:41Z" duration="3.363448" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+]]></output>
+                </test-case>
+              </test-suite>
+              <test-case id="1050" name="CharacterSwitchRebindsItsOwnAtlasGeometryFramesAndTimingWithoutCrossCache" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.CharacterSwitchRebindsItsOwnAtlasGeometryFramesAndTimingWithoutCrossCache" methodname="CharacterSwitchRebindsItsOwnAtlasGeometryFramesAndTimingWithoutCrossCache" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" seed="1467024943" result="Passed" start-time="2026-10-29 13:35:41Z" end-time="2026-10-29 13:35:41Z" duration="0.027863" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+]]></output>
+              </test-case>
+              <test-case id="1051" name="ConfigEditsInvalidateTimingWithoutReloadingAtlasAndErrorsRecoverOnce" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.ConfigEditsInvalidateTimingWithoutReloadingAtlasAndErrorsRecoverOnce" methodname="ConfigEditsInvalidateTimingWithoutReloadingAtlasAndErrorsRecoverOnce" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" seed="400361283" result="Passed" start-time="2026-10-29 13:35:41Z" end-time="2026-10-29 13:35:41Z" duration="0.039669" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': animation rejected, nothing is drawn.
+  characters.technical_fixture.animations.idle_combat.EndFrame: 2 is outside the clip's local frames 0..1 (0-based clip indices; was the atlas clip shortened?)
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': animation rejected, nothing is drawn.
+  characters.technical_fixture.animations.idle_combat: clip missing from manifest
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': animation rejected, nothing is drawn.
+  characters.technical_fixture.animations.run: clip missing from manifest
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': animation rejected, nothing is drawn.
+  characters.technical_fixture.animations.kick_spin: clip missing from manifest
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': animation rejected, nothing is drawn.
+  characters.technical_fixture.animations.jump.markers.land: missing (required to fit the clip to its simulation state)
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': animation rejected, nothing is drawn.
+  characters.technical_fixture.animations.punch_left.EndFrame: 2 is outside the clip's local frames 0..1 (0-based clip indices; was the atlas clip shortened?)
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': animation rejected, nothing is drawn.
+  characters.technical_fixture.animations.kick_left: animation settings missing
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+]]></output>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1049" name="MixedIdleRunStrikeMatchesManualFramesAcrossPagesAndDepth" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.MixedIdleRunStrikeMatchesManualFramesAcrossPagesAndDepth" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-29 13:35:41Z" end-time="2026-10-29 13:35:45Z" duration="4.014021" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="Category" value="Graphics" />
+                </properties>
+                <test-case id="1046" name="MixedIdleRunStrikeMatchesManualFramesAcrossPagesAndDepth(1)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.MixedIdleRunStrikeMatchesManualFramesAcrossPagesAndDepth(1)" methodname="MixedIdleRunStrikeMatchesManualFramesAcrossPagesAndDepth" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" seed="2065447819" result="Passed" start-time="2026-10-29 13:35:41Z" end-time="2026-10-29 13:35:42Z" duration="1.356800" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+]]></output>
+                </test-case>
+                <test-case id="1047" name="MixedIdleRunStrikeMatchesManualFramesAcrossPagesAndDepth(2)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.MixedIdleRunStrikeMatchesManualFramesAcrossPagesAndDepth(2)" methodname="MixedIdleRunStrikeMatchesManualFramesAcrossPagesAndDepth" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" seed="2146522418" result="Passed" start-time="2026-10-29 13:35:42Z" end-time="2026-10-29 13:35:43Z" duration="1.316455" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+]]></output>
+                </test-case>
+                <test-case id="1048" name="MixedIdleRunStrikeMatchesManualFramesAcrossPagesAndDepth(3)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.MixedIdleRunStrikeMatchesManualFramesAcrossPagesAndDepth(3)" methodname="MixedIdleRunStrikeMatchesManualFramesAcrossPagesAndDepth" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" seed="878932145" result="Passed" start-time="2026-10-29 13:35:43Z" end-time="2026-10-29 13:35:45Z" duration="1.339737" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+]]></output>
+                </test-case>
+              </test-suite>
+              <test-suite type="ParameterizedMethod" id="1037" name="MixedIdleRunUsesActualMovementAndKeepsIndependentCachedTiming" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.MixedIdleRunUsesActualMovementAndKeepsIndependentCachedTiming" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-29 13:35:45Z" end-time="2026-10-29 13:35:52Z" duration="7.450594" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                </properties>
+                <test-case id="1034" name="MixedIdleRunUsesActualMovementAndKeepsIndependentCachedTiming(0)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.MixedIdleRunUsesActualMovementAndKeepsIndependentCachedTiming(0)" methodname="MixedIdleRunUsesActualMovementAndKeepsIndependentCachedTiming" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" seed="1176943137" result="Passed" start-time="2026-10-29 13:35:45Z" end-time="2026-10-29 13:35:47Z" duration="2.475716" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.run.SpeedCurve: speed differs at loop endpoints; the cycle has a speed discontinuity
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+]]></output>
+                </test-case>
+                <test-case id="1035" name="MixedIdleRunUsesActualMovementAndKeepsIndependentCachedTiming(49)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.MixedIdleRunUsesActualMovementAndKeepsIndependentCachedTiming(49)" methodname="MixedIdleRunUsesActualMovementAndKeepsIndependentCachedTiming" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" seed="1934936374" result="Passed" start-time="2026-10-29 13:35:47Z" end-time="2026-10-29 13:35:50Z" duration="2.483225" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.run.SpeedCurve: speed differs at loop endpoints; the cycle has a speed discontinuity
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+]]></output>
+                </test-case>
+                <test-case id="1036" name="MixedIdleRunUsesActualMovementAndKeepsIndependentCachedTiming(199)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.MixedIdleRunUsesActualMovementAndKeepsIndependentCachedTiming(199)" methodname="MixedIdleRunUsesActualMovementAndKeepsIndependentCachedTiming" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" seed="1522397664" result="Passed" start-time="2026-10-29 13:35:50Z" end-time="2026-10-29 13:35:52Z" duration="2.490681" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.run.SpeedCurve: speed differs at loop endpoints; the cycle has a speed discontinuity
+CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+]]></output>
+                </test-case>
+              </test-suite>
+              <test-suite type="ParameterizedMethod" id="1041" name="StrikesShowTheirFramesOnTheSimulationWindowsForEveryRosterSize" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.StrikesShowTheirFramesOnTheSimulationWindowsForEveryRosterSize" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-29 13:35:52Z" end-time="2026-10-29 13:35:57Z" duration="4.601338" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                </properties>
+                <test-case id="1038" name="StrikesShowTheirFramesOnTheSimulationWindowsForEveryRosterSize(0)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.StrikesShowTheirFramesOnTheSimulationWindowsForEveryRosterSize(0)" methodname="StrikesShowTheirFramesOnTheSimulationWindowsForEveryRosterSize" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" seed="921111127" result="Passed" start-time="2026-10-29 13:35:52Z" end-time="2026-10-29 13:35:54Z" duration="1.531541" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+]]></output>
+                </test-case>
+                <test-case id="1039" name="StrikesShowTheirFramesOnTheSimulationWindowsForEveryRosterSize(49)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.StrikesShowTheirFramesOnTheSimulationWindowsForEveryRosterSize(49)" methodname="StrikesShowTheirFramesOnTheSimulationWindowsForEveryRosterSize" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" seed="1402434550" result="Passed" start-time="2026-10-29 13:35:54Z" end-time="2026-10-29 13:35:55Z" duration="1.532211" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+]]></output>
+                </test-case>
+                <test-case id="1040" name="StrikesShowTheirFramesOnTheSimulationWindowsForEveryRosterSize(199)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests.StrikesShowTheirFramesOnTheSimulationWindowsForEveryRosterSize(199)" methodname="StrikesShowTheirFramesOnTheSimulationWindowsForEveryRosterSize" classname="MLFLegends.Tests.PlayMode.CombatSpriteAnimationPlayModeTests" runstate="Runnable" seed="1076596549" result="Passed" start-time="2026-10-29 13:35:55Z" end-time="2026-10-29 13:35:57Z" duration="1.536630" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CombatSpriteRenderer on 'Animated sprites': characters.technical_fixture.animations.jump: local frame 0 (tech_b) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestFixture" id="1052" name="CombatSpriteGraphicsTests" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-10-29 13:35:57Z" end-time="2026-10-29 13:36:04Z" duration="7.140962" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="Graphics" />
+              </properties>
+              <test-case id="1055" name="AFighterPassingThroughAnotherInDepthSwapsFrontExactlyAtEqualDepth" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.AFighterPassingThroughAnotherInDepthSwapsFrontExactlyAtEqualDepth" methodname="AFighterPassingThroughAnotherInDepthSwapsFrontExactlyAtEqualDepth" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" seed="1976223270" result="Passed" start-time="2026-10-29 13:35:57Z" end-time="2026-10-29 13:35:58Z" duration="0.978421" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1060" name="CloseWallOcclusionIsIndependentOfDistantRoster" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.CloseWallOcclusionIsIndependentOfDistantRoster" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-29 13:35:58Z" end-time="2026-10-29 13:35:58Z" duration="0.492575" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                </properties>
+                <test-case id="1057" name="CloseWallOcclusionIsIndependentOfDistantRoster(0)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.CloseWallOcclusionIsIndependentOfDistantRoster(0)" methodname="CloseWallOcclusionIsIndependentOfDistantRoster" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" seed="204506863" result="Passed" start-time="2026-10-29 13:35:58Z" end-time="2026-10-29 13:35:58Z" duration="0.165076" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1058" name="CloseWallOcclusionIsIndependentOfDistantRoster(49)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.CloseWallOcclusionIsIndependentOfDistantRoster(49)" methodname="CloseWallOcclusionIsIndependentOfDistantRoster" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" seed="691744797" result="Passed" start-time="2026-10-29 13:35:58Z" end-time="2026-10-29 13:35:58Z" duration="0.153842" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1059" name="CloseWallOcclusionIsIndependentOfDistantRoster(199)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.CloseWallOcclusionIsIndependentOfDistantRoster(199)" methodname="CloseWallOcclusionIsIndependentOfDistantRoster" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" seed="1549605815" result="Passed" start-time="2026-10-29 13:35:58Z" end-time="2026-10-29 13:35:58Z" duration="0.168850" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-case id="1061" name="FourHundredCoincidentFightersKeepIdOrderAcrossPagesAndChunkChanges" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.FourHundredCoincidentFightersKeepIdOrderAcrossPagesAndChunkChanges" methodname="FourHundredCoincidentFightersKeepIdOrderAcrossPagesAndChunkChanges" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" seed="1027234082" result="Passed" start-time="2026-10-29 13:35:58Z" end-time="2026-10-29 13:36:02Z" duration="3.990519" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1056" name="JumpPanAndZoomKeepTheDepthOrder" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.JumpPanAndZoomKeepTheDepthOrder" methodname="JumpPanAndZoomKeepTheDepthOrder" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" seed="1686441439" result="Passed" start-time="2026-10-29 13:36:02Z" end-time="2026-10-29 13:36:03Z" duration="0.435423" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1054" name="NearerFightersCoverFartherOnesAcrossPagesAndTiesFollowTheId" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.NearerFightersCoverFartherOnesAcrossPagesAndTiesFollowTheId" methodname="NearerFightersCoverFartherOnesAcrossPagesAndTiesFollowTheId" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" seed="1347498004" result="Passed" start-time="2026-10-29 13:36:03Z" end-time="2026-10-29 13:36:04Z" duration="0.878482" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1062" name="OpaqueGeometryOccludesInFrontAndNotBehindAndFeetStayOnTheFloor" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.OpaqueGeometryOccludesInFrontAndNotBehindAndFeetStayOnTheFloor" methodname="OpaqueGeometryOccludesInFrontAndNotBehindAndFeetStayOnTheFloor" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" seed="277574312" result="Passed" start-time="2026-10-29 13:36:04Z" end-time="2026-10-29 13:36:04Z" duration="0.043691" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1053" name="TrimFlipColoursHolesAndFramesLandOnTheExpectedPixels" fullname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests.TrimFlipColoursHolesAndFramesLandOnTheExpectedPixels" methodname="TrimFlipColoursHolesAndFramesLandOnTheExpectedPixels" classname="MLFLegends.Tests.PlayMode.CombatSpriteGraphicsTests" runstate="Runnable" seed="2105139146" result="Passed" start-time="2026-10-29 13:36:04Z" end-time="2026-10-29 13:36:04Z" duration="0.317773" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1063" name="CombatSpritePerformanceTests" fullname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests" classname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-10-29 13:36:04Z" end-time="2026-10-29 13:36:14Z" duration="10.147529" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="Performance" />
+              </properties>
+              <test-case id="1064" name="AllocationMeasurementDetectsALiveAllocationAndRejectsAZeroAllocationClaim" fullname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests.AllocationMeasurementDetectsALiveAllocationAndRejectsAZeroAllocationClaim" methodname="AllocationMeasurementDetectsALiveAllocationAndRejectsAZeroAllocationClaim" classname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests" runstate="Runnable" seed="1631070097" result="Passed" start-time="2026-10-29 13:36:04Z" end-time="2026-10-29 13:36:04Z" duration="0.030987" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[device	positive_bytes	empty_bytes	byte_counter_valid	positive_samples	empty_samples	sample_counter_valid
+Direct3D12	0	0	False	1	0	True
+
+]]></output>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1071" name="RendererCostAndAllocationsFor2_100_400" fullname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests.RendererCostAndAllocationsFor2_100_400" classname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-10-29 13:36:04Z" end-time="2026-10-29 13:36:14Z" duration="10.109763" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                </properties>
+                <test-case id="1065" name="RendererCostAndAllocationsFor2_100_400(0,False)" fullname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests.RendererCostAndAllocationsFor2_100_400(0,False)" methodname="RendererCostAndAllocationsFor2_100_400" classname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests" runstate="Runnable" seed="886844789" result="Passed" start-time="2026-10-29 13:36:04Z" end-time="2026-10-29 13:36:04Z" duration="0.502399" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[device	positive_bytes	empty_bytes	byte_counter_valid	positive_samples	empty_samples	sample_counter_valid
+Direct3D12	0	0	False	1	0	True
+
+]]></output>
+                </test-case>
+                <test-case id="1066" name="RendererCostAndAllocationsFor2_100_400(0,True)" fullname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests.RendererCostAndAllocationsFor2_100_400(0,True)" methodname="RendererCostAndAllocationsFor2_100_400" classname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests" runstate="Runnable" seed="632950079" result="Passed" start-time="2026-10-29 13:36:04Z" end-time="2026-10-29 13:36:07Z" duration="2.700090" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CombatSpriteRenderer on 'Combat sprites': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Combat sprites': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+device	positive_bytes	empty_bytes	byte_counter_valid	positive_samples	empty_samples	sample_counter_valid
+Direct3D12	0	0	False	1	0	True
+
+CombatSpriteRenderer on 'Combat sprites': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Combat sprites': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+]]></output>
+                </test-case>
+                <test-case id="1067" name="RendererCostAndAllocationsFor2_100_400(49,False)" fullname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests.RendererCostAndAllocationsFor2_100_400(49,False)" methodname="RendererCostAndAllocationsFor2_100_400" classname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests" runstate="Runnable" seed="731511585" result="Passed" start-time="2026-10-29 13:36:07Z" end-time="2026-10-29 13:36:08Z" duration="0.430504" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[device	positive_bytes	empty_bytes	byte_counter_valid	positive_samples	empty_samples	sample_counter_valid
+Direct3D12	0	0	False	1	0	True
+
+]]></output>
+                </test-case>
+                <test-case id="1068" name="RendererCostAndAllocationsFor2_100_400(49,True)" fullname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests.RendererCostAndAllocationsFor2_100_400(49,True)" methodname="RendererCostAndAllocationsFor2_100_400" classname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests" runstate="Runnable" seed="2053536313" result="Passed" start-time="2026-10-29 13:36:08Z" end-time="2026-10-29 13:36:10Z" duration="2.735804" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CombatSpriteRenderer on 'Combat sprites': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Combat sprites': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+device	positive_bytes	empty_bytes	byte_counter_valid	positive_samples	empty_samples	sample_counter_valid
+Direct3D12	0	0	False	1	0	True
+
+CombatSpriteRenderer on 'Combat sprites': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Combat sprites': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+]]></output>
+                </test-case>
+                <test-case id="1069" name="RendererCostAndAllocationsFor2_100_400(199,False)" fullname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests.RendererCostAndAllocationsFor2_100_400(199,False)" methodname="RendererCostAndAllocationsFor2_100_400" classname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests" runstate="Runnable" seed="1339892331" result="Passed" start-time="2026-10-29 13:36:10Z" end-time="2026-10-29 13:36:11Z" duration="0.726789" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[device	positive_bytes	empty_bytes	byte_counter_valid	positive_samples	empty_samples	sample_counter_valid
+Direct3D12	0	0	False	1	0	True
+
+]]></output>
+                </test-case>
+                <test-case id="1070" name="RendererCostAndAllocationsFor2_100_400(199,True)" fullname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests.RendererCostAndAllocationsFor2_100_400(199,True)" methodname="RendererCostAndAllocationsFor2_100_400" classname="MLFLegends.Tests.PlayMode.CombatSpritePerformanceTests" runstate="Runnable" seed="1297808122" result="Passed" start-time="2026-10-29 13:36:11Z" end-time="2026-10-29 13:36:14Z" duration="3.008727" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[CombatSpriteRenderer on 'Combat sprites': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Combat sprites': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+device	positive_bytes	empty_bytes	byte_counter_valid	positive_samples	empty_samples	sample_counter_valid
+Direct3D12	0	0	False	1	0	True
+
+CombatSpriteRenderer on 'Combat sprites': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Combat sprites': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestFixture" id="1072" name="CombatSpriteRendererPlayModeTests" fullname="MLFLegends.Tests.PlayMode.CombatSpriteRendererPlayModeTests" classname="MLFLegends.Tests.PlayMode.CombatSpriteRendererPlayModeTests" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-10-29 13:36:14Z" end-time="2026-10-29 13:36:14Z" duration="0.289497" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1077" name="AnchorsFollowTheBodyTransformFacingAndFrame" fullname="MLFLegends.Tests.PlayMode.CombatSpriteRendererPlayModeTests.AnchorsFollowTheBodyTransformFacingAndFrame" methodname="AnchorsFollowTheBodyTransformFacingAndFrame" classname="MLFLegends.Tests.PlayMode.CombatSpriteRendererPlayModeTests" runstate="Runnable" seed="996494714" result="Passed" start-time="2026-10-29 13:36:14Z" end-time="2026-10-29 13:36:14Z" duration="0.016152" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1081" name="ARejectedCatalogDrawsNothingAndTheBattleKeepsRunning" fullname="MLFLegends.Tests.PlayMode.CombatSpriteRendererPlayModeTests.ARejectedCatalogDrawsNothingAndTheBattleKeepsRunning" methodname="ARejectedCatalogDrawsNothingAndTheBattleKeepsRunning" classname="MLFLegends.Tests.PlayMode.CombatSpriteRendererPlayModeTests" runstate="Runnable" seed="509222943" result="Passed" start-time="2026-10-29 13:36:14Z" end-time="2026-10-29 13:36:14Z" duration="0.063195" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[CombatSpriteRenderer on 'Bad catalog sprites': atlas rejected, nothing is drawn.
+  schema_version: unsupported schema_version 7 (supported: 1)
+]]></output>
+              </test-case>
+              <test-case id="1079" name="EnableDisableDestroyAndWorldDisposalReleaseEverything" fullname="MLFLegends.Tests.PlayMode.CombatSpriteRendererPlayModeTests.EnableDisableDestroyAndWorldDisposalReleaseEverything" methodname="EnableDisableDestroyAndWorldDisposalReleaseEverything" classname="MLFLegends.Tests.PlayMode.CombatSpriteRendererPlayModeTests" runstate="Runnable" seed="855484930" result="Passed" start-time="2026-10-29 13:36:14Z" end-time="2026-10-29 13:36:14Z" duration="0.026073" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1078" name="PauseKeepsTheFrameAndPositionsWhileEndAndRestartReplaceEverything" fullname="MLFLegends.Tests.PlayMode.CombatSpriteRendererPlayModeTests.PauseKeepsTheFrameAndPositionsWhileEndAndRestartReplaceEverything" methodname="PauseKeepsTheFrameAndPositionsWhileEndAndRestartReplaceEverything" classname="MLFLegends.Tests.PlayMode.CombatSpriteRendererPlayModeTests" runstate="Runnable" seed="1052029614" result="Passed" start-time="2026-10-29 13:36:14Z" end-time="2026-10-29 13:36:14Z" duration="0.026857" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1076" name="ReadsTheDefaultWorldAfterTheFramesTicksFor2_100_400" fullname="MLFLegends.Tests.PlayMode.CombatSpriteRendererPlayModeTests.ReadsTheDefaultWorldAfterTheFramesTicksFor2_100_400" classname="MLFLegends.Tests.PlayMode.CombatSpriteRendererPlayModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-29 13:36:14Z" end-time="2026-10-29 13:36:14Z" duration="0.057817" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                </properties>
+                <test-case id="1073" name="ReadsTheDefaultWorldAfterTheFramesTicksFor2_100_400(0)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteRendererPlayModeTests.ReadsTheDefaultWorldAfterTheFramesTicksFor2_100_400(0)" methodname="ReadsTheDefaultWorldAfterTheFramesTicksFor2_100_400" classname="MLFLegends.Tests.PlayMode.CombatSpriteRendererPlayModeTests" runstate="Runnable" seed="1994655068" result="Passed" start-time="2026-10-29 13:36:14Z" end-time="2026-10-29 13:36:14Z" duration="0.015220" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1074" name="ReadsTheDefaultWorldAfterTheFramesTicksFor2_100_400(49)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteRendererPlayModeTests.ReadsTheDefaultWorldAfterTheFramesTicksFor2_100_400(49)" methodname="ReadsTheDefaultWorldAfterTheFramesTicksFor2_100_400" classname="MLFLegends.Tests.PlayMode.CombatSpriteRendererPlayModeTests" runstate="Runnable" seed="1770951130" result="Passed" start-time="2026-10-29 13:36:14Z" end-time="2026-10-29 13:36:14Z" duration="0.018038" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1075" name="ReadsTheDefaultWorldAfterTheFramesTicksFor2_100_400(199)" fullname="MLFLegends.Tests.PlayMode.CombatSpriteRendererPlayModeTests.ReadsTheDefaultWorldAfterTheFramesTicksFor2_100_400(199)" methodname="ReadsTheDefaultWorldAfterTheFramesTicksFor2_100_400" classname="MLFLegends.Tests.PlayMode.CombatSpriteRendererPlayModeTests" runstate="Runnable" seed="975819583" result="Passed" start-time="2026-10-29 13:36:14Z" end-time="2026-10-29 13:36:14Z" duration="0.023582" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-case id="1082" name="TheSmokeSceneDrawsItsBattleWithTheRealCombatCatalog" fullname="MLFLegends.Tests.PlayMode.CombatSpriteRendererPlayModeTests.TheSmokeSceneDrawsItsBattleWithTheRealCombatCatalog" methodname="TheSmokeSceneDrawsItsBattleWithTheRealCombatCatalog" classname="MLFLegends.Tests.PlayMode.CombatSpriteRendererPlayModeTests" runstate="Runnable" seed="1881610508" result="Passed" start-time="2026-10-29 13:36:14Z" end-time="2026-10-29 13:36:14Z" duration="0.070986" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+CombatSmokeBootstrap on 'Combat Bootstrap': strike windows (ticks @60 Hz, Preparation/Active/Recovery) revision 4: punch_left 14/6/9, punch_right 14/6/9, kick_left 12/6/12, kick_right 12/6/12, kick_spin 20/5/5. Landing recovery 12 ticks. New strikes/landings use them; running states keep their duration.
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+]]></output>
+              </test-case>
+              <test-case id="1080" name="TwoRenderersOnOneWorldAndCameraDrawOnce" fullname="MLFLegends.Tests.PlayMode.CombatSpriteRendererPlayModeTests.TwoRenderersOnOneWorldAndCameraDrawOnce" methodname="TwoRenderersOnOneWorldAndCameraDrawOnce" classname="MLFLegends.Tests.PlayMode.CombatSpriteRendererPlayModeTests" runstate="Runnable" seed="589830268" result="Passed" start-time="2026-10-29 13:36:14Z" end-time="2026-10-29 13:36:14Z" duration="0.026174" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[CombatSpriteRenderer on 'Sprites A' is superseded by a later enabled renderer of the same World and Camera; it draws nothing while that one is enabled.
+CombatSpriteRenderer on 'Sprites A' is superseded by a later enabled renderer of the same World and Camera; it draws nothing while that one is enabled.
+]]></output>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1005" name="DefaultWorldBattleLifecycleTests" fullname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests" classname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-10-29 13:36:14Z" end-time="2026-10-29 13:36:15Z" duration="0.438583" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1006" name="DefaultWorldHasOneLifecycleOwnerAndTheCompleteFixedStepOrder" fullname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests.DefaultWorldHasOneLifecycleOwnerAndTheCompleteFixedStepOrder" methodname="DefaultWorldHasOneLifecycleOwnerAndTheCompleteFixedStepOrder" classname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests" runstate="Runnable" seed="1558252876" result="Passed" start-time="2026-10-29 13:36:14Z" end-time="2026-10-29 13:36:14Z" duration="0.020086" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1007" name="DefaultWorldJumpFreezesDuringTimeScaleZeroAndPausedRestartClearsMotion" fullname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests.DefaultWorldJumpFreezesDuringTimeScaleZeroAndPausedRestartClearsMotion" methodname="DefaultWorldJumpFreezesDuringTimeScaleZeroAndPausedRestartClearsMotion" classname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests" runstate="Runnable" seed="920683821" result="Passed" start-time="2026-10-29 13:36:14Z" end-time="2026-10-29 13:36:14Z" duration="0.031022" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1009" name="DisablingBootstrapOnPauseEndsItsBattleBeforeUnpause" fullname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests.DisablingBootstrapOnPauseEndsItsBattleBeforeUnpause" methodname="DisablingBootstrapOnPauseEndsItsBattleBeforeUnpause" classname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests" runstate="Runnable" seed="1832052796" result="Passed" start-time="2026-10-29 13:36:14Z" end-time="2026-10-29 13:36:14Z" duration="0.054994" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[CombatSmokeBootstrap on 'Paused bootstrap': no CharacterAnimationConfig assigned; strikes keep the World's current windows (CombatAttackTuning defaults unless published elsewhere), and a new World's landing recovery is ZERO. For character animation assign the same config and CharacterId as the renderer.
+CombatSmokeBootstrap on 'Paused bootstrap': no CharacterAnimationConfig assigned; strikes keep the World's current windows (CombatAttackTuning defaults unless published elsewhere), and a new World's landing recovery is ZERO. For character animation assign the same config and CharacterId as the renderer.
+]]></output>
+              </test-case>
+              <test-case id="1008" name="PausedFramesApplyStartRestartAndEndForDuelAndLargeRosterWithoutSimulation" fullname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests.PausedFramesApplyStartRestartAndEndForDuelAndLargeRosterWithoutSimulation" methodname="PausedFramesApplyStartRestartAndEndForDuelAndLargeRosterWithoutSimulation" classname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests" runstate="Runnable" seed="1623881879" result="Passed" start-time="2026-10-29 13:36:14Z" end-time="2026-10-29 13:36:14Z" duration="0.037972" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1012" name="PausedSmokeSceneSwitchAndFinalUnloadDoNotNeedAFixedTick" fullname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests.PausedSmokeSceneSwitchAndFinalUnloadDoNotNeedAFixedTick" methodname="PausedSmokeSceneSwitchAndFinalUnloadDoNotNeedAFixedTick" classname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests" runstate="Runnable" seed="1785648742" result="Passed" start-time="2026-10-29 13:36:14Z" end-time="2026-10-29 13:36:15Z" duration="0.059225" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+CombatSmokeBootstrap on 'Combat Bootstrap': strike windows (ticks @60 Hz, Preparation/Active/Recovery) revision 6: punch_left 14/6/9, punch_right 14/6/9, kick_left 12/6/12, kick_right 12/6/12, kick_spin 20/5/5. Landing recovery 12 ticks. New strikes/landings use them; running states keep their duration.
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+CombatSmokeBootstrap on 'Combat Bootstrap': strike windows (ticks @60 Hz, Preparation/Active/Recovery) revision 7: punch_left 14/6/9, punch_right 14/6/9, kick_left 12/6/12, kick_right 12/6/12, kick_spin 20/5/5. Landing recovery 12 ticks. New strikes/landings use them; running states keep their duration.
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+There are 2 audio listeners in the scene. Please ensure there is always exactly one audio listener in the scene.
+]]></output>
+              </test-case>
+              <test-case id="1010" name="SceneBootstrapStartsTwoCombatantsAndLeavingAndReturningLeaksNothing" fullname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests.SceneBootstrapStartsTwoCombatantsAndLeavingAndReturningLeaksNothing" methodname="SceneBootstrapStartsTwoCombatantsAndLeavingAndReturningLeaksNothing" classname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests" runstate="Runnable" seed="1926865085" result="Passed" start-time="2026-10-29 13:36:15Z" end-time="2026-10-29 13:36:15Z" duration="0.183458" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[CombatSmokeBootstrap on 'Combat bootstrap 1': no CharacterAnimationConfig assigned; strikes keep the World's current windows (CombatAttackTuning defaults unless published elsewhere), and a new World's landing recovery is ZERO. For character animation assign the same config and CharacterId as the renderer.
+CombatSmokeBootstrap on 'Combat bootstrap 2': no CharacterAnimationConfig assigned; strikes keep the World's current windows (CombatAttackTuning defaults unless published elsewhere), and a new World's landing recovery is ZERO. For character animation assign the same config and CharacterId as the renderer.
+CombatSmokeBootstrap on 'Combat bootstrap 3': no CharacterAnimationConfig assigned; strikes keep the World's current windows (CombatAttackTuning defaults unless published elsewhere), and a new World's landing recovery is ZERO. For character animation assign the same config and CharacterId as the renderer.
+]]></output>
+              </test-case>
+              <test-case id="1011" name="SmokeSceneStartsItsBattleAndASceneSwitchNeitherStopsNorDuplicatesIt" fullname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests.SmokeSceneStartsItsBattleAndASceneSwitchNeitherStopsNorDuplicatesIt" methodname="SmokeSceneStartsItsBattleAndASceneSwitchNeitherStopsNorDuplicatesIt" classname="MLFLegends.Tests.PlayMode.DefaultWorldBattleLifecycleTests" runstate="Runnable" seed="529113224" result="Passed" start-time="2026-10-29 13:36:15Z" end-time="2026-10-29 13:36:15Z" duration="0.049251" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+CombatSmokeBootstrap on 'Combat Bootstrap': strike windows (ticks @60 Hz, Preparation/Active/Recovery) revision 9: punch_left 14/6/9, punch_right 14/6/9, kick_left 12/6/12, kick_right 12/6/12, kick_spin 20/5/5. Landing recovery 12 ticks. New strikes/landings use them; running states keep their duration.
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+CombatSmokeBootstrap on 'Combat Bootstrap': strike windows (ticks @60 Hz, Preparation/Active/Recovery) revision 10: punch_left 14/6/9, punch_right 14/6/9, kick_left 12/6/12, kick_right 12/6/12, kick_spin 20/5/5. Landing recovery 12 ticks. New strikes/landings use them; running states keep their duration.
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+There are 2 audio listeners in the scene. Please ensure there is always exactly one audio listener in the scene.
+]]></output>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1085" name="DefaultWorldClockTests" fullname="MLFLegends.Tests.PlayMode.DefaultWorldClockTests" classname="MLFLegends.Tests.PlayMode.DefaultWorldClockTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-29 13:36:15Z" end-time="2026-10-29 13:36:15Z" duration="0.253509" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1086" name="DefaultWorldHasOneClockAheadOfTheCombatPhases" fullname="MLFLegends.Tests.PlayMode.DefaultWorldClockTests.DefaultWorldHasOneClockAheadOfTheCombatPhases" methodname="DefaultWorldHasOneClockAheadOfTheCombatPhases" classname="MLFLegends.Tests.PlayMode.DefaultWorldClockTests" runstate="Runnable" seed="174756429" result="Passed" start-time="2026-10-29 13:36:15Z" end-time="2026-10-29 13:36:15Z" duration="0.252699" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1013" name="DefaultWorldCommandQueueTests" fullname="MLFLegends.Tests.PlayMode.DefaultWorldCommandQueueTests" classname="MLFLegends.Tests.PlayMode.DefaultWorldCommandQueueTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-29 13:36:15Z" end-time="2026-10-29 13:36:15Z" duration="0.255005" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1014" name="DefaultWorldHasOneProcessorLastInTheCollectionPhaseAndOneQueue" fullname="MLFLegends.Tests.PlayMode.DefaultWorldCommandQueueTests.DefaultWorldHasOneProcessorLastInTheCollectionPhaseAndOneQueue" methodname="DefaultWorldHasOneProcessorLastInTheCollectionPhaseAndOneQueue" classname="MLFLegends.Tests.PlayMode.DefaultWorldCommandQueueTests" runstate="Runnable" seed="1927028719" result="Passed" start-time="2026-10-29 13:36:15Z" end-time="2026-10-29 13:36:15Z" duration="0.254054" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1015" name="PlayerInputPlayModeTests" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" testcasecount="11" result="Failed" site="Child" start-time="2026-10-29 13:36:15Z" end-time="2026-10-29 13:36:18Z" duration="2.536395" total="11" passed="5" failed="6" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1026" name="AdapterFollowsTheDefaultWorldWhenItAppearsOrIsReplaced" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests.AdapterFollowsTheDefaultWorldWhenItAppearsOrIsReplaced" methodname="AdapterFollowsTheDefaultWorldWhenItAppearsOrIsReplaced" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" seed="935910750" result="Failed" start-time="2026-10-29 13:36:15Z" end-time="2026-10-29 13:36:15Z" duration="0.177932" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[Unhandled log message: '[Error] Arena movement frozen for 3 bodies: ArenaUnavailable, revision 13.'. Use UnityEngine.TestTools.LogAssert.Expect]]></message>
+                  <stack-trace><![CDATA[MLFLegends.Combat.CombatArenaAuthoring:Update () (at Assets/MLFLegends/Combat/Runtime/Bootstrap/CombatArenaAuthoring.cs:52)
+
+]]></stack-trace>
+                </failure>
+                <output><![CDATA[CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+CombatSmokeBootstrap on 'Combat Bootstrap': strike windows (ticks @60 Hz, Preparation/Active/Recovery) revision 12: punch_left 14/6/9, punch_right 14/6/9, kick_left 12/6/12, kick_right 12/6/12, kick_spin 20/5/5. Landing recovery 12 ticks. New strikes/landings use them; running states keep their duration.
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+There are 2 audio listeners in the scene. Please ensure there is always exactly one audio listener in the scene.
+There are 2 audio listeners in the scene. Please ensure there is always exactly one audio listener in the scene.
+There are 2 audio listeners in the scene. Please ensure there is always exactly one audio listener in the scene.
+There are 2 audio listeners in the scene. Please ensure there is always exactly one audio listener in the scene.
+CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+CombatSmokeBootstrap on 'Combat Bootstrap': strike windows (ticks @60 Hz, Preparation/Active/Recovery) revision 14: punch_left 14/6/9, punch_right 14/6/9, kick_left 12/6/12, kick_right 12/6/12, kick_spin 20/5/5. Landing recovery 12 ticks. New strikes/landings use them; running states keep their duration.
+CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+CombatSmokeBootstrap on 'Combat Bootstrap': strike windows (ticks @60 Hz, Preparation/Active/Recovery) revision 15: punch_left 14/6/9, punch_right 14/6/9, kick_left 12/6/12, kick_right 12/6/12, kick_spin 20/5/5. Landing recovery 12 ticks. New strikes/landings use them; running states keep their duration.
+Arena movement frozen for 3 bodies: ArenaUnavailable, revision 13.
+There are 2 audio listeners in the scene. Please ensure there is always exactly one audio listener in the scene.
+]]></output>
+              </test-case>
+              <test-case id="1027" name="AdditiveSceneSwitchAndAdapterReenableKeepOneProducerAndOnePlayerCommandPerTick" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests.AdditiveSceneSwitchAndAdapterReenableKeepOneProducerAndOnePlayerCommandPerTick" methodname="AdditiveSceneSwitchAndAdapterReenableKeepOneProducerAndOnePlayerCommandPerTick" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" seed="658096564" result="Passed" start-time="2026-10-29 13:36:15Z" end-time="2026-10-29 13:36:16Z" duration="0.130812" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+CombatSmokeBootstrap on 'Combat Bootstrap': strike windows (ticks @60 Hz, Preparation/Active/Recovery) revision 17: punch_left 14/6/9, punch_right 14/6/9, kick_left 12/6/12, kick_right 12/6/12, kick_spin 20/5/5. Landing recovery 12 ticks. New strikes/landings use them; running states keep their duration.
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+CombatSmokeBootstrap on 'Combat Bootstrap': strike windows (ticks @60 Hz, Preparation/Active/Recovery) revision 18: punch_left 14/6/9, punch_right 14/6/9, kick_left 12/6/12, kick_right 12/6/12, kick_spin 20/5/5. Landing recovery 12 ticks. New strikes/landings use them; running states keep their duration.
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+There are 2 audio listeners in the scene. Please ensure there is always exactly one audio listener in the scene.
+]]></output>
+              </test-case>
+              <test-case id="1028" name="CameraRebindsOnRestartAndHoldsItsViewWhenTheBattleEnds" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests.CameraRebindsOnRestartAndHoldsItsViewWhenTheBattleEnds" methodname="CameraRebindsOnRestartAndHoldsItsViewWhenTheBattleEnds" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" seed="2140402341" result="Passed" start-time="2026-10-29 13:36:16Z" end-time="2026-10-29 13:36:16Z" duration="0.040946" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+CombatSmokeBootstrap on 'Combat Bootstrap': strike windows (ticks @60 Hz, Preparation/Active/Recovery) revision 20: punch_left 14/6/9, punch_right 14/6/9, kick_left 12/6/12, kick_right 12/6/12, kick_spin 20/5/5. Landing recovery 12 ticks. New strikes/landings use them; running states keep their duration.
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+CombatSmokeBootstrap on 'Combat Bootstrap': strike windows (ticks @60 Hz, Preparation/Active/Recovery) revision 22: punch_left 14/6/9, punch_right 14/6/9, kick_left 12/6/12, kick_right 12/6/12, kick_spin 20/5/5. Landing recovery 12 ticks. New strikes/landings use them; running states keep their duration.
+]]></output>
+              </test-case>
+              <test-case id="1022" name="FocusLossStopsTheFighterOnTheNextTickAndDropsPresses" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests.FocusLossStopsTheFighterOnTheNextTickAndDropsPresses" methodname="FocusLossStopsTheFighterOnTheNextTickAndDropsPresses" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" seed="1313731678" result="Passed" start-time="2026-10-29 13:36:16Z" end-time="2026-10-29 13:36:16Z" duration="0.107157" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+CombatSmokeBootstrap on 'Combat Bootstrap': strike windows (ticks @60 Hz, Preparation/Active/Recovery) revision 24: punch_left 14/6/9, punch_right 14/6/9, kick_left 12/6/12, kick_right 12/6/12, kick_spin 20/5/5. Landing recovery 12 ticks. New strikes/landings use them; running states keep their duration.
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+]]></output>
+              </test-case>
+              <test-case id="1021" name="PauseCollectsNoPressWhilePanAndZoomStillWorkAndResumeUsesTheLiveHold" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests.PauseCollectsNoPressWhilePanAndZoomStillWorkAndResumeUsesTheLiveHold" methodname="PauseCollectsNoPressWhilePanAndZoomStillWorkAndResumeUsesTheLiveHold" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" seed="771335748" result="Passed" start-time="2026-10-29 13:36:16Z" end-time="2026-10-29 13:36:16Z" duration="0.074399" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+CombatSmokeBootstrap on 'Combat Bootstrap': strike windows (ticks @60 Hz, Preparation/Active/Recovery) revision 26: punch_left 14/6/9, punch_right 14/6/9, kick_left 12/6/12, kick_right 12/6/12, kick_spin 20/5/5. Landing recovery 12 ticks. New strikes/landings use them; running states keep their duration.
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+]]></output>
+              </test-case>
+              <test-case id="1016" name="PlayerLoopProcessesInputBeforeTheFixedTicksAndRunsLateUpdateAfterThem" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests.PlayerLoopProcessesInputBeforeTheFixedTicksAndRunsLateUpdateAfterThem" methodname="PlayerLoopProcessesInputBeforeTheFixedTicksAndRunsLateUpdateAfterThem" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" seed="1892034579" result="Passed" start-time="2026-10-29 13:36:16Z" end-time="2026-10-29 13:36:16Z" duration="0.005941" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[UnityEngine.InputSystem.InputSettings must be instantiated using the ScriptableObject.CreateInstance method instead of new InputSettings.
+]]></output>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1025" name="RealFocusLossAndRegainWithDeviceResyncTurnsNoRestoredHoldIntoAPress" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests.RealFocusLossAndRegainWithDeviceResyncTurnsNoRestoredHoldIntoAPress" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" testcasecount="2" result="Failed" site="Child" start-time="2026-10-29 13:36:16Z" end-time="2026-10-29 13:36:18Z" duration="1.808919" total="2" passed="0" failed="2" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                </properties>
+                <failure>
+                  <message><![CDATA[One or more child tests had errors]]></message>
+                </failure>
+                <test-case id="1023" name="RealFocusLossAndRegainWithDeviceResyncTurnsNoRestoredHoldIntoAPress(True)" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests.RealFocusLossAndRegainWithDeviceResyncTurnsNoRestoredHoldIntoAPress(True)" methodname="RealFocusLossAndRegainWithDeviceResyncTurnsNoRestoredHoldIntoAPress" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" seed="936242198" result="Failed" start-time="2026-10-29 13:36:16Z" end-time="2026-10-29 13:36:17Z" duration="0.910446" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <failure>
+                    <message><![CDATA[  Release, then a fresh K press jumps.
+  Expected: False
+  But was:  True
+]]></message>
+                    <stack-trace><![CDATA[at MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests+<RealFocusLossAndRegainWithDeviceResyncTurnsNoRestoredHoldIntoAPress>d__42.MoveNext () [0x003d0] in D:\Unity\Project\mlf-w66\Assets\Tests\PlayMode\Input\PlayerInputPlayModeTests.cs:411
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@1405238725ab\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+                  </failure>
+                  <output><![CDATA[CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+CombatSmokeBootstrap on 'Combat Bootstrap': strike windows (ticks @60 Hz, Preparation/Active/Recovery) revision 28: punch_left 14/6/9, punch_right 14/6/9, kick_left 12/6/12, kick_right 12/6/12, kick_spin 20/5/5. Landing recovery 12 ticks. New strikes/landings use them; running states keep their duration.
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+]]></output>
+                </test-case>
+                <test-case id="1024" name="RealFocusLossAndRegainWithDeviceResyncTurnsNoRestoredHoldIntoAPress(False)" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests.RealFocusLossAndRegainWithDeviceResyncTurnsNoRestoredHoldIntoAPress(False)" methodname="RealFocusLossAndRegainWithDeviceResyncTurnsNoRestoredHoldIntoAPress" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" seed="230266310" result="Failed" start-time="2026-10-29 13:36:17Z" end-time="2026-10-29 13:36:18Z" duration="0.897343" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <failure>
+                    <message><![CDATA[  Release, then a fresh K press jumps.
+  Expected: False
+  But was:  True
+]]></message>
+                    <stack-trace><![CDATA[at MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests+<RealFocusLossAndRegainWithDeviceResyncTurnsNoRestoredHoldIntoAPress>d__42.MoveNext () [0x003d0] in D:\Unity\Project\mlf-w66\Assets\Tests\PlayMode\Input\PlayerInputPlayModeTests.cs:411
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@1405238725ab\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+                  </failure>
+                  <output><![CDATA[CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+CombatSmokeBootstrap on 'Combat Bootstrap': strike windows (ticks @60 Hz, Preparation/Active/Recovery) revision 30: punch_left 14/6/9, punch_right 14/6/9, kick_left 12/6/12, kick_right 12/6/12, kick_spin 20/5/5. Landing recovery 12 ticks. New strikes/landings use them; running states keep their duration.
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+]]></output>
+                </test-case>
+              </test-suite>
+              <test-suite type="ParameterizedMethod" id="1020" name="TapAndHoldReachTheRightTicksThroughTheRealPlayerLoop" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests.TapAndHoldReachTheRightTicksThroughTheRealPlayerLoop" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" testcasecount="3" result="Failed" site="Child" start-time="2026-10-29 13:36:18Z" end-time="2026-10-29 13:36:18Z" duration="0.186841" total="3" passed="0" failed="3" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                </properties>
+                <failure>
+                  <message><![CDATA[One or more child tests had errors]]></message>
+                </failure>
+                <test-case id="1017" name="TapAndHoldReachTheRightTicksThroughTheRealPlayerLoop(30)" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests.TapAndHoldReachTheRightTicksThroughTheRealPlayerLoop(30)" methodname="TapAndHoldReachTheRightTicksThroughTheRealPlayerLoop" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" seed="816772056" result="Failed" start-time="2026-10-29 13:36:18Z" end-time="2026-10-29 13:36:18Z" duration="0.053973" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <failure>
+                    <message><![CDATA[  fps 30: moved on exactly the 26 ticks of the held frames
+  Expected: -0.266666591f +/- 9.99999975E-05f
+  But was:  -0.910633147f
+]]></message>
+                    <stack-trace><![CDATA[at MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests+<TapAndHoldReachTheRightTicksThroughTheRealPlayerLoop>d__39.MoveNext () [0x004d8] in D:\Unity\Project\mlf-w66\Assets\Tests\PlayMode\Input\PlayerInputPlayModeTests.cs:276
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@1405238725ab\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+                  </failure>
+                  <output><![CDATA[CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+CombatSmokeBootstrap on 'Combat Bootstrap': strike windows (ticks @60 Hz, Preparation/Active/Recovery) revision 32: punch_left 14/6/9, punch_right 14/6/9, kick_left 12/6/12, kick_right 12/6/12, kick_spin 20/5/5. Landing recovery 12 ticks. New strikes/landings use them; running states keep their duration.
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+]]></output>
+                </test-case>
+                <test-case id="1018" name="TapAndHoldReachTheRightTicksThroughTheRealPlayerLoop(60)" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests.TapAndHoldReachTheRightTicksThroughTheRealPlayerLoop(60)" methodname="TapAndHoldReachTheRightTicksThroughTheRealPlayerLoop" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" seed="96543104" result="Failed" start-time="2026-10-29 13:36:18Z" end-time="2026-10-29 13:36:18Z" duration="0.059327" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <failure>
+                    <message><![CDATA[  fps 60: moved on exactly the 13 ticks of the held frames
+  Expected: -1.13333333f +/- 9.99999975E-05f
+  But was:  -1.80000019f
+]]></message>
+                    <stack-trace><![CDATA[at MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests+<TapAndHoldReachTheRightTicksThroughTheRealPlayerLoop>d__39.MoveNext () [0x004d8] in D:\Unity\Project\mlf-w66\Assets\Tests\PlayMode\Input\PlayerInputPlayModeTests.cs:276
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@1405238725ab\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+                  </failure>
+                  <output><![CDATA[CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+CombatSmokeBootstrap on 'Combat Bootstrap': strike windows (ticks @60 Hz, Preparation/Active/Recovery) revision 34: punch_left 14/6/9, punch_right 14/6/9, kick_left 12/6/12, kick_right 12/6/12, kick_spin 20/5/5. Landing recovery 12 ticks. New strikes/landings use them; running states keep their duration.
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+]]></output>
+                </test-case>
+                <test-case id="1019" name="TapAndHoldReachTheRightTicksThroughTheRealPlayerLoop(120)" fullname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests.TapAndHoldReachTheRightTicksThroughTheRealPlayerLoop(120)" methodname="TapAndHoldReachTheRightTicksThroughTheRealPlayerLoop" classname="MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests" runstate="Runnable" seed="882812037" result="Failed" start-time="2026-10-29 13:36:18Z" end-time="2026-10-29 13:36:18Z" duration="0.072482" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <failure>
+                    <message><![CDATA[  fps 120 attempt 1: the tap jumped
+  Expected: False
+  But was:  True
+]]></message>
+                    <stack-trace><![CDATA[at MLFLegends.Tests.PlayMode.PlayerInputPlayModeTests+<TapAndHoldReachTheRightTicksThroughTheRealPlayerLoop>d__39.MoveNext () [0x002a6] in D:\Unity\Project\mlf-w66\Assets\Tests\PlayMode\Input\PlayerInputPlayModeTests.cs:253
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@1405238725ab\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+                  </failure>
+                  <output><![CDATA[CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSmokeBootstrap on 'Combat Bootstrap': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+CombatSmokeBootstrap on 'Combat Bootstrap': strike windows (ticks @60 Hz, Preparation/Active/Recovery) revision 36: punch_left 14/6/9, punch_right 14/6/9, kick_left 12/6/12, kick_right 12/6/12, kick_spin 20/5/5. Landing recovery 12 ticks. New strikes/landings use them; running states keep their duration.
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.jump: local frame 0 (jump_000) is in no rise/fall/land marker and is never shown (ECS takeoff is immediate)
+CombatSpriteRenderer on 'Main Camera': characters.mage_female_01.animations.punch_right: Active frames 3..3 differ from the manifest's strike_pose 2..3 (the config decides)
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestFixture" id="1083" name="SceneAndEcsSmokeTests" fullname="MLFLegends.Tests.PlayMode.SceneAndEcsSmokeTests" classname="MLFLegends.Tests.PlayMode.SceneAndEcsSmokeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-29 13:36:18Z" end-time="2026-10-29 13:36:18Z" duration="0.343984" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1084" name="SampleSceneLoadsAndEcsWorldSurvivesAFrame" fullname="MLFLegends.Tests.PlayMode.SceneAndEcsSmokeTests.SampleSceneLoadsAndEcsWorldSurvivesAFrame" methodname="SampleSceneLoadsAndEcsWorldSurvivesAFrame" classname="MLFLegends.Tests.PlayMode.SceneAndEcsSmokeTests" runstate="Runnable" seed="1110722697" result="Passed" start-time="2026-10-29 13:36:18Z" end-time="2026-10-29 13:36:18Z" duration="0.343108" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: C:/Users/Стас/AppData/LocalLow/DefaultCompany/mlf-legends\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

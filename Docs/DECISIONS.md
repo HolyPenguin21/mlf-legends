@@ -1,4 +1,28 @@
-## Current #66 — Stage 04.4–04.5 impulses and indexed Hit (2026-10-29)
+## Current #69 — Stage 05.1 decisions (2026-10-29)
+
+Only this section is current; every older "History" section keeps its own SHA/scope and is superseded where it disagrees (old key layouts, exact-limb intentions, velocity = displacement/dt, series limit 4, stage states).
+
+- **D69-1 Final contact velocity.** Velocity after contact is the physical final velocity, never achieved displacement / dt:
+  inward normal parts against surfaces that blocked the body are removed (time of impact implicit in the move), touching
+  pairs exchange approaching normal velocity as a perfectly inelastic mass-weighted collision (held bodies immovable),
+  then deceleration. One integrator, one Position/Motion writer; positions/holds/slop unchanged. [STAGE05_1_CHARACTER_SERIES.md](STAGE05_1_CHARACTER_SERIES.md) §1.1.
+- **D69-2 Disabled cleanup.** Whole-entity `Disabled` fighters lose ExternalVelocity like a disabled InCombat bit.
+- **D69-3 Test isolation, not production relaxation.** The ordered PlayMode FAIL came from a test World without the arena
+  owner and an unrun `finally`; the fixture restores replaced Worlds in `[UnityTearDown]`. The arena authoring reports a
+  frozen-movement error only after its own staged geometry is published.
+- **D69-4 Per-character data in the existing dataflow.** Body (Radius/Height/Mass) and per-slot clip/damage/reach/depth/
+  height live in `CharacterAnimationEntry.Combat` next to the animation timing (the only Active source) and are published
+  through the existing `CombatStrikeSchedule` (now the character table). No second config, no physics/attack/ability
+  managers. Values are frozen per strike execution (`CombatAttackState.Strike`) and per fighter at spawn.
+- **D69-5 Semantic slots and migration.** `CombatAttackKind` 1..5 keep their values as Hand1/Hand2/Foot1/Foot2/
+  PhysicalAbility; default clips punch_left/punch_right/kick_left/kick_right/kick_spin. Versioned, idempotent data migration.
+- **D69-6 Layout and series (manager's working interpretation for review).** U hand series, I foot series, O ability,
+  Space jump; priority U → I → O; 1-1-2-1-2 by started strikes in a bounded step; hand↔foot switch restarts at 1;
+  Recovery end resets; O free-state only, never buffered, never interrupts; no length limit. Exact-limb command bits 4..8
+  are retired (invalid), so pre-#69 recordings using them are not compatible.
+- **D69-7 Debug view.** Play Mode Scene gizmos on the bootstrap draw the simulated body and the frozen strike box.
+
+## History — #66 — Stage 04.4–04.5 impulses and indexed Hit (2026-10-29)
 
 Agent implementation choices, pending manager review and owner acceptance ([contract](STAGE04_IMPULSES_HIT.md)):
 - One impulse input: `CombatImpulse` buffer on a Movement-owned singleton, epoch = BattleNumber; consumed exactly once by
@@ -21,7 +45,7 @@ Agent implementation choices, pending manager review and owner acceptance ([cont
   arena lifecycle tests calling SendMessage in EditMode, and a sprite fixture walking enemies through each other.
   Fixed test-side in the first commit; no runtime 04.3 change was needed.
 
-## Current #64 — Stage 04.3 body contacts (2026-10-29)
+## History — #64 — Stage 04.3 body contacts (2026-10-29)
 
 PR #62 and #63 were merged on the owner's explicit command; integrated main base is
 `adf98cd1c9ca4df2b2d2e96aa65d3a7e17eb3a5a`. Branch `feature/64-body-contacts`; the owner subsequently explicitly authorized commit, push and merge of #64.
@@ -33,7 +57,7 @@ Free allies yield, ordinary locomotion does not bulldoze enemies, trapped/unreso
 Stage 03 OWNER-ACCEPTED; Stage 04 IN PROGRESS. Unity/C#/Burst/scene/performance NOT RUN; source/model checks are separate.
 Historical notes below retain their original SHA/status and do not override this update.
 
-## Current #61 — Stage 04.2 static arena (2026-10-29)
+## History — #61 — Stage 04.2 static arena (2026-10-29)
 
 Dependent branch `feature/61-static-arena` starts from corrected #60 PR #62 head
 `e26e668435b9cb55bcf5bced163710b6c2b61230`; main at dispatch is `180b4121792e68931f27c109b78cd0d24c21a4d4`.
@@ -47,7 +71,7 @@ planar distance; the old diagonal one-axis distance expectation is corrected wit
 **Unity/C# compilation/suites/Burst/GPU/runtime performance NOT RUN**; source/model results are separate and do not
 certify runtime acceptance. Historical dated evidence below applies only to its recorded SHA/scope.
 
-## Current #58 — Stage 04.1 (2026-10-28)
+## History — #58 — Stage 04.1 (2026-10-28)
 
 **Stage 03 OWNER-ACCEPTED**, by the owner's direct message recorded in #58: «Stage 03 закрыли. Идем дальше».
 Exact owner manual-test SHA/protocol was not supplied; this is not a blanket Unity/GPU PASS. **Stage 04 IN PROGRESS**;

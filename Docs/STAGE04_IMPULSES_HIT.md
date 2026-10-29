@@ -1,3 +1,8 @@
+> **Superseded in part by #69 (2026-10-29):** step 5 of §3 ("velocity = achieved physical displacement / dt") was a
+> defect — it published the tick's average displacement, not the velocity after the contact. The current rule (blocked
+> normal removed, inelastic normal exchange between touching bodies, then deceleration) is in
+> [STAGE05_1_CHARACTER_SERIES.md](STAGE05_1_CHARACTER_SERIES.md) §1.1. Everything else below is unchanged.
+
 # Stage 04.4–04.5 / #66 — external impulses, indexed Hit and 2/100/400 scale
 
 Base: fresh main `cf2b5bcf57c2b81b635074a0322a85ecf50879b3` (merge of PR #65 / #64). Branch

@@ -1,4 +1,23 @@
-## Current #66 — Stage 04.4–04.5 impulses, indexed Hit, 2/100/400 (2026-10-29)
+## Current #69 — Stage 05.1 data flow (2026-10-29)
+
+Only this section is current; every older "History" section keeps its own SHA/scope and is superseded where it disagrees (old key layouts, exact-limb intentions, velocity = displacement/dt, series limit 4, stage states).
+
+```
+CharacterAnimationConfig ─ Animations (timing) + Combat (body, 5 slots: clip, damage, reach, depth, height)
+   └─ CombatSmokeBootstrap (main thread, on change): validate → CombatAnimationSet(slot clips) → ApplyTo
+        └─ CombatStrikeSchedule.Publish  ── the World's one character table (Revision)
+input capture (U/I/O/Space) → PlayerInputCommandSystem ─┐
+AI producers ───────────────────────────────────────────┴→ CombatCommandQueue → processor (retired bits → InvalidValue)
+fixed tick: BattleLifecycle (spawn: table.Body → CombatBody) → clock → commands
+  → CombatActionSystem (U→I→O, SeriesStep, copies Timing + Strike) → Facing
+  → CombatMovementSystem (single integrator; contact job: positions, then final contact velocity)
+  → CombatSpatialIndexSystem (final snapshot) → CombatHitSystem (frozen Strike, index batch, Burst kernel)
+presentation: renderer (slot clips) and bootstrap gizmos read ECS only
+```
+Owners are unchanged: Action writes CombatAttackState, Movement Position/Motion, Hit HP/ledgers, lifecycle spawns;
+details [STAGE05_1_CHARACTER_SERIES.md](STAGE05_1_CHARACTER_SERIES.md).
+
+## History — #66 — Stage 04.4–04.5 impulses, indexed Hit, 2/100/400 (2026-10-29)
 
 Fresh main base `cf2b5bcf57c2b81b635074a0322a85ecf50879b3` (PR #65); branch `feature/66-impulses-indexed-hit`, one PR.
 [Contract: impulse input/epoch, integration, mass/contacts, rollback, Hit migration, checks, manual checklist](STAGE04_IMPULSES_HIT.md);
@@ -10,7 +29,7 @@ The first real Unity compile of the 04.3 base failed (CS0246 in the replay drive
 EditMode fixes. Per-attack Impact/stagger/guard remain Stage 05/06. Stage 03 OWNER-ACCEPTED; Stage 04 IN PROGRESS —
 manager review and owner manual acceptance pending; merge only on owner instruction.
 
-## Current #64 — Stage 04.3 body contacts (2026-10-29)
+## History — #64 — Stage 04.3 body contacts (2026-10-29)
 
 PR #62 and #63 were merged on the owner's explicit command; integrated main base is
 `adf98cd1c9ca4df2b2d2e96aa65d3a7e17eb3a5a`. Branch `feature/64-body-contacts`; the owner subsequently explicitly authorized commit, push and merge of #64.
@@ -22,7 +41,7 @@ Free allies yield, ordinary locomotion does not bulldoze enemies, trapped/unreso
 Stage 03 OWNER-ACCEPTED; Stage 04 IN PROGRESS. Unity/C#/Burst/scene/performance NOT RUN; source/model checks are separate.
 Historical notes below retain their original SHA/status and do not override this update.
 
-## Current #61 — Stage 04.2 static arena (2026-10-29)
+## History — #61 — Stage 04.2 static arena (2026-10-29)
 
 Dependent branch `feature/61-static-arena` starts from corrected #60 PR #62 head
 `e26e668435b9cb55bcf5bced163710b6c2b61230`; main at dispatch is `180b4121792e68931f27c109b78cd0d24c21a4d4`.
@@ -36,7 +55,7 @@ planar distance; the old diagonal one-axis distance expectation is corrected wit
 **Unity/C# compilation/suites/Burst/GPU/runtime performance NOT RUN**; source/model results are separate and do not
 certify runtime acceptance. Historical dated evidence below applies only to its recorded SHA/scope.
 
-## Current #58 — Stage 04.1 (2026-10-28)
+## History — #58 — Stage 04.1 (2026-10-28)
 
 **Stage 03 OWNER-ACCEPTED**, by the owner's direct message recorded in #58: «Stage 03 закрыли. Идем дальше».
 Exact owner manual-test SHA/protocol was not supplied; this is not a blanket Unity/GPU PASS. **Stage 04 IN PROGRESS**;
@@ -53,7 +72,7 @@ stale tick/epoch/membership, including paused End/Restart/Despawn. Atomic AABB b
 returning caller-owned ranges without a second index or escaping view. Lifecycle includes whole-entity Disabled cleanup.
 Settings: CombatBodyTuning and CombatSpatialTuning.
 
-## Current #56 — image pivot and target-owned Inspector cache
+## History — #56 — image pivot and target-owned Inspector cache
 
 Catalog Image Pivots stores stable frame_id → Sprite subasset references. Atlas load converts imported rect/pivot into
 one effective full-canvas pivot per frame, shared by geometry/anchors; absent bindings retain JSON fallback. GPU bounds
@@ -62,7 +81,7 @@ invalidate catalog Version after Apply/reimport; player builds read referenced S
 CharacterAnimationConfigEditor has no raster preview. Its target-owned manifest/settings/diagnostic caches are invalidated
 by revisions and Undo/project events and cleared on disable. [Contract and limitations](STAGE03_PIVOT_CORRECTION.md).
 
-## Current controls #52 — shared exact/general intentions (2026-10-28)
+## History — controls #52 — shared exact/general intentions (2026-10-28)
 
 [Current controls and handoff](STAGE03_CONTROLS.md): the existing Input System capture emits ushort CommandButtons, through
 one producer/processor into CombatActionSystem. Exact/general selection lives in CombatAttackTuning, not input/presentation.

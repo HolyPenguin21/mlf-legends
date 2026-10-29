@@ -1,4 +1,10 @@
-## Current #66 — Stage 04.4–04.5 impulses, indexed Hit, 2/100/400 (2026-10-29)
+## Current #69 — controls, series and per-character data (2026-10-29)
+
+Only this section is current; every older "History" section keeps its own SHA/scope and is superseded where it disagrees (old key layouts, exact-limb intentions, velocity = displacement/dt, series limit 4, stage states).
+
+Controls and strike rules below ("Controls", "Attacks") are the #69 state; contract [STAGE05_1_CHARACTER_SERIES.md](STAGE05_1_CHARACTER_SERIES.md).
+
+## History — #66 — Stage 04.4–04.5 impulses, indexed Hit, 2/100/400 (2026-10-29)
 
 Fresh main base `cf2b5bcf57c2b81b635074a0322a85ecf50879b3` (PR #65); branch `feature/66-impulses-indexed-hit`, one PR.
 [Contract: impulse input/epoch, integration, mass/contacts, rollback, Hit migration, checks, manual checklist](STAGE04_IMPULSES_HIT.md);
@@ -10,7 +16,7 @@ The first real Unity compile of the 04.3 base failed (CS0246 in the replay drive
 EditMode fixes. Per-attack Impact/stagger/guard remain Stage 05/06. Stage 03 OWNER-ACCEPTED; Stage 04 IN PROGRESS —
 manager review and owner manual acceptance pending; merge only on owner instruction.
 
-## Current #64 — Stage 04.3 body contacts (2026-10-29)
+## History — #64 — Stage 04.3 body contacts (2026-10-29)
 
 PR #62 and #63 were merged on the owner's explicit command; integrated main base is
 `adf98cd1c9ca4df2b2d2e96aa65d3a7e17eb3a5a`. Branch `feature/64-body-contacts`; the owner subsequently explicitly authorized commit, push and merge of #64.
@@ -22,7 +28,7 @@ Free allies yield, ordinary locomotion does not bulldoze enemies, trapped/unreso
 Stage 03 OWNER-ACCEPTED; Stage 04 IN PROGRESS. Unity/C#/Burst/scene/performance NOT RUN; source/model checks are separate.
 Historical notes below retain their original SHA/status and do not override this update.
 
-## Current #61 — Stage 04.2 static arena (2026-10-29)
+## History — #61 — Stage 04.2 static arena (2026-10-29)
 
 Dependent branch `feature/61-static-arena` starts from corrected #60 PR #62 head
 `e26e668435b9cb55bcf5bced163710b6c2b61230`; main at dispatch is `180b4121792e68931f27c109b78cd0d24c21a4d4`.
@@ -38,35 +44,30 @@ certify runtime acceptance. Historical dated evidence below applies only to its 
 
 # MLF Legends — Combat specification
 
-**Approval status:** approved high-level mechanics. The keyboard layout is owner-specified in #52; unapproved balance values and other future mechanics remain provisional.
+**Approval status:** approved high-level mechanics. The keyboard layout is owner-specified in #67 and implemented in #69 (the #52 layout is historical); series rules are the manager's working interpretation for review; balance values and future mechanics remain provisional.
 
 ## Fundamentals
 A moderately paced Little Fighter 2 / Nekketsu-inspired 2.5D action brawler on true 3D arenas with sprite characters. Fixed camera angle independent of zoom; player directly controls **one fighter**, remaining combatants use AI. One world scales from 1v1 to 200v200. Death lasts until encounter end; no respawn in match. Map size and winning conditions are scenario-dependent: annihilation, defense, capture or survival.
 
-## Controls — current owner layout (#52)
+## Controls — current owner layout (#69, owner requirements from #67)
 
-Physical keys, without Shift. Movement remains WASD in world X/Z. Combat action bindings live only in
-`Assets/InputSystem_Actions.inputactions` → Player; camera/UI maps and existing movement bindings are unchanged.
+Physical keys, without Shift. Movement remains WASD in world X/Z. Combat bindings live only in
+`Assets/InputSystem_Actions.inputactions` → Player (`HandSeries`, `FootSeries`, `PhysicalAbility`, `Jump`); camera/UI maps unchanged.
 
-| Key | Logical intention | Executed strike |
+| Key | Logical intention | Executed |
 |---|---|---|
-| Y | PunchLeft | punch_left, always |
-| U | PunchRight | punch_right, always |
-| I | Attack | existing alternating hand series |
-| H | KickLeft | kick_left, always |
-| J | KickRight | kick_right, always |
-| K | KickSpin | kick_spin, including from free grounded stance |
-| L | Kick | existing kick_left → kick_right → kick_spin series |
-| Space | Jump | jump |
+| U | HandSeries | Hand1, Hand1, Hand2, Hand1, Hand2, … |
+| I | FootSeries | Foot1, Foot1, Foot2, Foot1, Foot2, … |
+| O | PhysicalAbility | the character's physical ability (05.1: kick_spin clip, no self impulse) |
+| Space | Jump | jump (kept until the owner explicitly cancels it) |
+| K | — | reserved for the Stage 06 block, unbound |
+| double-tap WASD | — | future Stage 06 dash, not implemented |
+| 7 / 8 / 9 / 0 | — | future magic slots (Stage 13), unbound |
 
-One press produces one intention, holding never repeats. Simultaneous strikes use the same deterministic rule for
-player and AI: **PunchLeft → PunchRight → KickLeft → KickRight → KickSpin → Attack → Kick**. Jump + strike from a free
-grounded state starts the jump and drops the strike. All intentions use the common command queue and fixed simulation.
-The single existing follow-up slot stores the exact/general intention until execution; exact sides never alternate.
-
-Old combat aliases (Enter, mouse, gamepad/other-device buttons) are removed. Guard is unbound and unimplemented; its
-future key is decided before Stage 06. Crouch is excluded from the project. Dash and Cast are deferred and unbound;
-unused Player template actions are removed. These decisions do not change Camera/UI controls.
+One press produces one intention, holding never repeats. Simultaneous presses use the stable technical priority
+**U → I → O** for player and AI alike (manager's starting rule, #69). Jump + strike from a free grounded state starts the
+jump and drops the strike. The old exact-limb keys Y/U/H/J/K/L of #52 are not extra gameplay buttons any more; their
+command bits are retired (rejected as invalid values). Crouch is excluded. All intentions use the common command queue.
 
 Input is sampled once per real fixed tick: live Move/Held every catch-up tick, Pressed consumed once. Pause,
 focus/device interruptions and battle/World rebinding retain their existing press cleanup. During landing recovery,
@@ -87,52 +88,40 @@ Stage 05.1 defines the first action-state restriction explicitly: a running stri
 ## Attacks
 A canonical attack has Windup → Active → Recovery, attack shapes, interrupt/cancel windows and optional cooldown. Light attack is faster/weaker, heavy attack slower/stronger with greater guard pressure; jump attacks enabled. Attack queries consider horizontal facing, target depth Z and height Y; individual attacks can strike several enemies. Each intended impact is recorded only once per active event per target unless a move is explicitly multi-hit.
 
-### Implemented minimal strike set (Stage 05.1, PR #48; rules PROPOSED, numbers provisional — owner approval pending)
+### Implemented strike set (Stage 05.1 / #69; rules = manager's working interpretation, values provisional)
 
-> **Stage 03 tuning update (owner instruction).** Strike windows are no longer fixed numbers: each strike clip's
-> Preparation (= Windup) / Active / Recovery frame ranges in `CharacterAnimationConfig`, with its duration and speed curve,
-> define them (quantized to 60 Hz ticks, Active never shorter than one tick; see `Presentation/Sprites/ANIMATION.md`). The
-> current project values after 68c43c are punch_left/right 14/6/9, kicks 12/6/12, kick_spin 20/5/5 ticks; the table
-> below is the headless default only. **During attacks planar movement is 50% Preparation / 25% Active / 25% Recovery** (the strike keeps
-> playing, no jump); facing keeps the strike lock described below. A strike keeps the windows it started with. The chain point is
-> Recovery start + the chain delay below, capped at the strike's end.
+Five semantic slots with per-character data (`CharacterAnimationConfig` → character → **Combat**): **Hand1, Hand2, Foot1,
+Foot2, PhysicalAbility** — each with its clip, Damage, ReachMin..ReachMax (forward), DepthHalfWidth (±ΔZ) and
+HeightTolerance (±ΔY), world units, validated ranges, never clamped. The slot clip's Preparation (= Windup) / Active /
+Recovery frames with its duration and speed curve define the windows (quantized to 60 Hz, Active ≥ 1 tick; see
+`Presentation/Sprites/ANIMATION.md`). Body per character: vertical cylinder Radius/Height/Mass from CombatPosition. A strike
+copies its timing AND damage/box at its start (frozen per execution); a body applies at spawn. Details and Inspector path:
+[STAGE05_1_CHARACTER_SERIES.md](STAGE05_1_CHARACTER_SERIES.md).
 
-The spec leaves the heavy/combination mapping, series, air strikes and movement during attacks open. Stage 05.1
-implements the smallest coherent set below; every item marked *proposed* is a decision for the owner to confirm or change
-(reach/damage/chain rules/default windows live in CombatAttackTuning; live phase windows come from CharacterAnimationConfig).
+| Slot | Default clip | Default windows (headless) | Chain delay | Damage | Reach (forward) |
+|---|---|---|---|---|---|
+| Hand1 | punch_left | 13/5/11 | 4 | 4 | 0 … 1.0 |
+| Hand2 | punch_right | 9/9/11 | 4 | 4 | 0 … 1.0 |
+| Foot1 / Foot2 | kick_left / kick_right | 11/5/17 | 6 | 7 | 0 … 1.3 |
+| PhysicalAbility (finisher) | kick_spin | 19/6/20 | — | 12 | 0 … 1.45 |
 
-- **Controls:** the owner-approved table above; the same exact/general flags are available to AI.
-- **Strikes:** `punch_left`, `punch_right`, `kick_left`, `kick_right`, `kick_spin`. Each has Windup → Active → Recovery in
-  fixed ticks (60 Hz). Hits resolve only on Active ticks, in the fixed simulation tick, never from animation or markers.
+All default boxes: |ΔZ| ≤ 0.4, |ΔY| ≤ 0.9; target point = CombatPosition. Current project windows: punch 14/6/9, kicks
+12/6/12, kick_spin 20/5/5 ticks. Every combatant spawns with 100 HP. **Planar movement during a strike: 50% Preparation /
+25% Active / 25% Recovery**, never a jump; facing locked except on each strike's first tick.
 
-| Strike | Windup (default) | Active (default) | Recovery (default) | Chain after recovery tick | Damage | Reach (forward) |
-|---|---|---|---|---|---|---|
-| punch_left | 13 | 5 | 11 | 4 | 4 | 0 … 1.0 |
-| punch_right | 9 | 9 | 11 | 4 | 4 | 0 … 1.0 |
-| kick_left / kick_right | 11 | 5 | 17 | 6 | 7 | 0 … 1.3 |
-| kick_spin (finisher) | 19 | 6 | 20 | — | 12 | 0 … 1.45 |
-
-  All boxes: |ΔZ| ≤ 0.4, |ΔY| ≤ 0.9 (world units; 2 units = nominal body height). Windows follow the delivered art's frame
-  proportions; reach follows the drawn fist/foot. Every combatant spawns with 100 HP.
-- **Start (proposed):** a fresh press (Held never repeats) starts a series when the fighter is free and grounded at the
-  start of the tick. Simultaneous strikes use the priority above; Jump + strike from free grounded stance starts Jump and drops the strike.
-  **Air strikes are not implemented**: an airborne press is dropped (no jump-attack clip exists yet), contrary to the
-  approved "jump attacks enabled" goal — deferred to a later stage with its own clip.
-- **Series (proposed):** general requests start left and alternate sides; general Kick after `kick_right` is the
-  `kick_spin` finisher. A press during Windup is dropped; from the first Active tick to the end of Recovery the latest
-  press is buffered in one slot. The follow-up starts on the first tick at/after the strike's chain point (Windup + Active +
-  chain delay), cutting the rest of Recovery; without a buffered press Recovery runs out and the fighter is free on the next
-  tick. `kick_spin` and the 4th strike of a series cannot chain: they always play the full Recovery and drop the buffer.
-  Examples: I I I I = hand L R L R; L L L = kick L, kick R, spin. Exact Y/U/H/J/K keep the selected strike even when buffered; spin remains a full-Recovery finisher.
-- **During a strike:** planar speed = 50% Preparation (Windup), 25% Active, 25% Recovery; never a jump; facing is locked except on the first tick of each strike (series start or follow-up), where
-  that tick's MoveX may still turn the fighter, before the hit box is tested. Moving never cancels the strike.
-- **Targets:** every in-combat combatant of another team inside the box (forward along the attacker's `CombatFacing`).
-  Allies and self are never hit. Several targets per strike are allowed (spec: "individual attacks can strike several
-  enemies"). Each target is hit at most once per strike (per-strike ledger), however many Active ticks overlap it; the
-  next strike starts with an empty ledger.
-- **Not implemented (no current requirement or a later stage):** guard damage, impact/stagger/knockback, defeat at 0 HP
-  (HP clamps at 0, the fighter keeps fighting), combo bonuses, cancels, cooldowns, heavy/light distinction, air strikes,
-  hits on despawned/disabled fighters. Body collisions (Stage 04) are absent, so fighters may overlap; reach starts at 0.
+- **Start:** a fresh press (Held never repeats) starts a strike when free and grounded at the start of the tick.
+  Airborne presses are dropped (no air strikes yet). Jump + strike → jump.
+- **Series:** U and I each run **1, 1, 2, 1, 2, …** (first two started strikes use clip 1), counted by started strikes in a
+  bounded step — no length limit. A Windup press is dropped; from Active to the end of Recovery the latest series press
+  is buffered in one slot and starts at the chain point (Windup + Active + chain delay). Switching hand ↔ foot starts the
+  other sequence at 1; Recovery ending without continuation resets the series; no hidden timeout. Dropped, unexecuted or
+  replaced presses never advance a sequence.
+- **Physical ability (O):** starts only from the free legal state, plays its full Recovery, is never buffered, never
+  interrupts a strike, never ends a foot series automatically.
+- **Targets:** every in-combat enemy inside the box, several per strike, each at most once per strike (ledger); allies and
+  self never. Resolved on the shared final spatial index after Movement (#66).
+- **Not implemented:** guard damage, impact/stagger/knockback per strike, self impulse, swept/path hits, dynamic Height,
+  defeat at 0 HP, combo bonuses, cancels, cooldowns, heavy/light, air strikes, VFX.
 
 Each impact separately resolves:
 - **HP Damage**: injury/health reduction.
@@ -142,10 +131,10 @@ Each impact separately resolves:
 Attack animation follows state and simulation windows, not Animator events.
 
 ## Guard
-Future Stage 06, not implemented or bound; key undecided (L is general Kick). Blocking protects only from front. Regular guard drains stability according to hit and defender's guard strength; stability recovers by defined rules. Heavy strikes may push defending fighter. Stability reaching zero triggers guard break and a vulnerable interval. **Timely guard** reduces loss and opens a temporary advantage for player/AI to use; **does not perform counter automatically**. Attacks from rear bypass normal front guard.
+Future Stage 06, not implemented; K is reserved for it (unbound in 05.1). Blocking protects only from front. Regular guard drains stability according to hit and defender's guard strength; stability recovers by defined rules. Heavy strikes may push defending fighter. Stability reaching zero triggers guard break and a vulnerable interval. **Timely guard** reduces loss and opens a temporary advantage for player/AI to use; **does not perform counter automatically**. Attacks from rear bypass normal front guard.
 
 ## Dash and jump
-Dash is deferred/unbound; no L+direction action exists. Future directional defensive dash creates rapid repositioning about **1–1.5 fighter widths** as a starting tuning estimate. A brief defined segment may avoid ordinary attack hit registration, but dash is *not universally invulnerable* to magical/environmental hazards. Has punishable recovery, command gating and physical collision throughout, with no phasing through crowds or walls. Jump changes altitude and attack eligibility, vulnerable air state and landing.
+Dash is a future Stage 06 double-tap of a WASD direction; not implemented in 05.1. Future directional defensive dash creates rapid repositioning about **1–1.5 fighter widths** as a starting tuning estimate. A brief defined segment may avoid ordinary attack hit registration, but dash is *not universally invulnerable* to magical/environmental hazards. Has punishable recovery, command gating and physical collision throughout, with no phasing through crowds or walls. Jump changes altitude and attack eligibility, vulnerable air state and landing.
 
 ## Body collisions
 All characters interact physically. Ally yield creates slight movement priority, and user-controlled fighter passes through allied clusters almost effortlessly **without** disabling collision. Enemies physically obstruct movement. Knockback into other fighters/environment can have chain effects.
@@ -153,6 +142,9 @@ Since #66 (provisional calibration): an external impulse J changes velocity by J
 enemy, but physical motion transfers to any body by mass (inelastic, momentum-conserving, chains through groups); walls
 stop the normal part and keep sliding; ground/air deceleration 24/2 u/s²; max 24 u/s. Strike speed factors and landing
 lock do not reduce it; it never turns the fighter, cancels a strike or counts as running. No attack applies an impulse yet.
+Since #69 the velocity after a contact is the physical final velocity, not the tick's average displacement: the normal part
+into a blocking surface is removed at the time of impact (tangent kept), and bodies that came into contact share their
+approaching normal velocity as a perfectly inelastic, mass-weighted collision. Nothing hidden is released later.
 
 ## Friendly effects
 Ordinary direct weapon attacks don't damage allies. Consequences of skills and environmental reactions may affect either team. Avoid a general friendly-fire subsystem beyond this until clearly required.
