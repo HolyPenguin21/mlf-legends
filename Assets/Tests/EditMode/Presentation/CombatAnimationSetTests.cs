@@ -265,7 +265,9 @@ namespace MLFLegends.Tests.EditMode
                 script.Player(r, r, ReplayRole.Human, moveX: 1, moveZ: (sbyte)(r > 80 ? 1 : 0));
             CombatStrikeSchedule.Publish(w.Manager, set.StrikeSchedule);
             w.Script = script;
-            w.Request(BattleRequest.Start(BattleSetup.Default));
+            var setup = BattleSetup.Default;
+            setup.Ai.Position = new float3(20, 0, 20); // Unobstructed stride/landing fixture, not enemy pressure.
+            w.Request(BattleRequest.Start(setup));
             w.Step(120);
             var records = w.BattleRecords(1);
             var landing = System.Array.FindIndex(records, r => r.Combatant(r.HumanId).Motion.Grounded);

@@ -5,6 +5,7 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Jobs;
 
 namespace MLFLegends.Combat
 {
@@ -29,6 +30,26 @@ namespace MLFLegends.Combat
                 Max = position + new float3(body.Radius, body.Height, body.Radius),
             };
             return bounds.IsValid; // Also rejects overflow in computed bounds, not only invalid inputs.
+        }
+        // Both insertion and query use floor and closed [min,max] cells. No casts toward zero, epsilon or clamping.
+        internal static bool TryCells(in CombatSpatialBounds bounds, out int2 min, out int2 max, out long count)
+        {
+            min = max = default;
+            count = 0;
+            var x0 = Math.Floor((double)bounds.Min.x / CombatSpatialTuning.CellSize);
+            var z0 = Math.Floor((double)bounds.Min.z / CombatSpatialTuning.CellSize);
+            var x1 = Math.Floor((double)bounds.Max.x / CombatSpatialTuning.CellSize);
+            var z1 = Math.Floor((double)bounds.Max.z / CombatSpatialTuning.CellSize);
+            if (x0 < int.MinValue || z0 < int.MinValue || x1 > int.MaxValue || z1 > int.MaxValue)
+                return false;
+            min = new int2((int)x0, (int)z0);
+            max = new int2((int)x1, (int)z1);
+            var width = (long)max.x - min.x + 1;
+            var depth = (long)max.y - min.y + 1;
+            if (width > long.MaxValue / depth)
+                return false;
+            count = width * depth;
+            return true;
         }
     }
 
@@ -73,6 +94,78 @@ namespace MLFLegends.Combat
         NativeList<CombatSpatialBody> m_Bodies;
         NativeParallelMultiHashMap<int2, int> m_Cells;
         NativeList<uint> m_Seen;
+        NativeList<CombatContactActor> m_Movement;
+        NativeList<int2> m_ContactPairs;
+        NativeArray<CombatContactDiagnostics> m_ContactDiagnostics;
+        NativeList<CombatArenaShape> m_EmptyShapes;
+        public CombatContactDiagnostics LastContacts { get; private set; }
+        public double LastMovementKernelMicroseconds { get; private set; }
+        public long MovementScratchCapacityBytes => !m_Allocated ? 0 : (long)m_Movement.Capacity * UnsafeUtility.SizeOf<CombatContactActor>()
+            + (long)m_ContactPairs.Capacity * UnsafeUtility.SizeOf<int2>() + UnsafeUtility.SizeOf<CombatContactDiagnostics>()
+            + (long)m_EmptyShapes.Capacity * UnsafeUtility.SizeOf<CombatArenaShape>();
+        internal NativeArray<CombatArenaShape> EmptyShapes => m_EmptyShapes.AsArray();
+
+        struct ByMovementId : IComparer<CombatContactActor>
+        {
+            public int Compare(CombatContactActor a, CombatContactActor b) => a.Id.CompareTo(b.Id);
+        }
+
+        // Internal synchronous scratch lease: never a public snapshot, never read as yesterday's final state.
+        internal NativeList<CombatContactActor> BeginMovement()
+        {
+            m_Published = false;
+            m_Movement.Clear(); m_ContactPairs.Clear();
+            return m_Movement;
+        }
+
+        internal void EndMovement()
+        {
+            // Do not retain Entity/pair rows across pause, Despawn, End, Restart or World replacement.
+            m_Movement.Clear(); m_ContactPairs.Clear(); m_Cells.Clear();
+        }
+
+        internal void CalculateMovement(NativeArray<CombatArenaShape> shapes, uint tick, uint landingTicks)
+        {
+            m_Movement.Sort(new ByMovementId());
+            var session = m_Session.CalculateEntityCount() == 1 ? m_Session.GetSingleton<BattleSession>() : default;
+            var active = session.IsActive;
+            var expected = m_ExpectedFighters.CalculateEntityCount();
+            if (active && (expected != m_Fighters.CalculateEntityCount() || expected != m_Movement.Length))
+                throw new InvalidOperationException("Incomplete contact inputs: every enabled fighter needs Id/Team/Body/Position/Motion/AppliedCommand.");
+            if (m_Movement.Length > CombatContactTuning.MaxBodies)
+                throw new InvalidOperationException("Contact roster exceeds the battle limit; no bodies were dropped.");
+            long entries = 0;
+            for (var i = 0; i < m_Movement.Length; i++)
+            {
+                var a = m_Movement[i];
+                if (i > 0 && a.Id == m_Movement[i - 1].Id)
+                    throw new InvalidOperationException("Duplicate movement CombatantId.");
+                if (active && !a.Collidable)
+                    throw new InvalidOperationException("An enabled movement row is missing its contact identity/body/team.");
+                if (!a.Collidable) continue; // Explicit isolated fixtures without a BattleSession retain their legacy path.
+                if (a.Id == 0)
+                    throw new InvalidOperationException("Invalid movement CombatantId; no partial output was written.");
+                if (!CombatSpatialBounds.TryFromBody(a.Start, a.Body, out var bounds))
+                    throw new InvalidOperationException("Invalid contact body; no fighter was dropped.");
+                // Covers initial world depenetration, the whole proposed path and the total body correction budget.
+                var margin = math.length(a.Desired) * 2 + 2 * CombatContactTuning.CorrectionBudget;
+                bounds.Min -= new float3(margin, 0, margin); bounds.Max += new float3(margin, 0, margin);
+                if (!CombatSpatialBounds.TryCells(bounds, out _, out _, out var count)
+                    || count > CombatSpatialTuning.MaxBuildEntries - entries)
+                    throw new InvalidOperationException("Swept contact grid capacity/work range exceeded.");
+                entries += count;
+            }
+            if (entries > m_Cells.Capacity) m_Cells.Capacity = Grow(m_Cells.Capacity, (int)entries, CombatSpatialTuning.MaxBuildEntries);
+            var n = m_Movement.Length;
+            var maxPairs = n * (n - 1) / 2;
+            if (maxPairs > m_ContactPairs.Capacity) m_ContactPairs.Capacity = math.max(maxPairs, m_ContactPairs.Capacity * 2);
+            m_Seen.Resize(n, NativeArrayOptions.ClearMemory);
+            var start = Stopwatch.GetTimestamp();
+            new CombatContactJob { Actors = m_Movement, Cells = m_Cells, Seen = m_Seen, Pairs = m_ContactPairs,
+                Shapes = shapes, Diagnostics = m_ContactDiagnostics, Tick = tick, LandingTicks = landingTicks, BattleNumber = session.BattleNumber }.Schedule().Complete();
+            LastMovementKernelMicroseconds = MicrosSince(start);
+            LastContacts = m_ContactDiagnostics[0];
+        }
         EntityQuery m_Session;
         EntityQuery m_Clock;
         EntityQuery m_Fighters;
@@ -114,6 +207,10 @@ namespace MLFLegends.Combat
                 m_Bodies = new NativeList<CombatSpatialBody>(1, Allocator.Persistent);
                 m_Cells = new NativeParallelMultiHashMap<int2, int>(1, Allocator.Persistent);
                 m_Seen = new NativeList<uint>(1, Allocator.Persistent);
+                m_Movement = new NativeList<CombatContactActor>(1, Allocator.Persistent);
+                m_ContactPairs = new NativeList<int2>(1, Allocator.Persistent);
+                m_ContactDiagnostics = new NativeArray<CombatContactDiagnostics>(1, Allocator.Persistent);
+                m_EmptyShapes = new NativeList<CombatArenaShape>(1, Allocator.Persistent);
                 m_Allocated = true;
             }
             catch
@@ -132,6 +229,10 @@ namespace MLFLegends.Combat
 
         void DisposeStorage()
         {
+            if (m_EmptyShapes.IsCreated) m_EmptyShapes.Dispose();
+            if (m_ContactDiagnostics.IsCreated) m_ContactDiagnostics.Dispose();
+            if (m_ContactPairs.IsCreated) m_ContactPairs.Dispose();
+            if (m_Movement.IsCreated) m_Movement.Dispose();
             if (m_Seen.IsCreated) m_Seen.Dispose();
             if (m_Cells.IsCreated) m_Cells.Dispose();
             if (m_Bodies.IsCreated) m_Bodies.Dispose();
@@ -182,7 +283,7 @@ namespace MLFLegends.Combat
             {
                 if (i > 0 && m_Bodies[i - 1].Id.Equals(m_Bodies[i].Id))
                     throw new InvalidOperationException("Duplicate CombatantId in spatial snapshot.");
-                if (!TryCells(m_Bodies[i].Bounds, out _, out _, out var count)
+                if (!CombatSpatialBounds.TryCells(m_Bodies[i].Bounds, out _, out _, out var count)
                     || count > CombatSpatialTuning.MaxBuildEntries - entries)
                     throw new InvalidOperationException("Spatial body footprint exceeds the representable grid/memory work range.");
                 entries += count;
@@ -192,7 +293,7 @@ namespace MLFLegends.Combat
             var occupied = 0;
             for (var i = 0; i < m_Bodies.Length; i++)
             {
-                TryCells(m_Bodies[i].Bounds, out var min, out var max, out _);
+                CombatSpatialBounds.TryCells(m_Bodies[i].Bounds, out var min, out var max, out _);
                 // long induction variables avoid wrapping at int.MaxValue (including a one-cell range at that edge).
                 for (long x = min.x; x <= max.x; x++)
                 for (long z = min.y; z <= max.y; z++)
@@ -321,7 +422,7 @@ namespace MLFLegends.Combat
         void AppendQuery(in CombatSpatialBounds bounds, NativeList<CombatSpatialBody> results)
         {
             var offset = results.Length;
-            if (!TryCells(bounds, out var min, out var max, out var cells) || cells > CombatSpatialTuning.MaxQueryCells)
+            if (!CombatSpatialBounds.TryCells(bounds, out var min, out var max, out var cells) || cells > CombatSpatialTuning.MaxQueryCells)
             {
                 LastQueryUsedFullScan = true; // Scan every row, no capacity-limited candidate set.
                 for (var i = 0; i < m_Bodies.Length; i++)
@@ -358,27 +459,6 @@ namespace MLFLegends.Combat
                 } while (m_Cells.TryGetNextValue(out row, ref iterator));
             }
             results.AsArray().GetSubArray(offset, results.Length - offset).Sort(new ById());
-        }
-
-        // Both insertion and query use floor and closed [min,max] cells. No casts toward zero, epsilon or clamping.
-        static bool TryCells(in CombatSpatialBounds bounds, out int2 min, out int2 max, out long count)
-        {
-            min = max = default;
-            count = 0;
-            var x0 = Math.Floor((double)bounds.Min.x / CombatSpatialTuning.CellSize);
-            var z0 = Math.Floor((double)bounds.Min.z / CombatSpatialTuning.CellSize);
-            var x1 = Math.Floor((double)bounds.Max.x / CombatSpatialTuning.CellSize);
-            var z1 = Math.Floor((double)bounds.Max.z / CombatSpatialTuning.CellSize);
-            if (x0 < int.MinValue || z0 < int.MinValue || x1 > int.MaxValue || z1 > int.MaxValue)
-                return false;
-            min = new int2((int)x0, (int)z0);
-            max = new int2((int)x1, (int)z1);
-            var width = (long)max.x - min.x + 1;
-            var depth = (long)max.y - min.y + 1;
-            if (width > long.MaxValue / depth)
-                return false;
-            count = width * depth;
-            return true;
         }
     }
 }

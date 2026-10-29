@@ -121,6 +121,9 @@ namespace MLFLegends.Tests.EditMode
 
         /// <summary>All combatants (defeated ones too), sorted by <see cref="CombatantId"/>.</summary>
         public CombatantRecord[] Combatants;
+        public CombatSpatialBody[] Spatial = Array.Empty<CombatSpatialBody>();
+        public bool SpatialValid;
+        public uint SpatialTick;
 
         /// <summary>The tick's <see cref="CombatCommandResult"/> buffer, in its own (canonical) order.</summary>
         public ResultRecord[] Results;
@@ -373,6 +376,12 @@ namespace MLFLegends.Tests.EditMode
             .Select(r => $"r{r.RelativeTick}: {string.Join(" | ", r.Normalized)}").ToArray();
 
         /// <summary>One line per completed tick of the World, idle ticks included: absolute ticks and raw IDs.</summary>
+        public string[] SpatialLog => Records.Select(r => !r.SpatialValid ? "spatial unavailable" :
+            "tick:" + r.SpatialTick + " " + string.Join(";", r.Spatial.Select(b =>
+                b.Id.Value + ":" + b.Team.Value + ":" + b.Position.x.ToString("R", CultureInfo.InvariantCulture) + "," + b.Position.y.ToString("R", CultureInfo.InvariantCulture)
+                + "," + b.Position.z.ToString("R", CultureInfo.InvariantCulture) + ":" + b.Body.Radius.ToString("R", CultureInfo.InvariantCulture)
+                + ":" + b.Body.Height.ToString("R", CultureInfo.InvariantCulture) + ":" + b.Body.Mass.ToString("R", CultureInfo.InvariantCulture)))) .ToArray();
+
         public string[] RawLog => Records.Select(r =>
             $"t{r.Tick} battle{r.BattleNumber}{(r.Active ? "" : " idle")} start{r.BattleStartTick}: {string.Join(" | ", r.Raw)}").ToArray();
 
@@ -601,8 +610,17 @@ namespace MLFLegends.Tests.EditMode
         {
             var session = m_Session.GetSingleton<BattleSession>();
             Driver.Track(session);
-            Driver.Records.Add(ReplayWorld.Capture(EntityManager, m_Combatants, m_Queue.GetSingletonEntity(),
-                m_Clock.GetSingleton<SimulationClock>().Tick, session));
+            var record = ReplayWorld.Capture(EntityManager, m_Combatants, m_Queue.GetSingletonEntity(),
+                m_Clock.GetSingleton<SimulationClock>().Tick, session);
+            var index = World.GetExistingSystemManaged<CombatSpatialIndexSystem>();
+            if (index.TryGetSnapshotInfo(out var info))
+            {
+                using var rows = new NativeList<CombatSpatialBody>(Allocator.Temp);
+                record.SpatialValid = index.TryQueryAabb(new CombatSpatialBounds { Min = new float3(-float.MaxValue), Max = new float3(float.MaxValue) }, rows);
+                record.SpatialTick = info.Tick;
+                record.Spatial = rows.AsArray().ToArray();
+            }
+            Driver.Records.Add(record);
         }
     }
 

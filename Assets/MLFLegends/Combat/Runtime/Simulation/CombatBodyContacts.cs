@@ -1,0 +1,389 @@
+using System.Collections.Generic;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Entities;
+using Unity.Jobs;
+using Unity.Mathematics;
+
+namespace MLFLegends.Combat
+{
+    /// <summary>Starting calibration, not balance. Mass remains solely in CombatBody.</summary>
+    public static class CombatContactTuning
+    {
+        public const float Skin = CombatArenaTuning.Skin;
+        public const float ControlledMobility = .2f;
+        public const float ControlledDistanceEpsilon = 4 * Skin; // Joint world/body tolerance must not advance run stride.
+        public const float CorrectionBudget = .5f;
+        public const float AllyYieldSpeed = 3f;
+        public const int MaxYieldAttempts = 4;
+        public const float TinyVerticalSpeed = 1e-12f;
+        public const float TinyPlanarSpeedSquared = 1e-20f;
+        public const float TinyInwardDistance = 1e-12f;
+        public const float TinyCorrectionSquared = 1e-16f;
+        public const int MaxIterations = 48;
+        public const int MaxPairVisits = 4000000;
+        public const long MaxCandidateVisits = 32000000;
+        public const int MaxBodies = BattleSetup.MaxCombatantsPerTeam * 2;
+    }
+
+    public struct CombatContactDiagnostics
+    {
+        public uint Tick, BattleNumber;
+        public long Candidates, PairVisits;
+        public int PeakPairs, Iterations, FrozenBodies, WorldRejections, YieldAttempts;
+        public float ResidualPenetration, UnresolvedPenetration, ResidualConstraint;
+        public bool ResidualComplete;
+        public bool WorkLimit;
+        public bool KernelRanManaged;
+    }
+
+    // Scratch rows, not ECS components or an alternative position source. Lifetime: one synchronous Movement call.
+    internal struct CombatContactActor
+    {
+        public Entity Entity;
+        public uint Id;
+        public byte Team;
+        public bool Collidable, Controlled, Legacy, Jump, Frozen, CanRestoreSupport;
+        public CombatBody Body, MovementBody;
+        public float3 Start;
+        public CombatMotion Motion;
+        public float2 Desired;
+        public CombatArenaMove Result;
+        public float CorrectionUsed, YieldUsed;
+        public int Island, YieldAttempts;
+        public CombatSpatialBounds Swept;
+    }
+
+    /// <summary>Exact finite-cylinder tests; no ECS, memory ownership, clock or Unity Physics.</summary>
+    public static class CombatBodyContacts
+    {
+        public static float Penetration(float3 a, in CombatBody ab, float3 b, in CombatBody bb)
+        {
+            if (a.y >= b.y + bb.Height || b.y >= a.y + ab.Height) return 0;
+            return math.max(0, ab.Radius + bb.Radius - math.distance(a.xz, b.xz));
+        }
+
+        // Intersection of the relative disk quadratic and the OPEN vertical interval over [0,1].
+        // Both motions participate. Endpoints alone cannot detect exchanging sides in a tick.
+        public static bool Sweep(float3 a0, float3 a1, in CombatBody ab, float3 b0, float3 b1,
+            in CombatBody bb, uint minId, uint maxId, out float2 normal, out float depth)
+        {
+            normal = default; depth = 0;
+            var q = b0 - a0;
+            var v = (b1 - b0) - (a1 - a0);
+            var enter = 0f; var exit = 1f;
+            if (math.abs(v.y) < CombatContactTuning.TinyVerticalSpeed)
+            {
+                if (q.y <= -bb.Height || q.y >= ab.Height) return false;
+            }
+            else
+            {
+                var y0 = (-bb.Height - q.y) / v.y;
+                var y1 = (ab.Height - q.y) / v.y;
+                enter = math.max(enter, math.min(y0, y1));
+                exit = math.min(exit, math.max(y0, y1));
+                if (enter >= exit) return false;
+            }
+            var radius = ab.Radius + bb.Radius;
+            var aa = math.lengthsq(v.xz);
+            var cc = math.lengthsq(q.xz) - radius * radius;
+            if (aa < CombatContactTuning.TinyPlanarSpeedSquared)
+            {
+                if (cc > 0) return false;
+            }
+            else
+            {
+                var bb2 = math.dot(q.xz, v.xz);
+                var discriminant = bb2 * bb2 - aa * cc;
+                if (discriminant < 0) return false;
+                var root = math.sqrt(math.max(0, discriminant));
+                enter = math.max(enter, (-bb2 - root) / aa);
+                exit = math.min(exit, (-bb2 + root) / aa);
+                if (enter > exit) return false;
+            }
+            if (exit < 0 || enter > 1) return false;
+            var contact = q.xz + v.xz * math.max(0, enter);
+            // Id-based tie break for coincident centres; independent of Entity, chunk and hash order.
+            var fallback = ((minId ^ maxId) & 1) == 0 ? new float2(1, 0) : new float2(0, 1);
+            normal = math.normalizesafe(contact, fallback);
+            depth = math.max(0, radius - math.dot((b1 - a1).xz, normal));
+            return depth > CombatContactTuning.Skin;
+        }
+    }
+
+    // Explicit Burst job boundary. The ISystem and grid owner orchestrate on main thread; numerical work runs here.
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Strict)]
+    internal struct CombatContactJob : IJob
+    {
+        public NativeList<CombatContactActor> Actors;
+        public NativeParallelMultiHashMap<int2, int> Cells;
+        public NativeList<uint> Seen;
+        public NativeList<int2> Pairs;
+        [ReadOnly] public NativeArray<CombatArenaShape> Shapes;
+        public NativeArray<CombatContactDiagnostics> Diagnostics;
+        public uint Tick, LandingTicks, BattleNumber;
+
+        struct ByPair : IComparer<int2>
+        {
+            public int Compare(int2 a, int2 b) => a.x == b.x ? a.y.CompareTo(b.y) : a.x.CompareTo(b.x);
+        }
+
+        [BurstDiscard]
+        void MarkManaged(ref CombatContactDiagnostics d) => d.KernelRanManaged = true;
+
+        public void Execute()
+        {
+            var d = new CombatContactDiagnostics { Tick = Tick, BattleNumber = BattleNumber };
+            MarkManaged(ref d);
+            for (var i = 0; i < Actors.Length; i++)
+            {
+                var a = Actors[i]; a.Island = i;
+                if (!a.Frozen)
+                {
+                    a.Result = CombatArenaGeometry.Move(Shapes, a.MovementBody, a.Start, a.Desired,
+                        a.Motion.VerticalVelocity, a.Motion.Grounded, a.Jump, LandingTicks, a.Legacy, a.Motion.GroundHeight);
+                    if (a.Result.Failure != CombatArenaFailure.None) a.Frozen = true;
+                }
+                // Solver iterates constraints, not elapsed time: a temporary loss of support must be reversible.
+                a.CanRestoreSupport = a.Result.Grounded || (a.Motion.Grounded && !a.Jump);
+                Actors[i] = a;
+            }
+            var solved = false;
+            for (var iteration = 0; iteration < CombatContactTuning.MaxIterations; iteration++)
+            {
+                if (!BuildPairs(ref d)) break;
+                d.Iterations++;
+                var violation = false;
+                var actualResidual = 0f;
+                for (var p = 0; p < Pairs.Length; p++)
+                {
+                    if (++d.PairVisits > CombatContactTuning.MaxPairVisits) { d.WorkLimit = true; break; }
+                    var pair = Pairs[p];
+                    var a = Actors[pair.x]; var b = Actors[pair.y];
+                    actualResidual = math.max(actualResidual, CombatBodyContacts.Penetration(a.Result.Position, a.Body, b.Result.Position, b.Body));
+                    if (!CombatBodyContacts.Sweep(a.Start, a.Result.Position, a.Body, b.Start, b.Result.Position, b.Body,
+                        a.Id, b.Id, out var n, out var depth)) continue;
+                    violation = true;
+                    Union(pair.x, pair.y);
+                    var initial = CombatBodyContacts.Penetration(a.Start, a.Body, b.Start, b.Body) > CombatContactTuning.Skin;
+                    float wa, wb;
+                    if (a.Team == b.Team || initial)
+                    {
+                        // Normalise without storing inverse mass or overflowing 1/Mass for tiny valid Mass.
+                        var small = math.min(a.Body.Mass, b.Body.Mass);
+                        wa = small / a.Body.Mass; wb = small / b.Body.Mass;
+                        if (!initial && a.Team == b.Team)
+                        {
+                            if (a.Controlled) wa *= CombatContactTuning.ControlledMobility;
+                            if (b.Controlled) wb *= CombatContactTuning.ControlledMobility;
+                        }
+                    }
+                    else
+                    {
+                        // Cancel inward locomotion, never transfer it into a passive enemy as a bulldozer impulse.
+                        wa = math.max(0, math.dot((a.Result.Position - a.Start).xz, n));
+                        wb = math.max(0, -math.dot((b.Result.Position - b.Start).xz, n));
+                        if (wa + wb < CombatContactTuning.TinyInwardDistance) // vertical entry, not locomotion: physical mass response
+                        {
+                            var small = math.min(a.Body.Mass, b.Body.Mass);
+                            wa = small / a.Body.Mass; wb = small / b.Body.Mass;
+                        }
+                    }
+                    if (a.Frozen) wa = 0;
+                    if (b.Frozen) wb = 0;
+                    if (wa + wb <= 0) continue;
+                    var share = wa / (wa + wb);
+                    var yielded = false;
+                    if (!initial && a.Team == b.Team)
+                    {
+                        // A finite normal priority alone pushes a collinear queue forever. Yield sideways as well,
+                        // under the same world/body budgets, so a free ally can actually let the controller pass.
+                        if (a.Controlled) yielded = Yield(ref a, ref b, depth * (1 - share), ref d);
+                        else if (b.Controlled) yielded = Yield(ref b, ref a, depth * share, ref d);
+                    }
+                    if (!yielded || CombatBodyContacts.Sweep(a.Start, a.Result.Position, a.Body, b.Start, b.Result.Position, b.Body,
+                        a.Id, b.Id, out n, out depth))
+                    {
+                        Correct(ref a, -n * depth * share, ref d);
+                        Correct(ref b, n * depth * (1 - share), ref d);
+                    }
+                    // Union updates rows; do not overwrite their union-find parents with the cached copies.
+                    a.Island = Actors[pair.x].Island; b.Island = Actors[pair.y].Island;
+                    Actors[pair.x] = a; Actors[pair.y] = b;
+                }
+                if (d.WorkLimit) break;
+                if (!violation)
+                {
+                    // No correction happened in this pass: its residual is the final, coherent state.
+                    d.ResidualPenetration = actualResidual; d.ResidualComplete = true;
+                    solved = true; break;
+                }
+            }
+            // A tight island must stop instead of publishing penetration. Other islands continue moving.
+            // Every candidate edge is unioned while building, including new neighbours after a correction.
+            if (!solved)
+            {
+                if (!d.WorkLimit) BuildPairs(ref d);
+                for (var p = 0; !d.WorkLimit && p < Pairs.Length; p++)
+                {
+                    if (++d.PairVisits > CombatContactTuning.MaxPairVisits) { d.WorkLimit = true; break; }
+                    var pair = Pairs[p]; var a = Actors[pair.x]; var b = Actors[pair.y];
+                    if (!CombatBodyContacts.Sweep(a.Start, a.Result.Position, a.Body, b.Start, b.Result.Position, b.Body,
+                        a.Id, b.Id, out _, out var depth)) continue;
+                    d.ResidualConstraint = math.max(d.ResidualConstraint, depth);
+                    d.UnresolvedPenetration = math.max(d.UnresolvedPenetration,
+                        CombatBodyContacts.Penetration(a.Result.Position, a.Body, b.Result.Position, b.Body));
+                    FreezeIsland(Root(pair.x));
+                }
+                // Full working envelopes contain every rollback endpoint, so this same complete pair list
+                // also covers final penetrations. Keep diagnostics inside the same explicit work budget.
+                for (var p = 0; !d.WorkLimit && p < Pairs.Length; p++)
+                {
+                    if (++d.PairVisits > CombatContactTuning.MaxPairVisits) { d.WorkLimit = true; break; }
+                    var a = Actors[Pairs[p].x]; var b = Actors[Pairs[p].y];
+                    d.ResidualPenetration = math.max(d.ResidualPenetration,
+                        CombatBodyContacts.Penetration(a.Result.Position, a.Body, b.Result.Position, b.Body));
+                }
+                d.ResidualComplete = !d.WorkLimit;
+                if (d.WorkLimit)
+                {
+                    for (var i = 0; i < Actors.Length; i++) Freeze(i);
+                    d.ResidualPenetration = 0; // Unknown, not a claimed zero: ResidualComplete is false.
+                }
+            }
+            for (var i = 0; i < Actors.Length; i++)
+            {
+                var a = Actors[i];
+                if (a.Frozen) d.FrozenBodies++;
+                else if (!a.Legacy && a.CanRestoreSupport)
+                {
+                    // Final support, not an intermediate iteration, determines grounded/landing output.
+                    a.Result.Grounded = a.Result.Velocity <= 0 && CombatArenaGeometry.Support(Shapes,
+                        a.Result.Position, a.MovementBody.Radius, a.Result.Position.y, a.Result.Position.y, true, out _);
+                    if (a.Result.Grounded)
+                    {
+                        a.Result.Velocity = 0;
+                        a.Result.GroundHeight = a.Result.Position.y;
+                    }
+                    a.Result.Landed &= a.Result.Grounded;
+                    Actors[i] = a;
+                }
+            }
+            Diagnostics[0] = d;
+        }
+
+        int Root(int i)
+        {
+            while (Actors[i].Island != i) i = Actors[i].Island;
+            return i;
+        }
+        void Union(int a, int b)
+        {
+            a = Root(a); b = Root(b);
+            if (a == b) return;
+            var row = Actors[math.max(a, b)]; row.Island = math.min(a, b); Actors[math.max(a, b)] = row;
+        }
+        void FreezeIsland(int root)
+        {
+            for (var i = 0; i < Actors.Length; i++) if (Root(i) == root) Freeze(i);
+        }
+        void Freeze(int i)
+        {
+            var a = Actors[i]; a.Frozen = true;
+            a.Result.Position = a.Start; a.Result.ControlledDistance = 0;
+            Actors[i] = a;
+        }
+
+        bool Yield(ref CombatContactActor controller, ref CombatContactActor ally, float pressure,
+            ref CombatContactDiagnostics d)
+        {
+            if (controller.Frozen || ally.Frozen || ally.YieldAttempts >= CombatContactTuning.MaxYieldAttempts
+                || math.lengthsq(controller.Desired) < CombatContactTuning.TinyPlanarSpeedSquared) return false;
+            var forward = math.normalizesafe(controller.Desired);
+            var separation = (ally.Result.Position - controller.Result.Position).xz;
+            if (math.dot(separation, forward) <= 0) return false; // No automatic motion for allies behind/away from control.
+            var sideways = new float2(-forward.y, forward.x);
+            var offset = math.dot(separation, sideways);
+            var sign = math.abs(offset) > CombatContactTuning.Skin ? math.sign(offset)
+                : ((controller.Id ^ ally.Id) & 1) == 0 ? 1f : -1f;
+            var limit = CombatContactTuning.AllyYieldSpeed * SimulationTiming.TickDuration;
+            var startingUsed = ally.YieldUsed;
+            for (var attempt = 0; attempt < 2 && ally.YieldAttempts < CombatContactTuning.MaxYieldAttempts; attempt++)
+            {
+                var amount = math.min(pressure, math.max(0, limit - ally.YieldUsed));
+                if (amount <= CombatContactTuning.Skin) return ally.YieldUsed > startingUsed;
+                var before = ally.Result.Position;
+                ally.YieldAttempts++; d.YieldAttempts++;
+                Correct(ref ally, sideways * (sign * amount), ref d);
+                var achieved = math.distance(before.xz, ally.Result.Position.xz);
+                ally.YieldUsed += achieved;
+                if (achieved > CombatContactTuning.Skin) return true;
+                sign = -sign; // Preferred side is obstructed: bounded opposite-side world probe, not navigation.
+            }
+            return ally.YieldUsed > startingUsed;
+        }
+
+        void Correct(ref CombatContactActor a, float2 correction, ref CombatContactDiagnostics d)
+        {
+            if (a.Frozen || math.lengthsq(correction) < CombatContactTuning.TinyCorrectionSquared) return;
+            var remaining = math.length(a.Desired) + math.min(a.Body.Radius, CombatContactTuning.CorrectionBudget) - a.CorrectionUsed;
+            if (remaining <= 0) return; // Residual is diagnosed and island rolled back, never silently accepted.
+            var length = math.length(correction);
+            if (length > remaining) correction *= remaining / length;
+            var before = a.Result;
+            var after = CombatArenaGeometry.Move(Shapes, a.MovementBody, before.Position, correction,
+                before.Velocity, before.Grounded, false, 0, a.Legacy, before.GroundHeight, integrateTime: false);
+            if (after.Failure != CombatArenaFailure.None) { d.WorldRejections++; return; }
+            var achieved = (after.Position - before.Position).xz;
+            a.CorrectionUsed += math.length(achieved);
+            // Passive displacement can never create running distance, even during landing or an attack.
+            var controlDirection = math.normalizesafe(a.Desired);
+            after.ControlledDistance = math.max(0, before.ControlledDistance + math.min(0, math.dot(achieved, controlDirection)));
+            after.Landed = before.Landed;
+            a.Result = after;
+        }
+
+        bool BuildPairs(ref CombatContactDiagnostics d)
+        {
+            Cells.Clear(); Pairs.Clear();
+            long entries = 0;
+            for (var i = 0; i < Actors.Length; i++)
+            {
+                Seen[i] = 0;
+                var a = Actors[i];
+                if (!a.Collidable) continue;
+                CombatSpatialBounds.TryFromBody(a.Start, a.Body, out var start);
+                CombatSpatialBounds.TryFromBody(a.Result.Position, a.Body, out var end);
+                a.Swept = new CombatSpatialBounds { Min = math.min(start.Min, end.Min), Max = math.max(start.Max, end.Max) };
+                Actors[i] = a;
+                if (!CombatSpatialBounds.TryCells(a.Swept, out var min, out var max, out var count)
+                    || count > Cells.Capacity - entries) { d.WorkLimit = true; return false; }
+                entries += count;
+                for (long x = min.x; x <= max.x; x++)
+                for (long z = min.y; z <= max.y; z++) Cells.Add(new int2((int)x, (int)z), i);
+            }
+            for (var i = 0; i < Actors.Length; i++)
+            {
+                var a = Actors[i]; if (!a.Collidable) continue;
+                CombatSpatialBounds.TryCells(a.Swept, out var min, out var max, out _);
+                for (long x = min.x; x <= max.x; x++)
+                for (long z = min.y; z <= max.y; z++)
+                {
+                    if (!Cells.TryGetFirstValue(new int2((int)x, (int)z), out var j, out var it)) continue;
+                    do
+                    {
+                        if (++d.Candidates > CombatContactTuning.MaxCandidateVisits) { d.WorkLimit = true; return false; }
+                        if (j <= i || Seen[j] == (uint)i + 1) continue;
+                        Seen[j] = (uint)i + 1;
+                        if (!a.Swept.Overlaps(Actors[j].Swept)) continue;
+                        Pairs.Add(new int2(i, j));
+                        Union(i, j);
+                    } while (Cells.TryGetNextValue(out j, ref it));
+                }
+            }
+            Pairs.Sort(new ByPair());
+            d.PeakPairs = math.max(d.PeakPairs, Pairs.Length);
+            return true;
+        }
+    }
+}

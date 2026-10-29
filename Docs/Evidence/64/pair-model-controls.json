@@ -1,0 +1,39 @@
+{
+  "scope": "ILLUSTRATIVE TWO-DISK MODEL; no C#/Unity/native execution; not an independent oracle for the C# solver",
+  "old_normal_only": {
+    "a": [
+      1.6666666666666672,
+      0.0
+    ],
+    "b": [
+      2.266666666666667,
+      0.0
+    ],
+    "passed": false,
+    "distance": 1.6666666666666672
+  },
+  "bounded_lateral": {
+    "a": [
+      1.9435727387061685,
+      0.018634705084957633
+    ],
+    "b": [
+      0.882136306469156,
+      -0.5833251985817253
+    ],
+    "passed": true,
+    "distance": 1.9435727387061685
+  },
+  "phase_arithmetic": {
+    "a": [
+      0.6647382345993487,
+      0.018917516545349927
+    ],
+    "b": [
+      0.8596421603365912,
+      -0.5487401657734676
+    ],
+    "passed": false,
+    "distance": 0.6647382345993487
+  }
+}

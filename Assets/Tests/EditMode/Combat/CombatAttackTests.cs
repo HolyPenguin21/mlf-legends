@@ -31,11 +31,20 @@ namespace MLFLegends.Tests.EditMode
 
         static CombatantRecord Ai(TickRecord r) => r.Combatant(r.AiId);
 
-        static TickRecord[] Play(BattleSetup setup, ReplayScript script, int ticks)
+        static TickRecord[] Play(BattleSetup setup, ReplayScript script, int ticks, bool hitGeometryFixture = false)
         {
             using var w = new ReplayWorld("strikes");
             w.Script = script;
             w.Request(BattleRequest.Start(setup));
+            if (hitGeometryFixture)
+            {
+                w.World.GetExistingSystemManaged<InitializationSystemGroup>().Update();
+                // These independent hit-box boundary expectations require the exact supplied positions.
+                // Tiny valid bodies retain membership and contacts without displacing separated boundary targets.
+                using var q = w.Manager.CreateEntityQuery(typeof(CombatBody));
+                using var entities = q.ToEntityArray(Allocator.Temp);
+                foreach (var e in entities) w.Manager.SetComponentData(e, new CombatBody { Radius = .01f, Height = 2, Mass = 1 });
+            }
             w.Step(ticks);
             return w.BattleRecords(1);
         }
@@ -147,7 +156,7 @@ namespace MLFLegends.Tests.EditMode
         {
             var script = new ReplayScript();
             Press(script, 1, A);
-            var records = Play(Duel(new float3(x, y, z)), script, 40);
+            var records = Play(Duel(new float3(x, y, z)), script, 40, hitGeometryFixture: true);
             Assert.That(Ai(records.Last()).Health.Current, Is.EqualTo(hit ? CombatAttackTuning.MaxHealth - Def(CombatAttackKind.PunchLeft).Damage : CombatAttackTuning.MaxHealth));
             Assert.That(records.Any(r => H(r).Hits.Length > 0), Is.EqualTo(hit));
         }
@@ -311,8 +320,11 @@ namespace MLFLegends.Tests.EditMode
             using (var query = w.Manager.CreateEntityQuery(typeof(CombatantId), typeof(CombatPosition)))
             using (var entities = query.ToEntityArray(Allocator.Temp))
                 foreach (var entity in entities)
+                {
+                    w.Manager.SetComponentData(entity, new CombatBody { Radius = .01f, Height = 2, Mass = 1 });
                     if (places.TryGetValue(w.Manager.GetComponentData<CombatantId>(entity).Value, out var place))
                         w.Manager.SetComponentData(entity, new CombatPosition { Value = place });
+                }
             w.Step(40);
             var last = w.Records.Last();
             var damaged = CombatAttackTuning.MaxHealth - Def(CombatAttackKind.PunchLeft).Damage;
@@ -527,6 +539,8 @@ namespace MLFLegends.Tests.EditMode
                     // 0.6 apart, rows 0.3 apart in depth, so every fighter has enemies within reach and depth.
                     var index = id.Value - first < 2 ? 0 : team == 1 ? id.Value - first - 1 : id.Value - first - 1 - setup.HumanAllies;
                     w.Manager.SetComponentData(entity, new CombatPosition { Value = new float3(team == 1 ? 0f : 0.6f, 0f, index * 0.3f) });
+                    // Keep these independent hit/ledger rows physically separated at depth spacing .3.
+                    w.Manager.SetComponentData(entity, new CombatBody { Radius = .1f, Height = 2, Mass = 1 });
                     ids.Add(id);
                 }
             }
