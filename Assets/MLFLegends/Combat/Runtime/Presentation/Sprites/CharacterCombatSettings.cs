@@ -17,7 +17,7 @@ namespace MLFLegends.Combat
         [Tooltip("HP removed from each valid target, once per strike (0..1000).")]
         public int Damage;
 
-        [Tooltip("Hit box start along the facing, world units from the fighter's position (inclusive, 0..8). Target point = its position.")]
+        [Tooltip("Hit box start along the facing, world units from the fighter's position (inclusive, 0..8). Target point = accepted body waist.")]
         public float ReachMin;
 
         [Tooltip("Hit box end along the facing, world units (inclusive, ReachMin..8).")]
@@ -29,7 +29,7 @@ namespace MLFLegends.Combat
         [Tooltip("Largest |ΔY| (altitude) between attacker and target, world units (0..8).")]
         public float HeightTolerance;
 
-        [Tooltip("Vertical hit center offset from the current reference point, world units.")]
+        [Tooltip("Vertical hit center offset from the accepted waist (Position.y + Body.Height/2), world units.")]
         public float HitOffsetY;
         [Tooltip("Self launch impulse J; 0 disables. Delta velocity = J / spawn mass. Maximum 24 units/s.")]
         public float SelfImpulse;
@@ -68,7 +68,7 @@ namespace MLFLegends.Combat
     /// character binding (CharacterId) for every fighter of that type; nothing here depends on a CombatantId, team or role.
     /// </summary>
     /// <remarks>
-    /// Body: a vertical cylinder from CombatPosition (Radius, constant Height, Mass), in world units; art pixels, nominal
+    /// Body: a vertical cylinder from CombatPosition (Radius, spawn Height, Mass), in world units; art pixels, nominal
     /// height and pivots are never converted into it. Published by the scene (CombatSmokeBootstrap) into the World's
     /// <see cref="CombatStrikeSchedule"/>: strikes use the values of the table current at their start, fighters the body of
     /// the table current at their spawn (next start/restart).
@@ -87,7 +87,7 @@ namespace MLFLegends.Combat
         [Tooltip("Radius, world units (0.05..2). Contacts, walls and spawn support use it.")]
         public float BodyRadius = CombatBodyTuning.Radius;
 
-        [Tooltip("Constant height above CombatPosition, world units (0.25..8).")]
+        [Tooltip("Spawn/base height above CombatPosition (0.25..8); Movement may temporarily accept a strike profile height.")]
         public float BodyHeight = CombatBodyTuning.Height;
 
         [Tooltip("Mass (0.05..100): impulse Δv = J / Mass and the inelastic contact share.")]

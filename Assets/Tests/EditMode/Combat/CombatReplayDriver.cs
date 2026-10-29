@@ -93,6 +93,7 @@ namespace MLFLegends.Tests.EditMode
         public CombatAttackState Attack;
         public CombatHealth Health;
         public CombatBodyProfile Profile;
+        public CombatDamageFeedback Feedback;
 
         /// <summary>CombatantId values in the current strike's hit ledger, in hit order.</summary>
         public uint[] Hits;
@@ -467,6 +468,7 @@ namespace MLFLegends.Tests.EditMode
                         HasApplied = hasApplied,
                         Applied = hasApplied ? manager.GetComponentData<AppliedCombatCommand>(entity) : default,
                         Attack = manager.HasComponent<CombatAttackState>(entity) ? manager.GetComponentData<CombatAttackState>(entity) : default,
+                        Feedback = manager.HasComponent<CombatDamageFeedback>(entity) ? manager.GetComponentData<CombatDamageFeedback>(entity) : default,
                         Health = manager.HasComponent<CombatHealth>(entity) ? manager.GetComponentData<CombatHealth>(entity) : default,
                         Hits = manager.HasBuffer<CombatHitRecord>(entity)
                             ? manager.GetBuffer<CombatHitRecord>(entity, true).AsNativeArray().ToArray().Select(h => h.Target.Value).ToArray()
@@ -528,7 +530,7 @@ namespace MLFLegends.Tests.EditMode
                     + $"strike({c.Attack.Kind},start:{(c.Attack.IsAttacking ? At(c.Attack.StartTick) : "-")},series:{c.Attack.SeriesStep},"
                     + $"timing:{c.Attack.Timing.ActiveStart}/{c.Attack.Timing.RecoveryStart}/{c.Attack.Timing.End}/{c.Attack.Timing.ChainPoint},"
                     + $"physical:{Float(c.Attack.Strike.SelfImpulse)}/{Float(c.Attack.Strike.ElevationDegrees)}/{c.Attack.Strike.LaunchTick},height:{Float(c.Attack.Strike.CompactHeight)}/{c.Attack.Strike.CompactStart}/{c.Attack.Strike.CompactEnd},offset:{Float(c.Attack.Strike.HitOffsetY)},impact:{c.Attack.Strike.OnHitImpulse},"
-                    + $"buffered:{c.Attack.Buffered},end:{At(c.Attack.EndTick)},hits:[{string.Join(",", c.Hits.Select(Id))}]) hp:{c.Health.Current}/{c.Health.Max} "
+                    + $"buffered:{c.Attack.Buffered},end:{At(c.Attack.EndTick)},hits:[{string.Join(",", c.Hits.Select(Id))}]) hp:{c.Health.Current}/{c.Health.Max} damageTick:{At(c.Feedback.LastDamageTick)} "
                     + $"{c.Facing} {(c.InCombat ? "in-combat" : "out")} applied[{applied}]");
             }
 

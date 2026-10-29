@@ -286,7 +286,7 @@ namespace MLFLegends.Tests.PlayMode
             Assert.That(moved, Is.GreaterThan(0));
             Assert.That(Manager.GetComponentData<CombatPosition>(human).Value.x, Is.EqualTo(x0 - moved * Step).Within(1e-4f),
                 $"fps {fps}: moved on exactly the {moved} ticks of the held frames");
-            Assert.That(Manager.GetComponentData<CombatFacing>(human).Value, Is.EqualTo(FacingDirection.Left));
+            Assert.That(Manager.GetComponentData<CombatFacing>(human).Value, Is.EqualTo(FacingDirection.Right));
 
             // The camera's LateUpdate of the previous frame followed the ECS position of that frame's last tick.
             var position = Manager.GetComponentData<CombatPosition>(human).Value;

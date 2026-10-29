@@ -165,7 +165,7 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(strike.Kind, Is.EqualTo(CombatAttackKind.Hand1));
             Assert.That(P(w, e[0]).x, Is.EqualTo(6 * Dt - CombatMovementTuning.MoveSpeed * Dt * .5f).Within(.00021),
                 "Full external step plus 50% Windup control in the opposite direction.");
-            Assert.That(w.Manager.GetComponentData<CombatFacing>(e[0]).Value, Is.EqualTo(FacingDirection.Left), "Only the command turns.");
+            Assert.That(w.Manager.GetComponentData<CombatFacing>(e[0]).Value, Is.EqualTo(FacingDirection.Right), "Retreat control and impulse do not turn away from the nearest enemy.");
             Assert.That(before.Value, Is.EqualTo(FacingDirection.Right));
             Assert.That(w.Manager.GetComponentData<CombatAttackState>(e[0]).StartTick, Is.EqualTo(strike.StartTick));
 

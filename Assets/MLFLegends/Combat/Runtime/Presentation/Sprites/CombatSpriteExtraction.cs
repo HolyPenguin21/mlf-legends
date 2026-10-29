@@ -8,7 +8,7 @@ using Unity.Profiling;
 
 namespace MLFLegends.Combat
 {
-    /// <summary>GPU instance record (24 bytes); layout mirrored by <c>SpriteInstance</c> in CombatSprite.shader.</summary>
+    /// <summary>GPU instance record (32 bytes); layout mirrored by <c>SpriteInstance</c> in CombatSprite.shader.</summary>
     [StructLayout(LayoutKind.Sequential)]
     public struct SpriteInstanceGpu
     {
@@ -22,6 +22,8 @@ namespace MLFLegends.Combat
 
         /// <summary>+1 right, −1 left, from <see cref="CombatFacing"/>.</summary>
         public float Facing;
+        public float DamageFactor;
+        public float Padding; // 16-byte-aligned structured-buffer stride
     }
 
     /// <summary>
@@ -150,7 +152,7 @@ namespace MLFLegends.Combat
         /// (<see cref="CombatAnimationSet.FrameFor"/>); a fighter lacking them (manual worlds) shows idle from battle start.
         /// </summary>
         public void Run(World world, SpriteAtlas atlas, in SpriteCardBasis basis, float depthSeparation, uint defaultFrame, float pixelWorldSize = 2f / 96f, CombatAnimationSet animations = null,
-            float2 imageOffsetCard = default)
+            float2 imageOffsetCard = default, uint damageDurationTicks = 9)
         {
             if (m_Disposed)
                 throw new ObjectDisposedException(nameof(CombatSpriteExtraction));
@@ -181,7 +183,7 @@ namespace MLFLegends.Combat
             if (!session.IsActive)
                 return;
 
-            uint tick = 0;
+            uint tick = m_Clocks.CalculateEntityCount() == 1 ? m_Clocks.GetSingleton<SimulationClock>().Tick : 0;
             if (animations != null)
             {
                 if (m_Clocks.CalculateEntityCount() != 1)
@@ -192,6 +194,7 @@ namespace MLFLegends.Combat
                 defaultFrame = animations.IdleFrame(tick, session.BattleStartTick);
             }
 
+            using var entities = m_Combatants.ToEntityArray(Allocator.Temp);
             using var ids = m_Combatants.ToComponentDataArray<CombatantId>(Allocator.Temp);
             using var positions = m_Combatants.ToComponentDataArray<CombatPosition>(Allocator.Temp);
             using var facings = m_Combatants.ToComponentDataArray<CombatFacing>(Allocator.Temp);
@@ -272,6 +275,8 @@ namespace MLFLegends.Combat
                     DepthOffset = m_Offsets[index],
                     Frame = frame,
                     Facing = facings[index].Value == FacingDirection.Left ? -1f : 1f,
+                    DamageFactor = world.EntityManager.HasComponent<CombatDamageFeedback>(entities[index])
+                        ? DamageFactor(tick, world.EntityManager.GetComponentData<CombatDamageFeedback>(entities[index]).LastDamageTick, damageDurationTicks) : 0,
                 };
                 m_InstanceIds[slot] = ids[index].Value;
                 m_PageMin[page] = math.min(m_PageMin[page], position);
@@ -280,6 +285,13 @@ namespace MLFLegends.Combat
 
             cursor.Dispose();
             frames.Dispose();
+        }
+
+        public static float DamageFactor(uint tick, uint last, uint duration)
+        {
+            if (last == 0 || tick < last || duration == 0 || tick - last >= duration) return 0;
+            var value = 1 - (tick - last) / (float)duration;
+            return value * value * (3 - 2 * value);
         }
 
         /// <summary>

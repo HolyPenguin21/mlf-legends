@@ -25,16 +25,16 @@ namespace MLFLegends.Tests.EditMode
 
         struct Row
         {
-            public uint Id; public byte Team; public float3 Position; public FacingDirection Facing;
+            public uint Id; public byte Team; public float3 Position; public float Height; public FacingDirection Facing;
             public CombatAttackState Attack; public bool HasHealth, CanAttack; public int Health; public uint[] Ledger;
         }
 
-        public static bool OracleInside(in CombatStrikeParameters s, float3 attacker, FacingDirection facing, float3 target)
+        public static bool OracleInside(in CombatStrikeParameters s, float3 attacker, FacingDirection facing, float3 target, float attackerHeight = 2, float targetHeight = 2)
         {
             var dx = target.x - attacker.x;
             var forward = facing == FacingDirection.Left ? -dx : dx;
             return forward >= s.ReachMin && forward <= s.ReachMax && math.abs(target.z - attacker.z) <= s.DepthHalfWidth
-                && math.abs(target.y - attacker.y) <= s.HeightTolerance;
+                && math.abs(target.y - attacker.y + (targetHeight - attackerHeight) / 2 - s.HitOffsetY) <= s.HeightTolerance;
         }
 
         protected override void OnUpdate()
@@ -47,6 +47,7 @@ namespace MLFLegends.Tests.EditMode
             {
                 Id = EntityManager.GetComponentData<CombatantId>(e).Value, Team = EntityManager.GetComponentData<CombatTeam>(e).Value,
                 Position = EntityManager.GetComponentData<CombatPosition>(e).Value,
+                Height = EntityManager.HasComponent<CombatBody>(e) ? EntityManager.GetComponentData<CombatBody>(e).Height : 2,
                 Facing = EntityManager.HasComponent<CombatFacing>(e) ? EntityManager.GetComponentData<CombatFacing>(e).Value : FacingDirection.Right,
                 Attack = EntityManager.HasComponent<CombatAttackState>(e) ? EntityManager.GetComponentData<CombatAttackState>(e) : default,
                 CanAttack = EntityManager.HasComponent<CombatAttackState>(e) && EntityManager.HasComponent<CombatFacing>(e) && EntityManager.HasBuffer<CombatHitRecord>(e),
@@ -64,7 +65,7 @@ namespace MLFLegends.Tests.EditMode
                 var strike = a.Attack.Strike; // the values frozen at this execution's start (#69), not the live table
                 foreach (var t in rows)
                     if (t.HasHealth && t.Team != a.Team && t.Id != a.Id && !a.Ledger.Contains(t.Id)
-                        && OracleInside(strike, a.Position, a.Facing, t.Position))
+                        && OracleInside(strike, a.Position, a.Facing, t.Position, a.Height, t.Height))
                         Expected.Add((Tick, a.Id, t.Id));
             }
         }

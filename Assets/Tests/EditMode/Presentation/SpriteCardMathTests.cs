@@ -225,7 +225,7 @@ namespace MLFLegends.Tests.EditMode
                 Assert.That(atlas.PageBytes, Is.EqualTo(128 * 128 * 4 + 96 * 160 * 4), "W × H × 4 per page, no mipmaps.");
                 Assert.That(atlas.FrameTableBytes, Is.EqualTo(3 * 32));
                 Assert.That(SpriteAtlas.FrameStride, Is.EqualTo(32));
-                Assert.That(CombatSpriteExtraction.InstanceStride, Is.EqualTo(24));
+                Assert.That(CombatSpriteExtraction.InstanceStride, Is.EqualTo(32));
                 Assert.That(atlas.Frames[0].CardRect, Is.EqualTo(new float4(-26f, 0f, 14f, 80f)));
                 Assert.That(atlas.Frames[2].Uv, Is.EqualTo(SpriteCardMath.FrameUv(new int4(8, 8, 50, 100), new int2(96, 160))));
                 Assert.That(atlas.FramePages.ToArray(), Is.EqualTo(new[] { 0, 0, 1 }));

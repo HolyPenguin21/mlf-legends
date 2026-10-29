@@ -512,7 +512,7 @@ namespace MLFLegends.Combat
                 Gizmos.color = phase == CombatAttackPhase.Active ? Color.red
                     : phase == CombatAttackPhase.Windup ? new Color(1f, .9f, .1f) : new Color(.6f, .6f, .6f);
                 var strike = attack.Strike;
-                var center = p + new Vector3(facing * (strike.ReachMin + strike.ReachMax) * .5f, strike.HitOffsetY, 0f);
+                var center = p + new Vector3(facing * (strike.ReachMin + strike.ReachMax) * .5f, body.Height * .5f + strike.HitOffsetY, 0f);
                 Gizmos.DrawWireCube(center, new Vector3(strike.ReachMax - strike.ReachMin, 2f * strike.HeightTolerance, 2f * strike.DepthHalfWidth));
             }
         }

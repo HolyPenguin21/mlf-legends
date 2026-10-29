@@ -158,7 +158,7 @@ namespace MLFLegends.Tests.EditMode
         [TestCase(1.0f, 0f, 0f, true, TestName = "Reach max inclusive")]
         [TestCase(1.01f, 0f, 0f, false, TestName = "Beyond reach")]
         [TestCase(0f, 0f, 0f, true, TestName = "Overlapping position")]
-        [TestCase(-0.05f, 0f, 0f, false, TestName = "Behind the attacker")]
+        [TestCase(-0.05f, 0f, 0f, true, TestName = "Nearest enemy turns the first strike left")]
         [TestCase(0.5f, 0.4f, 0f, true, TestName = "Depth limit inclusive")]
         [TestCase(0.5f, -0.41f, 0f, false, TestName = "Beyond depth")]
         [TestCase(0.5f, 0f, 0.9f, true, TestName = "Height limit inclusive")]
@@ -185,7 +185,7 @@ namespace MLFLegends.Tests.EditMode
             var end = 1 + Def(CombatAttackKind.Hand1).TotalTicks;
             for (var t = 1; t < end; t++)
                 Assert.That(H(records[t - 1]).Facing, Is.EqualTo(FacingDirection.Left), $"r{t}: locked");
-            Assert.That(H(records[end - 1]).Facing, Is.EqualTo(FacingDirection.Right), "Free again: MoveX turns.");
+            Assert.That(H(records[end - 1]).Facing, Is.EqualTo(FacingDirection.Left), "Free again: still faces the enemy while retreating.");
             Assert.That(Ai(records.Last()).Health.Current, Is.LessThan(CombatAttackTuning.MaxHealth), "Target behind the spawn facing was hit after the turn.");
         }
 

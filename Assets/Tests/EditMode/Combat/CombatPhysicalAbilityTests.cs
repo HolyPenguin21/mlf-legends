@@ -42,7 +42,7 @@ namespace MLFLegends.Tests.EditMode
         public void LaunchAtTickZeroUsesFinalFacingAndJOverMassExactlyOnce(int sign)
         {
             var table = Schedule(); table.Body.Mass = 2;
-            using var w = Start(table, new ReplayScript().Player(1, 1, ReplayRole.Human, moveX: (sbyte)sign, pressed: CommandButtons.PhysicalAbility));
+            using var w = Start(table, new ReplayScript().Player(1, 1, ReplayRole.Human, moveX: (sbyte)-sign, pressed: CommandButtons.PhysicalAbility), Duel(20 * sign));
             w.Step();
             var entity = Actor(w, w.Session.HumanCombatant);
             var motion = w.Manager.GetComponentData<CombatMotion>(entity);
@@ -75,6 +75,7 @@ namespace MLFLegends.Tests.EditMode
             w.Step();
             var target = Actor(w, w.Session.AiCombatant);
             Assert.That(w.Manager.GetComponentData<CombatHealth>(target).Current, Is.EqualTo(100 - strike.Damage));
+            Assert.That(w.Manager.GetComponentData<CombatDamageFeedback>(target).LastDamageTick, Is.EqualTo(1));
             Assert.That(w.Manager.GetComponentData<CombatMotion>(target).ExternalVelocity.y, Is.Zero);
             using (var q = w.Manager.CreateEntityQuery(typeof(CombatImpulseQueue)))
                 Assert.That(w.Manager.GetBuffer<CombatImpulse>(q.GetSingletonEntity()).Length, Is.EqualTo(1));
@@ -143,11 +144,15 @@ namespace MLFLegends.Tests.EditMode
         [Test]
         public void OcclusionAndCommittedChordRejectSolidButAllowFloorTangency()
         {
-            using var shapes = new NativeArray<CombatArenaShape>(1, Allocator.Temp);
-            shapes[0] = new CombatArenaShape { Kind = CombatArenaKind.Box, Center = float2.zero, HalfSize = new float2(.1f, 10), Bottom = -1, Top = 2, AxisX = new float2(1, 0) };
-            Assert.That(CombatMotionGeometry.SegmentClear(shapes, new float3(-1, .5f, 0), new float3(1, .5f, 0)), Is.False);
-            shapes[0] = new CombatArenaShape { Kind = CombatArenaKind.Box, Center = float2.zero, HalfSize = new float2(10), Bottom = -1, Top = 0, AxisX = new float2(1, 0) };
-            Assert.That(CombatMotionGeometry.SegmentClear(shapes, float3.zero, new float3(1, 0, 0), .3f, 2), Is.True);
+            var shapes = new NativeArray<CombatArenaShape>(1, Allocator.Temp);
+            try
+            {
+                shapes[0] = new CombatArenaShape { Kind = CombatArenaKind.Box, Center = float2.zero, HalfSize = new float2(.1f, 10), Bottom = -1, Top = 2, AxisX = new float2(1, 0) };
+                Assert.That(CombatMotionGeometry.SegmentClear(shapes, new float3(-1, .5f, 0), new float3(1, .5f, 0)), Is.False);
+                shapes[0] = new CombatArenaShape { Kind = CombatArenaKind.Box, Center = float2.zero, HalfSize = new float2(10), Bottom = -1, Top = 0, AxisX = new float2(1, 0) };
+                Assert.That(CombatMotionGeometry.SegmentClear(shapes, float3.zero, new float3(1, 0, 0), .3f, 2), Is.True);
+            }
+            finally { shapes.Dispose(); }
         }
     }
 }

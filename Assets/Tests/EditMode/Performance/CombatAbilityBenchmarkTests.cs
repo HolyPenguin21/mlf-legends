@@ -19,7 +19,7 @@ namespace MLFLegends.Tests.EditMode
         [Test]
         public void AbilityCost2_100_400FreePackedAndCorridor()
         {
-            var lines = new List<string> { "count\tscenario\tlaunchers\tJ\tfull_mean_us\tfull_p95_us\tmovement_us\tindex_us\tpairs\tsegments\thit_candidates\thits\tholds\tdiscards\tgc_bytes\tnative_motion_bytes\tburst_managed" };
+            var lines = new List<string> { "count\tscenario\tlaunchers\tJ\tfull_mean_us\tfull_p95_us\tfacing_us\tmovement_us\tindex_us\tpairs\tsegments\thit_candidates\thits\tholds\tdiscards\tgc_bytes\tnative_motion_bytes\tburst_managed\tfacing_burst_managed" };
             foreach (var count in new[] { 2, 100, 400 })
             foreach (var scenario in new[] { "free", "packed", "corridor" })
             foreach (var all in new[] { false, true })
@@ -69,7 +69,7 @@ namespace MLFLegends.Tests.EditMode
                 var fixedStep = world.GetExistingSystemManaged<FixedStepSimulationSystemGroup>();
                 var index = world.GetExistingSystemManaged<CombatSpatialIndexSystem>();
                 var samples = new List<double>(); long pairs = 0, hits = 0, candidates = 0, holds = 0, discards = 0;
-                double movement = 0, builds = 0; var managed = false; var maxSegments = 0;
+                double movement = 0, builds = 0, facingUs = 0; var managed = false; var facingManaged = false; var maxSegments = 0;
                 // Explicitly includes first-run/JIT and capacity growth. Hardware/raw output required before claiming performance.
                 var gc = GC.GetAllocatedBytesForCurrentThread();
                 for (var frame = 1; frame <= 60; frame++)
@@ -77,6 +77,8 @@ namespace MLFLegends.Tests.EditMode
                     world.SetTime(new TimeData((frame - .5) * SimulationTiming.TickDuration, SimulationTiming.TickDuration));
                     var start = Stopwatch.GetTimestamp(); fixedStep.Update();
                     samples.Add((Stopwatch.GetTimestamp() - start) * 1e6 / Stopwatch.Frequency);
+                    ref var facing = ref world.Unmanaged.GetUnsafeSystemRef<CombatFacingSystem>(world.GetExistingSystem<CombatFacingSystem>());
+                    facingUs += facing.LastMicroseconds; facingManaged |= facing.LastKernelRanManaged;
                     var d = index.LastContacts; pairs += d.PairVisits; holds += d.LocalHolds + d.TraceHolds;
                     discards += d.DiscardedVelocities; movement += index.LastMovementKernelMicroseconds; builds += index.LastBuildMicroseconds;
                     managed |= d.KernelRanManaged; maxSegments = Math.Max(maxSegments, index.MotionSegmentCount);
@@ -85,7 +87,7 @@ namespace MLFLegends.Tests.EditMode
                 }
                 gc = GC.GetAllocatedBytesForCurrentThread() - gc;
                 samples.Sort();
-                lines.Add(FormattableString.Invariant($"{count}\t{scenario}\t{(all ? count : 1)}\t{impulse}\t{samples.Average():F2}\t{samples[56]:F2}\t{movement/60:F2}\t{builds/60:F2}\t{pairs}\t{maxSegments}\t{candidates}\t{hits}\t{holds}\t{discards}\t{gc}\t{index.MotionCapacityBytes}\t{managed}"));
+                lines.Add(FormattableString.Invariant($"{count}\t{scenario}\t{(all ? count : 1)}\t{impulse}\t{samples.Average():F2}\t{samples[56]:F2}\t{facingUs/60:F2}\t{movement/60:F2}\t{builds/60:F2}\t{pairs}\t{maxSegments}\t{candidates}\t{hits}\t{holds}\t{discards}\t{gc}\t{index.MotionCapacityBytes}\t{managed}\t{facingManaged}"));
             }
             var path = Path.Combine(Application.temporaryCachePath, "stage05-ability.tsv"); File.WriteAllLines(path, lines);
             TestContext.WriteLine($"Hardware: {SystemInfo.processorType}; OS: {SystemInfo.operatingSystem}; Unity: {Application.unityVersion}; raw: {path}");

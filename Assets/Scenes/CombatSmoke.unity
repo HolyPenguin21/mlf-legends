@@ -318,6 +318,14 @@ MonoBehaviour:
   m_AlphaCutoff: 0.5
   m_DepthBias: 0.02
   m_DepthSeparation: 0.002
+  m_ShadowShader: {fileID: 4800000, guid: eddc55b2a12947ada2cd108bd11d1d3a, type: 3}
+  m_DrawGroundShadows: 1
+  m_ShadowRadiusMultiplier: 1.25
+  m_ShadowColor: {r: 0, g: 0, b: 0, a: 0.35}
+  m_ShadowBias: 0.003
+  m_DamageColor: {r: 1, g: 0, b: 0, a: 1}
+  m_DamageIntensity: 0.25
+  m_DamageDurationTicks: 9
   m_DrawAnchorGizmos: 1
 --- !u!114 &673466320
 MonoBehaviour:

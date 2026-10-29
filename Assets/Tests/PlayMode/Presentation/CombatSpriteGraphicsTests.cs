@@ -196,6 +196,29 @@ namespace MLFLegends.Tests.PlayMode
         // ---------------------------------------------------------------- shader, UV, trim, flip, frames, pages
 
         [UnityTest]
+        public IEnumerator DamageTintAffectsOnlyTheReceiverInOneSharedBatch()
+        {
+            yield return RestartBattle(Duel(new float3(-.6f, 0, 0), FacingDirection.Right,
+                new float3(.6f, 0, 0), FacingDirection.Left));
+            var baseline = Render();
+            using var q = Manager.CreateEntityQuery(typeof(CombatantId), typeof(CombatDamageFeedback));
+            using var entities = q.ToEntityArray(Allocator.Temp);
+            foreach (var e in entities)
+                if (Manager.GetComponentData<CombatantId>(e).Equals(Ai))
+                    Manager.SetComponentData(e, new CombatDamageFeedback { LastDamageTick = Tick });
+            var tinted = Render(); var changedReceiver = 0;
+            for (var i = 0; i < baseline.Length; i++)
+            {
+                if (Near(baseline[i], tinted[i])) continue;
+                Assert.That(i % Size, Is.GreaterThan(Size / 2), "Attacker and transparent background remain unchanged.");
+                changedReceiver++;
+            }
+            Assert.That(changedReceiver, Is.GreaterThan(100));
+            Assert.That(m_Renderer.Stats.Submissions, Is.EqualTo(1));
+            SaveEvidence(m_Readback, "74-damage-receiver-only");
+        }
+
+        [UnityTest]
         public IEnumerator TrimFlipColoursHolesAndFramesLandOnTheExpectedPixels()
         {
             var human = new Fighter { Support = float3.zero, Facing = FacingDirection.Right, Frame = "tech_a" };

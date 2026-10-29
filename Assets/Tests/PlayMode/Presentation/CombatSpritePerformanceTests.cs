@@ -40,6 +40,7 @@ namespace MLFLegends.Tests.PlayMode
             public double ExtractUs;
             public double SubmitUs;
             public double RenderUs;
+            public double ShadowUs;
             public long GcBytes;
             public int GcSamples;
             public long DrawCalls;
@@ -130,11 +131,11 @@ namespace MLFLegends.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator RendererCostAndAllocationsFor2_100_400([Values(0, 49, 199)] int allies, [Values(false, true)] bool realArt)
+        public IEnumerator RendererCostAndAllocationsFor2_100_400([Values(0, 49, 199)] int allies, [Values(false, true)] bool realArt, [Values(false, true)] bool groundShadows)
         {
             RequireGraphicsDevice();
             var count = 2 + 2 * allies;
-            var prefix = realArt ? "stage05-combat-anim" : "stage03-sprites";
+            var prefix = (realArt ? "stage05-combat-anim" : "stage03-sprites") + (groundShadows ? "-ground-shadows" : "");
             CharacterAnimationConfig config = null;
             if (realArt)
             {
@@ -148,8 +149,15 @@ namespace MLFLegends.Tests.PlayMode
             CombatSpriteRenderer renderer = null;
             SpriteRunTestProducer movementProducer = null;
             var profilerWasEnabled = Profiler.enabled;
+            CombatArenaSystem arena = null; ulong arenaLease = 0;
             try
             {
+                if (groundShadows)
+                {
+                    arena = DefaultWorld.GetExistingSystemManaged<CombatArenaSystem>(); arenaLease = arena.Acquire();
+                    arena.Stage(arenaLease, new[] { new CombatArenaShape { Kind = CombatArenaKind.Box, Center = float2.zero,
+                        AxisX = new float2(1, 0), HalfSize = new float2(512), Bottom = -1, Top = 0 } });
+                }
                 target = CreateTarget(512);
                 camera = CreateCamera("Sprite perf camera", new Vector3(0f, 1f, 0f), 14f, target);
                 renderer = CreateRenderer(camera);
@@ -212,6 +220,7 @@ namespace MLFLegends.Tests.PlayMode
                             ExtractUs = withRenderer ? refreshStats.ExtractMicroseconds : 0,
                             SubmitUs = withRenderer ? refreshStats.SubmitMicroseconds : 0,
                             RenderUs = renderUs,
+                            ShadowUs = withRenderer ? refreshStats.ShadowMicroseconds : 0,
                             GcBytes = meter.BytesWork ? gcAfter - gcBefore : -1,
                             GcSamples = meter.SamplesWork ? gcSamples : -1,
                             DrawCalls = statsDrawCalls > 0 ? statsDrawCalls : drawCalls.Valid ? drawCalls.LastValue : -1,
@@ -228,6 +237,8 @@ namespace MLFLegends.Tests.PlayMode
                     if (withRenderer)
                     {
                         Assert.That(renderer.Stats.Instances, Is.EqualTo(count));
+                        Assert.That(renderer.Stats.ShadowInstances, Is.EqualTo(groundShadows ? count : 0));
+                        Assert.That(renderer.Stats.ShadowSubmissions, Is.EqualTo(groundShadows ? 1 : 0));
                         Assert.That(renderer.Stats.InstanceBuffersCreated, Is.EqualTo(buffersAfterWarmup), "No buffer re-creation per frame.");
                         Assert.That(renderer.Atlas.GpuBuffersCreated, Is.EqualTo(atlasBuffers));
                         Assert.That(renderer.Stats.Submissions, Is.EqualTo(1), "One draw submission for all fighters on one page.");
@@ -270,13 +281,14 @@ namespace MLFLegends.Tests.PlayMode
                 if (results[true][MeasuredFrames - 1].DrawCalls > 0)
                 {
                     var added = Median(results[true].Select(s => (double)s.DrawCalls)) - Median(results[false].Select(s => (double)s.DrawCalls));
-                    Assert.That(added, Is.LessThanOrEqualTo(4), "Draw calls grow with pages × passes, not fighters.");
+                    Assert.That(added, Is.LessThanOrEqualTo(groundShadows ? 5 : 4), "Pages × passes plus one shared shadow submission.");
                 }
                 if (!meter.BytesWork && !meter.SamplesWork)
                     Assert.Inconclusive("Allocation result NOT RUN: neither counter detected the live allocation; timing TSV retained.");
             }
             finally
             {
+                if (arena != null) arena.Release(arenaLease);
                 SpriteRunTestProducer.Remove(DefaultWorld, movementProducer);
                 Profiler.enabled = profilerWasEnabled;
                 if (camera != null) camera.targetTexture = null;
@@ -305,7 +317,7 @@ namespace MLFLegends.Tests.PlayMode
 
         static void WriteRaw(int count, bool withRenderer, Sample[] samples, string prefix)
         {
-            var rows = new List<string> { "sample\trefresh_us\textract_us\tsubmit_us\tcamera_render_us\tgc_bytes\tgc_alloc_samples\tdraw_calls\tbatches\tsetpass" };
+            var rows = new List<string> { "sample\trefresh_us\textract_us\tsubmit_us\tcamera_render_us\tgc_bytes\tgc_alloc_samples\tdraw_calls\tbatches\tsetpass\tshadow_us" };
             for (var i = 0; i < samples.Length; i++)
             {
                 var s = samples[i];
@@ -313,7 +325,7 @@ namespace MLFLegends.Tests.PlayMode
                     s.RefreshUs.ToString("R", CultureInfo.InvariantCulture), s.ExtractUs.ToString("R", CultureInfo.InvariantCulture),
                     s.SubmitUs.ToString("R", CultureInfo.InvariantCulture), s.RenderUs.ToString("R", CultureInfo.InvariantCulture),
                     Allocation(s.GcBytes), Allocation(s.GcSamples), s.DrawCalls.ToString(CultureInfo.InvariantCulture),
-                    s.Batches.ToString(CultureInfo.InvariantCulture), s.SetPass.ToString(CultureInfo.InvariantCulture)));
+                    s.Batches.ToString(CultureInfo.InvariantCulture), s.SetPass.ToString(CultureInfo.InvariantCulture), s.ShadowUs.ToString("R", CultureInfo.InvariantCulture)));
             }
             File.WriteAllLines(OutputPath($"{prefix}-n{count}-{(withRenderer ? "renderer" : "no-renderer")}-raw.tsv"), rows);
         }
@@ -358,6 +370,10 @@ namespace MLFLegends.Tests.PlayMode
                 (stats.InstanceBufferCapacity * CombatSpriteExtraction.InstanceStride).ToString(CultureInfo.InvariantCulture),
                 renderer != null ? renderer.Atlas.PageBytes.ToString(CultureInfo.InvariantCulture) : "0",
                 renderer != null ? renderer.Atlas.FrameTableBytes.ToString(CultureInfo.InvariantCulture) : "0",
+                F(Median(samples.Select(s => s.ShadowUs))),
+                stats.ShadowSubmissions.ToString(CultureInfo.InvariantCulture),
+                stats.ShadowInstances.ToString(CultureInfo.InvariantCulture),
+                renderer != null && renderer.GroundShadows != null ? (renderer.GroundShadows.Capacity * CombatGroundShadows.Stride).ToString(CultureInfo.InvariantCulture) : "0",
             });
         }
 
@@ -365,7 +381,7 @@ namespace MLFLegends.Tests.PlayMode
         {
             var header = "fighters\tmode\tdevice\trefresh_median_us\trefresh_p95_us\textract_median_us\tsubmit_median_us\tcamera_render_median_us\tgc_bytes_measured\tgc_alloc_samples\t"
                 + "draw_calls_median\tbatches_median\tsetpass_median\tsubmissions\tinstance_buffers_created\tinstance_buffer_bytes\t"
-                + "atlas_page_bytes\tframe_table_bytes";
+                + "atlas_page_bytes\tframe_table_bytes\tshadow_median_us\tshadow_submissions\tshadow_instances\tshadow_buffer_bytes";
             File.WriteAllLines(OutputPath($"{prefix}-n{count}.tsv"), new[] { header }.Concat(rows));
         }
     }
