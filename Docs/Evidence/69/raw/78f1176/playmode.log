@@ -13,7 +13,7 @@ Date: 2026-10-29T13:35:03Z
   Session Id:              14e3aaed45da47e7814920a6d5cf5828
   Correlation Id:          3defef1e859a9a672a5bb6f71a267a47
   External correlation Id: 5645001002588458655
-  Machine Id:              6IyvFXyj1//mqMVh1ynN85JvFvM=
+  Machine Id:              <redacted>
 [Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-Стас" (connect: 0.00s, validation: 0.00s, handshake: 0.03s)
 [Licensing::IpcConnector] Successfully connected to: "LicenseClient-Стас-notifications" at "2026-10-29T13:35:04.0051931Z"
 [Licensing::Module] Error: Access token is unavailable; failed to update

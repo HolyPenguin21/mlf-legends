@@ -4,7 +4,7 @@ Machine: AMD Ryzen 5 3600 (12 logical), 32 GB, RTX 2060 SUPER (D3D12 for the Pla
 Windows 11 26100. Toolchain: Unity 6000.5.4f1, Entities/Collections 6.5.0, Burst 1.8.29, safety checks on.
 All runs: a detached worktree (the owner's Editor holds the main project) on a **clean checkout of the named commit**
 (`git status` clean except Unity's `ProjectSettings/TimeManager.asset` rewrite, never committed). Results only from actual
-runs: **PASS / FAIL / NOT RUN**. Raw NUnit XML and Editor logs: [`raw/<sha>/`](raw).
+runs: **PASS / FAIL / NOT RUN**. Raw NUnit XML and Editor logs: [`raw/<sha>/`](raw) (only the licensing "Machine Id" value is redacted).
 
 Commits of the branch (base main `86012a006b51f6295a855dbaa9b6bbf1d3d23133`):
 `78f1176` fixes 1.1/1.2/1.3 → `0ede130` faults found by the full ordered run → `f945b09` per-character data →

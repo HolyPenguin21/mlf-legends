@@ -74,7 +74,7 @@ Input System module state changed to: Initialized.
   Session Id:              dd3a9b8260c046f28c64382dc78c9b35
   Correlation Id:          3defef1e859a9a672a5bb6f71a267a47
   External correlation Id: 8770699146799521595
-  Machine Id:              6IyvFXyj1//mqMVh1ynN85JvFvM=
+  Machine Id:              <redacted>
 [Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-Стас" (connect: 0.00s, validation: 0.00s, handshake: 0.03s)
 [Licensing::IpcConnector] Successfully connected to: "LicenseClient-Стас-notifications" at "2026-10-29T13:27:23.7670513Z"
 [Licensing::Module] Error: Access token is unavailable; failed to update
