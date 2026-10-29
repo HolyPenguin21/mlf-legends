@@ -1,8 +1,36 @@
 # Stage 04.1 / #58 — bottom-up review of PR #59
 
+## #60 / PR #62 second bottom-up review (2026-10-29)
+
+Reviewed PR head `7a65651a620494b7d32487a2cbcf52e819828b3f` against merged main
+`180b4121792e68931f27c109b78cd0d24c21a4d4`. This is implementing-agent source review; not manager acceptance.
+
+| Layer / finding | Review and correction |
+|---|---|
+| Asset → manifest → timing | Two exact 68c43c blobs remain pinned. Config phases, all configured frame IDs, quantization, final kick frames and chain_exit remain consistent. Synthetic jump's 4/5 boundary remains eight ticks per frame. No asset or production code edit. |
+| Timing → publication → Movement → presentation | Existing synthetic replay covered landing 16 only; project landing 12 was checked separately in publication/frame tests. Both existing landing replay tests now run for **project 12 and synthetic 16**, asserting the copied Motion duration, airborne frames, exact grounded frame holds, no held-direction slide, immediate idle/run and distance-based run phase. These C# cases are authored, **NOT RUN**. Other negative timing fixtures now use explicit fixture inputs too. |
+| Action / Facing / Hit / final index | Frozen strike timing still controls all phases; damage/ledger is still Hit-only, input buffer and 50/25/25 unchanged. Index remains read-only after Movement and before Hit in default/replay/benchmark. No owner, clock or allocation/lifecycle change in #60. |
+| Config/cache/World lifecycle | Bootstrap republishes only on config/catalog/World revision and restores its own World's table by publication lease; renderer owns shared timing/cache independently, reads ECS and invalidates on config/catalog change. Test config edits use an instantiated config and defensive Set. Destroy/disable cleanup and World leases remain unchanged. This is source inspection, not runtime lifecycle evidence. |
+| Verifier committed whitespace gap | `git diff --check` with no refs is empty on the required clean head. It now checks **BASE → TESTED_SHA**, so committed whitespace defects cannot get a misleading PASS. Report has an explicit committed-diff result. |
+| Verifier production-path gap | The #60-base guard formerly covered selected Assets directories and the inputactions file, allowing other Assets roots/input metadata to escape its all-production claim. It now rejects **every Assets change except test files and Markdown**, plus Packages/ProjectSettings non-document changes. Original-base protection and exact two-blob tuning checks are retained. |
+
+Reproduce the final source/model result from a clean checkout using the command in QA.md; the report records its own
+tested SHA/tree. Evidence-only commits store the preceding tested source report; the PR records the additional clean
+final-head rerun. Unity compilation/import, Entities/Burst, C# suites, GPU and actual allocations/performance remain
+**NOT RUN**. No new runtime gameplay failure is established by these source findings; the gaps were in validation.
+
+## Historical 04.1 implementation review
+
 2026-10-28. Reviewed implementation: `c73897d2453fe2c39ce6d6a55dfb84978825e484`, against base main
 `a6e96295c0a1e008327e28e8ff89205caf0a4f77`. Corrections stay in the same branch/PR; no merge.
 This is the implementing agent's second source review, not an independent manager review or Unity execution.
+
+**#60 correction, 2026-10-28:** the historical review above concerns `c73897d`; the merged delivery also includes
+`68c43cbb51ff863ec5b7a5bac82e5f39b60c4db1`. Its exact two tuning assets/blobs are listed in
+[the spatial contract](STAGE04_SPATIAL_INDEX.md). The former blanket art/config identity claim and 177 unchanged-file
+report do not certify merged main `180b4121792e68931f27c109b78cd0d24c21a4d4`: the old verifier actually fails on its
+atlas `.meta`. Project-config test mismatches were source findings, not executed Unity failures. #60 preserves tuning,
+corrects the existing tests and pins both tuning blobs. [Current evidence/reproduction](QA.md).
 
 ## Findings and corrections
 
@@ -30,7 +58,7 @@ Aggregate entry/duplicate diagnostics use long so a large batch cannot overflow 
 | Availability / lifecycle | Tick/BattleNumber/active session checked live, then structural order and complete enabled membership. Disabled-tag fix closes lifecycle cleanup gap. Paused Initialization cannot expose old entities; invalidation keeps capacity separate from availability. |
 | Writers / phase graph | Action → Facing → Movement → SpatialIndex → Hit remains acyclic. Only existing lifecycle initializes Body; index writes no gameplay component. Existing Movement, Facing, Action, Hit and tuning files remain byte-identical to base. |
 | Default / replay / benchmark | Same RuntimeSystems registration; unique-owner/order assertions retained. Replay body values included, previous-state control comparison retained. Default-world jump test reads post-Movement position; paused Restart/End rejection remains covered. |
-| Presentation / scene / config | No renderer/Inspector/pivot/art/config/scene/package changes. Scene exit uses the same lifecycle/session invalidation. No new clock, spawn path, cleanup system or character registry. |
+| Presentation / scene / config | Renderer/Inspector/scene/packages unchanged. The merged delivery includes pivot `.meta` and CharacterAnimationConfig changes from 68c43c (two pinned blobs), preserved by #60. Scene exit uses the same lifecycle/session invalidation. No new clock, spawn path, cleanup system or character registry. |
 | Future stages | No contact resolution, proposed-position index, impulses or Hit migration. Atomic batches supply the same conservative final-position AABB API for future consumers; 04.2–04.5 remain separate work. |
 
 ## Executed evidence and limits
@@ -40,7 +68,10 @@ queries and 12,048 source-body pair queries against an independent bounds scan; 
 broken **Python model** variants (lost upper cells, duplicates, ordering, stamp reuse); membership/cleanup predicate
 counterexamples; extreme cell-count guards; exact Spawn/baseline allowed-archetype agreement (with the old-head omission
 reproduced); protected-source identity and whitespace. Report with final source SHA256:
-`Docs/Evidence/58/static-checks.json`. Models do not execute or mutate the C# implementation.
+`Docs/Evidence/58/static-checks.json`. The corrected report records its tested SHA/tree, clean starting state, original
+base, #60 base, full changed-path lists and exact tuning exceptions. Production protection covers Core/Simulation/Input/
+Commands and assets/metadata; edited test sources and Markdown reporting are not claimed byte-unchanged.
+Models do not execute or mutate the C# implementation.
 
 Unity compilation, Entities sourcegen/Burst, C# EditMode/PlayMode suites, GPU, native leaks, actual allocations and benchmark
 runs remain **NOT RUN**. A source-pattern check also rejects direct indexer writes on readonly using NativeArray locals;

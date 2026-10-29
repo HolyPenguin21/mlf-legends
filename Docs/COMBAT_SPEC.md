@@ -54,7 +54,7 @@ A canonical attack has Windup → Active → Recovery, attack shapes, interrupt/
 > **Stage 03 tuning update (owner instruction).** Strike windows are no longer fixed numbers: each strike clip's
 > Preparation (= Windup) / Active / Recovery frame ranges in `CharacterAnimationConfig`, with its duration and speed curve,
 > define them (quantized to 60 Hz ticks, Active never shorter than one tick; see `Presentation/Sprites/ANIMATION.md`). The
-> current project values are punch_left/right 14/6/9, kicks 20/10/30, kick_spin 53/14/53 ticks; the table
+> current project values after 68c43c are punch_left/right 14/6/9, kicks 12/6/12, kick_spin 20/5/5 ticks; the table
 > below is the headless default only. **During attacks planar movement is 50% Preparation / 25% Active / 25% Recovery** (the strike keeps
 > playing, no jump); facing keeps the strike lock described below. A strike keeps the windows it started with. The chain point is
 > Recovery start + the chain delay below, capped at the strike's end.

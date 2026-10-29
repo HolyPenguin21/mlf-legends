@@ -165,16 +165,25 @@ namespace MLFLegends.Tests.PlayMode
             {
                 bootstrap.AnimationConfig = config;
                 bootstrap.StrikeCharacterId = "mage_female_01";
-                LogAssert.Expect(LogType.Log, new Regex("strike windows .*punch_left 14/6/9, punch_right 14/6/9, kick_left 20/10/30, kick_right 20/10/30, kick_spin 53/14/53"));
+                LogAssert.Expect(LogType.Log, new Regex("strike windows .*punch_left 14/6/9, punch_right 14/6/9, kick_left 12/6/12, kick_right 12/6/12, kick_spin 20/5/5"));
                 bootstrap.gameObject.SetActive(true);
                 yield return NextTick();
                 var table = Singleton<CombatStrikeSchedule>();
                 Assert.That(table.Revision, Is.EqualTo(bootstrap.PublishedScheduleRevision));
                 Assert.That((table.PunchLeft.WindupTicks, table.PunchLeft.ActiveTicks, table.PunchLeft.RecoveryTicks), Is.EqualTo((14, 6, 9)));
+                Assert.That((table.KickLeft.WindupTicks, table.KickLeft.ActiveTicks, table.KickLeft.RecoveryTicks), Is.EqualTo((12, 6, 12)));
+                Assert.That((table.KickRight.WindupTicks, table.KickRight.ActiveTicks, table.KickRight.RecoveryTicks), Is.EqualTo((12, 6, 12)));
+                Assert.That((table.KickSpin.WindupTicks, table.KickSpin.ActiveTicks, table.KickSpin.RecoveryTicks), Is.EqualTo((20, 5, 5)));
+                Assert.That(table.LandingRecoveryTicks, Is.EqualTo(12u));
 
                 // Owner edit in Play Mode: punch_left lasts 1 s (6 flat frames of 10 ticks, phases 0..2 / 3 / 4..5). Published on the next frame.
                 var entries = config.Characters.ToArray();
                 var punch = entries[0].Animations.First(a => a.ClipId == "punch_left");
+                punch.EndFrame = 5;
+                punch.PreparationEndFrame = 2;
+                punch.ActiveEndFrame = 3;
+                punch.LandingStartFrame = -1;
+                punch.SpeedCurve = AnimationCurve.Linear(0, 1, 1, 1);
                 punch.TotalDurationSeconds = 1.0;
                 config.Set(entries);
                 LogAssert.Expect(LogType.Log, new Regex("strike windows .*punch_left 30/10/20"));

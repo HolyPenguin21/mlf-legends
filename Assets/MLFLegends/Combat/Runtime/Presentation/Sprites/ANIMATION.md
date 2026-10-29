@@ -4,7 +4,7 @@
 requests feed the existing CombatAttackState; this renderer selects the existing named clips and never reads keys.
 PR #51 already supplies the shared bootstrap config binding and empty-clips preview guard; neither is duplicated here.
 Authoritative selection remains strike → airborne jump → landing recovery → run → idle. Phase speed is 50/25/25;
-landing is uninterruptible by controlled move/new actions for the configured frame holds (currently 27 ticks).
+landing is uninterruptible by controlled move/new actions for the configured frame holds (currently 12 ticks after 68c43c).
 Older dated animation descriptions below are historical where they state fixed strike tuning, run-before-landing,
 Preparation-only movement or old input keys. Stage 03 is NOT accepted until the owner confirms the Unity check.
 
@@ -17,7 +17,8 @@ One ImageOffsetPixels per character adds a translation. Raster Inspector preview
 Attack planar speed is 50% Preparation, 25% Active, 25% Recovery. Landing now has an authoritative motion recovery window:
 physical contact → jump landing frames (movement/new actions locked) → run if held, otherwise idle_combat. In jump settings,
 LandingStartFrame..EndFrame sets the range; -1 uses the old land marker. T/curve frame holds set the duration (ceil to ticks),
-published with the existing combat timing table. Current owner curve gives 27 ticks / 0.45s; no separate delay.
+published with the existing combat timing table. Current flat curve, T=1s, EndFrame=4 and LandingStartFrame=4
+give one landing frame (4) for 12 ticks / 0.2s; no separate delay. Older 27-tick evidence describes the pre-68c43c config.
 These rules supersede old Preparation-only movement and run-before-landing text below. Stage 03 is NOT accepted yet.
 
 # Character animation — Stage 03 tuning: frame ranges and strike phases (current)
