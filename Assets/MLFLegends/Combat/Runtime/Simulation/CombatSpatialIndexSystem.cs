@@ -98,11 +98,13 @@ namespace MLFLegends.Combat
         NativeList<int2> m_ContactPairs;
         NativeArray<CombatContactDiagnostics> m_ContactDiagnostics;
         NativeList<CombatArenaShape> m_EmptyShapes;
+        NativeList<CombatImpulse> m_Impulses;
         public CombatContactDiagnostics LastContacts { get; private set; }
         public double LastMovementKernelMicroseconds { get; private set; }
         public long MovementScratchCapacityBytes => !m_Allocated ? 0 : (long)m_Movement.Capacity * UnsafeUtility.SizeOf<CombatContactActor>()
             + (long)m_ContactPairs.Capacity * UnsafeUtility.SizeOf<int2>() + UnsafeUtility.SizeOf<CombatContactDiagnostics>()
-            + (long)m_EmptyShapes.Capacity * UnsafeUtility.SizeOf<CombatArenaShape>();
+            + (long)m_EmptyShapes.Capacity * UnsafeUtility.SizeOf<CombatArenaShape>()
+            + (long)m_Impulses.Capacity * UnsafeUtility.SizeOf<CombatImpulse>();
         internal NativeArray<CombatArenaShape> EmptyShapes => m_EmptyShapes.AsArray();
 
         struct ByMovementId : IComparer<CombatContactActor>
@@ -121,10 +123,11 @@ namespace MLFLegends.Combat
         internal void EndMovement()
         {
             // Do not retain Entity/pair rows across pause, Despawn, End, Restart or World replacement.
-            m_Movement.Clear(); m_ContactPairs.Clear(); m_Cells.Clear();
+            m_Movement.Clear(); m_ContactPairs.Clear(); m_Cells.Clear(); m_Impulses.Clear();
         }
 
-        internal void CalculateMovement(NativeArray<CombatArenaShape> shapes, uint tick, uint landingTicks)
+        // impulses: Movement's pending input of this tick, copied into owner scratch for the job (consumed by the caller).
+        internal void CalculateMovement(NativeArray<CombatArenaShape> shapes, NativeArray<CombatImpulse> impulses, uint tick, uint landingTicks)
         {
             m_Movement.Sort(new ByMovementId());
             var session = m_Session.CalculateEntityCount() == 1 ? m_Session.GetSingleton<BattleSession>() : default;
@@ -134,6 +137,15 @@ namespace MLFLegends.Combat
                 throw new InvalidOperationException("Incomplete contact inputs: every enabled fighter needs Id/Team/Body/Position/Motion/AppliedCommand.");
             if (m_Movement.Length > CombatContactTuning.MaxBodies)
                 throw new InvalidOperationException("Contact roster exceeds the battle limit; no bodies were dropped.");
+            m_Impulses.Clear(); m_Impulses.AddRange(impulses);
+            var physics = impulses.Length > 0;
+            var fastest = CombatImpulseTuning.MaxExternalSpeed;
+            for (var i = 0; i < m_Movement.Length; i++)
+            {
+                var speed = math.length(m_Movement[i].Velocity);
+                physics |= speed > 0;
+                fastest = math.max(fastest, speed);
+            }
             long entries = 0;
             for (var i = 0; i < m_Movement.Length; i++)
             {
@@ -147,8 +159,12 @@ namespace MLFLegends.Combat
                     throw new InvalidOperationException("Invalid movement CombatantId; no partial output was written.");
                 if (!CombatSpatialBounds.TryFromBody(a.Start, a.Body, out var bounds))
                     throw new InvalidOperationException("Invalid contact body; no fighter was dropped.");
-                // Covers initial world depenetration, the whole proposed path and the total body correction budget.
-                var margin = math.length(a.Desired) * 2 + 2 * CombatContactTuning.CorrectionBudget;
+                // Covers initial world depenetration, the whole proposed path and the total body correction budget,
+                // including any accepted impulse of this tick and transfer through a group (CombatContactJob.CorrectionBudget).
+                var margin = math.length(a.Desired) * 2 + 2 * CombatContactTuning.CorrectionBudget
+                    + (physics ? 3 * fastest * SimulationTiming.TickDuration : 0);
+                if (!math.isfinite(margin))
+                    throw new InvalidOperationException("Non-finite movement/external velocity; no partial output was written.");
                 bounds.Min -= new float3(margin, 0, margin); bounds.Max += new float3(margin, 0, margin);
                 if (!CombatSpatialBounds.TryCells(bounds, out _, out _, out var count)
                     || count > CombatSpatialTuning.MaxBuildEntries - entries)
@@ -162,7 +178,8 @@ namespace MLFLegends.Combat
             m_Seen.Resize(n, NativeArrayOptions.ClearMemory);
             var start = Stopwatch.GetTimestamp();
             new CombatContactJob { Actors = m_Movement, Cells = m_Cells, Seen = m_Seen, Pairs = m_ContactPairs,
-                Shapes = shapes, Diagnostics = m_ContactDiagnostics, Tick = tick, LandingTicks = landingTicks, BattleNumber = session.BattleNumber }.Schedule().Complete();
+                Shapes = shapes, Impulses = m_Impulses.AsArray(), Diagnostics = m_ContactDiagnostics, Tick = tick, LandingTicks = landingTicks,
+                BattleNumber = session.BattleNumber, Physics = physics }.Schedule().Complete();
             LastMovementKernelMicroseconds = MicrosSince(start);
             LastContacts = m_ContactDiagnostics[0];
         }
@@ -211,6 +228,7 @@ namespace MLFLegends.Combat
                 m_ContactPairs = new NativeList<int2>(1, Allocator.Persistent);
                 m_ContactDiagnostics = new NativeArray<CombatContactDiagnostics>(1, Allocator.Persistent);
                 m_EmptyShapes = new NativeList<CombatArenaShape>(1, Allocator.Persistent);
+                m_Impulses = new NativeList<CombatImpulse>(1, Allocator.Persistent);
                 m_Allocated = true;
             }
             catch
@@ -229,6 +247,7 @@ namespace MLFLegends.Combat
 
         void DisposeStorage()
         {
+            if (m_Impulses.IsCreated) m_Impulses.Dispose();
             if (m_EmptyShapes.IsCreated) m_EmptyShapes.Dispose();
             if (m_ContactDiagnostics.IsCreated) m_ContactDiagnostics.Dispose();
             if (m_ContactPairs.IsCreated) m_ContactPairs.Dispose();
