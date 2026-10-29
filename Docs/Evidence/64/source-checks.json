@@ -1,8 +1,8 @@
 {
   "scope": "SOURCE / INDEPENDENT PYTHON MODEL ONLY; not execution of C#/Unity/Burst or solver",
   "base_integrated_main": "adf98cd1c9ca4df2b2d2e96aa65d3a7e17eb3a5a",
-  "tested_sha": "6d1625186db441bbe5cc2f1ad8e7cff1268360e2",
-  "tested_tree": "7ca76137d352eb02e446cfc0ac0b5f4c20743ec2",
+  "tested_sha": "00d76af76525fd6c255eeb7830ae2311ebd986cc",
+  "tested_tree": "24990c9f1bfbe012f036daf6f69166eaae776c80",
   "clean_worktree_at_start": true,
   "changed_paths": [
     "Assets/MLFLegends/Combat/Runtime/Core/CONTRACTS.md",
@@ -25,6 +25,7 @@
     "Docs/COMBAT_SPEC.md",
     "Docs/DECISIONS.md",
     "Docs/Evidence/64/README.md",
+    "Docs/Evidence/64/pair-model-controls.json",
     "Docs/Evidence/64/source-checks.json",
     "Docs/PERFORMANCE_BASELINE.md",
     "Docs/QA.md",

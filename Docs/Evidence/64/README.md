@@ -4,9 +4,9 @@ Integrated main base: `adf98cd1c9ca4df2b2d2e96aa65d3a7e17eb3a5a`.
 PR #62 merged as `589b627b457e4b78e43bae74be64b7c238224e02`; PR #63 merged as the base above on the owner's
 explicit command. Delivery branch: `feature/64-body-contacts`. After the review the owner explicitly authorized commit, push and merge.
 
-Latest stored source verification tests clean commit `6d1625186db441bbe5cc2f1ad8e7cff1268360e2` / tree `7ca76137d352eb02e446cfc0ac0b5f4c20743ec2`.
-The following evidence-only commit updates this README, the recorded source/model JSON and the QA review link;
-it does not change runtime, tests or model scripts. Earlier pre-review evidence remains in git history.
+Latest stored source verification tests published clean commit `00d76af76525fd6c255eeb7830ae2311ebd986cc` / tree `24990c9f1bfbe012f036daf6f69166eaae776c80`.
+The following evidence-only commit updates this README, the recorded source JSON;
+it does not change runtime, tests or model scripts. Earlier local verification is superseded by this check of the fetched published source.
 
 [Bottom-up findings and corrections](../../STAGE04_BODY_CONTACTS_REVIEW.md) · [Current contract](../../STAGE04_BODY_CONTACTS.md).
 This is implementation source review, not independent manager acceptance or Unity validation.
@@ -53,4 +53,7 @@ calibration. Manager review/owner manual contacts acceptance and the rest of Sta
 The earlier `git push -u origin feature/64-body-contacts` was rejected by automatic approval review. The stated reason
 was private-code egress to GitHub without a separate explicit payload/destination authorization. No alternate upload
 or push was attempted during this review. After the review the owner explicitly instructed commit, push and merge (2026-10-29), superseding that publication
-block and authorizing the subsequent delivery to HolyPenguin21/mlf-legends. Existing #62/#63 merges are completed.
+block and authorizing delivery to HolyPenguin21/mlf-legends. Direct Git lacked write credentials, so the connected GitHub
+API published the exact verified tree instead. The published branch was fetched back and verified: PASS — SOURCE/PYTHON ONLY.
+Delivery is tracked by [PR #65](https://github.com/HolyPenguin21/mlf-legends/pull/65); the owner authorized its merge to main.
+Existing #62/#63 merges are completed.
