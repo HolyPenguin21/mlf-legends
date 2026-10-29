@@ -1,3 +1,23 @@
+## Current #66 — Stage 04.4–04.5 impulses and indexed Hit (2026-10-29)
+
+Agent implementation choices, pending manager review and owner acceptance ([contract](STAGE04_IMPULSES_HIT.md)):
+- One impulse input: `CombatImpulse` buffer on a Movement-owned singleton, epoch = BattleNumber; consumed exactly once by
+  the Movement call that sees it (Hit-phase producers → T+1). No event framework, queue owner or physics clock.
+- Physical X/Z velocity lives in `CombatMotion.ExternalVelocity`; vertical stays `VerticalVelocity`. Δv = J/CombatBody.Mass.
+- Physics before control within a tick (two world moves only when there is external motion; otherwise the exact 04.3 move).
+  Strike factors and landing lock act on control only; positive lift leaves support without Jump Pressed.
+- Contacts split each violation by cause; the physical share is a perfectly inelastic, mass-weighted normal response for
+  any teams and becomes velocity (= achieved physical displacement / dt). Walls are frictionless; ground/air Coulomb
+  deceleration 24 / 2 u/s², rest below 0.05 u/s; max external speed 24 u/s, beyond is rejected (never clipped).
+- Rolled-back islands publish zero external velocity and count it; consumed J is never retried.
+- Disabled InCombat loses its external velocity and its pending impulses (dropped); re-enable releases nothing.
+- Hit: managed orchestration + one atomic index batch + Burst kernel; ulp-padded point-target box as broadphase; stale
+  snapshot with Active attackers throws before writes, no brute-force fallback. The 04.1 "disabled index" replay control
+  is replaced by an independent brute-force oracle.
+- 04.3 blockers found by the first real compile/run: missing `using Unity.Mathematics` in the replay driver (CS0246), 04.2
+  arena lifecycle tests calling SendMessage in EditMode, and a sprite fixture walking enemies through each other.
+  Fixed test-side in the first commit; no runtime 04.3 change was needed.
+
 ## Current #64 — Stage 04.3 body contacts (2026-10-29)
 
 PR #62 and #63 were merged on the owner's explicit command; integrated main base is

@@ -1,3 +1,15 @@
+## Current #66 — Stage 04.4–04.5 impulses, indexed Hit, 2/100/400 (2026-10-29)
+
+Fresh main base `cf2b5bcf57c2b81b635074a0322a85ecf50879b3` (PR #65); branch `feature/66-impulses-indexed-hit`, one PR.
+[Contract: impulse input/epoch, integration, mass/contacts, rollback, Hit migration, checks, manual checklist](STAGE04_IMPULSES_HIT.md);
+[exact SHA and PASS/FAIL/NOT RUN results](Evidence/66/README.md).
+Movement remains the only Position/Motion writer and integrator: pending `CombatImpulse` → Δv=J/Mass → physics then
+control proposals → contacts (physical share = mass-weighted inelastic response for any teams, 04.3 rules for the rest)
+→ velocity from achieved physics → deceleration → final index → Hit via one atomic index batch + Burst kernel.
+The first real Unity compile of the 04.3 base failed (CS0246 in the replay driver); fixed first, with two test-side
+EditMode fixes. Per-attack Impact/stagger/guard remain Stage 05/06. Stage 03 OWNER-ACCEPTED; Stage 04 IN PROGRESS —
+manager review and owner manual acceptance pending; merge only on owner instruction.
+
 ## Current #64 — Stage 04.3 body contacts (2026-10-29)
 
 PR #62 and #63 were merged on the owner's explicit command; integrated main base is
@@ -140,8 +152,8 @@ has independent manager STATIC PASS; runtime acceptance is NOT RUN. Full state-d
 | 01 | ECS simulation, fixed-step scheduler, entity data, command buffer, replay tests and 2/100/400 ECS baseline | Six main tasks delivered, Bootstrap debt #19 implemented; independent code audit #23 static PASS, owner accepted Stage 02 transition with missing Unity proof tracked in #30 and Windows Unicode/Burst #17 separate. No movement/AI/collisions/renderer yet. | ACCEPTED FOR NEXT STAGE (OWNER) — UNITY QA DEFERRED |
 | 02 | Movement and camera | Deterministic X/Z movement + jump Y, facing/action-state, tick-aligned input, fixed orthographic camera follow/zoom/pan, with one ECS authority | IMPLEMENTATION COMPLETE / MANAGER REVIEW PASS — #31/#33/#35 reviewed; #22 merged via PR #37, fixes and raw 244/244 ×2 + 21/21 ×2 + Performance 7/7 independently inspected; manual/hardware/full-frame QA remains qualified in QA.md |
 | 03 | GPU sprite rendering | Atlas animation, direction/frame selection, stable depth sorting, instancing | OWNER-ACCEPTED — direct owner message in #58; exact manual-test SHA/protocol unknown, no blanket Unity/GPU PASS. #46/#53 remain separate follow-ups; historical per-SHA evidence below is retained. |
-| 04 | Collisions | Custom actor/world collision, spatial index, masses, allies yield, enemies block, knockback | IN PROGRESS — #58 / 04.1 bodies and final-position spatial index delivered for review, Unity NOT RUN. 04.2 arena contacts, 04.3 body contacts, 04.4 impulses and 04.5 Hit migration remain separate. |
-| 05 | Attack resolution | Windup/active/recovery; fast/heavy/jump attacks; shapes, multi-hit rules, damage/impact/stagger | IN PROGRESS — 05.1 (#48, MERGED `b828ccb`, Unity EditMode/PlayMode/GPU PASS): five grounded strikes, W/A/R, box hit tests, multi-target, once-per-strike ledger, HP damage, series/buffer; rules PROPOSED pending owner approval. Open: heavy/light mapping, jump attacks, guard damage, impact/stagger/knockback, defeat |
+| 04 | Collisions | Custom actor/world collision, spatial index, masses, allies yield, enemies block, knockback | IN PROGRESS — 04.1 index (#58), 04.2 arena (#61), 04.3 body contacts (#64) merged; 04.4 impulses + 04.5 indexed Hit + 2/100/400 scale delivered in #66 for manager review and owner manual acceptance (Unity results in Docs/Evidence/66). |
+| 05 | Attack resolution | Windup/active/recovery; fast/heavy/jump attacks; shapes, multi-hit rules, damage/impact/stagger | IN PROGRESS — 05.1 (#48, MERGED `b828ccb`, Unity EditMode/PlayMode/GPU PASS): five grounded strikes, W/A/R, box hit tests, multi-target, once-per-strike ledger, HP damage, series/buffer; rules PROPOSED pending owner approval. Since #66 Hit runs on the shared final index (no reimplementation needed). Open: per-attack Impact wired to the #66 impulse input, stagger/launch, interrupt/cancel, guard damage, heavy/light mapping, jump attacks, defeat, balance |
 | 06 | Defense | Facing guard, stability, timely defense/counter opportunity, guard break; future guard key undecided, dash deferred/unbound | NOT STARTED |
 | 07 | Duel AI | Range, observable windups, bounded reaction time, mistakes, defense/dash/counter via same command rules | NOT STARTED |
 | 08 | Physiology | SPECIAL, body regions, injury and broken limbs, eye loss, bleeding, death, capability filtering | NOT STARTED |

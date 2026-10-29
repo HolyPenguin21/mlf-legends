@@ -1,3 +1,15 @@
+## Current #66 — Stage 04.4–04.5 impulses, indexed Hit, 2/100/400 (2026-10-29)
+
+Fresh main base `cf2b5bcf57c2b81b635074a0322a85ecf50879b3` (PR #65); branch `feature/66-impulses-indexed-hit`, one PR.
+[Contract: impulse input/epoch, integration, mass/contacts, rollback, Hit migration, checks, manual checklist](STAGE04_IMPULSES_HIT.md);
+[exact SHA and PASS/FAIL/NOT RUN results](Evidence/66/README.md).
+Movement remains the only Position/Motion writer and integrator: pending `CombatImpulse` → Δv=J/Mass → physics then
+control proposals → contacts (physical share = mass-weighted inelastic response for any teams, 04.3 rules for the rest)
+→ velocity from achieved physics → deceleration → final index → Hit via one atomic index batch + Burst kernel.
+The first real Unity compile of the 04.3 base failed (CS0246 in the replay driver); fixed first, with two test-side
+EditMode fixes. Per-attack Impact/stagger/guard remain Stage 05/06. Stage 03 OWNER-ACCEPTED; Stage 04 IN PROGRESS —
+manager review and owner manual acceptance pending; merge only on owner instruction.
+
 ## Current #64 — Stage 04.3 body contacts (2026-10-29)
 
 PR #62 and #63 were merged on the owner's explicit command; integrated main base is
@@ -137,6 +149,10 @@ Dash is deferred/unbound; no L+direction action exists. Future directional defen
 
 ## Body collisions
 All characters interact physically. Ally yield creates slight movement priority, and user-controlled fighter passes through allied clusters almost effortlessly **without** disabling collision. Enemies physically obstruct movement. Knockback into other fighters/environment can have chain effects.
+Since #66 (provisional calibration): an external impulse J changes velocity by J/Mass; ordinary walking never shoves an
+enemy, but physical motion transfers to any body by mass (inelastic, momentum-conserving, chains through groups); walls
+stop the normal part and keep sliding; ground/air deceleration 24/2 u/s²; max 24 u/s. Strike speed factors and landing
+lock do not reduce it; it never turns the fighter, cancels a strike or counts as running. No attack applies an impulse yet.
 
 ## Friendly effects
 Ordinary direct weapon attacks don't damage allies. Consequences of skills and environmental reactions may affect either team. Avoid a general friendly-fire subsystem beyond this until clearly required.

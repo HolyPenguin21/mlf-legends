@@ -8,6 +8,8 @@ using NUnit.Framework;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Burst;
+using Unity.Jobs;
 using UnityEngine.Profiling;
 
 namespace MLFLegends.Tests.EditMode
@@ -17,24 +19,67 @@ namespace MLFLegends.Tests.EditMode
     public partial class ContactLoadProducer : SystemBase
     {
         public bool OnlyControlled;
+        /// <summary>0 none, 1 the controlled fighter, 2 every fighter; every 30 ticks (Stage 04.4 load).</summary>
+        public int Impulses;
+        /// <summary>Strike every 30 ticks instead of 60, so Active ticks with targets dominate the measured window.</summary>
+        public bool Strikes;
         protected override void OnUpdate()
         {
             var tick = SystemAPI.GetSingleton<SimulationClock>().Tick;
-            var controlled = SystemAPI.GetSingleton<BattleSession>().HumanCombatant;
+            var session = SystemAPI.GetSingleton<BattleSession>();
+            var controlled = session.HumanCombatant;
             var buffer = SystemAPI.GetSingletonBuffer<CombatCommandSubmission>();
+            var impulses = SystemAPI.GetSingletonBuffer<CombatImpulse>();
             foreach (var (id, team) in SystemAPI.Query<RefRO<CombatantId>, RefRO<CombatTeam>>().WithAll<InCombat>())
             {
                 var moving = !OnlyControlled || id.ValueRO.Equals(controlled);
+                var period = Strikes ? 30u : 60u;
+                var direction = team.ValueRO.Value == 1 ? 1f : -1f;
                 buffer.Add(new CombatCommandSubmission(new CombatCommand { Combatant = id.ValueRO, Tick = tick,
-                    MoveX = moving ? (sbyte)(team.ValueRO.Value == 1 ? 1 : -1) : (sbyte)0,
-                    Source = CommandSource.AI, Pressed = moving && tick % 60 == 1 ? CommandButtons.PunchLeft : CommandButtons.None }));
+                    MoveX = moving ? (sbyte)direction : (sbyte)0,
+                    Source = CommandSource.AI, Pressed = moving && tick % period == 1 ? CommandButtons.PunchLeft : CommandButtons.None }));
+                if (tick % 30 == 5 && (Impulses == 2 || Impulses == 1 && id.ValueRO.Equals(controlled)))
+                    impulses.Add(new CombatImpulse { Target = id.ValueRO, BattleNumber = session.BattleNumber,
+                        Impulse = new float3(8 * direction, id.ValueRO.Value % 4 == 0 ? 3 : 0, id.ValueRO.Value % 2 == 0 ? 2 : -2) });
             }
+        }
+    }
+
+    // Same final snapshot, same Active attackers, same box rule: complete scan versus the index batch. Counts must agree.
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Strict)]
+    struct HitSearchProbeJob : IJob
+    {
+        [ReadOnly] public NativeArray<CombatSpatialBody> Bodies; // brute force: every fighter
+        [ReadOnly] public NativeArray<CombatSpatialBody> Candidates; // indexed: flat candidate rows
+        [ReadOnly] public NativeArray<int2> Ranges;
+        [ReadOnly] public NativeArray<float4> Attackers; // position xyz, facing
+        [ReadOnly] public NativeArray<CombatAttackKind> Kinds;
+        [ReadOnly] public NativeArray<byte> Teams;
+        public bool Indexed;
+        public NativeArray<long> Result; // [0] Inside tests, [1] inside, [2] checksum of inside (attacker index, target id)
+
+        public void Execute()
+        {
+            long tests = 0, inside = 0, sum = 0;
+            for (var a = 0; a < Attackers.Length; a++)
+            {
+                var strike = CombatAttackTuning.Get(Kinds[a]);
+                var rows = Indexed ? Candidates.GetSubArray(Ranges[a].x, Ranges[a].y) : Bodies;
+                for (var t = 0; t < rows.Length; t++)
+                {
+                    if (rows[t].Team.Value == Teams[a]) continue;
+                    tests++;
+                    if (!CombatHitSystem.Inside(strike, Attackers[a].xyz, Attackers[a].w, rows[t].Position)) continue;
+                    inside++; sum += (a + 1) * 1000003L + rows[t].Id.Value;
+                }
+            }
+            Result[0] = tests; Result[1] = inside; Result[2] = sum;
         }
     }
 
     public partial class CombatStrikeBenchmarkTests
     {
-        [Test]
+        [Test, Timeout(1800000)] // Dense 400 is not linear: 24 scenarios × ~2400 ticks exceed the default 180 s.
         public void BodyContactScenarios2_100_400ReportColdWarmWorkAndOwnerCosts()
         {
             var enabled = Profiler.enabled; var recorder = Recorder.Get("GC.Alloc"); var recorderEnabled = recorder.enabled;
@@ -45,9 +90,15 @@ namespace MLFLegends.Tests.EditMode
                 lines.Add("# Numerical kernel is Schedule+Complete; movement includes main-thread gather/write and job dispatch. Kernel flag reports actual managed execution, never assumes Burst.");
                 lines.Add("# Cold means first Movement in a new World; Burst may already be compiled by earlier tests.");
                 lines.Add("# Dense work is not linear. Native capacity is payload lower bound, process delta also includes allocator/ECS effects. Full fixed group measured separately.");
-                lines.Add("bodies\tscenario\tcold_move_us\tcold_native_payload\twarm_native_payload\tmove_mean_us\tmove_p95_us\tkernel_mean_us\tindex_mean_us\thit_mean_us\tfull_tick_mean_us\tfull_tick_p95_us\tcandidates\tpair_visits\tpeak_pairs\titerations\tfinal_residual\tresidual_complete\tunresolved_penetration\tconstraint_violation\tfrozen\tyield_attempts\tworld_rejections\twork_limits\tmanaged_kernel\tgc_samples\tprocess_native_delta");
+                lines.Add("# Stage 04.4/04.5 (#66): impulses every 30 ticks (single = controlled fighter, mass = everyone); strikes = presses every 30 ticks.");
+                lines.Add("# Hit search: the same final snapshot and Active attackers, complete scan vs index batch (+Inside kernel); counts must match. Overlapping timings are not additive.");
+                lines.Add("bodies\tscenario\tcold_move_us\tcold_native_payload\twarm_native_payload\tmove_mean_us\tmove_p95_us\tkernel_mean_us\tindex_mean_us\thit_mean_us\tfull_tick_mean_us\tfull_tick_p95_us\tcandidates\tpair_visits\tpeak_pairs\titerations\tfinal_residual\tresidual_complete\tunresolved_penetration\tconstraint_violation\tfrozen\tyield_attempts\tworld_rejections\twork_limits\tmanaged_kernel\tgc_samples\tprocess_native_delta"
+                    + "\timpulses_applied\timpulses_rejected\tphysical_bodies\tdiscarded_velocities\tover_speed\tmax_external_speed"
+                    + "\tactive_attacker_ticks\taccepted_hits\thit_queries\thit_candidates\thit_entries\thit_inside_tests\thit_managed_kernel"
+                    + "\tbruteforce_search_mean_us\tindexed_search_mean_us\tbruteforce_inside_tests\tindexed_inside_tests\tsearch_inside\tsearch_match");
+                var failures = new List<string>();
                 foreach (var count in new[] { 2, 100, 400 })
-                foreach (var scenario in new[] { "sparse", "dense_allies", "opponents", "corridor", "wall_pressure" })
+                foreach (var scenario in new[] { "sparse", "dense_allies", "opponents", "corridor", "wall_pressure", "impulse_single", "impulse_mass", "strikes" })
                 {
                     using var bench = new CombatBenchmarkWorld("body contact benchmark"); bench.Producer.Load = ProducerLoad.None;
                     var rows = new List<CombatArenaShape> { CombatArenaTests.Box(0, -.5f, 0, 500, 0, 500) };
@@ -60,6 +111,9 @@ namespace MLFLegends.Tests.EditMode
                     var arena = bench.World.GetExistingSystemManaged<CombatArenaSystem>();
                     Assert.That(arena.Stage(arena.Acquire(), rows.ToArray()), Is.True);
                     var setup = BattleSetup.Default; setup.HumanAllies = setup.AiAllies = (ushort)(count / 2 - 1);
+                    // Commit geometry before spawn (as the production fixed/Initialization boundary does), so spawn support
+                    // is real: a body frozen by an unresolved island keeps its spawn Motion and could never strike otherwise.
+                    arena.Update();
                     bench.Submit(BattleRequest.Start(setup)); bench.ApplyRequests();
                     using (var actorRows = bench.Combatants.ToEntityArray(Allocator.Temp))
                     {
@@ -72,6 +126,7 @@ namespace MLFLegends.Tests.EditMode
                             else if (scenario == "corridor") position = new float3((i - count / 2) * .6f, 0, 0);
                             else if (scenario == "wall_pressure") { team = 1; position = new float3(-.4f - (i / 10) * .6f, 0, (i % 10) * .6f); }
                             else if (scenario == "dense_allies") { team = 1; position = new float3((i % 20) * .6f, 0, (i / 20) * .6f); }
+                            // impulse_*/strikes reuse the opposing-front layout below: enemies .6 apart, inside punch reach.
                             else position = new float3(team == 1 ? -.3f - (i / 20) * .6f : .3f + ((i - count / 2) / 20) * .6f, 0, ((i < count / 2 ? i : i - count / 2) % 20) * .6f);
                             bench.Manager.SetComponentData(actors[i], new CombatTeam { Value = team });
                             bench.Manager.SetComponentData(actors[i], new CombatPosition { Value = position });
@@ -79,6 +134,7 @@ namespace MLFLegends.Tests.EditMode
                     }
                     var collection = bench.World.GetExistingSystemManaged<CombatCommandCollectionSystemGroup>();
                     var producer = bench.World.CreateSystemManaged<ContactLoadProducer>(); producer.OnlyControlled = scenario == "dense_allies";
+                    producer.Impulses = scenario == "impulse_single" ? 1 : scenario == "impulse_mass" ? 2 : 0; producer.Strikes = scenario == "strikes";
                     collection.AddSystemToUpdateList(producer); collection.SortSystems();
                     var clock = bench.World.GetExistingSystem<CombatClockSystem>();
                     var action = bench.World.GetExistingSystem<CombatActionSystem>(); var facing = bench.World.GetExistingSystem<CombatFacingSystem>();
@@ -88,7 +144,45 @@ namespace MLFLegends.Tests.EditMode
                     var hits = new BenchmarkSamples(MeasuredTicks); var kernel = new BenchmarkSamples(MeasuredTicks);
                     long candidates = 0, visits = 0, frozen = 0, yields = 0, rejects = 0, workLimits = 0, iterations = 0;
                     var peak = 0; var residual = 0f; var unresolved = 0f; var constraint = 0f; var complete = true; var managed = false;
-                    double Tick(bool measure)
+                    long applied = 0, rejected = 0, physical = 0, discarded = 0, overSpeed = 0, activeTicks = 0, accepted = 0, queries = 0, hitCandidates = 0, entries = 0, insideTests = 0;
+                    long bfTests = 0, ixTests = 0, searchInside = 0; var maxSpeed = 0f; var hitManaged = false; var match = true;
+                    var bruteSearch = new BenchmarkSamples(MeasuredTicks); var indexedSearch = new BenchmarkSamples(MeasuredTicks);
+                    using var attackerQuery = bench.Manager.CreateEntityQuery(typeof(CombatAttackState), typeof(CombatFacing), typeof(CombatPosition), typeof(CombatTeam), typeof(InCombat));
+                    using var all = new NativeList<CombatSpatialBody>(1024, Allocator.Persistent); using var hitRows = new NativeList<CombatSpatialBody>(4096, Allocator.Persistent);
+                    using var ranges = new NativeList<int2>(512, Allocator.Persistent); using var boxes = new NativeList<CombatSpatialBounds>(512, Allocator.Persistent);
+                    using var attackers = new NativeList<float4>(512, Allocator.Persistent); using var kinds = new NativeList<CombatAttackKind>(512, Allocator.Persistent);
+                    using var attackerTeams = new NativeList<byte>(512, Allocator.Persistent); using var result = new NativeArray<long>(3, Allocator.Persistent);
+                    var everywhere = new CombatSpatialBounds { Min = new float3(-float.MaxValue), Max = new float3(float.MaxValue) };
+                    void CompareSearch()
+                    {
+                        attackers.Clear(); kinds.Clear(); attackerTeams.Clear(); boxes.Clear();
+                        var tick = bench.Tick;
+                        using (var states = attackerQuery.ToComponentDataArray<CombatAttackState>(Allocator.Temp))
+                        using (var facings = attackerQuery.ToComponentDataArray<CombatFacing>(Allocator.Temp))
+                        using (var positions = attackerQuery.ToComponentDataArray<CombatPosition>(Allocator.Temp))
+                        using (var teams = attackerQuery.ToComponentDataArray<CombatTeam>(Allocator.Temp))
+                            for (var i = 0; i < states.Length; i++)
+                            {
+                                if (!states[i].IsAttacking || states[i].Timing.PhaseAt(tick - states[i].StartTick) != CombatAttackPhase.Active) continue;
+                                var facingSign = facings[i].Value == FacingDirection.Left ? -1f : 1f;
+                                attackers.Add(new float4(positions[i].Value, facingSign)); kinds.Add(states[i].Kind); attackerTeams.Add(teams[i].Value);
+                                boxes.Add(CombatHitSystem.StrikeQuery(CombatAttackTuning.Get(states[i].Kind), positions[i].Value, facingSign));
+                            }
+                        if (attackers.Length == 0) return;
+                        var start = Stopwatch.GetTimestamp();
+                        if (!index.TryQueryAabb(everywhere, all)) { match = false; return; }
+                        var probe = new HitSearchProbeJob { Bodies = all.AsArray(), Candidates = all.AsArray(), Ranges = ranges.AsArray(), Attackers = attackers.AsArray(),
+                            Kinds = kinds.AsArray(), Teams = attackerTeams.AsArray(), Result = result };
+                        probe.Run(); bruteSearch.Add(Stopwatch.GetTimestamp() - start);
+                        long bt = result[0], bi = result[1], bs = result[2];
+                        start = Stopwatch.GetTimestamp();
+                        if (!index.TryQueryAabbBatch(boxes.AsArray(), hitRows, ranges)) { match = false; return; }
+                        probe.Candidates = hitRows.AsArray(); probe.Ranges = ranges.AsArray(); probe.Indexed = true;
+                        probe.Run(); indexedSearch.Add(Stopwatch.GetTimestamp() - start);
+                        bfTests += bt; ixTests += result[0]; searchInside += bi;
+                        match &= bi == result[1] && bs == result[2];
+                    }
+                    double Tick(bool measure, bool compare = false)
                     {
                         arena.Update(); clock.Update(bench.World.Unmanaged); collection.Update(); action.Update(bench.World.Unmanaged); facing.Update(bench.World.Unmanaged);
                         var start = Stopwatch.GetTimestamp(); movement.Update(bench.World.Unmanaged); var elapsed = Stopwatch.GetTimestamp() - start;
@@ -99,9 +193,21 @@ namespace MLFLegends.Tests.EditMode
                             frozen += d.FrozenBodies; yields += d.YieldAttempts; rejects += d.WorldRejections; if (d.WorkLimit) workLimits++;
                             peak = Math.Max(peak, d.PeakPairs); residual = Math.Max(residual, d.ResidualPenetration); complete &= d.ResidualComplete;
                             unresolved = Math.Max(unresolved, d.UnresolvedPenetration); constraint = Math.Max(constraint, d.ResidualConstraint); managed |= d.KernelRanManaged;
+                            applied += d.ImpulsesApplied; rejected += d.ImpulsesRejected; physical += d.PhysicalBodies; discarded += d.DiscardedVelocities;
+                            overSpeed += d.OverSpeedBodies; maxSpeed = Math.Max(maxSpeed, d.MaxExternalSpeed);
                         }
                         start = Stopwatch.GetTimestamp(); index.Update(); if (measure) grid.Add(Stopwatch.GetTimestamp() - start);
+                        if (compare) CompareSearch();
                         start = Stopwatch.GetTimestamp(); hit.Update(bench.World.Unmanaged); if (measure) hits.Add(Stopwatch.GetTimestamp() - start);
+                        if (measure)
+                        {
+                            var h = bench.World.Unmanaged.GetUnsafeSystemRef<CombatHitSystem>(hit).LastHits;
+                            if (h.Tick == bench.Tick && h.ActiveAttackers > 0)
+                            {
+                                activeTicks++; accepted += h.AcceptedHits; queries += h.Queries; hitCandidates += h.Candidates;
+                                entries += h.EntriesVisited; insideTests += h.InsideTests; hitManaged |= h.KernelRanManaged;
+                            }
+                        }
                         return BenchmarkSamples.Microseconds(elapsed);
                     }
                     var cold = Tick(false);
@@ -112,19 +218,30 @@ namespace MLFLegends.Tests.EditMode
                     if (control.End() == 0) Assert.Inconclusive("NOT RUN: allocation counter positive control failed.");
                     var nativeBefore = Profiler.GetTotalAllocatedMemoryLong(); var gc = GcAllocationScope.Begin(); int gcSamples;
                     try { for (var i = 0; i < MeasuredTicks; i++) Tick(true); } finally { gcSamples = gc.End(); }
+                    // Separate pass on the following ticks: the search comparison is test code, outside the GC/owner timings.
+                    for (var i = 0; i < MeasuredTicks; i++) Tick(false, true);
                     var nativeDelta = Profiler.GetTotalAllocatedMemoryLong() - nativeBefore;
                     Assert.That(gcSamples, Is.Zero, "Warm Movement + contacts + index + Hit owner loop.");
+                    if (!match) failures.Add($"{count} {scenario}: indexed and complete-scan searches differ");
+                    if ((scenario == "strikes" || scenario == "opponents" || scenario.StartsWith("impulse")) && activeTicks == 0)
+                        failures.Add($"{count} {scenario}: no Active strike in the measured window (empty Hit phase)");
+                    if (scenario == "strikes" && accepted == 0) failures.Add($"{count} {scenario}: no accepted hits (only full ledgers)");
+                    if (scenario.StartsWith("impulse") && applied == 0) failures.Add($"{count} {scenario}: no impulse applied");
                     index.TryGetSnapshotInfo(out var finalInfo);
                     Assert.That(finalInfo.NativePayloadCapacityBytes + index.MovementScratchCapacityBytes, Is.EqualTo(warmCapacity));
                     for (var i = 0; i < WarmupTicks; i++) bench.Frames(1, 1);
                     var full = new BenchmarkSamples(MeasuredTicks);
                     for (var i = 0; i < MeasuredTicks; i++) { bench.PrepareFrame(1); var start = Stopwatch.GetTimestamp(); bench.RunFrame(); full.Add(Stopwatch.GetTimestamp() - start); }
-                    var m = move.Stats(); var g = grid.Stats(); var h = hits.Stats(); var k = kernel.Stats(); var f = full.Stats();
-                    lines.Add(string.Join("\t", count, scenario, cold, coldCapacity, warmCapacity, m.Mean, m.P95, k.Mean, g.Mean, h.Mean,
-                        f.Mean, f.P95, candidates, visits, peak, iterations, residual, complete, unresolved, constraint, frozen, yields, rejects, workLimits, managed, gcSamples, nativeDelta));
+                    var m = move.Stats(); var g = grid.Stats(); var hs = hits.Stats(); var k = kernel.Stats(); var f = full.Stats();
+                    var bf = bruteSearch.Count > 0 ? bruteSearch.Stats().Mean : 0; var ix = indexedSearch.Count > 0 ? indexedSearch.Stats().Mean : 0;
+                    lines.Add(string.Join("\t", count, scenario, cold, coldCapacity, warmCapacity, m.Mean, m.P95, k.Mean, g.Mean, hs.Mean,
+                        f.Mean, f.P95, candidates, visits, peak, iterations, residual, complete, unresolved, constraint, frozen, yields, rejects, workLimits, managed, gcSamples, nativeDelta,
+                        applied, rejected, physical, discarded, overSpeed, maxSpeed, activeTicks, accepted, queries, hitCandidates, entries, insideTests, hitManaged,
+                        bf, ix, bfTests, ixTests, searchInside, match));
                 }
                 Directory.CreateDirectory(BenchmarkReport.Directory);
-                File.WriteAllLines(Path.Combine(BenchmarkReport.Directory, "stage04-body-contacts.tsv"), lines);
+                File.WriteAllLines(Path.Combine(BenchmarkReport.Directory, "stage04-impulses-hit.tsv"), lines);
+                Assert.That(failures, Is.Empty);
             }
             finally { recorder.enabled = recorderEnabled; Profiler.enabled = enabled; }
         }
