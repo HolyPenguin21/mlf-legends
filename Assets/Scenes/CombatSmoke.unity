@@ -156,7 +156,7 @@ MonoBehaviour:
   m_AiTeam: 2
   m_AiPosition: {x: 2, y: 0, z: 0}
   m_AiFacing: -1
-  m_AiTeamSize: 1
+  m_AiTeamSize: 10
   m_AnimationConfig: {fileID: 11400000, guid: d8e48ba01625508b897c0650c6fcc813, type: 2}
   m_StrikeCharacterId: mage_female_01
   m_RequireArena: 1
@@ -319,14 +319,14 @@ MonoBehaviour:
   m_AlphaCutoff: 0.5
   m_DepthBias: 0.02
   m_DepthSeparation: 0.002
+  m_DamageColor: {r: 1, g: 0, b: 0, a: 1}
+  m_DamageIntensity: 0.25
+  m_DamageDurationTicks: 9
   m_ShadowShader: {fileID: 4800000, guid: eddc55b2a12947ada2cd108bd11d1d3a, type: 3}
   m_DrawGroundShadows: 1
   m_ShadowRadiusMultiplier: 1.25
   m_ShadowColor: {r: 0, g: 0, b: 0, a: 0.35}
   m_ShadowBias: 0.003
-  m_DamageColor: {r: 1, g: 0, b: 0, a: 1}
-  m_DamageIntensity: 0.25
-  m_DamageDurationTicks: 9
   m_DrawAnchorGizmos: 1
 --- !u!114 &673466320
 MonoBehaviour:

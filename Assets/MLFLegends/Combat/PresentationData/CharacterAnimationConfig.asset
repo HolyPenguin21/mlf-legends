@@ -19,7 +19,7 @@ MonoBehaviour:
     Animations:
     - ClipId: idle_combat
       EndFrame: 5
-      TotalDurationSeconds: 0.75
+      TotalDurationSeconds: 1.5
       SpeedCurve:
         serializedVersion: 2
         m_Curve:
@@ -236,7 +236,7 @@ MonoBehaviour:
       m_LegacyFrameCount: 0
     - ClipId: physical_ability
       EndFrame: 7
-      TotalDurationSeconds: 2
+      TotalDurationSeconds: 1
       SpeedCurve:
         serializedVersion: 2
         m_Curve:
@@ -398,42 +398,74 @@ MonoBehaviour:
         Damage: 4
         ReachMin: 0
         ReachMax: 1.3
-        DepthHalfWidth: 0.4
-        HeightTolerance: 2
+        DepthHalfWidth: 0.6
+        HeightTolerance: 0.5
+        HitOffsetY: 0
+        SelfImpulse: 0
+        ElevationDegrees: 0
+        LaunchFrame: -1
+        CompactHeight: 0
+        CompactFirstFrame: 0
+        CompactEndFrame: 0
+        OnHitImpulse: {x: 3, y: 0, z: 0}
       Hand2:
         ClipId: punch_right
         Damage: 4
         ReachMin: 0
         ReachMax: 1.3
-        DepthHalfWidth: 0.4
-        HeightTolerance: 2
+        DepthHalfWidth: 0.6
+        HeightTolerance: 0.5
+        HitOffsetY: 0
+        SelfImpulse: 0
+        ElevationDegrees: 0
+        LaunchFrame: -1
+        CompactHeight: 0
+        CompactFirstFrame: 0
+        CompactEndFrame: 0
+        OnHitImpulse: {x: 3, y: 0, z: 0}
       Foot1:
         ClipId: kick_left
         Damage: 7
         ReachMin: 0
         ReachMax: 1.5
-        DepthHalfWidth: 0.4
-        HeightTolerance: 2
+        DepthHalfWidth: 0.8
+        HeightTolerance: 0.5
+        HitOffsetY: 0
+        SelfImpulse: 0
+        ElevationDegrees: 0
+        LaunchFrame: -1
+        CompactHeight: 0
+        CompactFirstFrame: 0
+        CompactEndFrame: 0
+        OnHitImpulse: {x: 2, y: 15, z: 0}
       Foot2:
         ClipId: kick_right
         Damage: 7
         ReachMin: 0
         ReachMax: 1.5
-        DepthHalfWidth: 0.4
-        HeightTolerance: 2
+        DepthHalfWidth: 0.8
+        HeightTolerance: 0.5
+        HitOffsetY: 0
+        SelfImpulse: 0
+        ElevationDegrees: 0
+        LaunchFrame: -1
+        CompactHeight: 0
+        CompactFirstFrame: 0
+        CompactEndFrame: 0
+        OnHitImpulse: {x: 5, y: 0, z: 0}
       PhysicalAbility:
         ClipId: physical_ability
+        Damage: 12
+        ReachMin: 0
+        ReachMax: 2
+        DepthHalfWidth: 1.6
+        HeightTolerance: 1
+        HitOffsetY: 0
         SelfImpulse: 12
         ElevationDegrees: 35
         LaunchFrame: -1
         CompactHeight: 1
         CompactFirstFrame: 1
         CompactEndFrame: 6
-        OnHitImpulse: {x: 1, y: 1, z: 2}
-        HitOffsetY: -0.3
-        Damage: 12
-        ReachMin: 0
-        ReachMax: 1.45
-        DepthHalfWidth: 0.4
-        HeightTolerance: 0.9
+        OnHitImpulse: {x: 20, y: 0, z: 10}
       m_Version: 1
