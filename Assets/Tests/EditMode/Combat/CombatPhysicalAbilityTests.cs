@@ -94,6 +94,17 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(w.Manager.GetComponentData<CombatHealth>(target).Current, Is.EqualTo(100 - strike.Damage));
             Assert.That(w.Manager.GetComponentData<CombatDamageFeedback>(target).LastDamageTick, Is.EqualTo(1));
             Assert.That(w.Manager.GetComponentData<CombatMotion>(target).ExternalVelocity.y, Is.Zero);
+            var fact = CombatStrikeEffectsTests.Facts(w).Single(f => f.Kind == CombatEffectKind.Impact);
+            Assert.That(fact.Time, Is.GreaterThan(0).And.LessThan(1));
+            var path = w.Records.Last().MotionPaths;
+            var victimPath = path.First(s => s.Actor.Id.Value == w.Session.AiCombatant.Value && s.Begin <= fact.Time && s.End >= fact.Time);
+            var local = (float)((fact.Time - victimPath.Begin) / (victimPath.End - victimPath.Begin));
+            var expectedPoint = victimPath.From + (victimPath.To - victimPath.From) * local;
+            expectedPoint.y += victimPath.Actor.Body.Height / 2;
+            Assert.That(math.distance(fact.Position, expectedPoint), Is.LessThan(1e-5), "Historical accepted victim waist, not final position.");
+            var final = w.Manager.GetComponentData<CombatPosition>(target).Value + new float3(0, table.Body.Height / 2, 0);
+            Assert.That(math.distance(fact.Position, final), Is.GreaterThan(.01f));
+
             using (var q = w.Manager.CreateEntityQuery(typeof(CombatImpulseQueue)))
                 Assert.That(w.Manager.GetBuffer<CombatImpulse>(q.GetSingletonEntity()).Length, Is.EqualTo(1));
             w.Step();

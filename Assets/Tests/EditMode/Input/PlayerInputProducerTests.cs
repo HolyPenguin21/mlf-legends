@@ -315,6 +315,34 @@ namespace MLFLegends.Tests.EditMode
         }
 
         [Test]
+        public void FocusFHoldTapAndCatchUpToggleOnceThroughAcceptedCommands()
+        {
+            StartRig(); Frame(1);
+            Frame(10, () => Down(Key.F));
+            Assert.That(Human(Last).Focus.Disabled, Is.True);
+            Assert.That(BattleTicks().Count(r => (HumanCommand(r).Pressed & CommandButtons.FocusToggle) != 0), Is.EqualTo(1));
+            Frame(10); Assert.That(Human(Last).Focus.Disabled, Is.True);
+            Frame(0, () => Up(Key.F)); Frame(1, () => Tap(Key.F));
+            Assert.That(Human(Last).Focus.Disabled, Is.False);
+            Frame(0, () => { Tap(Key.F); Tap(Key.F); }); Frame(1);
+            Assert.That(Human(Last).Focus.Disabled, Is.True, "Existing per-tick button contract coalesces multiple pre-tick edges to one bit.");
+        }
+
+        [Test]
+        public void FocusBindingCanBeRemappedBeforeCaptureClonesTheMap()
+        {
+            var copy = UnityEngine.Object.Instantiate(m_Asset);
+            try
+            {
+                copy.FindAction("Player/FocusToggle", true).ApplyBindingOverride("<Keyboard>/g");
+                m_Asset = copy; StartRig(); Frame(1);
+                Frame(1, () => Tap(Key.F)); Assert.That(Human(Last).Focus.Disabled, Is.False);
+                Frame(1, () => Tap(Key.G)); Assert.That(Human(Last).Focus.Disabled, Is.True);
+            }
+            finally { m_Capture?.Dispose(); UnityEngine.Object.DestroyImmediate(copy); }
+        }
+
+        [Test]
         public void SeveralPressesBeforeOneTickAreOneBitAndAJumpHeldForSecondsJumpsOnce()
         {
             StartRig();
@@ -398,8 +426,8 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(command.Held, Is.EqualTo(CommandButtons.None), "Gamepad combat aliases removed; movement stick remains tested separately.");
             Assert.That(command.Pressed, Is.EqualTo(CommandButtons.None));
             // #69 layout: U hand series, I foot series, O physical ability, Space jump.
-            var keys = new[] { Key.U, Key.I, Key.O, Key.Space };
-            var flags = new[] { CommandButtons.HandSeries, CommandButtons.FootSeries, CommandButtons.PhysicalAbility, CommandButtons.Jump };
+            var keys = new[] { Key.U, Key.I, Key.O, Key.Space, Key.F };
+            var flags = new[] { CommandButtons.HandSeries, CommandButtons.FootSeries, CommandButtons.PhysicalAbility, CommandButtons.Jump, CommandButtons.FocusToggle };
             for (var i = 0; i < keys.Length; i++)
             {
                 Frame(1, () => Tap(keys[i]));

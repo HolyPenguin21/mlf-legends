@@ -327,6 +327,11 @@ MonoBehaviour:
   m_ShadowRadiusMultiplier: 1.25
   m_ShadowColor: {r: 0, g: 0, b: 0, a: 0.35}
   m_ShadowBias: 0.003
+  m_DamageColor: {r: 1, g: 0, b: 0, a: 1}
+  m_DamageIntensity: 0.25
+  m_DamageDurationTicks: 9
+  m_EffectShader: {fileID: 4800000, guid: adc8f059c7694a5d8217f77acd278c69, type: 3}
+  m_DrawEffects: 1
   m_DrawAnchorGizmos: 1
 --- !u!114 &673466320
 MonoBehaviour:

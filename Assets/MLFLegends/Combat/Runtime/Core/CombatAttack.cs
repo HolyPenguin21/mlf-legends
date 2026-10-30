@@ -18,8 +18,8 @@ namespace MLFLegends.Combat
     }
 
     /// <summary>
-    /// Phase of a strike on one fixed tick: Windup (Preparation: no hits, planar movement allowed) → Active (hits resolve) →
-    /// Recovery (return to stance, no hits).
+    /// Graphic/movement phase of a strike. Hit eligibility independently reads the frozen damage interval; an explicit
+    /// override may end before graphic Active ends or continue into Recovery.
     /// </summary>
     public enum CombatAttackPhase : byte
     {
@@ -81,6 +81,8 @@ namespace MLFLegends.Combat
     {
         /// <summary>HP removed from each valid target, once per strike.</summary>
         public int Damage;
+
+        public int SwingEffect, ImpactEffect; // immutable World resource handles, 0 = disabled
 
         /// <summary>Hit box along the attacker's facing, world units from its position (forward distance, inclusive).</summary>
         public float ReachMin;

@@ -1,3 +1,11 @@
+## Current Stage 05.3 (#77)
+
+CombatAutoFocus is per-fighter byte-backed desired mode plus LastToggleTick (zero/default ON), initialized at spawn,
+written only by Facing from accepted Pressed bit10. Retired bits4..8 stay invalid. Frozen Strike adds numeric Swing/Impact
+handles; frozen Timing supplies the sole half-open damage interval independently of graphic phases. CombatEffectFact is
+numeric/bounded and not a gameplay input. Hit owns its stream/sequence/epoch; existing lifecycle resets history even on
+paused End/Restart. Presentation reads it without deleting facts. Full rules and units: Docs/STAGE05_3.md.
+
 ## Current #69 contracts (Stage 05.1)
 
 - `CommandButtons` (ushort): HandSeries=1, Jump=2, Guard=4 (reserved), FootSeries=8, PhysicalAbility=512; retired

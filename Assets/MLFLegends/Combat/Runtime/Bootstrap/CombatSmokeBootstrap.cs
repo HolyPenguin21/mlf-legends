@@ -75,6 +75,9 @@ namespace MLFLegends.Combat
         CharacterAnimationConfig m_ScheduleConfig;
         string m_ScheduleCharacter;
         int m_ScheduleVersion;
+        long m_EffectVersion;
+        World m_FocusWorld;
+        EntityQuery m_FocusSession, m_FocusActors;
         SpriteAtlasCatalog m_ScheduleCatalog;
         int m_ScheduleCatalogVersion;
         bool m_ScheduleAttempted;
@@ -194,6 +197,7 @@ namespace MLFLegends.Combat
         {
             // On Play Mode exit the default world may already be disposed; it takes its combatants with it.
             // Nothing to end if this bootstrap never requested a battle (invalid setup).
+            ReleaseFocusQueries();
             EndOwnedBattle();
             ReleaseMissingArena();
             RestoreSchedule(); // Restore in the World where THIS bootstrap published, even if DefaultWorld changed.
@@ -333,7 +337,7 @@ namespace MLFLegends.Combat
 
         bool ScheduleSourceChanged() =>
             !m_ScheduleAttempted || m_ScheduleWorld != World.DefaultGameObjectInjectionWorld || m_ScheduleConfig != m_AnimationConfig || m_ScheduleCharacter != m_StrikeCharacterId
-            || (m_AnimationConfig != null && m_ScheduleVersion != m_AnimationConfig.Version)
+            || (m_AnimationConfig != null && (m_ScheduleVersion != m_AnimationConfig.Version || m_EffectVersion != m_AnimationConfig.EffectRevisionFor(m_StrikeCharacterId)))
             || (m_ScheduleCatalog != null && m_ScheduleCatalogVersion != m_ScheduleCatalog.Version)
             || (m_WaitingForActionSystem && m_ScheduleWorld != null && m_ScheduleWorld.IsCreated
                 && m_ScheduleWorld.Unmanaged.GetExistingUnmanagedSystem<CombatActionSystem>() != SystemHandle.Null);
@@ -351,6 +355,7 @@ namespace MLFLegends.Combat
             m_ScheduleConfig = m_AnimationConfig;
             m_ScheduleCharacter = m_StrikeCharacterId;
             m_ScheduleVersion = m_AnimationConfig != null ? m_AnimationConfig.Version : 0;
+            m_EffectVersion = m_AnimationConfig != null ? m_AnimationConfig.EffectRevisionFor(m_StrikeCharacterId) : 0;
             m_ScheduleCatalog = null;
             // A World without CombatActionSystem (e.g. a partial test World) simulates no strikes and has no table.
             if (!TryGetSchedule(entityManager, out _))
@@ -402,7 +407,14 @@ namespace MLFLegends.Combat
                     if (set != null)
                     {
                         schedule = set.StrikeSchedule;
-                        try { combat.ApplyTo(ref schedule, set); }
+                        try
+                        {
+                            combat.ApplyTo(ref schedule, set);
+                            using var effects = entityManager.CreateEntityQuery(typeof(CombatEffectResources));
+                            if (effects.CalculateEntityCount() == 1)
+                                entityManager.GetComponentObject<CombatEffectResources>(effects.GetSingletonEntity()).Prepare(ref schedule,
+                                    combat, set, catalog, m_AnimationConfig.ImageOffsetFor(m_StrikeCharacterId));
+                        }
                         catch (System.ArgumentException invalid) { errors.Add(invalid.Message); }
                     }
                 }
@@ -455,7 +467,8 @@ namespace MLFLegends.Combat
                 var t = schedule.Get(kind);
                 var p = schedule.GetStrike(kind);
                 parts[(int)kind - 1] = $"{kind} {(clipFor ?? CombatAnimationSet.DefaultClip)(kind)} {t.WindupTicks}/{t.ActiveTicks}/{t.RecoveryTicks} " +
-                    $"dmg {p.Damage} reach {p.ReachMin}-{p.ReachMax} J {p.SelfImpulse}@{p.LaunchTick} angle {p.ElevationDegrees} height {p.CompactHeight}[{p.CompactStart},{p.CompactEnd}) impact {p.OnHitImpulse} offsetY {p.HitOffsetY}";
+                    $"damage [{t.DamageStart / SimulationTiming.TickRateHz:0.######},{t.DamageEnd / SimulationTiming.TickRateHz:0.######}) s / [{t.DamageStart:0.###},{t.DamageEnd:0.###}) ticks " +
+                    $"Swing [0,{t.SwingEnd / SimulationTiming.TickRateHz:0.######}) s; dmg {p.Damage} reach {p.ReachMin}-{p.ReachMax} J {p.SelfImpulse}@{p.LaunchTick} angle {p.ElevationDegrees} height {p.CompactHeight}[{p.CompactStart},{p.CompactEnd}) impact {p.OnHitImpulse} offsetY {p.HitOffsetY}";
             }
 
             return string.Join(", ", parts);
@@ -480,6 +493,8 @@ namespace MLFLegends.Combat
             using var fighters = entityManager.CreateEntityQuery(ComponentType.ReadOnly<CombatPosition>(),
                 ComponentType.ReadOnly<CombatBody>(), ComponentType.ReadOnly<InCombat>());
             using var entities = fighters.ToEntityArray(Allocator.Temp);
+            var spatial = world.GetExistingSystemManaged<CombatSpatialIndexSystem>();
+            var motionSnapshot = spatial != null && spatial.TryGetSnapshotInfo(out _);
             foreach (var entity in entities)
             {
                 var p = (Vector3)(float3)entityManager.GetComponentData<CombatPosition>(entity).Value;
@@ -509,12 +524,49 @@ namespace MLFLegends.Combat
                 if (!attack.IsAttacking)
                     continue;
                 var phase = attack.Timing.PhaseAt(tick - attack.StartTick);
-                Gizmos.color = phase == CombatAttackPhase.Active ? Color.red
+                Gizmos.color = attack.Timing.DealsDamageOn(tick - attack.StartTick) ? Color.red
                     : phase == CombatAttackPhase.Windup ? new Color(1f, .9f, .1f) : new Color(.6f, .6f, .6f);
                 var strike = attack.Strike;
-                var center = p + new Vector3(facing * (strike.ReachMin + strike.ReachMax) * .5f, body.Height * .5f + strike.HitOffsetY, 0f);
-                Gizmos.DrawWireCube(center, new Vector3(strike.ReachMax - strike.ReachMin, 2f * strike.HeightTolerance, 2f * strike.DepthHalfWidth));
+                if (strike.SelfImpulse > 0 && attack.Timing.DealsDamageOn(tick - attack.StartTick) && motionSnapshot
+                    && entityManager.HasComponent<CombatantId>(entity))
+                {
+                    attack.Timing.DamageWindow(tick - attack.StartTick, out var lo, out var hi);
+                    if (spatial.TryDamageBounds(entityManager.GetComponentData<CombatantId>(entity).Value, strike, facing, lo, hi, out var swept))
+                        Gizmos.DrawWireCube((Vector3)((swept.Min + swept.Max) * .5f), (Vector3)(swept.Max - swept.Min));
+                }
+                else
+                {
+                    var center = p + new Vector3(facing * (strike.ReachMin + strike.ReachMax) * .5f, body.Height * .5f + strike.HitOffsetY, 0f);
+                    Gizmos.DrawWireCube(center, new Vector3(strike.ReachMax - strike.ReachMin, 2f * strike.HeightTolerance, 2f * strike.DepthHalfWidth));
+                }
             }
+        }
+
+        void ReleaseFocusQueries()
+        {
+            if (m_FocusWorld != null && m_FocusWorld.IsCreated) { m_FocusSession.Dispose(); m_FocusActors.Dispose(); }
+            m_FocusWorld = null;
+        }
+        void OnGUI()
+        {
+            if (!Application.isPlaying) return;
+            var world = m_BattleWorld != null && m_BattleWorld.IsCreated ? m_BattleWorld : null;
+            if (world != m_FocusWorld)
+            {
+                ReleaseFocusQueries(); m_FocusWorld = world;
+                if (world != null)
+                {
+                    m_FocusSession = world.EntityManager.CreateEntityQuery(typeof(BattleSession));
+                    m_FocusActors = world.EntityManager.CreateEntityQuery(typeof(CombatantId), typeof(CombatAutoFocus));
+                }
+            }
+            if (world == null || m_FocusSession.CalculateEntityCount() != 1) return;
+            var session = m_FocusSession.GetSingleton<BattleSession>(); if (!session.IsActive) return;
+            var em = world.EntityManager;
+            using var entities = m_FocusActors.ToEntityArray(Allocator.Temp);
+            foreach (var entity in entities)
+                if (em.GetComponentData<CombatantId>(entity).Value == session.HumanCombatant.Value)
+                { GUI.Label(new Rect(12, 12, 240, 26), em.GetComponentData<CombatAutoFocus>(entity).Disabled ? "Auto focus OFF [F]" : "Auto focus ON [F]"); break; }
         }
 
         static void DrawCylinder(Vector3 foot, float radius, float height)

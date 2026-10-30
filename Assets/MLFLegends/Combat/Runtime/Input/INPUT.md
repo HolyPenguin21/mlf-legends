@@ -1,3 +1,12 @@
+## Current Stage 05.3 (#77)
+
+Player/FocusToggle defaults to keyboard F and is remappable through the existing action/binding-override path.
+It shares capture, pause/focus/device edge discard and tick-aligned accepted commands with U/I/O/Space. Held does not repeat;
+several pre-tick edges coalesce to one bit under the existing contract. One press reaches only one catch-up tick. F does not
+change Facing in a callback; Facing consumes bit10, toggles the addressed fighter's desired mode, then performs its one
+pass. Default ON, restart ON; OFF uses MoveX with Z-only/idle side preserved. Strike/landing direction locks survive toggle.
+See Docs/STAGE05_3.md; future K remains unbound. No camera lock or selected-target cycling.
+
 # Player input (Stage 02.3, Issue #22)
 
 Real Unity Input System input for the one fighter the human controls, through the existing single command queue.

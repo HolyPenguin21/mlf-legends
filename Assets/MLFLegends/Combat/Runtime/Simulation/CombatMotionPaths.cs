@@ -211,10 +211,24 @@ namespace MLFLegends.Combat
             return true;
         }
 
-        internal bool TryMotionBounds(uint id, out CombatSpatialBounds bounds)
+        internal bool TryDamageBounds(uint id, in CombatStrikeParameters strike, float facing, float lo, float hi,
+            out CombatSpatialBounds bounds)
         {
-            foreach (var body in m_MotionBodies) if (body.Id.Value == id) { bounds = body.Bounds; return true; }
-            bounds = default; return false;
+            bounds = new CombatSpatialBounds { Min = new float3(float.PositiveInfinity), Max = new float3(float.NegativeInfinity) };
+            if (m_Info.Tick != m_MotionTick || m_Info.BattleNumber != m_MotionBattle) return false;
+            var found = false;
+            foreach (var segment in m_MotionSegments)
+            {
+                if (segment.Actor.Id.Value != id || segment.End <= lo || segment.Begin >= hi) continue;
+                var span = segment.End - segment.Begin;
+                var from = math.lerp(segment.From, segment.To, math.max(0, (lo - segment.Begin) / span));
+                var to = math.lerp(segment.From, segment.To, math.min(1, (hi - segment.Begin) / span));
+                var a = CombatHitSystem.StrikeQuery(strike, from, facing, segment.Actor.Body.Height);
+                var b = CombatHitSystem.StrikeQuery(strike, to, facing, segment.Actor.Body.Height);
+                bounds.Min = math.min(bounds.Min, math.min(a.Min, b.Min));
+                bounds.Max = math.max(bounds.Max, math.max(a.Max, b.Max)); found = true;
+            }
+            return found;
         }
 
         internal bool CopyMotionSegments(NativeList<CombatMotionSegment> output)

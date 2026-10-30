@@ -1,4 +1,16 @@
-## Current #69 — controls, series and per-character data (2026-10-29)
+## Current #77 — Stage 05.3 (2026-10-29)
+
+Current rules and exact Inspector paths: [STAGE05_3.md](STAGE05_3.md). #73/#74 are merged; their numerical waist,
+accepted path/Height, wall occlusion, launch and ledger contracts remain. Damage now uses one frozen half-open interval:
+by default the previous graphic Active range; an explicit positive duration starts at its first Active boundary and can
+end in Recovery, never after execution. Graphic phases/movement/chain/launch are unchanged by this override.
+Swing runs from accepted execution start through the excluding boundary after the final Active frame, including misses.
+Every confirmed Hit (including Damage0 / HP0) publishes one world-fixed Impact; red damage tint still requires Damage>0.
+Remappable **F** toggles nearest-enemy orientation, default ON, via accepted Pressed bit10. OFF uses MoveX, Z-only/idle
+preserve side. Current strike/landing locks keep their direction; toggles change the desired mode for the next permitted
+boundary. No selected target or camera lock. Next: 06.1 block K/stability/timely defence, then 06.2 double-tap dash.
+
+## History — #69 — controls, series and per-character data (2026-10-29)
 
 Only this section is current; every older "History" section keeps its own SHA/scope and is superseded where it disagrees (old key layouts, exact-limb intentions, velocity = displacement/dt, series limit 4, stage states).
 
@@ -59,6 +71,7 @@ Physical keys, without Shift. Movement remains WASD in world X/Z. Combat binding
 | U | HandSeries | Hand1, Hand1, Hand2, Hand1, Hand2, … |
 | I | FootSeries | Foot1, Foot1, Foot2, Foot1, Foot2, … |
 | O | PhysicalAbility | the character's physical ability (v2 art #70: physical_ability clip; v1 kick_spin; no self impulse) |
+| F | Toggle auto focus | nearest-enemy orientation ON/OFF (bit10, Pressed only; remappable) |
 | Space | Jump | jump (kept until the owner explicitly cancels it) |
 | K | — | reserved for the Stage 06 block, unbound |
 | double-tap WASD | — | future Stage 06 dash, not implemented |
@@ -81,7 +94,11 @@ new battle drops the pan. The camera never decides which fighters are simulated.
 
 ## Facing and directional movement (approved, 2026-10-26)
 
-The current 2.5D combat facing has two directions: **Left (world X negative)** and **Right (world X positive)**. Fighters automatically turn toward horizontal movement: on a fixed simulation tick with accepted `MoveX = +1`, they face Right; with accepted `MoveX = -1`, they face Left. This also applies during diagonals and jumps. **Pure depth movement (`MoveX = 0, MoveZ ≠ 0`) and standing still do not turn the character**; the previous horizontal facing remains. There is no automatic facing toward the closest enemy or backward-striding mode. Player and AI share the same rule, derived only from `AppliedCombatCommand`.
+The two directions are Left (world −X) and Right (world +X). Auto focus is ON by default: nearest enabled enemy by
+X/Z distance and stable-ID ties, with MoveX fallback when none exists. F toggles the fighter's desired mode. With OFF,
+MoveX sets side and MoveX0 preserves it, including pure Z. Strikes lock direction after their first tick and landing
+locks remain. Same-tick F + strike is resolved by the single Facing pass before launch. WASD stays world movement.
+[Exact current contract](STAGE05_3.md).
 
 Stage 05.1 defines the first action-state restriction explicitly: a running strike locks the turn except on its first tick (see Attacks); Guard still does not lock it. The sprite renderer (#38) mirrors the art by ECS `CombatFacing` but never decides it. Implementation tracked in [Stage 02.2 Issue #33](https://github.com/HolyPenguin21/mlf-legends/issues/33).
 
@@ -105,7 +122,7 @@ copies its timing AND damage/box at its start (frozen per execution); a body app
 | Foot1 / Foot2 | kick_left / kick_right | 11/5/17 | 6 | 7 | 0 … 1.3 |
 | PhysicalAbility (finisher) | physical_ability (v1: kick_spin) | 19/6/20 | — | 12 | 0 … 1.45 |
 
-All default boxes: |ΔZ| ≤ 0.4, |ΔY| ≤ 0.9; target point = CombatPosition. Current project windows (v2 art, #70): punch
+All default boxes: |ΔZ| ≤ 0.4, |ΔY| ≤ 0.9; target point = accepted body waist (Position.y + Body.Height/2), plus attacker HitOffsetY for its hit center. Current project windows (v2 art, #70): punch
 14/6/9, kicks 15/5/10, physical_ability 15/4/11 ticks ([migration table](STAGE05_1A_ATLAS_MIGRATION.md#4-config-migration-old--new-characteranimationconfigasset)). Every combatant spawns with 100 HP. **Planar movement during a strike: 50% Preparation /
 25% Active / 25% Recovery**, never a jump; facing locked except on each strike's first tick.
 
@@ -120,8 +137,8 @@ All default boxes: |ΔZ| ≤ 0.4, |ΔY| ≤ 0.9; target point = CombatPosition. 
   interrupts a strike, never ends a foot series automatically.
 - **Targets:** every in-combat enemy inside the box, several per strike, each at most once per strike (ledger); allies and
   self never. Resolved on the shared final spatial index after Movement (#66).
-- **Not implemented:** guard damage, impact/stagger/knockback per strike, self impulse, swept/path hits, dynamic Height,
-  defeat at 0 HP, combo bonuses, cancels, cooldowns, heavy/light, air strikes, VFX.
+- **Implemented by #73/#74/#77:** authored impulses, accepted swept paths/Height, waist targeting, damage feedback, Swing/Impact and F mode. Still deferred: guard damage/stagger,
+  defeat at 0 HP, combo bonuses, cancels, cooldowns, heavy/light, air strikes.
 
 Each impact separately resolves:
 - **HP Damage**: injury/health reduction.

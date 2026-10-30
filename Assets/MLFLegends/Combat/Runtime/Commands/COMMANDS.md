@@ -1,3 +1,10 @@
+## Current Stage 05.3 (#77)
+
+FocusToggle is ushort bit10, default physical F in Input System, Pressed toggles once. Retired bits4..8 remain invalid.
+The existing processor/queue is unchanged except its allowed mask; IsNone includes this Held/Pressed flag normally.
+Only accepted addressed commands reach Facing's per-fighter desired mode; stale/foreign/unknown/rejected requests do not.
+No secondary toggle queue or clock. Details: Docs/STAGE05_3.md.
+
 ## Current #69 flag validation
 
 The processor validates ushort CommandButtons with the mask HandSeries(1) | Jump(2) | Guard(4) | FootSeries(8) |

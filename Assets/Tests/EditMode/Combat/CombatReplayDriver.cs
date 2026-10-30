@@ -94,6 +94,7 @@ namespace MLFLegends.Tests.EditMode
         public CombatHealth Health;
         public CombatBodyProfile Profile;
         public CombatDamageFeedback Feedback;
+        public CombatAutoFocus Focus;
 
         /// <summary>CombatantId values in the current strike's hit ledger, in hit order.</summary>
         public uint[] Hits;
@@ -464,6 +465,7 @@ namespace MLFLegends.Tests.EditMode
                         Body = manager.GetComponentData<CombatBody>(entity),
                         Profile = manager.HasComponent<CombatBodyProfile>(entity) ? manager.GetComponentData<CombatBodyProfile>(entity) : default,
                         Facing = manager.GetComponentData<CombatFacing>(entity).Value,
+                        Focus = manager.HasComponent<CombatAutoFocus>(entity) ? manager.GetComponentData<CombatAutoFocus>(entity) : default,
                         InCombat = manager.IsComponentEnabled<InCombat>(entity),
                         HasApplied = hasApplied,
                         Applied = hasApplied ? manager.GetComponentData<AppliedCombatCommand>(entity) : default,
@@ -528,10 +530,10 @@ namespace MLFLegends.Tests.EditMode
                     + $"motion(ground:{Float(c.Motion.GroundHeight)},vy:{Float(c.Motion.VerticalVelocity)},ext:{Float(c.Motion.ExternalVelocity.x)}/{Float(c.Motion.ExternalVelocity.y)},grounded:{c.Motion.Grounded},"
                     + $"land:{At(c.Motion.LandTick)},landingTicks:{c.Motion.LandingRecoveryTicks},moved:{At(c.Motion.LastMoveTick)},streak:{At(c.Motion.MoveStreakStartTick)}/{Float(c.Motion.MoveStreakDistance)}) "
                     + $"strike({c.Attack.Kind},start:{(c.Attack.IsAttacking ? At(c.Attack.StartTick) : "-")},series:{c.Attack.SeriesStep},"
-                    + $"timing:{c.Attack.Timing.ActiveStart}/{c.Attack.Timing.RecoveryStart}/{c.Attack.Timing.End}/{c.Attack.Timing.ChainPoint},"
+                    + $"timing:{c.Attack.Timing.ActiveStart}/{c.Attack.Timing.RecoveryStart}/{c.Attack.Timing.End}/{c.Attack.Timing.ChainPoint},damageWindow:{c.Attack.Timing.DamageStart:R}/{c.Attack.Timing.DamageEnd:R},"
                     + $"physical:{Float(c.Attack.Strike.SelfImpulse)}/{Float(c.Attack.Strike.ElevationDegrees)}/{c.Attack.Strike.LaunchTick},height:{Float(c.Attack.Strike.CompactHeight)}/{c.Attack.Strike.CompactStart}/{c.Attack.Strike.CompactEnd},offset:{Float(c.Attack.Strike.HitOffsetY)},impact:{c.Attack.Strike.OnHitImpulse},"
                     + $"buffered:{c.Attack.Buffered},end:{At(c.Attack.EndTick)},hits:[{string.Join(",", c.Hits.Select(Id))}]) hp:{c.Health.Current}/{c.Health.Max} damageTick:{At(c.Feedback.LastDamageTick)} "
-                    + $"{c.Facing} {(c.InCombat ? "in-combat" : "out")} applied[{applied}]");
+                    + $"{c.Facing} autoFocus:{!c.Focus.Disabled}/{At(c.Focus.LastToggleTick)} {(c.InCombat ? "in-combat" : "out")} applied[{applied}]");
             }
 
             lines.AddRange(results.Select(r => $"result {Command(r.Command)} -> {r.Outcome}"));

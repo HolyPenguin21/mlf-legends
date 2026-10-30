@@ -127,6 +127,25 @@ namespace MLFLegends.Combat
             return Vector2.zero;
         }
 
+        /// <summary>Asset revision fingerprint only; no parsing or allocations while checking for a publication change.</summary>
+        public long EffectRevisionFor(string characterId)
+        {
+            long hash = 17;
+            if (m_Characters == null) return hash;
+            for (var c = 0; c < m_Characters.Length; c++)
+            {
+                var character = m_Characters[c];
+                if (character == null || character.CharacterId != characterId || character.Combat == null) continue;
+                for (var kind = CombatAttackKind.Hand1; kind <= CombatAttackKind.PhysicalAbility; kind++)
+                {
+                    var strike = character.Combat.Strike(kind);
+                    var a = strike?.Swing?.Catalog; var b = strike?.Impact?.Catalog;
+                    unchecked { hash = hash * 31 + (a != null ? a.Version : 0); hash = hash * 31 + (b != null ? b.Version : 0); }
+                }
+            }
+            return hash;
+        }
+
         /// <summary>
         /// The combat data of <paramref name="characterId"/> (a missing block on a code-built entry means the defaults). Only
         /// this character is checked; ranges are validated by the caller (<see cref="CharacterCombatSettings.Validate"/>).
