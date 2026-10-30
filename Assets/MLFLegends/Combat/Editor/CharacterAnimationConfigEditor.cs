@@ -36,6 +36,7 @@ namespace MLFLegends.Editor
         sealed class CharacterDiagnostics
         {
             public string Signature;
+            public long EffectRevision;
             public string Landing;
             public string Strikes;
             public readonly List<ClipDiagnostics> Clips = new List<ClipDiagnostics>();
@@ -84,7 +85,8 @@ namespace MLFLegends.Editor
             EditorGUILayout.HelpBox("Combat (per character): Body Radius/Height/Mass (cylinder from CombatPosition, world units) and " +
                 "five strike slots: Clip, Damage, Reach min..max, Depth ±, Height ± (world units, point target). Edits publish on the " +
                 "next frame and act on the next strike; the body applies at the next battle start/restart. Timing stays in the clip " +
-                "settings above. Scene gizmos: Combat Bootstrap → Draw Combat Gizmos.", MessageType.Info);
+                "settings above. Optional damage-duration override and Swing/Impact bindings live in each strike slot. The read-only " +
+                "footer shows damage/Swing intervals in seconds and ticks. Scene gizmos: Combat Bootstrap → Draw Combat Gizmos.", MessageType.Info);
             EditorGUILayout.HelpBox("Sprite Editor pivot positions each image relative to CombatPosition. Catalog Image Pivots " +
                 "maps frame_id to Sprite; only an absent binding uses the legacy JSON pivot. Image Offset Pixels adds one " +
                 "translation (+X right, +Y down), mirrored with the image and anchors. Reference support is source_size × " +
@@ -149,6 +151,9 @@ namespace MLFLegends.Editor
         void EnsureCache(CharacterAnimationConfig config)
         {
             var settingsChanged = m_CheckSettings || m_ConfigVersion != config.Version || m_Characters.Count != config.Characters.Count;
+            for (var c = 0; c < config.Characters.Count && c < m_Characters.Count; c++)
+                if (config.Characters[c] != null && m_Characters[c].EffectRevision != config.EffectRevisionFor(config.Characters[c].CharacterId))
+                    settingsChanged = true;
             var dependenciesChanged = m_CheckDependencies;
             foreach (var character in config.Characters)
             {
@@ -205,6 +210,8 @@ namespace MLFLegends.Editor
                 signature.Append('|').Append(character.AtlasCatalog != null ? character.AtlasCatalog.GetEntityId().ToString() : "0");
                 foreach (var settings in character.Animations ?? Array.Empty<CharacterAnimationSettings>())
                     signature.Append('|').Append(settings == null ? "null" : JsonUtility.ToJson(settings));
+                signature.Append('|').Append(JsonUtility.ToJson(character.Combat));
+                signature.Append('|').Append(config.EffectRevisionFor(character.CharacterId));
                 // Offset-only edits and unchanged Undo/Apply do not integrate the speed curve again.
                 if (!definitionsChanged && m_Characters[c].Signature == signature.ToString()) continue;
                 var item = Build(config, character);
@@ -215,7 +222,7 @@ namespace MLFLegends.Editor
 
         CharacterDiagnostics Build(CharacterAnimationConfig config, CharacterAnimationEntry character)
         {
-            var result = new CharacterDiagnostics();
+            var result = new CharacterDiagnostics { EffectRevision = config.EffectRevisionFor(character.CharacterId) };
             if (character.AtlasCatalog == null) { result.Errors.Add("No catalog assigned"); return result; }
             var manifest = m_Manifests[character.AtlasCatalog];
             result.Errors.AddRange(manifest.Errors);

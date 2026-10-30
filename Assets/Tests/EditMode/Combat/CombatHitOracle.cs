@@ -37,6 +37,13 @@ namespace MLFLegends.Tests.EditMode
                 && math.abs(target.y - attacker.y + (targetHeight - attackerHeight) / 2 - s.HitOffsetY) <= s.HeightTolerance;
         }
 
+        static bool OracleDamageTick(CombatStrikeTiming t, uint elapsed)
+        {
+            double start = t.PreciseActiveWindow ? t.ActiveStartTicks : t.ActiveStart;
+            double end = t.OverrideDamageDuration ? t.DamageEndTicks : t.PreciseActiveWindow ? t.RecoveryStartTicks : t.RecoveryStart;
+            return elapsed < t.End && elapsed < end && elapsed + 1d > start;
+        }
+
         protected override void OnUpdate()
         {
             Tick = SystemAPI.GetSingleton<SimulationClock>().Tick;
@@ -60,7 +67,7 @@ namespace MLFLegends.Tests.EditMode
             foreach (var a in rows)
             {
                 if (!a.CanAttack || a.Attack.Kind == CombatAttackKind.None
-                    || a.Attack.Timing.PhaseAt(Tick - a.Attack.StartTick) != CombatAttackPhase.Active) continue;
+                    || !OracleDamageTick(a.Attack.Timing, Tick - a.Attack.StartTick)) continue;
                 ActiveAttackers++;
                 var strike = a.Attack.Strike; // the values frozen at this execution's start (#69), not the live table
                 foreach (var t in rows)

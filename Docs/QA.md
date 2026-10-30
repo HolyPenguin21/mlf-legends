@@ -1,4 +1,14 @@
-## Current #70 — Stage 05.1a (2026-10-29)
+## Current #77 — Stage 05.3 verification scope (2026-10-29)
+
+Fresh base main `d5e97dea7326fa6bc6ccd28ebb44f823c601a92d`; owner scene/combat values preserved. Source/model checks
+and exact tested source SHA: [Evidence/77](Evidence/77/README.md). Reproduction/manual cases and available authored suites:
+[STAGE05_3.md](STAGE05_3.md). Unity compilation/import, all authored EditMode/PlayMode/Graphics/Performance, actual Burst,
+GPU readback and owner weak/strong O crowd/wall scenarios are **NOT RUN**. No Editor/.NET compiler is installed here.
+Historical 603/603 and 59/59 are pre-#73 and are not current results. #73/#74 targeted regressions remain mandatory on
+an available Unity machine, including ordinary Hit's valid empty NativeArray, exact/velocity-only budget and Frozen.
+Stage04/05 owner acceptance remains open. Delivery is permitted without waiting for unavailable Unity checks.
+
+## History — #70 — Stage 05.1a (2026-10-29)
 
 Only this section is current; older sections are history. Results with exact SHA and raw XML/logs:
 [Evidence/70](Evidence/70/README.md). Summary: full EditMode (non-Performance) 603/603 and full PlayMode (D3D12) 59/59 on

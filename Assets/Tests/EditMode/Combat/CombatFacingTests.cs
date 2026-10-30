@@ -150,6 +150,80 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(w.CountWith<CombatFacing>(), Is.Zero);
         }
 
+        [TestCase(CommandSource.Player)] [TestCase(CommandSource.AI)]
+        public void FocusToggleChangesDesiredModeOnceAndFreeMoveFacesAway(CommandSource source)
+        {
+            using var w = new ReplayWorld("focus mode source parity"); Initialize(w, Setup());
+            var h = Actor(w, w.Session.HumanCombatant);
+            w.Script = source == CommandSource.Player
+                ? new ReplayScript().Player(1, 1, ReplayRole.Human, moveX: -1, held: CommandButtons.FocusToggle, pressed: CommandButtons.FocusToggle)
+                : new ReplayScript().Ai(1, 1, ReplayRole.Human, moveX: -1, held: CommandButtons.FocusToggle, pressed: CommandButtons.FocusToggle);
+            w.Step(); Assert.That(Facing(w, h), Is.EqualTo(L)); Assert.That(w.Manager.GetComponentData<CombatAutoFocus>(h).Disabled, Is.True);
+            var owner = w.World.GetExistingSystem<CombatFacingSystem>(); owner.Update(w.World.Unmanaged);
+            Assert.That(w.Manager.GetComponentData<CombatAutoFocus>(h).Disabled, Is.True, "Repeated polling of accepted tick cannot toggle again.");
+            w.Script.Player(2, 2, ReplayRole.Human, moveZ: 1, held: CommandButtons.FocusToggle); w.Step();
+            Assert.That(Facing(w, h), Is.EqualTo(L), "Pure Z retains side with auto focus OFF.");
+            w.Script.Player(3, 3, ReplayRole.Human, pressed: CommandButtons.FocusToggle); w.Step();
+            Assert.That(Facing(w, h), Is.EqualTo(R)); Assert.That(w.Manager.GetComponentData<CombatAutoFocus>(h).Disabled, Is.False);
+        }
+
+        [TestCase(CommandButtons.HandSeries)] [TestCase(CommandButtons.FootSeries)] [TestCase(CommandButtons.PhysicalAbility)]
+        public void MidStrikeToggleWaitsForPermittedFacingBoundary(CommandButtons button)
+        {
+            using var w = new ReplayWorld("focus strike lock");
+            w.Script = new ReplayScript().Player(1, 1, ReplayRole.Human, pressed: button)
+                .Player(2, 2, ReplayRole.Human, moveX: -1, pressed: CommandButtons.FocusToggle);
+            Initialize(w, Setup()); var h = Actor(w, w.Session.HumanCombatant); w.Step(2);
+            var attack = w.Manager.GetComponentData<CombatAttackState>(h);
+            Assert.That(w.Manager.GetComponentData<CombatAutoFocus>(h).Disabled, Is.True); Assert.That(Facing(w, h), Is.EqualTo(R));
+            for (uint t = 3; t <= attack.Timing.End + 1; t++) w.Script.Player(t, t, ReplayRole.Human, moveX: -1);
+            w.Step(attack.Timing.End - 1); Assert.That(Facing(w, h), Is.EqualTo(L));
+        }
+
+        [Test]
+        public void FocusAndLaunchZeroUseOneFinalDirectionForImpulseHitAndSwing()
+        {
+            using var w = new ReplayWorld("focus launch zero"); var table = CombatStrikeSchedule.Default;
+            table.PhysicalAbility = CombatStrikeTiming.FromTicks(0, 4, 2, CombatAttackTuning.NoChain);
+            table.PhysicalAbilityStrike.SelfImpulse = 6; table.PhysicalAbilityStrike.LaunchTick = 0;
+            CombatStrikeEffectsTests.BindTechnical(w, ref table); CombatStrikeSchedule.Publish(w.Manager, table);
+            w.Script = new ReplayScript().Player(1, 1, ReplayRole.Human, moveX: -1,
+                pressed: CommandButtons.FocusToggle | CommandButtons.PhysicalAbility);
+            Initialize(w, Setup()); w.Step(); var h = Actor(w, w.Session.HumanCombatant);
+            Assert.That(Facing(w, h), Is.EqualTo(L));
+            Assert.That(w.Manager.GetComponentData<CombatMotion>(h).ExternalVelocity.x, Is.LessThan(0));
+            Assert.That(CombatStrikeEffectsTests.Facts(w).Single(f => f.Kind == CombatEffectKind.Swing).Facing, Is.EqualTo(-1));
+        }
+
+        [Test]
+        public void LandingToggleChangesModeButHonorsLockAndRestartDefaultsToOn()
+        {
+            using var w = new ReplayWorld("focus landing"); Initialize(w, Setup()); var h = Actor(w, w.Session.HumanCombatant);
+            var motion = w.Manager.GetComponentData<CombatMotion>(h); motion.LandTick = 1; motion.LandingRecoveryTicks = 3;
+            w.Manager.SetComponentData(h, motion);
+            w.Script = new ReplayScript().Player(1, 1, ReplayRole.Human, moveX: -1, pressed: CommandButtons.FocusToggle)
+                .Player(4, 4, ReplayRole.Human, moveX: -1);
+            w.Step(3); Assert.That(Facing(w, h), Is.EqualTo(R)); Assert.That(w.Manager.GetComponentData<CombatAutoFocus>(h).Disabled, Is.True);
+            w.Step(); Assert.That(Facing(w, h), Is.EqualTo(L));
+            w.Request(BattleRequest.Restart(Setup())); w.Script = new ReplayScript(); w.Step();
+            Assert.That(w.Manager.GetComponentData<CombatAutoFocus>(Actor(w, w.Session.HumanCombatant)).Disabled, Is.False);
+        }
+
+        [Test]
+        public void RejectedStaleUnknownAndFutureToggleOnlyActOnAcceptedTick()
+        {
+            using var w = new ReplayWorld("focus accepted only"); Initialize(w, Setup()); var h = Actor(w, w.Session.HumanCombatant);
+            w.Script = new ReplayScript().Player(1, 1, ReplayRole.Human, moveX: 2, pressed: CommandButtons.FocusToggle)
+                .Player(1, 1, ReplayRole.Invalid, pressed: CommandButtons.FocusToggle)
+                .Player(2, 1, ReplayRole.Human, pressed: CommandButtons.FocusToggle)
+                .Player(3, 3, ReplayRole.PreviousHuman, pressed: CommandButtons.FocusToggle)
+                .Player(2, 4, ReplayRole.Human, pressed: CommandButtons.FocusToggle);
+            w.Step(3); Assert.That(w.Manager.GetComponentData<CombatAutoFocus>(h).Disabled, Is.False);
+            w.Step(); Assert.That(w.Manager.GetComponentData<CombatAutoFocus>(h).Disabled, Is.True);
+            using var other = new ReplayWorld("focus foreign World"); Initialize(other, Setup()); other.Step();
+            Assert.That(other.Manager.GetComponentData<CombatAutoFocus>(Actor(other, other.Session.HumanCombatant)).Disabled, Is.False);
+        }
+
         [Test]
         public void ClockGuardAndPartialFixturesRemainSafe()
         {

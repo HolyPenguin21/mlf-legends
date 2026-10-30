@@ -33,11 +33,24 @@ namespace MLFLegends.Combat
         public bool PreciseActiveWindow { get => m_PreciseActiveWindow != 0; set => m_PreciseActiveWindow = value ? (byte)1 : (byte)0; }
         public double ActiveStartTicks, RecoveryStartTicks;
 
-        public void ActiveWindow(uint elapsed, out float lo, out float hi)
+        // Compatibility query; execution damage always has exactly one interval.
+        public void ActiveWindow(uint elapsed, out float lo, out float hi) => DamageWindow(elapsed, out lo, out hi);
+
+        // One execution damage interval; visual phases and movement retain their original boundaries.
+        byte m_OverrideDamageDuration;
+        public bool OverrideDamageDuration { get => m_OverrideDamageDuration != 0; set => m_OverrideDamageDuration = value ? (byte)1 : (byte)0; }
+        public double DamageEndTicks;
+        public double DamageStart => PreciseActiveWindow ? ActiveStartTicks : ActiveStart;
+        public double DamageEnd => OverrideDamageDuration ? DamageEndTicks : PreciseActiveWindow ? RecoveryStartTicks : RecoveryStart;
+        public double SwingEnd => PreciseActiveWindow ? RecoveryStartTicks : RecoveryStart;
+        public bool DealsDamageOn(uint elapsed) => elapsed < End && elapsed < DamageEnd && elapsed + 1d > DamageStart;
+        public void DamageWindow(uint elapsed, out float lo, out float hi)
         {
-            lo = PreciseActiveWindow ? (float)Math.Max(0, ActiveStartTicks - elapsed) : 0;
-            hi = PreciseActiveWindow ? (float)Math.Min(1, RecoveryStartTicks - elapsed) : 1;
+            lo = (float)Math.Max(0, DamageStart - elapsed);
+            hi = (float)Math.Min(1, DamageEnd - elapsed);
         }
+        public bool DamageIntervalValid => Finite(DamageStart) && Finite(DamageEnd) && DamageStart >= 0
+            && DamageEnd > DamageStart && DamageEnd <= End;
 
         public bool CanChain => ChainPoint != NoChain;
 
@@ -45,7 +58,7 @@ namespace MLFLegends.Combat
         public int ActiveTicks => RecoveryStart - ActiveStart;
         public int RecoveryTicks => End - RecoveryStart;
 
-        public bool IsValid => ActiveStart < RecoveryStart && RecoveryStart <= End && End <= MaxTicks
+        public bool IsValid => DamageIntervalValid && ActiveStart < RecoveryStart && RecoveryStart <= End && End <= MaxTicks
             && (ChainPoint == NoChain || (ChainPoint >= RecoveryStart && ChainPoint <= End));
 
         /// <summary>Phase on the tick <paramref name="elapsed"/> ticks after the strike's first tick; None once it ended.</summary>
@@ -253,6 +266,19 @@ namespace MLFLegends.Combat
         {
             if (!schedule.IsValid)
                 throw new ArgumentException("CombatStrikeSchedule.Publish: invalid strike timing.", nameof(schedule));
+            using (var effects = entityManager.CreateEntityQuery(typeof(CombatEffectResources)))
+            {
+                var resources = effects.CalculateEntityCount() == 1
+                    ? entityManager.GetComponentObject<CombatEffectResources>(effects.GetSingletonEntity()) : null;
+                for (var kind = CombatAttackKind.Hand1; kind <= CombatAttackKind.PhysicalAbility; kind++)
+                {
+                    var value = schedule.GetStrike(kind);
+                    if (value.SwingEffect < 0 || value.ImpactEffect < 0
+                        || value.SwingEffect != 0 && resources?.Get(value.SwingEffect) == null
+                        || value.ImpactEffect != 0 && resources?.Get(value.ImpactEffect) == null)
+                        throw new ArgumentException($"{kind}: VFX handle is not a prepared binding of this World.", nameof(schedule));
+                }
+            }
             // A query built from an EntityManager is Persistent until the World is disposed: released before any throw.
             var builder = new EntityQueryBuilder(Allocator.Temp);
             var query = builder.WithAllRW<CombatStrikeSchedule>().Build(entityManager);

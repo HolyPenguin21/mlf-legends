@@ -1,0 +1,18 @@
+{
+  "sha": "a48efa2ba2e5cfef6cdb0be5b00e212ee6fea1e2",
+  "tree": "70ce0a91b6f1052cae31eed82c143ae1e5b0f29b",
+  "dirty": false,
+  "source": "PASS",
+  "CSharp_syntax_files": 121,
+  "instance_stride_model": 32,
+  "shadow_stride_model": 80,
+  "independent_model_cases": 10000,
+  "model": "PASS",
+  "Unity_compilation": "NOT RUN",
+  "EditMode": "NOT RUN",
+  "PlayMode": "NOT RUN",
+  "Burst": "NOT RUN",
+  "GPU_visual": "NOT RUN",
+  "CPU_GPU_performance": "NOT RUN",
+  "owner_manual_acceptance": "NOT RUN"
+}

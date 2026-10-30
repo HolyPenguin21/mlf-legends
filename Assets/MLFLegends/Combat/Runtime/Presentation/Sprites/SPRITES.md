@@ -1,3 +1,12 @@
+## Current Stage 05.3 (#77)
+
+CombatSpriteRenderer owns one read-only CombatEffectsPresentation helper, one effect material/buffer, shared card mesh;
+batches by effect atlas/page through the existing SpriteAtlas parser/frame cache. 32-byte effect instances carry independent
+scale/rotation, frozen facing and fixed/following positions. Alpha blend/ZTest LEqual/ZWrite Off; independent rotated-card
+bounds and ±.004 front/back bias. No body damage tint or shadow policy change. No event GameObjects/ParticleSystems.
+World-scoped numerical history/versions belong to Hit; reader disable releases reader resources, World teardown releases
+cached atlas buffers/technical textures. Exact ownership, counters/retention, pause/epoch and tests: Docs/STAGE05_3.md.
+
 ## Current #56 pivot contract
 
 See [effective pivot, migration and invalidation](../../../../../../Docs/STAGE03_PIVOT_CORRECTION.md).

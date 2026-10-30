@@ -1,3 +1,14 @@
+## Current Stage 05.3 (#77)
+
+Existing body timing/ranges/curves/pivots are retained. Optional per-slot damage-duration override is a gameplay setting;
+visual phases and body animation do not change. Swing normalizes its own frame shares over execution start through the
+excluding boundary after the last graphic Active frame, including Windup and misses. Impact has its own positive lifetime
+and stays at the confirmed contact waist/time, not a target's later position. Prepared frame/anchor tables and numeric VFX
+handles freeze with execution; asset edits affect new strikes. All ages use the existing fixed clock, including pause.
+Technical cyan Swing/yellow Impact are enabled in smoke as diagnostic clips; replace per-slot bindings with a catalog for
+final art. No change to 12-clip/76-frame character art. See Docs/STAGE05_3.md for Inspector paths, historical anchors,
+fallback, lifecycle, caps and the O example.
+
 ## Current #70 — v2 atlas (12 clips / 76 frames, 192×160)
 
 Required clips: idle_combat, run, jump and the slot clips punch_left, punch_right, kick_left, kick_right,

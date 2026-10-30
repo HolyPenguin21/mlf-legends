@@ -16,7 +16,7 @@ namespace MLFLegends.Combat
         internal struct Participant
         {
             public Entity Entity; public uint Id; public byte Team; public float3 Position;
-            public sbyte MoveX; public bool HasIdentity, Locked;
+            public sbyte MoveX; public bool HasIdentity, Locked, AutoFocus;
         }
         NativeList<Opponent> m_Opponents;
         NativeList<Participant> m_Participants;
@@ -39,6 +39,7 @@ namespace MLFLegends.Combat
             state.Dependency.Complete(); var start = Stopwatch.GetTimestamp();
             m_Opponents.Clear(); m_Participants.Clear();
             var tick = SystemAPI.TryGetSingleton<SimulationClock>(out var clock) ? clock.Tick : SimulationClock.NoTick;
+            var focusModes = SystemAPI.GetComponentLookup<CombatAutoFocus>();
             var attacks = SystemAPI.GetComponentLookup<CombatAttackState>(true);
             var motions = SystemAPI.GetComponentLookup<CombatMotion>(true);
             var teams = SystemAPI.GetComponentLookup<CombatTeam>(true);
@@ -53,13 +54,21 @@ namespace MLFLegends.Combat
                     throw new System.InvalidOperationException("Facing roster exceeds the supported battle bound.");
                 foreach (var (applied, entity) in SystemAPI.Query<RefRO<AppliedCombatCommand>>().WithAll<CombatFacing, InCombat>().WithEntityAccess())
                 {
+                    var autoFocus = true;
+                    if (focusModes.TryGetComponent(entity, out var mode))
+                    {
+                        var command = applied.ValueRO.Command;
+                        if (command.Tick == tick && mode.LastToggleTick != tick && (command.Pressed & CommandButtons.FocusToggle) != 0)
+                        { mode.Disabled = !mode.Disabled; mode.LastToggleTick = tick; focusModes[entity] = mode; }
+                        autoFocus = !mode.Disabled;
+                    }
                     var locked = attacks.TryGetComponent(entity, out var attack) && attack.IsAttacking && attack.StartTick != tick;
                     locked |= motions.TryGetComponent(entity, out var motion) && motion.IsLandingRecovery(tick);
                     var identity = ids.TryGetComponent(entity, out var id) && teams.TryGetComponent(entity, out _)
                         && positions.HasComponent(entity);
                     m_Participants.Add(new Participant { Entity = entity, Id = identity ? id.Value : 0,
                         Team = identity ? teams[entity].Value : (byte)0, Position = identity ? positions[entity].Value : default,
-                        MoveX = applied.ValueRO.Command.MoveX, HasIdentity = identity, Locked = locked });
+                        MoveX = applied.ValueRO.Command.MoveX, HasIdentity = identity, Locked = locked, AutoFocus = autoFocus });
                 }
                 m_Managed[0] = 0;
                 new NearestFacingJob { Managed = m_Managed, Opponents = m_Opponents.AsArray(), Participants = m_Participants.AsArray(),
@@ -90,7 +99,7 @@ namespace MLFLegends.Combat
                     if (actor.Locked) continue;
                     var facing = Facings[actor.Entity];
                     var nearest = float.PositiveInfinity; var bestId = uint.MaxValue; var dx = 0f; var found = false;
-                    if (actor.HasIdentity)
+                    if (actor.HasIdentity && actor.AutoFocus)
                         foreach (var enemy in Opponents)
                         {
                             if (enemy.Entity == actor.Entity || enemy.Team == actor.Team) continue;

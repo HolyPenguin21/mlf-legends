@@ -1,3 +1,11 @@
+## Current Stage 05.3 (#77)
+
+[Current complete contract](../../../../../Docs/STAGE05_3.md): damage uses frozen Timing.DamageStart/DamageEnd,
+not PhaseAt==Active; OverrideDamageDuration may extend into Recovery without changing graphic/movement phases or chain.
+Facing consumes accepted F bit10 into per-fighter desired mode before its single pass, preserving strike/landing locks.
+Hit publishes one bounded fact stream after final Facing/Movement and successful confirmations. Old phase-only Hit and
+Preparation-only movement descriptions below are historical (current movement is 50/25/25). No new clock/system.
+
 ## Stage 04.4–04.5 / #66 current contract
 
 Movement (sole Position/Motion writer, one integrator) consumes the single CombatImpulse input at its tick boundary,
@@ -281,7 +289,7 @@ CombatStateUpdateSystemGroup
 
 - `CombatActionSystem` copies `schedule.Get(kind)` into `CombatAttackState.Timing` on every strike start (series start or
   follow-up). Buffering from `ActiveStart`, chaining at `ChainPoint`, ending at `End` read only that copy. `CombatHitSystem`
-  resolves hits on ticks where `Timing.PhaseAt(tick − StartTick) == Active`; the per-strike ledger still allows one hit per
+  resolves hits where `Timing.DealsDamageOn(tick − StartTick)`; the per-strike ledger still allows one hit per
   target. `CombatMovementSystem` applies planar Move normally (diagonal scaling, same position owner) on **Preparation (Windup)
   ticks**, ignores Move in Active/Recovery and Jump during the whole strike; moving never cancels the strike. Facing is unchanged
   (turn only on a strike's first tick).
