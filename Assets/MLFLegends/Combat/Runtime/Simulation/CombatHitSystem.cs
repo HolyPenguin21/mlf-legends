@@ -171,7 +171,7 @@ namespace MLFLegends.Combat
                     stream.Append(facts, new CombatEffectFact { Kind = CombatEffectKind.Swing, Attacker = a.Entity,
                         AttackerId = a.Id, StartTick = a.StartTick, Binding = a.Strike.SwingEffect,
                         BattleNumber = sessionNumber, Facing = a.Facing, Position = a.Position,
-                        Time = tick - 1d, End = tick - 1d + a.Timing.SwingEnd, Timing = a.Timing });
+                        Time = tick, End = tick + a.Timing.RecoveryStart, Timing = a.Timing });
                 m_Swings.Clear(); stream.LastSwingTick = tick;
             }
             SystemAPI.SetComponent(m_Effects, stream);
@@ -329,7 +329,9 @@ namespace MLFLegends.Combat
                         continue;
                     d.InsideTests++;
                     if (Contains(ledger, target.Id.Value)) continue;
-                    var contact = attacker.DamageLo; var point = target.Position + new float3(0, target.Body.Height * .5f, 0); var delta = target.Position - attacker.Position;
+                    // Ordinary geometry samples both final positions at the end of this tick.
+                    // Eligibility remains damage-interval OVERLAP, independently of this sample timestamp.
+                    var contact = 1f; var point = target.Position + new float3(0, target.Body.Height * .5f, 0); var delta = target.Position - attacker.Position;
                     if (attacker.Swept)
                     {
                         if (!TrySwept(attacker, target, out contact, out delta, out point)) continue;
@@ -412,3 +414,4 @@ namespace MLFLegends.Combat
         }
     }
 }
+

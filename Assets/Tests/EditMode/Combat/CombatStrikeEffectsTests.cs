@@ -47,6 +47,76 @@ namespace MLFLegends.Tests.EditMode
         internal static void Refresh(CombatEffectsPresentation p, ReplayWorld w) =>
             p.Refresh(w.World, null, Basis, 2, .02f, null, null, null, 0, false);
 
+        [TestCase(false, false)] [TestCase(true, false)]
+        [TestCase(false, true)] [TestCase(true, true)]
+        public void SwingAnchorAndLifetimeMatchActualBodyIncludingLastActive(bool left, bool subTick)
+        {
+            using var w = new ReplayWorld("body and Swing integration");
+            var definition = CombatAnimationFixture.Definition(); var errors = new List<string>();
+            var set = CombatAnimationSet.Create(definition, id => {
+                var settings = CombatAnimationFixture.Settings(definition, id);
+                settings.SpeedCurve = new AnimationCurve(new Keyframe(0, .2f), new Keyframe(.5f, 2), new Keyframe(1, .7f));
+                return settings;
+            }, "nonuniform", errors);
+            Assert.That(set, Is.Not.Null, string.Join(";", errors));
+            var table = set.StrikeSchedule;
+            table.Hand1 = CombatStrikeTiming.FromTicks(0, 4, 2, 0);
+            if (subTick) { table.Hand1.PreciseActiveWindow = true; table.Hand1.ActiveStartTicks = .1; table.Hand1.RecoveryStartTicks = 3.2; }
+            BindTechnical(w, ref table);
+            var binding = w.Manager.GetComponentObject<CombatEffectResources>(StreamEntity(w)).Get(table.Hand1Strike.SwingEffect);
+            // Unique calibrated anchors on the three distinct body poses; no timing oracle shared with production.
+            binding.BodyTiming = set.Attack(CombatAttackKind.Hand1);
+            binding.Settings.Anchor = CombatEffectAnchor.HandLeft; binding.Settings.Offset = Vector3.zero;
+            binding.BodyNominalPixels = 2;
+            binding.AnchorPixels = new[] { new float2(1, 0), new float2(2, 0), new float2(3, 0) };
+            binding.AnchorVisible = new[] { true, true, true };
+            binding.AnchorDirections = new[] { new float2(1,0), new float2(1,0), new float2(1,0) };
+            binding.AnchorLayers = new SpriteAnchorLayer[3];
+            Start(w, table, left ? -20 : 20);
+            w.Script.Player(1, 1, ReplayRole.Human, pressed: CommandButtons.HandSeries);
+            using var p = new CombatEffectsPresentation();
+            for (uint tick = 1; tick <= 5; tick++)
+            {
+                w.Step(); Refresh(p, w);
+                var e = Actor(w, w.Session.HumanCombatant);
+                var attack = w.Manager.GetComponentData<CombatAttackState>(e);
+                var motion = w.Manager.GetComponentData<CombatMotion>(e);
+                var body = set.FrameFor(tick, w.Session.BattleStartTick, motion, attack);
+                if (tick <= 4)
+                {
+                    Assert.That(body, Is.EqualTo(CombatAnimationFixture.TechC), "The phase clamp keeps the actual body Active.");
+                    Assert.That(p.Stats.Alive, Is.EqualTo(1), "Swing must survive the final displayed Active tick.");
+                    var support = w.Manager.GetComponentData<CombatPosition>(e).Value;
+                    var expected = SpriteCardMath.CardToWorld(Basis, support, new float2(left ? -2 : 2, 0), 1);
+                    Assert.That(math.distance(p.GetInstance(0).Position, expected), Is.LessThan(1e-6f));
+                    Refresh(p, w); Assert.That(p.Stats.Alive, Is.EqualTo(1), "Repeated/paused presentation is read-only.");
+                }
+                else
+                {
+                    Assert.That(body, Is.EqualTo(CombatAnimationFixture.TechB));
+                    Assert.That(p.Stats.Alive, Is.Zero, "First Recovery has no Swing.");
+                }
+            }
+        }
+
+        [Test]
+        public void MovingOrdinaryContactUsesFinalTimeAndFinalWaistDespitePartialWindow()
+        {
+            using var w = new ReplayWorld("ordinary sample time"); var table = CombatStrikeSchedule.Default;
+            table.Hand1 = CombatStrikeTiming.FromTicks(0, 1, 2, 0);
+            table.Hand1.PreciseActiveWindow = true; table.Hand1.ActiveStartTicks = .1; table.Hand1.RecoveryStartTicks = .2;
+            Start(w, table);
+            w.Script.Player(1, 1, ReplayRole.Human, pressed: CommandButtons.HandSeries);
+            w.Script.Ai(1, 1, ReplayRole.Ai, moveX: 1);
+            w.Step();
+            var impact = Facts(w).Single(f => f.Kind == CombatEffectKind.Impact);
+            var target = Actor(w, w.Session.AiCombatant);
+            var position = w.Manager.GetComponentData<CombatPosition>(target).Value;
+            Assert.That(impact.Time, Is.EqualTo(1d));
+            Assert.That(impact.Position, Is.EqualTo(position + new float3(0, table.Body.Height / 2, 0)));
+            Assert.That(w.Manager.GetBuffer<CombatHitRecord>(Actor(w, w.Session.HumanCombatant)).Length, Is.EqualTo(1));
+        }
+
         [TestCase(.25, .75)] [TestCase(1, 2)] [TestCase(1.9, 2.01)]
         public void DamageIntervalIsHalfOpenAndIndependentOfVisualPhases(double first, double end)
         {
@@ -123,7 +193,7 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(impacts.Length, Is.EqualTo(extended ? 1 : 0));
             if (extended) Assert.That(impacts[0].Time, Is.GreaterThan(2), "Contact occurs after original Active, during graphic Recovery.");
             var swing = Facts(w).Single(f => f.Kind == CombatEffectKind.Swing);
-            Assert.That(swing.End, Is.EqualTo(2));
+            Assert.That(swing.End, Is.EqualTo(3));
             Assert.That(w.Records.Sum(r => r.Impulses.Length), Is.EqualTo(extended ? 1 : 0), "One authored on-hit impulse, no ledger reset during long window.");
             using var presentation = new CombatEffectsPresentation(); Refresh(presentation, w);
             Assert.That(presentation.Stats.Alive, Is.EqualTo(extended ? 1 : 0), "Swing expired; only live short Impact remains.");
@@ -321,3 +391,4 @@ namespace MLFLegends.Tests.EditMode
         }
     }
 }
+

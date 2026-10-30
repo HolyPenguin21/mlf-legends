@@ -1,3 +1,18 @@
+## #79 timing correction (2026-10-30)
+
+Swing uses the body presentation axis: Time=StartTick, End=StartTick+RecoveryStart (exclusive).
+RecoveryStart is the quantized graphic boundary: even a sub-tick authored Active must keep its Swing
+through the final displayed Active tick. Anchor selection uses the exact same phase-clamped StrikeLocalFrame
+as FrameFor. Authored T/curves and numerical damage/launch/physics intervals are unchanged.
+
+Contacts keep the numerical integration axis: tick T integrates [T-1,T]. Swept contacts retain their actual
+fraction and historical waist/relative position. Ordinary contacts sample both FINAL positions at fraction 1,
+Time=T. Eligibility is nonempty overlap of the damage interval with [elapsed,elapsed+1), including start and
+excluding end; sampling at the final boundary does not reject a previously eligible ordinary contact.
+This preserves the point-target box/waist policy; it does not turn U/I into sweeps. Guard uses this numerical axis.
+
+The older timing descriptions below are historical where they disagree with this correction.
+
 # Stage 05.3 — damage duration, strike effects and auto focus (#77)
 
 Base main `d5e97dea7326fa6bc6ccd28ebb44f823c601a92d` includes #73/#74 review fixes and owner smoke tuning.
@@ -160,3 +175,4 @@ NOT MEASURED. Benchmark has no claimed measurements until actually run on named 
 Unity import/compilation, EditMode/PlayMode/Graphics/Performance, actual Burst/GPU/GC and owner manual acceptance are
 NOT RUN in this environment. [Exact tested source and raw checks](Evidence/77/README.md). Source review and models do not
 replace the remaining wall/front/back/offscreen/anchor/GPU checks or weak/strong crowd demonstration.
+

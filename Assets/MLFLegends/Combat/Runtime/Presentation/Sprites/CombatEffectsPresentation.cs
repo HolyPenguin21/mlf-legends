@@ -90,7 +90,7 @@ namespace MLFLegends.Combat
                 if (now < fact.Time) continue;
                 var binding = resources.Get(fact.Binding);
                 if (binding == null || binding.Atlas == null || binding.Atlas.IsDisposed) { stats.MissingBindings++; continue; }
-                var origin = fact.Position; var elapsed = now - (fact.StartTick - 1d); var bodyElapsed = elapsed;
+                var origin = fact.Position; var elapsed = now - (double)fact.StartTick; var bodyElapsed = elapsed;
                 var depth = depthBias;
                 if (fact.Kind == CombatEffectKind.Swing)
                 {
@@ -115,7 +115,9 @@ namespace MLFLegends.Combat
                 var relativeLayer = settings.Layer; var rotation = 0f;
                 if (settings.Anchor != CombatEffectAnchor.Offset)
                 {
-                    var local = binding.BodyTiming.LocalFrameAt(bodyElapsed / SimulationTiming.TickRateHz);
+                    var local = fact.Kind == CombatEffectKind.Swing
+                        ? CombatAnimationSet.StrikeLocalFrame(binding.BodyTiming, fact.Timing, (uint)Math.Max(0, bodyElapsed))
+                        : binding.BodyTiming.LocalFrameAt(bodyElapsed / SimulationTiming.TickRateHz);
                     if (!binding.AnchorVisible[local])
                     { stats.MissingAnchors++; if (settings.MissingAnchor == CombatEffectMissingAnchor.Skip) continue; }
                     else
@@ -206,3 +208,4 @@ namespace MLFLegends.Combat
         }
     }
 }
+
