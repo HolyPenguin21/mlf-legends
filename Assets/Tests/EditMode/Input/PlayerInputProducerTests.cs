@@ -343,6 +343,47 @@ namespace MLFLegends.Tests.EditMode
         }
 
         [Test]
+        public void RealKShortTapAndGamepadGuardReachCommonActionGates()
+        {
+            StartRig(); Frame(1);
+            Frame(1, () => Down(Key.K));
+            Assert.That(HumanCommand(Last).Held, Is.EqualTo(CommandButtons.Guard));
+            Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.Guard));
+            Assert.That(Human(Last).Guard.Mode, Is.EqualTo(CombatGuardMode.Held));
+            Frame(1, () => Up(Key.K)); Frame(6);
+            Frame(1, () => Tap(Key.K));
+            Assert.That(HumanCommand(Last).Held, Is.EqualTo(CommandButtons.None));
+            Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.Guard));
+            Assert.That(Human(Last).Guard.FreshEntry, Is.True);
+            Frame(1); Assert.That(Human(Last).Guard.Mode, Is.EqualTo(CombatGuardMode.Exit));
+            Frame(6); Frame(1, () => Pad(GamepadButton.LeftShoulder,true));
+            Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.Guard));
+            Assert.That(Human(Last).Guard.Mode, Is.EqualTo(CombatGuardMode.Held));
+            Frame(1, () => Pad(GamepadButton.LeftShoulder,false));
+        }
+
+        [Test]
+        public void GuardRebindingUsesClonedAssetAndInterruptedKDoesNotManufactureFreshPress()
+        {
+            StartRig(); Frame(1); Frame(1,()=>Down(Key.K));
+            m_Capture.SetFocused(false); Frame(1);
+            Assert.That(Human(Last).Guard.Mode,Is.EqualTo(CombatGuardMode.Exit));
+            m_Capture.SetFocused(true); Frame(1);
+            Assert.That(HumanCommand(Last).Pressed,Is.EqualTo(CommandButtons.None));
+            Frame(1,()=>Up(Key.K)); Frame(8);
+            var copy=UnityEngine.Object.Instantiate(m_Asset);
+            try
+            {
+                copy.FindAction("Player/Guard",true).ApplyBindingOverride("<Keyboard>/v");
+                m_Capture.Dispose(); m_Capture=new PlayerInputCapture(copy); m_Producer.Attach(m_Capture);
+                Frame(1,()=>Tap(Key.K)); Assert.That(HumanCommand(Last).Pressed,Is.EqualTo(CommandButtons.None));
+                Frame(1,()=>Tap(Key.V)); Assert.That(HumanCommand(Last).Pressed,Is.EqualTo(CommandButtons.Guard));
+                Assert.That(Human(Last).Guard.FreshEntry,Is.True);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(copy); }
+        }
+
+        [Test]
         public void SeveralPressesBeforeOneTickAreOneBitAndAJumpHeldForSecondsJumpsOnce()
         {
             StartRig();
@@ -426,8 +467,8 @@ namespace MLFLegends.Tests.EditMode
             Assert.That(command.Held, Is.EqualTo(CommandButtons.None), "Gamepad combat aliases removed; movement stick remains tested separately.");
             Assert.That(command.Pressed, Is.EqualTo(CommandButtons.None));
             // #69 layout: U hand series, I foot series, O physical ability, Space jump.
-            var keys = new[] { Key.U, Key.I, Key.O, Key.Space, Key.F };
-            var flags = new[] { CommandButtons.HandSeries, CommandButtons.FootSeries, CommandButtons.PhysicalAbility, CommandButtons.Jump, CommandButtons.FocusToggle };
+            var keys = new[] { Key.U, Key.I, Key.O, Key.Space, Key.F, Key.K };
+            var flags = new[] { CommandButtons.HandSeries, CommandButtons.FootSeries, CommandButtons.PhysicalAbility, CommandButtons.Jump, CommandButtons.FocusToggle, CommandButtons.Guard };
             for (var i = 0; i < keys.Length; i++)
             {
                 Frame(1, () => Tap(keys[i]));
@@ -440,8 +481,8 @@ namespace MLFLegends.Tests.EditMode
             Frame(1, () => { Tap(Key.O); Tap(Key.I); Tap(Key.U); });
             Assert.That(HumanCommand(Last).Pressed, Is.EqualTo(CommandButtons.HandSeries | CommandButtons.FootSeries | CommandButtons.PhysicalAbility));
             Assert.That(CombatAttackTuning.StrikeButton(HumanCommand(Last).Pressed), Is.EqualTo(CommandButtons.HandSeries));
-            // The old exact-limb keys are not extra gameplay buttons; K (future block), 7/8/9/0 (future magic) stay unbound.
-            foreach (var unbound in new[] { Key.Y, Key.H, Key.J, Key.K, Key.L, Key.Digit7, Key.Digit8, Key.Digit9, Key.Digit0 })
+            // The old exact-limb keys are not extra gameplay buttons; 7/8/9/0 (future magic) stay unbound; K is guard.
+            foreach (var unbound in new[] { Key.Y, Key.H, Key.J, Key.L, Key.Digit7, Key.Digit8, Key.Digit9, Key.Digit0 })
             {
                 Frame(1, () => Tap(unbound));
                 Assert.That(HumanCommand(Last).IsNone, Is.True, $"{unbound} is unbound");

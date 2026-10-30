@@ -86,7 +86,9 @@ namespace MLFLegends.Editor
                 "five strike slots: Clip, Damage, Reach min..max, Depth ±, Height ± (world units, point target). Edits publish on the " +
                 "next frame and act on the next strike; the body applies at the next battle start/restart. Timing stays in the clip " +
                 "settings above. Optional damage-duration override and Swing/Impact bindings live in each strike slot. The read-only " +
-                "footer shows damage/Swing intervals in seconds and ticks. Scene gizmos: Combat Bootstrap → Draw Combat Gizmos.", MessageType.Info);
+                "footer shows damage/Swing intervals in seconds and ticks. Guard: maximum at spawn, settings frozen at entry; " +
+                "Strength is dimensionless; cone in degrees; regen in resource/s; all windows in fixed ticks at 60 Hz. " +
+                "Strikes include GuardDamage. Block plays once then holds its last pose. Scene gizmos: Combat Bootstrap → Draw Combat Gizmos.", MessageType.Info);
             EditorGUILayout.HelpBox("Sprite Editor pivot positions each image relative to CombatPosition. Catalog Image Pivots " +
                 "maps frame_id to Sprite; only an absent binding uses the legacy JSON pivot. Image Offset Pixels adds one " +
                 "translation (+X right, +Y down), mirrored with the image and anchors. Reference support is source_size × " +
@@ -268,6 +270,7 @@ namespace MLFLegends.Editor
                     if (settings.ClipId == CombatAnimationSet.IdleClip) item.Timing = set.Idle;
                     else if (settings.ClipId == CombatAnimationSet.RunClip) item.Timing = set.Run;
                     else if (settings.ClipId == CombatAnimationSet.JumpClip) item.Timing = set.Jump;
+                    else if (settings.ClipId == CombatAnimationSet.BlockClip) item.Timing = set.Block;
                     else
                         for (var kind = CombatAttackKind.Hand1; kind <= CombatAttackKind.PhysicalAbility; kind++)
                             if (combat.ClipFor(kind) == settings.ClipId) item.Timing = set.Attack(kind);

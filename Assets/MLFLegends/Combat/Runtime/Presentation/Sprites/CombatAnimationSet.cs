@@ -30,6 +30,7 @@ namespace MLFLegends.Combat
         public const string IdleClip = "idle_combat";
         public const string RunClip = "run";
         public const string JumpClip = "jump";
+        public const string BlockClip = "block";
 
         public const string PhysicalAbilityClip = "physical_ability";
 
@@ -83,6 +84,7 @@ namespace MLFLegends.Combat
         public SpriteAnimationTiming Idle { get; private set; }
         public SpriteAnimationTiming Run { get; private set; }
         public SpriteAnimationTiming Jump { get; private set; }
+        public SpriteAnimationTiming Block { get; private set; }
 
         /// <summary>Ticks the landing frames play after touch-down (config share of the jump clip, ≥ 1).</summary>
         public uint LandingTicks { get; private set; }
@@ -144,6 +146,9 @@ namespace MLFLegends.Combat
             set.Idle = Timing(definition, settingsFor, path, IdleClip, true, false, errors, warnings, out _);
             set.Run = Timing(definition, settingsFor, path, RunClip, true, false, errors, warnings, out _);
             set.Jump = Timing(definition, settingsFor, path, JumpClip, false, false, errors, warnings, out var jumpClip);
+            // Optional for legacy characters; existing authored block uses the same range/T/curve pipeline.
+            if (definition.TryGetClipIndex(BlockClip, out _) && settingsFor(BlockClip) != null)
+                set.Block = Timing(definition, settingsFor, path, BlockClip, false, false, errors, warnings, out _);
             if (set.Jump != null)
             {
                 var jumpPath = path + "." + JumpClip;
@@ -322,11 +327,12 @@ namespace MLFLegends.Combat
         public uint IdleFrame(uint tick, uint battleStartTick) => Idle.FrameAt(Seconds((long)tick - battleStartTick - 1));
 
         /// <summary>Atlas frame of a fighter on <paramref name="tick"/> (the last completed tick).</summary>
-        public uint FrameFor(uint tick, uint battleStartTick, in CombatMotion motion, in CombatAttackState attack)
+        public uint FrameFor(uint tick, uint battleStartTick, in CombatMotion motion, in CombatAttackState attack,
+            CombatGuardState guard = default, CombatStability resource = default, SpriteAnimationTiming frozenBlock = null, SpriteAnimationTiming frozenAttack = null)
         {
             if (attack.IsAttacking)
             {
-                var timing = m_Attacks[(int)attack.Kind];
+                var timing = frozenAttack ?? m_Attacks[(int)attack.Kind];
                 return timing.Frame(StrikeLocalFrame(timing, attack.Timing, tick - attack.StartTick));
             }
 
@@ -338,6 +344,15 @@ namespace MLFLegends.Combat
 
             if (motion.IsLandingRecovery(tick))
                 return Fit(Jump, m_Land, (tick - motion.LandTick) / (double)motion.LandingRecoveryTicks);
+
+            var block = frozenBlock ?? Block;
+            if (block != null)
+            {
+                if (resource.Broken(tick) || guard.Mode == CombatGuardMode.Exit)
+                    return block.Frame(block.FrameCount - 1);
+                if (guard.Effective(resource, tick, motion.Grounded))
+                    return block.Frame(block.LocalFrameAt(Seconds((long)tick - guard.StartTick)));
+            }
 
             const uint grace = CombatMovementTuning.MoveStreakGraceTicks;
             if (motion.MoveStreakStartTick != SimulationClock.NoTick && tick - motion.LastMoveTick <= grace)

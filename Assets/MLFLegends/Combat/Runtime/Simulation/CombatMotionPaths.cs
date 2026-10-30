@@ -12,6 +12,7 @@ namespace MLFLegends.Combat
         public CombatSpatialBody Actor;
         public float3 From, To;
         public float Begin, End;
+        public bool GroundedFrom, GroundedTo;
     }
 
     public static class CombatMotionGeometry
@@ -149,7 +150,8 @@ namespace MLFLegends.Combat
                     var actor = new CombatSpatialBody { Entity = a.Entity, Id = new CombatantId { Value = a.Id },
                         Team = new CombatTeam { Value = a.Team }, Body = a.Body, Position = a.Result.Position };
                     m_MotionSegments.Add(new CombatMotionSegment { Actor = actor, From = a.Start, To = a.Result.Position,
-                        Begin = slice / (float)m_MotionSlices, End = (slice + 1f) / m_MotionSlices });
+                        Begin = slice / (float)m_MotionSlices, End = (slice + 1f) / m_MotionSlices,
+                        GroundedFrom = a.Motion.Grounded, GroundedTo = a.Result.Grounded });
                     var original = m_TickInputs[i];
                     original.Result.ControlledDistance += a.Result.ControlledDistance;
                     original.Result.Landed |= a.Result.Landed;

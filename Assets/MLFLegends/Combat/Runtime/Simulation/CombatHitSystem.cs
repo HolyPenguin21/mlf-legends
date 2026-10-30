@@ -28,10 +28,10 @@ namespace MLFLegends.Combat
     /// CombatAttackState.Strike when the strike started (#69: per-character values). Each such target loses Damage HP (clamped at 0)
     /// once and joins the ledger, so several Active ticks of one strike never hit it twice; the next strike starts with an
     /// empty ledger. Allies and the attacker itself are never valid targets. Attackers and targets are visited in CombatantId
-    /// order, so the result never depends on chunk order. No defeat or guard; authored on-hit impulses use the next Movement boundary.
+    /// order, so the result never depends on chunk order. Guard is resolved after geometry in contact-time / target-id / attacker-id order; no defeat yet.\n    /// Authored on-hit impulses use the next Movement boundary. Hit alone writes stability and feedback.
     /// Stage 04.5: managed orchestration gathers Active attackers, builds one conservative point-target AABB per attacker and
     /// asks the World's only CombatSpatialIndexSystem for one atomic batch (membership validated once). A Burst job then runs
-    /// the unchanged Inside/filter/ledger/HP rules on the Id-sorted candidates. Body radius only widens the broadphase, never
+    /// the Inside/filter/ledger/guard/HP rules on the Id-sorted candidates. Body radius only widens the broadphase, never
     /// the hit rule. A missing/stale snapshot with Active attackers is a production invariant failure: it throws before any
     /// HP/ledger write, never silently falls back to a full scan. Native scratch belongs to this system (World lifetime),
     /// is cleared after every call (no Entity survives a tick) and is disposed in OnDestroy.
@@ -175,6 +175,9 @@ namespace MLFLegends.Combat
                 m_Swings.Clear(); stream.LastSwingTick = tick;
             }
             SystemAPI.SetComponent(m_Effects, stream);
+            // Hit owns recovery even with zero attackers. The fixed-tick guard prevents duplicate updates.
+            state.Dependency = new CombatGuardRegenJob { Tick = tick }.Schedule(state.Dependency);
+            state.Dependency.Complete();
             var bodies = SystemAPI.GetComponentLookup<CombatBody>(true);
             try
             {
@@ -236,7 +239,9 @@ namespace MLFLegends.Combat
                 state.Dependency = new CombatHitJob
                 {
                     Attackers = m_Attackers.AsArray(), Candidates = m_Candidates.AsArray(), Ranges = m_Ranges.AsArray(),
-                    Health = SystemAPI.GetComponentLookup<CombatHealth>(), Feedback = SystemAPI.GetComponentLookup<CombatDamageFeedback>(), Ledgers = SystemAPI.GetBufferLookup<CombatHitRecord>(),
+                    Health = SystemAPI.GetComponentLookup<CombatHealth>(),
+                    Guards = SystemAPI.GetComponentLookup<CombatGuardState>(true), Stability = SystemAPI.GetComponentLookup<CombatStability>(),
+                    Motions = SystemAPI.GetComponentLookup<CombatMotion>(true), Facings = SystemAPI.GetComponentLookup<CombatFacing>(true), Feedback = SystemAPI.GetComponentLookup<CombatDamageFeedback>(), Ledgers = SystemAPI.GetBufferLookup<CombatHitRecord>(),
                     Diagnostics = m_Diagnostics, Segments = segments, BodyCount = bodyCount, Shapes = shapes,
                     Confirmed = m_Confirmed, Impulses = m_HitImpulses, BattleNumber = session,
                 }.Schedule(state.Dependency);
@@ -249,6 +254,14 @@ namespace MLFLegends.Combat
                 for (var i = 0; i < m_Confirmed.Length; i++)
                 {
                     var hit = m_Confirmed[i]; var a = m_Attackers[hit.AttackerIndex];
+                    if (hit.Outcome != CombatGuardOutcome.None)
+                        stream.Append(facts, new CombatEffectFact {
+                            Kind = hit.Outcome == CombatGuardOutcome.Break ? CombatEffectKind.Break
+                                : hit.Outcome == CombatGuardOutcome.Timely ? CombatEffectKind.Timely : CombatEffectKind.Block,
+                            Attacker = a.Entity, AttackerId = a.Id, TargetId = hit.Target.Id.Value, StartTick = a.StartTick,
+                            BattleNumber = session, Facing = a.Facing, Position = hit.Position,
+                            Time = tick - 1d + hit.Time, End = tick - 1d + hit.Time + 9, Timing = a.Timing });
+                    if (hit.EffectiveDamage <= 0) continue;
                     var duration = resources.Get(a.Strike.ImpactEffect)?.DurationTicks ?? 1;
                     stream.Append(facts, new CombatEffectFact { Kind = CombatEffectKind.Impact, Binding = a.Strike.ImpactEffect,
                         Attacker = a.Entity, AttackerId = a.Id, TargetId = hit.Target.Id.Value, StartTick = a.StartTick,
@@ -271,11 +284,26 @@ namespace MLFLegends.Combat
         }
     }
 
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Strict)]
+    [WithAll(typeof(InCombat))]
+    internal partial struct CombatGuardRegenJob : IJobEntity
+    {
+        public uint Tick;
+        void Execute(ref CombatStability resource, in CombatGuardState guard, in CombatMotion motion, in CombatAttackState attack)
+        {
+            CombatGuardResolution.Regenerate(ref resource, guard, Tick,
+                motion.Grounded && !motion.IsLandingRecovery(Tick) && !attack.IsAttacking);
+        }
+    }
+
     internal struct CombatHitConfirmation
     {
         public int AttackerIndex;
         public CombatSpatialBody Target;
         public float Time;
+        public bool TargetGrounded;
+        public int EffectiveDamage;
+        public CombatGuardOutcome Outcome;
         public float3 ImpactDelta, Position;
     }
 
@@ -287,6 +315,10 @@ namespace MLFLegends.Combat
         [ReadOnly] public NativeArray<CombatSpatialBody> Candidates;
         [ReadOnly] public NativeArray<int2> Ranges;
         public ComponentLookup<CombatHealth> Health;
+        [ReadOnly] public ComponentLookup<CombatGuardState> Guards;
+        public ComponentLookup<CombatStability> Stability;
+        [ReadOnly] public ComponentLookup<CombatMotion> Motions;
+        [ReadOnly] public ComponentLookup<CombatFacing> Facings;
         public ComponentLookup<CombatDamageFeedback> Feedback;
         public BufferLookup<CombatHitRecord> Ledgers;
         public NativeArray<CombatHitDiagnostics> Diagnostics;
@@ -332,12 +364,16 @@ namespace MLFLegends.Combat
                     // Ordinary geometry samples both final positions at the end of this tick.
                     // Eligibility remains damage-interval OVERLAP, independently of this sample timestamp.
                     var contact = 1f; var point = target.Position + new float3(0, target.Body.Height * .5f, 0); var delta = target.Position - attacker.Position;
+                    var grounded = Motions.TryGetComponent(target.Entity, out var motion) && motion.Grounded;
                     if (attacker.Swept)
                     {
-                        if (!TrySwept(attacker, target, out contact, out delta, out point)) continue;
+                        if (!TrySwept(attacker, target, out contact, out delta, out point, out grounded)) continue;
                     }
                     else if (!CombatHitSystem.Inside(strike, attacker.Position, attacker.Facing, target.Position, attacker.Height, target.Body.Height)) continue;
-                    Confirmed.Add(new CombatHitConfirmation { AttackerIndex = a, Target = target, Time = contact, ImpactDelta = delta, Position = point });
+                    if (!attacker.Swept && !CombatMotionGeometry.SegmentClear(Shapes,
+                        attacker.Position + new float3(0, attacker.Height * .5f + strike.HitOffsetY, 0), point)) continue;
+                    Confirmed.Add(new CombatHitConfirmation { AttackerIndex = a, Target = target, Time = contact,
+                        TargetGrounded = grounded, ImpactDelta = delta, Position = point });
                 }
             }
             // No HP/ledger mutation before the complete bounded confirmation pass.
@@ -347,15 +383,28 @@ namespace MLFLegends.Combat
                 var hit = Confirmed[h]; var attacker = Attackers[hit.AttackerIndex]; var strike = attacker.Strike;
                 var ledger = Ledgers[attacker.Entity];
                 ledger.Add(new CombatHitRecord { Target = hit.Target.Id });
-                var hp = Health[hit.Target.Entity]; hp.Current = math.max(0, hp.Current - strike.Damage); Health[hit.Target.Entity] = hp;
-                if (strike.Damage > 0 && Feedback.HasComponent(hit.Target.Entity))
+                var impulseMultiplier = 1f;
+                if (Guards.TryGetComponent(hit.Target.Entity, out var guard) && Stability.TryGetComponent(hit.Target.Entity, out var resource)
+                    && Facings.TryGetComponent(hit.Target.Entity, out var facing))
+                {
+                    hit.Outcome = CombatGuardResolution.Resolve(ref resource, guard, hit.TargetGrounded, -hit.ImpactDelta,
+                        facing.Value == FacingDirection.Left ? -1f : 1f, strike.GuardDamage, d.Tick - 1d + hit.Time, d.Tick);
+                    Stability[hit.Target.Entity] = resource; // visible to every later confirmation in this batch
+                    if (hit.Outcome == CombatGuardOutcome.Block || hit.Outcome == CombatGuardOutcome.Timely)
+                        impulseMultiplier = guard.Settings.BlockedImpulseMultiplier;
+                }
+                var blocked = hit.Outcome == CombatGuardOutcome.Block || hit.Outcome == CombatGuardOutcome.Timely;
+                var hp = Health[hit.Target.Entity]; var before = hp.Current;
+                hp.Current = math.max(0, hp.Current - (blocked ? 0 : strike.Damage)); Health[hit.Target.Entity] = hp;
+                hit.EffectiveDamage = before - hp.Current; Confirmed[h] = hit;
+                if (hit.EffectiveDamage > 0 && Feedback.HasComponent(hit.Target.Entity))
                     Feedback[hit.Target.Entity] = new CombatDamageFeedback { LastDamageTick = d.Tick };
-                if (math.any(strike.OnHitImpulse != 0))
+                if (impulseMultiplier > 0 && math.any(strike.OnHitImpulse != 0))
                 {
                     var outward = math.abs(hit.ImpactDelta.z) > 1e-6f ? math.sign(hit.ImpactDelta.z)
                         : ((attacker.Id ^ hit.Target.Id.Value) & 1) == 0 ? 1f : -1f;
                     Impulses.Add(new CombatImpulse { Target = hit.Target.Id, BattleNumber = BattleNumber,
-                        Impulse = new float3(attacker.Facing * strike.OnHitImpulse.x, strike.OnHitImpulse.y, outward * strike.OnHitImpulse.z) });
+                        Impulse = new float3(attacker.Facing * strike.OnHitImpulse.x, strike.OnHitImpulse.y, outward * strike.OnHitImpulse.z) * impulseMultiplier });
                 }
                 d.AcceptedHits++;
             }
@@ -363,9 +412,9 @@ namespace MLFLegends.Combat
             Diagnostics[0] = d;
         }
 
-        bool TrySwept(in CombatHitSystem.Attacker attacker, in CombatSpatialBody target, out float contact, out float3 delta, out float3 position)
+        bool TrySwept(in CombatHitSystem.Attacker attacker, in CombatSpatialBody target, out float contact, out float3 delta, out float3 position, out bool grounded)
         {
-            contact = float.PositiveInfinity; delta = default; position = default;
+            contact = float.PositiveInfinity; delta = default; position = default; grounded = false;
             var actorOffset = FindMotion(attacker.Id); var targetOffset = FindMotion(target.Id.Value);
             if (actorOffset < 0 || targetOffset < 0) return false;
             // The owner stores each slice in stable Id order. Both sides use precisely the same interval.
@@ -385,7 +434,13 @@ namespace MLFLegends.Combat
                 var point = math.lerp(aw0, aw1, local); point.y += attacker.Strike.HitOffsetY;
                 var victim = math.lerp(bw0, bw1, local);
                 if (!CombatMotionGeometry.SegmentClear(Shapes, point, victim)) continue;
-                if (time < contact) { contact = time; delta = victim - point; position = victim; }
+                if (time < contact)
+                {
+                    contact = time; delta = victim - point; position = victim;
+                    // Support from the accepted slice, never a later final Motion.
+                    // Departure loses protection in the open interior; exact start retains its start state.
+                    grounded = local <= 0 ? b.GroundedFrom : b.GroundedFrom && b.GroundedTo;
+                }
             }
             return math.isfinite(contact);
         }

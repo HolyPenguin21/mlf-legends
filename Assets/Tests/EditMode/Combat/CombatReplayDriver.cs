@@ -95,6 +95,8 @@ namespace MLFLegends.Tests.EditMode
         public CombatBodyProfile Profile;
         public CombatDamageFeedback Feedback;
         public CombatAutoFocus Focus;
+        public CombatGuardState Guard;
+        public CombatStability Stability;
 
         /// <summary>CombatantId values in the current strike's hit ledger, in hit order.</summary>
         public uint[] Hits;
@@ -466,6 +468,8 @@ namespace MLFLegends.Tests.EditMode
                         Profile = manager.HasComponent<CombatBodyProfile>(entity) ? manager.GetComponentData<CombatBodyProfile>(entity) : default,
                         Facing = manager.GetComponentData<CombatFacing>(entity).Value,
                         Focus = manager.HasComponent<CombatAutoFocus>(entity) ? manager.GetComponentData<CombatAutoFocus>(entity) : default,
+                        Guard = manager.HasComponent<CombatGuardState>(entity) ? manager.GetComponentData<CombatGuardState>(entity) : default,
+                        Stability = manager.HasComponent<CombatStability>(entity) ? manager.GetComponentData<CombatStability>(entity) : default,
                         InCombat = manager.IsComponentEnabled<InCombat>(entity),
                         HasApplied = hasApplied,
                         Applied = hasApplied ? manager.GetComponentData<AppliedCombatCommand>(entity) : default,

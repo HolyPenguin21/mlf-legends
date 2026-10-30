@@ -3,7 +3,7 @@ using Unity.Mathematics;
 
 namespace MLFLegends.Combat
 {
-    public enum CombatEffectKind : byte { Swing, Impact }
+    public enum CombatEffectKind : byte { Swing, Impact, Block, Timely, Break }
 
     /// <summary>Numerical confirmation, with no assets or gameplay authority. Times are completed-clock tick coordinates.</summary>
     [InternalBufferCapacity(0)]

@@ -42,7 +42,8 @@ namespace MLFLegends.Combat
         public double DamageEndTicks;
         public double DamageStart => PreciseActiveWindow ? ActiveStartTicks : ActiveStart;
         public double DamageEnd => OverrideDamageDuration ? DamageEndTicks : PreciseActiveWindow ? RecoveryStartTicks : RecoveryStart;
-        public double SwingEnd => PreciseActiveWindow ? RecoveryStartTicks : RecoveryStart;
+        // Presentation ends at the first displayed Recovery tick, including quantized short Active phases.
+        public double SwingEnd => RecoveryStart;
         public bool DealsDamageOn(uint elapsed) => elapsed < End && elapsed < DamageEnd && elapsed + 1d > DamageStart;
         public void DamageWindow(uint elapsed, out float lo, out float hi)
         {
@@ -159,6 +160,7 @@ namespace MLFLegends.Combat
 
         /// <summary>Body of every fighter spawned while this table is current (vertical cylinder from CombatPosition).</summary>
         public CombatBody Body;
+        public CombatGuardParameters Guard;
 
         /// <summary>Jump landing frames' duration quantized to ticks. 0 = no animation config published, no artificial delay.</summary>
         public uint LandingRecoveryTicks;
@@ -178,7 +180,7 @@ namespace MLFLegends.Combat
             Foot1Strike = CombatAttackTuning.Get(CombatAttackKind.Foot1).Parameters,
             Foot2Strike = CombatAttackTuning.Get(CombatAttackKind.Foot2).Parameters,
             PhysicalAbilityStrike = CombatAttackTuning.Get(CombatAttackKind.PhysicalAbility).Parameters,
-            Body = CombatBodyTuning.Default,
+            Body = CombatBodyTuning.Default, Guard = CombatGuardParameters.Default,
         };
 
         public CombatStrikeParameters GetStrike(CombatAttackKind kind)
@@ -252,7 +254,7 @@ namespace MLFLegends.Combat
                         return false;
                 }
 
-                return CombatCharacterLimits.IsValid(Body);
+                return CombatCharacterLimits.IsValid(Body) && Guard.IsValid;
             }
         }
 
@@ -270,6 +272,8 @@ namespace MLFLegends.Combat
             {
                 var resources = effects.CalculateEntityCount() == 1
                     ? entityManager.GetComponentObject<CombatEffectResources>(effects.GetSingletonEntity()) : null;
+                if (schedule.Guard.BlockTiming < 0 || schedule.Guard.BlockTiming != 0 && resources?.BlockTiming(schedule.Guard.BlockTiming) == null)
+                    throw new ArgumentException("Guard block timing is not a prepared binding of this World.", nameof(schedule));
                 for (var kind = CombatAttackKind.Hand1; kind <= CombatAttackKind.PhysicalAbility; kind++)
                 {
                     var value = schedule.GetStrike(kind);

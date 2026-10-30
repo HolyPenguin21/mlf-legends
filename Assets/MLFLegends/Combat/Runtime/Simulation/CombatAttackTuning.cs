@@ -22,6 +22,7 @@ namespace MLFLegends.Combat
 
         /// <summary>HP removed from each valid target, once per strike.</summary>
         public int Damage;
+        public float GuardDamage;
 
         /// <summary>Hit box along the attacker's facing, world units from its position (forward distance, inclusive).</summary>
         public float ReachMin;
@@ -38,7 +39,7 @@ namespace MLFLegends.Combat
         /// <summary>The default per-character values of this slot (damage and hit box).</summary>
         public CombatStrikeParameters Parameters => new CombatStrikeParameters
         {
-            Damage = Damage, ReachMin = ReachMin, ReachMax = ReachMax, DepthHalfWidth = DepthHalfWidth, HeightTolerance = HeightTolerance,
+            Damage = Damage, GuardDamage = GuardDamage, ReachMin = ReachMin, ReachMax = ReachMax, DepthHalfWidth = DepthHalfWidth, HeightTolerance = HeightTolerance,
         };
 
         public bool CanChain => ChainDelayTicks != CombatAttackTuning.NoChain;
@@ -65,6 +66,7 @@ namespace MLFLegends.Combat
 
         public static bool IsValid(in CombatStrikeParameters strike) =>
             strike.Damage >= 0 && strike.Damage <= MaxDamage
+            && InRange(strike.GuardDamage, 0, 1000000)
             && InRange(strike.ReachMin, 0, MaxReach) && InRange(strike.ReachMax, strike.ReachMin, MaxReach)
             && InRange(strike.DepthHalfWidth, 0, MaxDepthHalfWidth) && InRange(strike.HeightTolerance, 0, MaxHeightTolerance)
             && InRange(strike.HitOffsetY, -8, 8) && InRange(strike.SelfImpulse, 0, 2400)
@@ -100,24 +102,24 @@ namespace MLFLegends.Combat
             switch (kind)
             {
                 case CombatAttackKind.Hand1:
-                    return Strike(13, 5, 11, 4, 4, 1.0f);
+                    return Strike(13, 5, 11, 4, 4, 1.0f, 10);
                 case CombatAttackKind.Hand2:
-                    return Strike(9, 9, 11, 4, 4, 1.0f);
+                    return Strike(9, 9, 11, 4, 4, 1.0f, 10);
                 case CombatAttackKind.Foot1:
                 case CombatAttackKind.Foot2:
-                    return Strike(11, 5, 17, 6, 7, 1.3f);
+                    return Strike(11, 5, 17, 6, 7, 1.3f, 15);
                 case CombatAttackKind.PhysicalAbility:
-                    return Strike(19, 6, 20, NoChain, 12, 1.45f);
+                    return Strike(19, 6, 20, NoChain, 12, 1.45f, 25);
                 default:
                     return default;
             }
         }
 
-        static CombatAttackDefinition Strike(byte windup, byte active, byte recovery, byte chainDelay, int damage, float reach) =>
+        static CombatAttackDefinition Strike(byte windup, byte active, byte recovery, byte chainDelay, int damage, float reach, float guardDamage) =>
             new CombatAttackDefinition
             {
                 WindupTicks = windup, ActiveTicks = active, RecoveryTicks = recovery, ChainDelayTicks = chainDelay,
-                Damage = damage, ReachMin = 0f, ReachMax = reach, DepthHalfWidth = 0.4f, HeightTolerance = 0.9f,
+                Damage = damage, GuardDamage = guardDamage, ReachMin = 0f, ReachMax = reach, DepthHalfWidth = 0.4f, HeightTolerance = 0.9f,
             };
 
         /// <summary>Phase of the default windows on the tick <paramref name="elapsed"/> ticks after the strike's first tick; None once it ended.</summary>

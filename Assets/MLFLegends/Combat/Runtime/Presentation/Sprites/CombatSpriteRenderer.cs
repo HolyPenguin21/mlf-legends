@@ -90,6 +90,9 @@ namespace MLFLegends.Combat
         static readonly int s_DepthBias = Shader.PropertyToID("_DepthBias");
         static readonly int s_AlphaCutoff = Shader.PropertyToID("_AlphaCutoff");
         static readonly int s_DamageTint = Shader.PropertyToID("_DamageTint");
+        static readonly int s_BlockTint = Shader.PropertyToID("_BlockTint");
+        static readonly int s_TimelyTint = Shader.PropertyToID("_TimelyTint");
+        static readonly int s_BreakTint = Shader.PropertyToID("_BreakTint");
         static readonly int s_ImageOffsetCard = Shader.PropertyToID("_ImageOffsetCard");
 
         static readonly ProfilerMarker s_SubmitMarker = new ProfilerMarker("CombatSpriteRenderer.Submit");
@@ -122,7 +125,13 @@ namespace MLFLegends.Combat
         [Tooltip("Requested view-depth gap within overlapping cards; compressed to a fixed 1/16-world-unit total budget.")]
         [SerializeField, Range(0.0001f, 0.05f)] float m_DepthSeparation = 0.002f;
 
-        [Header("Damage feedback (simulation ticks; paused with combat)")]
+        [Header("Damage and guard feedback (simulation ticks; paused with combat)")]
+        [SerializeField] Color m_BlockColor = new Color(.1f,.4f,1);
+        [SerializeField, Range(0,1)] float m_BlockIntensity = .5f;
+        [SerializeField] Color m_TimelyColor = new Color(.1f,1,1);
+        [SerializeField, Range(0,1)] float m_TimelyIntensity = .65f;
+        [SerializeField] Color m_BreakColor = new Color(1,.6f,.05f);
+        [SerializeField, Range(0,1)] float m_BreakIntensity = .65f;
         [SerializeField] Color m_DamageColor = Color.red;
         [SerializeField, Range(0, 1)] float m_DamageIntensity = .25f;
         [SerializeField, Min(1)] int m_DamageDurationTicks = 9;
@@ -674,6 +683,9 @@ namespace MLFLegends.Combat
             var s = PixelWorldSize;
             var extents = CardExtents(s);
             m_Material.SetFloat(s_AlphaCutoff, m_AlphaCutoff);
+            m_Material.SetColor(s_BlockTint, new Color(m_BlockColor.r,m_BlockColor.g,m_BlockColor.b,m_BlockIntensity));
+            m_Material.SetColor(s_TimelyTint, new Color(m_TimelyColor.r,m_TimelyColor.g,m_TimelyColor.b,m_TimelyIntensity));
+            m_Material.SetColor(s_BreakTint, new Color(m_BreakColor.r,m_BreakColor.g,m_BreakColor.b,m_BreakIntensity));
             m_Material.SetColor(s_DamageTint, new Color(m_DamageColor.r, m_DamageColor.g, m_DamageColor.b, m_DamageIntensity));
 
             for (var p = 0; p < m_Extraction.PageCount; p++)

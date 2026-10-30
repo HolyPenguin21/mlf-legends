@@ -23,7 +23,7 @@ namespace MLFLegends.Combat
         /// <summary>+1 right, −1 left, from <see cref="CombatFacing"/>.</summary>
         public float Facing;
         public float DamageFactor;
-        public float Padding; // 16-byte-aligned structured-buffer stride
+        public float GuardFeedback; // signed flash: block/timely > 0, break < 0; stride remains 32 bytes
     }
 
     /// <summary>
@@ -53,6 +53,7 @@ namespace MLFLegends.Combat
         EntityQuery m_Clocks;
         EntityQuery m_Combatants;
         EntityQuery m_Animated;
+        EntityQuery m_EffectResources;
         uint m_BoundBattle;
         readonly Dictionary<uint, uint> m_Selections = new Dictionary<uint, uint>();
 
@@ -198,6 +199,8 @@ namespace MLFLegends.Combat
             using var ids = m_Combatants.ToComponentDataArray<CombatantId>(Allocator.Temp);
             using var positions = m_Combatants.ToComponentDataArray<CombatPosition>(Allocator.Temp);
             using var facings = m_Combatants.ToComponentDataArray<CombatFacing>(Allocator.Temp);
+            var resources = m_EffectResources.CalculateEntityCount() == 1
+                ? world.EntityManager.GetComponentObject<CombatEffectResources>(m_EffectResources.GetSingletonEntity()) : null;
             var count = ids.Length;
             if (count == 0)
                 return;
@@ -234,7 +237,14 @@ namespace MLFLegends.Combat
                 var frame = animations == null && m_Selections.TryGetValue(ids[i].Value, out var selected) && selected < frameCount ? selected : fallback;
                 if (animations != null && animatedIndex.TryGetValue(ids[i].Value, out var state))
                 {
-                    var animated = animations.FrameFor(tick, session.BattleStartTick, motions[state], attacks[state]);
+                    var actor = entities[i]; var em = world.EntityManager;
+                    var guard = em.HasComponent<CombatGuardState>(actor) ? em.GetComponentData<CombatGuardState>(actor) : default;
+                    var stability = em.HasComponent<CombatStability>(actor) ? em.GetComponentData<CombatStability>(actor) : default;
+                    SpriteAnimationTiming block = null;
+                    if (guard.Settings.BlockTiming != 0) block = resources?.BlockTiming(guard.Settings.BlockTiming);
+                    var frozenAttack = resources?.Get(attacks[state].Strike.SwingEffect)?.BodyTiming
+                        ?? resources?.Get(attacks[state].Strike.ImpactEffect)?.BodyTiming;
+                    var animated = animations.FrameFor(tick, session.BattleStartTick, motions[state], attacks[state], guard, stability, block, frozenAttack);
                     frame = animated < frameCount ? animated : fallback;
                 }
                 frames[i] = frame;
@@ -275,6 +285,8 @@ namespace MLFLegends.Combat
                     DepthOffset = m_Offsets[index],
                     Frame = frame,
                     Facing = facings[index].Value == FacingDirection.Left ? -1f : 1f,
+                    GuardFeedback = world.EntityManager.HasComponent<CombatStability>(entities[index])
+                        ? GuardFactor(tick, world.EntityManager.GetComponentData<CombatStability>(entities[index]), damageDurationTicks) : 0,
                     DamageFactor = world.EntityManager.HasComponent<CombatDamageFeedback>(entities[index])
                         ? DamageFactor(tick, world.EntityManager.GetComponentData<CombatDamageFeedback>(entities[index]).LastDamageTick, damageDurationTicks) : 0,
                 };
@@ -285,6 +297,14 @@ namespace MLFLegends.Combat
 
             cursor.Dispose();
             frames.Dispose();
+        }
+
+        public static float GuardFactor(uint tick, in CombatStability resource, uint duration)
+        {
+            var amount = DamageFactor(tick, resource.LastOutcomeTick, duration);
+            return resource.LastOutcome == CombatGuardOutcome.Break ? -amount
+                : resource.LastOutcome == CombatGuardOutcome.Timely ? amount * 2
+                : resource.LastOutcome == CombatGuardOutcome.Block ? amount : 0;
         }
 
         public static float DamageFactor(uint tick, uint last, uint duration)
@@ -391,6 +411,7 @@ namespace MLFLegends.Combat
             m_Clocks = manager.CreateEntityQuery(ComponentType.ReadOnly<SimulationClock>());
             m_Combatants = manager.CreateEntityQuery(ComponentType.ReadOnly<CombatantId>(), ComponentType.ReadOnly<CombatPosition>(),
                 ComponentType.ReadOnly<CombatFacing>(), ComponentType.ReadOnly<InCombat>());
+            m_EffectResources = manager.CreateEntityQuery(ComponentType.ReadOnly<CombatEffectResources>());
             m_Animated = manager.CreateEntityQuery(ComponentType.ReadOnly<CombatantId>(), ComponentType.ReadOnly<CombatMotion>(),
                 ComponentType.ReadOnly<CombatAttackState>(), ComponentType.ReadOnly<InCombat>());
         }
@@ -403,6 +424,7 @@ namespace MLFLegends.Combat
                 m_Clocks.Dispose();
                 m_Combatants.Dispose();
                 m_Animated.Dispose();
+                m_EffectResources.Dispose();
             }
 
             m_World = null;
@@ -410,6 +432,7 @@ namespace MLFLegends.Combat
             m_Clocks = default;
             m_Combatants = default;
             m_Animated = default;
+            m_EffectResources = default;
             m_BoundBattle = 0;
             if (clearSelections)
                 m_Selections.Clear();

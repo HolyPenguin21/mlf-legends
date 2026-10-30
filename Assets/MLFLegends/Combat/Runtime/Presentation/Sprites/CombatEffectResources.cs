@@ -30,6 +30,8 @@ namespace MLFLegends.Combat
             }
         }
         readonly List<Binding> m_Bindings = new List<Binding>();
+        readonly List<SpriteAnimationTiming> m_BlockTimings = new List<SpriteAnimationTiming>();
+        public SpriteAnimationTiming BlockTiming(int handle) => handle > 0 && handle <= m_BlockTimings.Count ? m_BlockTimings[handle - 1] : null;
         readonly List<SpriteAtlas> m_Atlases = new List<SpriteAtlas>();
         readonly List<SpriteAtlasCatalog> m_Catalogs = new List<SpriteAtlasCatalog>();
         readonly List<int> m_Versions = new List<int>();
@@ -51,6 +53,14 @@ namespace MLFLegends.Combat
         public void Prepare(ref CombatStrikeSchedule table, CharacterCombatSettings combat, CombatAnimationSet animations,
             SpriteAtlasCatalog bodyCatalog, Vector2 imageOffset)
         {
+            var blockCount = m_BlockTimings.Count;
+            table.Guard.BlockTiming = 0;
+            if (animations.Block != null)
+            {
+                if (m_BlockTimings.Count < MaxBindings)
+                { m_BlockTimings.Add(animations.Block); table.Guard.BlockTiming = m_BlockTimings.Count; }
+                else CapacityDropped++;
+            }
             var enabled = 0;
             for (var k = CombatAttackKind.Hand1; k <= CombatAttackKind.PhysicalAbility; k++)
             {
@@ -105,6 +115,8 @@ namespace MLFLegends.Combat
             }
             catch
             {
+                if (m_BlockTimings.Count > blockCount) m_BlockTimings.RemoveRange(blockCount, m_BlockTimings.Count - blockCount);
+                table.Guard.BlockTiming = 0;
                 for (var i = m_Atlases.Count - 1; i >= atlasCount; i--)
                 { m_Atlases[i].Dispose(); m_Atlases.RemoveAt(i); m_Catalogs.RemoveAt(i); m_Versions.RemoveAt(i); }
                 if (oldTechnical == null && m_TechnicalPages != null)
@@ -178,7 +190,7 @@ namespace MLFLegends.Combat
         public void Dispose()
         {
             foreach (var atlas in m_Atlases) atlas.Dispose();
-            m_Atlases.Clear(); m_Catalogs.Clear(); m_Versions.Clear(); m_Bindings.Clear(); m_Technical = null;
+            m_Atlases.Clear(); m_Catalogs.Clear(); m_Versions.Clear(); m_Bindings.Clear(); m_BlockTimings.Clear(); m_Technical = null;
             if (m_TechnicalPages != null) foreach (var p in m_TechnicalPages)
                 if (Application.isPlaying) UnityEngine.Object.Destroy(p); else UnityEngine.Object.DestroyImmediate(p);
             m_TechnicalPages = null;

@@ -15,7 +15,7 @@ from tree_sitter import Language, Parser
 import tree_sitter_c_sharp
 
 root = Path(__file__).resolve().parents[1]
-base = 'd5e97dea7326fa6bc6ccd28ebb44f823c601a92d'
+base = 'e4a4b1a1de3d7c6324537b4796119d6a038f81ed'
 runtime = root / 'Assets/MLFLegends/Combat/Runtime'
 parser = Parser(Language(tree_sitter_c_sharp.language()))
 cs = sorted((root/'Assets').rglob('*.cs'))
@@ -33,7 +33,7 @@ def unity_yaml(data):
 # Every previous owner-authored setting remains exactly equal, including curves/body/phases/launch/pivots.
 asset = 'Assets/MLFLegends/Combat/PresentationData/CharacterAnimationConfig.asset'
 before, after = unity_yaml(old(asset).decode()), unity_yaml(text(asset))
-added = {'OverrideDamageDuration', 'DamageDurationSeconds', 'Swing', 'Impact'}
+added = set()  # #79 preserves the complete owner asset from fresh main
 def previous_shape(node):
     if isinstance(node, dict): return {k: previous_shape(v) for k,v in node.items() if k not in added}
     if isinstance(node, list): return [previous_shape(v) for v in node]
@@ -48,25 +48,23 @@ for c in characters:
         assert slot['Swing']['ClipId']=='swing' and slot['Impact']['ClipId']=='impact'
 scene = 'Assets/Scenes/CombatSmoke.unity'
 without_vfx = re.sub(r'^  m_EffectShader:.*\n|^  m_DrawEffects:.*\n', '', text(scene), flags=re.M)
-assert without_vfx.encode()==old(scene), 'Existing owner scene fields changed'
+assert text(scene).encode()==old(scene), 'Existing owner scene fields changed'
 # Retired bits are never reused, F does not conflict with existing/future keys, old bindings remain identical.
 actions = 'Assets/InputSystem_Actions.inputactions'
 old_input, new_input = json.loads(old(actions)), json.loads(text(actions))
 for old_map, new_map in zip(old_input['maps'], new_input['maps']):
     if old_map['name']!='Player': assert old_map==new_map; continue
-    assert [a for a in new_map['actions'] if a['name']!='FocusToggle']==old_map['actions']
-    assert [b for b in new_map['bindings'] if b['action']!='FocusToggle']==old_map['bindings']
+    assert [a for a in new_map['actions'] if a['name']!='Guard']==old_map['actions']
+    assert [b for b in new_map['bindings'] if b['action']!='Guard']==old_map['bindings']
     f=[b for b in new_map['bindings'] if b['action']=='FocusToggle']
     assert len(f)==1 and f[0]['path']=='<Keyboard>/f'
+    assert {b['path'] for b in new_map['bindings'] if b['action']=='Guard'}=={'<Keyboard>/k','<Gamepad>/leftShoulder'}
 buttons=text('Assets/MLFLegends/Combat/Runtime/Core/CombatCommand.cs')
 assert 'FocusToggle = 1 << 10' in buttons
 assert not re.search(r'= 1 << [4-8]\b', buttons)
 # Existing owners/physics/body/shadow shader/art have not been refactored or redrawn.
 unchanged = [
-    'Assets/MLFLegends/Combat/Runtime/Simulation/CombatActionSystem.cs',
-    'Assets/MLFLegends/Combat/Runtime/Simulation/CombatMovementSystem.cs',
     'Assets/MLFLegends/Combat/Runtime/Simulation/CombatBodyContacts.cs',
-    'Assets/MLFLegends/Combat/Runtime/Presentation/Sprites/CombatSprite.shader',
     'Assets/MLFLegends/Combat/Runtime/Presentation/Sprites/CombatGroundShadow.shader',
     'Assets/MLFLegends/Art/Characters/MageFemale01/Metadata/mage_female_01.atlas.json',
 ]
@@ -84,6 +82,8 @@ assert 'mode.LastToggleTick != tick' in facing and 'command.Tick == tick' in fac
 assert 'actor.HasIdentity && actor.AutoFocus' in facing and 'attack.StartTick != tick' in facing
 assert not any(t in consumer for t in ('SetComponentData','SetComponent(','AddComponent','Time.time','Coroutine','new GameObject','ParticleSystem'))
 assert 'fact.Time - (fact.StartTick - 1d)' in consumer and 'now >= fact.End' in consumer
+assert 'Time = tick, End = tick + a.Timing.RecoveryStart' in hit
+assert 'var contact = 1f;' in hit and 'CombatAnimationSet.StrikeLocalFrame' in consumer
 shader=(runtime/'Presentation/Sprites/CombatEffect.shader').read_text()
 for token in ('Blend SrcAlpha OneMinusSrcAlpha','ZTest LEqual','ZWrite Off','_EffectInstances','instance.rotation'):
     assert token in shader

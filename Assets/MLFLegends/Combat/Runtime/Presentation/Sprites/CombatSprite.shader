@@ -9,6 +9,9 @@ Shader "MLF Legends/Combat Sprite"
     {
         [NoScaleOffset] _MainTex ("Atlas page (set per draw)", 2D) = "white" {}
         _DamageTint ("Damage tint (alpha = intensity)", Color) = (1, 0, 0, 0.25)
+        _BlockTint ("Block tint (alpha = intensity)", Color) = (0.1, 0.4, 1, 0.5)
+        _TimelyTint ("Timely tint (alpha = intensity)", Color) = (0.1, 1, 1, 0.65)
+        _BreakTint ("Guard break tint (alpha = intensity)", Color) = (1, 0.6, 0.05, 0.65)
         _AlphaCutoff ("Alpha cutoff", Range(0.01, 1)) = 0.5
     }
 
@@ -34,7 +37,7 @@ Shader "MLF Legends/Combat Sprite"
             uint frame;
             float facing;       // +1 right, -1 left
             float damageFactor;
-            float padding;
+            float guardFeedback;
         };
 
         StructuredBuffer<SpriteFrame> _SpriteFrames;
@@ -53,6 +56,7 @@ Shader "MLF Legends/Combat Sprite"
         CBUFFER_START(UnityPerMaterial)
             float _AlphaCutoff;
             float4 _DamageTint;
+            float4 _BlockTint, _TimelyTint, _BreakTint;
         CBUFFER_END
 
         struct Attributes
@@ -67,6 +71,7 @@ Shader "MLF Legends/Combat Sprite"
             float2 uv : TEXCOORD0;
             float3 normalWS : TEXCOORD1;
             nointerpolation float damageFactor : TEXCOORD2;
+            nointerpolation float guardFeedback : TEXCOORD3;
         };
 
         Varyings SpriteVertex(Attributes input)
@@ -92,6 +97,7 @@ Shader "MLF Legends/Combat Sprite"
             positionWS -= _CardView.xyz * (instance.depthOffset + _DepthBias);
             output.positionCS = TransformWorldToHClip(positionWS);
             output.damageFactor = instance.damageFactor;
+            output.guardFeedback = instance.guardFeedback;
             output.normalWS = below ? float3(0.0, 1.0, 0.0) : normalize(_CardGround.xyz);
             return output;
         }
@@ -120,6 +126,8 @@ Shader "MLF Legends/Combat Sprite"
             half4 ForwardFragment(Varyings input) : SV_Target
             {
                 half3 baseColor = SampleSprite(input.uv).rgb;
+                float4 guardTint = input.guardFeedback < 0 ? _BreakTint : input.guardFeedback > 1 ? _TimelyTint : _BlockTint;
+                baseColor = lerp(baseColor, guardTint.rgb, saturate(abs(input.guardFeedback) * guardTint.a));
                 return half4(lerp(baseColor, _DamageTint.rgb, saturate(input.damageFactor * _DamageTint.a)), 1.0);
             }
             ENDHLSL

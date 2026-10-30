@@ -30,12 +30,12 @@ namespace MLFLegends.Combat
         // sin(22.5°): an axis counts when it is at least this fraction of the stick's magnitude, i.e. 8 equal sectors.
         const float k_AxisFraction = 0.38268343f;
 
-        // #69 layout: U hand series, I foot series, O physical ability, Space jump. K (Stage 06 block), double-tap dash and
+        // #69 layout: U hand series, I foot series, O physical ability, Space jump. K guard (06.1). Double-tap dash and
         // 7/8/9/0 magic slots are deliberately unbound; the old exact-limb actions were removed from the asset.
-        static readonly string[] s_ButtonNames = { "HandSeries", "FootSeries", "PhysicalAbility", "Jump", "FocusToggle" };
+        static readonly string[] s_ButtonNames = { "HandSeries", "FootSeries", "PhysicalAbility", "Jump", "FocusToggle", "Guard" };
         static readonly CommandButtons[] s_ButtonFlags =
         {
-            CommandButtons.HandSeries, CommandButtons.FootSeries, CommandButtons.PhysicalAbility, CommandButtons.Jump, CommandButtons.FocusToggle,
+            CommandButtons.HandSeries, CommandButtons.FootSeries, CommandButtons.PhysicalAbility, CommandButtons.Jump, CommandButtons.FocusToggle, CommandButtons.Guard,
         };
 
         readonly InputActionMap m_Map;

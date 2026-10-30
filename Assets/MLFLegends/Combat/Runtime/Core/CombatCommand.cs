@@ -17,7 +17,7 @@ namespace MLFLegends.Combat
         HandSeries = 1 << 0,
         Jump = 1 << 1,
 
-        /// <summary>Reserved for the Stage 06 block (future K); unbound and ignored by the simulation.</summary>
+        /// <summary>Grounded frontal guard (K / gamepad left shoulder); Held defends, legal fresh Pressed arms timely block.</summary>
         Guard = 1 << 2,
 
         /// <summary>Foot series (I): Foot1, Foot1, Foot2, Foot1, Foot2, …</summary>

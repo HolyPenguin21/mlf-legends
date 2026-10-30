@@ -41,6 +41,8 @@ namespace MLFLegends.Combat
             var tick = SystemAPI.TryGetSingleton<SimulationClock>(out var clock) ? clock.Tick : SimulationClock.NoTick;
             var focusModes = SystemAPI.GetComponentLookup<CombatAutoFocus>();
             var attacks = SystemAPI.GetComponentLookup<CombatAttackState>(true);
+            var guards = SystemAPI.GetComponentLookup<CombatGuardState>(true);
+            var results = SystemAPI.GetComponentLookup<CombatStability>(true);
             var motions = SystemAPI.GetComponentLookup<CombatMotion>(true);
             var teams = SystemAPI.GetComponentLookup<CombatTeam>(true);
             var ids = SystemAPI.GetComponentLookup<CombatantId>(true);
@@ -63,6 +65,7 @@ namespace MLFLegends.Combat
                         autoFocus = !mode.Disabled;
                     }
                     var locked = attacks.TryGetComponent(entity, out var attack) && attack.IsAttacking && attack.StartTick != tick;
+                    locked |= guards.TryGetComponent(entity, out var guard) && results.TryGetComponent(entity, out var result) && guard.Locked(result, tick);
                     locked |= motions.TryGetComponent(entity, out var motion) && motion.IsLandingRecovery(tick);
                     var identity = ids.TryGetComponent(entity, out var id) && teams.TryGetComponent(entity, out _)
                         && positions.HasComponent(entity);

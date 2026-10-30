@@ -19,13 +19,13 @@ shadow=(r/'Presentation/Sprites/CombatGroundShadows.cs').read_text(); shader=(r/
 assert 'CombatSpatialIndexSystem' not in facing and 'distance == nearest && enemy.Id < bestId' in facing
 assert 'enemy.Team == actor.Team' in facing and 'math.abs(dx) > 1e-6f' in facing
 assert 'attack.StartTick != tick' in facing and 'LastKernelRanManaged' in facing
-assert 'strike.Damage > 0 && Feedback.HasComponent' in hit and 'LastDamageTick = d.Tick' in hit
+assert 'hit.EffectiveDamage > 0 && Feedback.HasComponent' in hit and 'LastDamageTick = d.Tick' in hit
 assert 'targetHeight - attackerHeight' in hit and 'a.Actor.Body.Height * .5f' in hit and 'b.Actor.Body.Height * .5f' in hit
 assert 'bodies[i].Radius' in shadow and 'GroundHeight' not in shadow and 'CombatArenaShape' in shadow
 assert 'ProjectedBounds' in shadow and 'worldBounds = ProjectedBounds' in shadow
 assert 'if (!Application.isPlaying || !m_DrawAnchorGizmos' in renderer
 assert 'OnDrawGizmosSelected' not in renderer
-assert 'float damageFactor;' in shader and 'float padding;' in shader
+assert 'float damageFactor;' in shader and 'float guardFeedback;' in shader
 assert struct.calcsize('3ffIfff')==32
 assert 'SampleSprite(input.uv).rgb' in shader and 'saturate(input.damageFactor * _DamageTint.a)' in shader
 assert 'clip(color.a - _AlphaCutoff)' in shader

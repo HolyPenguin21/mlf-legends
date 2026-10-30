@@ -566,7 +566,21 @@ namespace MLFLegends.Combat
             using var entities = m_FocusActors.ToEntityArray(Allocator.Temp);
             foreach (var entity in entities)
                 if (em.GetComponentData<CombatantId>(entity).Value == session.HumanCombatant.Value)
-                { GUI.Label(new Rect(12, 12, 240, 26), em.GetComponentData<CombatAutoFocus>(entity).Disabled ? "Auto focus OFF [F]" : "Auto focus ON [F]"); break; }
+                {
+                    var focus = em.GetComponentData<CombatAutoFocus>(entity).Disabled ? "OFF" : "ON";
+                    if (!em.HasComponent<CombatGuardState>(entity) || !em.HasComponent<CombatStability>(entity)) break;
+                    var guard = em.GetComponentData<CombatGuardState>(entity); var resource = em.GetComponentData<CombatStability>(entity);
+                    var motion = em.GetComponentData<CombatMotion>(entity); var hp = em.GetComponentData<CombatHealth>(entity);
+                    using var clocks = em.CreateEntityQuery(typeof(SimulationClock));
+                    var tick = clocks.GetSingleton<SimulationClock>().Tick;
+                    var mode = resource.Broken(tick) ? "Broken" : guard.Effective(resource, tick, motion.Grounded) ? "Guard"
+                        : guard.Mode == CombatGuardMode.Exit ? "Exit" : "Free";
+                    var timely = guard.FreshEntry && guard.Effective(resource, tick, motion.Grounded)
+                        && resource.TimelyEntryTick != guard.StartTick && tick < guard.StartTick - 1d + guard.Settings.TimelyTicks;
+                    GUI.Label(new Rect(12, 12, 700, 26), $"HP {hp.Current}/{hp.Max}  Stability {resource.Current:0.##}/{resource.Max:0.##}  {mode} [K]  AutoFocus {focus} [F]");
+                    GUI.Label(new Rect(12, 38, 700, 26), $"Timely {(timely ? "READY" : "OFF")}  Advantage {(resource.Advantage(guard, tick) ? "READY: U/I/O" : "OFF")}");
+                    break;
+                }
         }
 
         static void DrawCylinder(Vector3 foot, float radius, float height)

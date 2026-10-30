@@ -17,7 +17,7 @@ namespace MLFLegends.Tests.EditMode
             return e.ToArray().Single(x => w.Manager.GetComponentData<CombatantId>(x).Equals(id));
         }
         [TestCase(0, 100)] [TestCase(4, 100)] [TestCase(4, 0)]
-        public void OnlyPositiveConfirmedDamageFlashesIncludingHpZeroAndLedgerDoesNotRefresh(int damage, int hp)
+        public void OnlyEffectiveHpLossFlashesAndLedgerDoesNotRefresh(int damage, int hp)
         {
             using var w = new ReplayWorld("feedback hit owner");
             var table = CombatStrikeSchedule.Default; var strike = table.Hand1Strike; strike.Damage = damage;
@@ -32,7 +32,7 @@ namespace MLFLegends.Tests.EditMode
             ref var hit = ref w.World.Unmanaged.GetUnsafeSystemRef<CombatHitSystem>(w.World.GetExistingSystem<CombatHitSystem>());
             Assert.That(hit.LastHits.TraceSegments, Is.Zero, "Ordinary Hit schedules with a valid empty motion view.");
             var last = w.Manager.GetComponentData<CombatDamageFeedback>(target).LastDamageTick;
-            Assert.That(last, Is.EqualTo(damage > 0 ? 1u : 0u));
+            Assert.That(last, Is.EqualTo(damage > 0 && hp > 0 ? 1u : 0u));
             Assert.That(w.Manager.GetComponentData<CombatDamageFeedback>(h).LastDamageTick, Is.Zero);
             Assert.That(w.Manager.GetBuffer<CombatHitRecord>(h).Length, Is.EqualTo(1));
             Assert.That(w.Manager.GetComponentData<CombatHealth>(target).Current, Is.EqualTo(math.max(0, hp - damage)));

@@ -111,7 +111,8 @@ namespace MLFLegends.Combat
                 "    \"jump\": { \"frames\": [ " + Frames("tech_b,tech_b,tech_b,tech_b,tech_b,tech_b") + " ], \"loop\": false, \"hold_last\": false,\n" +
                 "      \"markers\": { \"rise\": [1, 2], \"fall\": [3], \"land\": [4, 5] } },\n" +
                 "    \"punch_left\": " + strike + ", \"punch_right\": " + strike + ", \"kick_left\": " + strike + ",\n" +
-                "    \"kick_right\": " + strike + ", \"physical_ability\": " + strike + "\n" +
+                "    \"kick_right\": " + strike + ", \"physical_ability\": " + strike + ",\n" +
+                "    \"block\": { \"frames\": [ " + Frames("tech_a,tech_c,tech_b") + " ], \"loop\": false, \"hold_last\": true, \"markers\": {} }\n" +
                 "  },\n  \"compatible_transitions\": []\n}";
             return ManifestJson.Substring(0, ManifestJson.IndexOf("\"clips\"")) + clips;
         }

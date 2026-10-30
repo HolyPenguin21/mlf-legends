@@ -17,6 +17,8 @@ namespace MLFLegends.Combat
 
         [Tooltip("HP removed from each valid target, once per strike (0..1000).")]
         public int Damage;
+        [Tooltip("Guard pressure per confirmed target; normal stability cost = GuardDamage / Guard.Strength.")]
+        public float GuardDamage;
 
         [Tooltip("Off: damage uses the animation Active interval. On: starts at the same first Active frame and lasts Damage Duration Seconds, independent of Swing and graphic phases.")]
         public bool OverrideDamageDuration;
@@ -51,7 +53,7 @@ namespace MLFLegends.Combat
 
         public CombatStrikeParameters Parameters => new CombatStrikeParameters
         {
-            Damage = Damage, ReachMin = ReachMin, ReachMax = ReachMax, DepthHalfWidth = DepthHalfWidth, HeightTolerance = HeightTolerance,
+            Damage = Damage, GuardDamage = GuardDamage, ReachMin = ReachMin, ReachMax = ReachMax, DepthHalfWidth = DepthHalfWidth, HeightTolerance = HeightTolerance,
             HitOffsetY = HitOffsetY, SelfImpulse = SelfImpulse, ElevationDegrees = ElevationDegrees,
             CompactHeight = CompactHeight, CompactEnd = (ushort)(CompactHeight > 0 ? 1 : 0),
             OnHitImpulse = new Unity.Mathematics.float3(OnHitImpulse.x, OnHitImpulse.y, OnHitImpulse.z),
@@ -62,7 +64,7 @@ namespace MLFLegends.Combat
             var strike = CombatAttackTuning.Get(kind);
             return new CharacterStrikeSettings
             {
-                ClipId = CombatAnimationSet.DefaultClip(kind), Damage = strike.Damage, ReachMin = strike.ReachMin,
+                ClipId = CombatAnimationSet.DefaultClip(kind), Damage = strike.Damage, GuardDamage = strike.GuardDamage, ReachMin = strike.ReachMin,
                 ReachMax = strike.ReachMax, DepthHalfWidth = strike.DepthHalfWidth, HeightTolerance = strike.HeightTolerance,
             };
         }
@@ -93,7 +95,10 @@ namespace MLFLegends.Combat
     [Serializable]
     public sealed class CharacterCombatSettings : ISerializationCallbackReceiver
     {
-        public const int CurrentVersion = 1;
+        public const int CurrentVersion = 2;
+
+        [Header("Guard (working calibration; fixed ticks at 60 Hz, rates per second)")]
+        public CombatGuardParameters Guard = CombatGuardParameters.Default;
 
         [Header("Body: vertical cylinder from CombatPosition")]
         [Tooltip("Radius, world units (0.05..2). Contacts, walls and spawn support use it.")]
@@ -142,6 +147,7 @@ namespace MLFLegends.Combat
         public bool Validate(string path, List<string> errors)
         {
             var before = errors.Count;
+            if (!Guard.IsValid) errors.Add(path + ".Guard: finite positive maximum/strength, cone 0..90 degrees, multipliers 0..1, nonnegative rates/ticks required");
             if (!CombatCharacterLimits.IsValid(Body))
                 errors.Add($"{path}.Body: Radius {BodyRadius} ({CombatCharacterLimits.MinRadius}..{CombatCharacterLimits.MaxRadius}), " +
                     $"Height {BodyHeight} ({CombatCharacterLimits.MinHeight}..{CombatCharacterLimits.MaxHeight}), " +
@@ -205,7 +211,7 @@ namespace MLFLegends.Combat
                 }
                 table.SetStrike(kind, value);
             }
-            table.Body = Body;
+            table.Body = Body; table.Guard = Guard;
         }
 
         void ISerializationCallbackReceiver.OnBeforeSerialize()
@@ -214,20 +220,25 @@ namespace MLFLegends.Combat
 
         void ISerializationCallbackReceiver.OnAfterDeserialize()
         {
-            if (m_Version >= CurrentVersion)
-                return;
-            // Pre-#69 data (no Combat block, or a zero-initialized one): the previous built-in values, exactly once.
-            var defaults = new CharacterCombatSettings();
-            BodyRadius = defaults.BodyRadius; BodyHeight = defaults.BodyHeight; BodyMass = defaults.BodyMass;
-            Hand1 = defaults.Hand1; Hand2 = defaults.Hand2; Foot1 = defaults.Foot1; Foot2 = defaults.Foot2;
-            PhysicalAbility = defaults.PhysicalAbility;
-            PhysicalAbility.ClipId = CombatAnimationSet.LegacyPhysicalAbilityClip; // the art such data was authored for
+            if (m_Version >= CurrentVersion) return;
+            if (m_Version == 0)
+            {
+                var defaults = new CharacterCombatSettings();
+                BodyRadius = defaults.BodyRadius; BodyHeight = defaults.BodyHeight; BodyMass = defaults.BodyMass;
+                Hand1 = defaults.Hand1; Hand2 = defaults.Hand2; Foot1 = defaults.Foot1; Foot2 = defaults.Foot2;
+                PhysicalAbility = defaults.PhysicalAbility;
+                PhysicalAbility.ClipId = CombatAnimationSet.LegacyPhysicalAbilityClip;
+            }
+            // v1 -> v2 touches ONLY new fields; owner body/strike/clip/timing/VFX remain exact.
+            Guard = CombatGuardParameters.Default;
+            for (var kind = CombatAttackKind.Hand1; kind <= CombatAttackKind.PhysicalAbility; kind++)
+                if (Strike(kind) != null) Strike(kind).GuardDamage = CombatAttackTuning.Get(kind).GuardDamage;
             m_Version = CurrentVersion;
         }
 
         internal CharacterCombatSettings Copy() => new CharacterCombatSettings
         {
-            BodyRadius = BodyRadius, BodyHeight = BodyHeight, BodyMass = BodyMass,
+            BodyRadius = BodyRadius, BodyHeight = BodyHeight, BodyMass = BodyMass, Guard = Guard,
             Hand1 = Hand1?.Copy(), Hand2 = Hand2?.Copy(), Foot1 = Foot1?.Copy(), Foot2 = Foot2?.Copy(),
             PhysicalAbility = PhysicalAbility?.Copy(), m_Version = m_Version,
         };

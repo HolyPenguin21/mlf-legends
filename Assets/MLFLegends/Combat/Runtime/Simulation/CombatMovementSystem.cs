@@ -54,6 +54,8 @@ namespace MLFLegends.Combat
                 const float dt = SimulationTiming.TickDuration;
                 var tick = SystemAPI.TryGetSingleton<SimulationClock>(out var clock) ? clock.Tick : SimulationClock.NoTick;
                 var attacks = SystemAPI.GetComponentLookup<CombatAttackState>(true);
+                var guards = SystemAPI.GetComponentLookup<CombatGuardState>(true);
+                var results = SystemAPI.GetComponentLookup<CombatStability>(true);
                 var landingTicks = SystemAPI.TryGetSingleton<CombatStrikeSchedule>(out var schedule) ? schedule.LandingRecoveryTicks : 0u;
                 var bodies = SystemAPI.GetComponentLookup<CombatBody>();
                 var profiles = SystemAPI.GetComponentLookup<CombatBodyProfile>();
@@ -71,6 +73,7 @@ namespace MLFLegends.Combat
                         .WithEntityAccess())
                 {
                     var command = applied.ValueRO.Command;
+                    if (command.Tick != tick) command = default;
                     var next = position.ValueRO.Value;
                     var kinetic = motion.ValueRO;
                     var moveMultiplier = 1f;
@@ -78,6 +81,19 @@ namespace MLFLegends.Combat
                     {
                         moveMultiplier = CombatMovementTuning.AttackMoveMultiplier(attack.Timing.PhaseAt(tick - attack.StartTick));
                         command.Pressed &= ~CommandButtons.Jump;
+                    }
+                    if (guards.TryGetComponent(entity, out var guard) && results.TryGetComponent(entity, out var result))
+                    {
+                        var now = tick - 1d;
+                        var broken = result.Broken(now);
+                        var exiting = guard.Mode == CombatGuardMode.Exit && now < guard.ExitUntil;
+                        var guarding = guard.Effective(result, now, kinetic.Grounded);
+                        if (broken || exiting || guarding)
+                        {
+                            moveMultiplier = broken ? guard.Settings.BrokenMoveMultiplier
+                                : exiting ? guard.Settings.ExitMoveMultiplier : guard.Settings.MoveMultiplier;
+                            command.Pressed &= ~CommandButtons.Jump;
+                        }
                     }
                     if (kinetic.IsLandingRecovery(tick))
                         command.Pressed = CommandButtons.None;

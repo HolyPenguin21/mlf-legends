@@ -81,6 +81,7 @@ namespace MLFLegends.Combat
     {
         /// <summary>HP removed from each valid target, once per strike.</summary>
         public int Damage;
+        public float GuardDamage;
 
         public int SwingEffect, ImpactEffect; // immutable World resource handles, 0 = disabled
 

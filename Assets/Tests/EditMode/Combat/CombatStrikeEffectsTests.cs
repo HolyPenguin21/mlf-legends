@@ -143,7 +143,7 @@ namespace MLFLegends.Tests.EditMode
         }
 
         [TestCase(0)] [TestCase(4)]
-        public void ConfirmedDamageZeroAndHpZeroHaveOneImpactPerTargetAndSwingOnMiss(int damage)
+        public void HpZeroStillHasOneLedgerPerTargetButNoDamagingFeedback(int damage)
         {
             using var w = new ReplayWorld("effects confirmation"); var table = CombatStrikeSchedule.Default;
             table.Hand1 = CombatStrikeTiming.FromTicks(0, 4, 2, 0); table.Hand1Strike.Damage = damage;
@@ -159,10 +159,10 @@ namespace MLFLegends.Tests.EditMode
             w.Frame(4);
             var facts = Facts(w);
             Assert.That(facts.Count(f => f.Kind == CombatEffectKind.Swing), Is.EqualTo(1));
-            Assert.That(facts.Count(f => f.Kind == CombatEffectKind.Impact), Is.EqualTo(2));
-            Assert.That(facts.Where(f => f.Kind == CombatEffectKind.Impact).Select(f => f.TargetId).Distinct().Count(), Is.EqualTo(2));
+            Assert.That(facts.Count(f => f.Kind == CombatEffectKind.Impact), Is.Zero);
+            Assert.That(w.Manager.GetBuffer<CombatHitRecord>(Actor(w, w.Session.HumanCombatant)).Length, Is.EqualTo(2));
             foreach (var e in entities) if (w.Manager.GetComponentData<CombatTeam>(e).Value == 2)
-                Assert.That(w.Manager.GetComponentData<CombatDamageFeedback>(e).LastDamageTick, Is.EqualTo(damage > 0 ? 1u : 0u));
+                Assert.That(w.Manager.GetComponentData<CombatDamageFeedback>(e).LastDamageTick, Is.Zero);
         }
 
         [Test]
